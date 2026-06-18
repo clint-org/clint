@@ -39,11 +39,11 @@
 } @else {
   @if (trial(); as t) {
     <app-manage-page-shell [narrow]="true">
-      <header class="mb-4 border border-slate-200 bg-white px-4 py-2">
-        @if (t.assets; as prod) {
-          <div
-            class="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500"
-          >
+      <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
+        <div
+          class="mb-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-500"
+        >
+          @if (t.assets; as prod) {
             @if (prod.companies; as co) {
               <a
                 [routerLink]="[
@@ -55,7 +55,7 @@
                   'companies',
                   co.id,
                 ]"
-                class="inline-flex items-center gap-1.5 hover:text-brand-700 hover:underline"
+                class="inline-flex items-center gap-1.5 text-slate-700 hover:text-brand-700 hover:underline"
               >
                 @if (co.logo_url) {
                   <app-brand-logo
@@ -72,22 +72,14 @@
             }
             <a
               [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'manage', 'assets', prod.id]"
-              class="hover:text-brand-700 hover:underline"
+              class="text-slate-700 hover:text-brand-700 hover:underline"
             >
               {{ prod.name }}
             </a>
-          </div>
-        }
-        <div class="mt-0.5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <div class="flex items-baseline gap-x-3">
-            <h1 class="text-sm font-semibold uppercase tracking-[0.08em] text-slate-900">
-              {{ t.acronym ?? t.name }}
-            </h1>
-            @if (showSecondaryName(t.acronym, t.name, t.identifier)) {
-              <span class="text-xs text-slate-500">{{ t.name }}</span>
-            }
-          </div>
-          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span class="text-slate-300" aria-hidden="true">/</span>
+          }
+          <span class="text-slate-400">Trial</span>
+          <span class="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1">
             @if (t.identifier) {
               <a
                 [href]="'https://clinicaltrials.gov/study/' + t.identifier"
@@ -115,7 +107,15 @@
             @if (t.status) {
               <app-status-tag [label]="t.status" />
             }
-          </div>
+          </span>
+        </div>
+        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h1 class="text-lg font-bold tracking-[-0.01em] text-slate-900">
+            {{ t.acronym ?? t.name }}
+          </h1>
+          @if (showSecondaryName(t.acronym, t.name, t.identifier)) {
+            <span class="text-[13px] text-slate-500">{{ t.name }}</span>
+          }
         </div>
       </header>
 
@@ -181,6 +181,9 @@
         </a>
       </nav>
 
+      <div class="flex flex-col items-start gap-4 lg:flex-row">
+      <!-- Main column: narrative (read, timeline, markers, activity). -->
+      <div class="min-w-0 flex-1">
       <!-- Primary intelligence -->
       <div id="primary-intelligence">
         @if (hasIntelligence()) {
@@ -231,15 +234,15 @@
         />
       </div>
 
-      <!-- Timeline + events panel -->
+      <!-- Timeline -->
       <section id="timeline" class="mb-4 bg-white border border-slate-200">
         <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-          <h2 class="font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
+          <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
             Timeline
           </h2>
           <button
             type="button"
-            class="font-mono text-[11px] uppercase tracking-wider text-slate-500 hover:text-brand-700 hover:underline"
+            class="font-mono text-[10px] uppercase tracking-[0.1em] text-brand-700 hover:underline"
             (click)="legendVisible.set(!legendVisible())"
           >
             {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
@@ -255,284 +258,7 @@
             [columnsOnly]="true"
           />
         </div>
-        @if (trial(); as t) {
-          <div class="border-t border-slate-200">
-            <app-entity-events-panel
-              [spaceId]="spaceIdSig()"
-              [tenantId]="tenantIdSig() ?? ''"
-              entityLevel="trial"
-              [entityId]="t.id"
-            />
-          </div>
-        }
       </section>
-
-      <!-- Referenced in -->
-      <section
-        id="referenced-in"
-        class="mb-4 border border-slate-200 bg-white"
-        aria-label="Reads referencing this trial"
-      >
-        <header
-          class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
-        >
-          <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            Referenced in
-          </h2>
-          <span class="font-mono text-[10px] text-slate-400">
-            {{ (intelligence()?.referenced_in ?? []).length }} reads
-          </span>
-        </header>
-        <div class="px-4 py-3">
-          @if ((intelligence()?.referenced_in ?? []).length === 0) {
-            <p class="text-xs text-slate-400">No published reads link to this trial yet.</p>
-          } @else {
-            <ul class="divide-y divide-slate-100">
-              @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
-                <li class="flex flex-wrap items-baseline gap-2 py-2">
-                  <span
-                    class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
-                  >
-                    {{ ref.entity_type }}
-                  </span>
-                  <span class="text-sm text-slate-800">{{ ref.headline }}</span>
-                  @if (ref.relationship_type) {
-                    <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-                      {{ ref.relationship_type }}
-                    </span>
-                  }
-                  @if (ref.gloss) {
-                    <span class="text-xs text-slate-500">-- {{ ref.gloss }}</span>
-                  }
-                </li>
-              }
-            </ul>
-          }
-        </div>
-      </section>
-
-      <!-- Materials section: file uploads linked to this trial. -->
-      <section
-        id="materials"
-        class="materials-section mb-4 border border-slate-200 bg-white"
-        aria-label="Engagement materials"
-      >
-        <header
-          class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
-        >
-          <h2 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            Materials
-          </h2>
-        </header>
-        @if (trial(); as t) {
-          <app-materials-section entityType="trial" [entityId]="t.id" [spaceId]="t.space_id" />
-        }
-      </section>
-
-      <!-- CT.gov data block -->
-      <div id="ctgov">
-        <app-section-card title="CT.gov data">
-          <div actions class="flex items-center gap-1">
-            @if (spaceRole.canEdit()) {
-              <span
-                [pTooltip]="!t.identifier ? 'Add an NCT identifier to enable CT.gov sync.' : ''"
-                tooltipPosition="bottom"
-              >
-                <p-button
-                  label="Sync from CT.gov"
-                  icon="fa-solid fa-rotate"
-                  [text]="true"
-                  size="small"
-                  [loading]="syncing()"
-                  [disabled]="!t.identifier"
-                  (onClick)="syncCtgov()"
-                />
-              </span>
-            }
-            @if (snapshot()) {
-              <p-button
-                label="Show all CT.gov data"
-                [text]="true"
-                size="small"
-                (onClick)="showAllCtgovModal.set(true)"
-              />
-            }
-          </div>
-
-          @if (t.identifier && nctValidity() === 'not_found') {
-            <p-message severity="error" [closable]="false" styleClass="mb-3">
-              <span class="text-xs">
-                <span class="font-mono">{{ t.identifier }}</span> was not found at CT.gov. Edit the
-                trial to fix the NCT, or remove it.
-              </span>
-            </p-message>
-          }
-
-          <dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2 text-sm">
-            <dt class="text-slate-500">Registry phase (as reported)</dt>
-            <dd class="text-slate-900">{{ t.phase ? phaseLabel(t.phase) : '(not set)' }}</dd>
-            <dt class="text-slate-500">Recruitment status</dt>
-            <dd class="text-slate-900">{{ t.recruitment_status ?? '(not set)' }}</dd>
-            <dt class="text-slate-500">Study type</dt>
-            <dd class="text-slate-900">{{ t.study_type ?? '(not set)' }}</dd>
-          </dl>
-
-          @if (snapshot()?.payload && detailExtraPaths().length) {
-            <div class="mt-4">
-              <app-ctgov-field-renderer
-                [snapshot]="snapshot()!.payload"
-                [paths]="detailExtraPaths()"
-                [dense]="true"
-              />
-            </div>
-          }
-
-          @if (t.ctgov_last_synced_at; as lastSynced) {
-            <p class="mt-3 font-mono text-[11px] text-slate-500 tabular-nums">
-              Last synced: {{ lastSynced | date: 'short' }}
-            </p>
-          } @else {
-            <p class="mt-3 font-mono text-[11px] text-slate-500">Not yet synced from CT.gov.</p>
-          }
-        </app-section-card>
-      </div>
-
-      <p-dialog
-        [(visible)]="showAllCtgovModal"
-        header="All CT.gov data"
-        [modal]="true"
-        styleClass="!w-[60rem]"
-      >
-        @if (snapshot(); as snap) {
-          <app-ctgov-field-renderer [snapshot]="snap.payload" [paths]="allCatalogPaths" />
-        } @else {
-          <p class="py-4 text-sm text-slate-500">No CT.gov snapshot is available yet.</p>
-        }
-      </p-dialog>
-
-      <!-- Basic info -->
-      <app-section-card title="Basic info">
-        <dl class="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
-          <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Status</dt>
-            <dd class="mt-1">
-              <app-status-tag [label]="t.status" />
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Asset</dt>
-            <dd class="mt-1 text-sm text-slate-900">{{ t.assets?.name || '--' }}</dd>
-          </div>
-          <div>
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-              Indications
-            </dt>
-            <dd class="mt-1">
-              @if (indications().length) {
-                <div class="flex flex-wrap items-center gap-1">
-                  @for (ind of indications(); track ind.id) {
-                    <span
-                      class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-700"
-                      >{{ ind.name }}</span
-                    >
-                  }
-                </div>
-              } @else {
-                <span class="text-sm text-slate-900">--</span>
-              }
-            </dd>
-          </div>
-          @if (spaceRole.canEdit()) {
-            <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                Display order
-              </dt>
-              <dd class="mt-1 font-mono text-sm text-slate-900 tabular-nums">
-                {{ t.display_order }}
-              </dd>
-            </div>
-          }
-        </dl>
-        @if (t.notes) {
-          <div class="mt-4 border-t border-slate-100 pt-4">
-            <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Notes</dt>
-            <dd class="mt-1 text-sm text-slate-700">{{ t.notes }}</dd>
-          </div>
-        }
-      </app-section-card>
-
-      <!-- Phase card: always renders. Empty state cues the analyst to fill it. -->
-      <app-section-card title="Phase">
-        @if (t.phase_type || t.phase_start_date || t.phase_end_date) {
-          <dl class="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3">
-            <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                Phase type
-              </dt>
-              <dd class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900">
-                <span>{{ t.phase_type ? phaseLabel(t.phase_type) : '--' }}</span>
-                @if (t.phase_type_source) {
-                  <span
-                    class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500"
-                  >
-                    {{ t.phase_type_source }}
-                  </span>
-                }
-              </dd>
-            </div>
-            <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                Start date
-              </dt>
-              <dd
-                class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900 tabular-nums"
-              >
-                <span>{{ (t.phase_start_date | date: 'mediumDate') || '--' }}</span>
-                @if (t.phase_start_date_source) {
-                  <span
-                    class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500"
-                  >
-                    {{ t.phase_start_date_source }}
-                  </span>
-                }
-              </dd>
-            </div>
-            <div>
-              <dt class="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                End date
-              </dt>
-              <dd
-                class="mt-1 flex items-baseline gap-1.5 font-mono text-sm text-slate-900 tabular-nums"
-              >
-                <span>{{ (t.phase_end_date | date: 'mediumDate') || '--' }}</span>
-                @if (t.phase_end_date_source) {
-                  <span
-                    class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500"
-                  >
-                    {{ t.phase_end_date_source }}
-                  </span>
-                }
-              </dd>
-            </div>
-          </dl>
-        } @else {
-          <p class="text-sm text-slate-500">
-            No phase set.
-            @if (spaceRole.canEdit()) {
-              <a
-                href="#"
-                class="text-brand-700 hover:underline"
-                (click)="$event.preventDefault(); editingTrial.set(true)"
-                >Edit this trial</a
-              >
-              to add phase, start, and end dates.
-            } @else {
-              The trial owner can add phase, start, and end dates from the edit dialog.
-            }
-          </p>
-        }
-      </app-section-card>
-
       <div id="markers">
         <app-section-card title="Markers">
           @if (spaceRole.canEdit()) {
@@ -698,6 +424,297 @@
             <p class="py-4 text-sm text-slate-500">No activity yet.</p>
           }
         </app-section-card>
+      </div>
+      </div>
+
+      <!-- Rail: the structured facts (snapshot, CT.gov, events, referenced, materials). -->
+      <div class="w-full flex-none lg:w-80">
+        <!-- Snapshot: basic info as a compact grid -->
+        <section class="mb-4 border border-slate-200 bg-white" aria-label="Trial snapshot">
+          <header
+            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+          >
+            <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+              Snapshot
+            </h2>
+          </header>
+          <dl class="grid grid-cols-2 text-sm">
+            <div class="border-b border-r border-slate-100 px-3 py-2.5">
+              <dt class="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                Status
+              </dt>
+              <dd class="mt-1">
+                <app-status-tag [label]="t.status" />
+              </dd>
+            </div>
+            <div class="border-b border-slate-100 px-3 py-2.5">
+              <dt class="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                Asset
+              </dt>
+              <dd class="mt-1 truncate text-[13px] font-semibold text-slate-900">
+                {{ t.assets?.name || '--' }}
+              </dd>
+            </div>
+            <div class="border-b border-r border-slate-100 px-3 py-2.5">
+              <dt class="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                Phase
+              </dt>
+              <dd class="mt-1 flex items-baseline gap-1.5 font-mono text-[13px] text-slate-900">
+                <span>{{ t.phase_type ? phaseLabel(t.phase_type) : '--' }}</span>
+                @if (t.phase_type_source) {
+                  <span
+                    class="rounded-sm border border-slate-200 bg-slate-50 px-1 py-px text-[9px] uppercase tracking-wider text-slate-500"
+                  >
+                    {{ t.phase_type_source }}
+                  </span>
+                }
+              </dd>
+            </div>
+            <div class="border-b border-slate-100 px-3 py-2.5">
+              <dt class="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                Indications
+              </dt>
+              <dd class="mt-1">
+                @if (indications().length) {
+                  <div class="flex flex-wrap items-center gap-1">
+                    @for (ind of indications(); track ind.id) {
+                      <span
+                        class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-700"
+                        >{{ ind.name }}</span
+                      >
+                    }
+                  </div>
+                } @else {
+                  <span class="text-[13px] text-slate-900">--</span>
+                }
+              </dd>
+            </div>
+            <div class="border-r border-slate-100 px-3 py-2.5">
+              <dt class="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                Start
+              </dt>
+              <dd class="mt-1 font-mono text-[13px] tabular-nums text-slate-900">
+                {{ (t.phase_start_date | date: 'mediumDate') || '--' }}
+                @if (t.phase_start_date_source) {
+                  <span class="ml-1 text-[9px] uppercase tracking-wider text-slate-500">
+                    {{ t.phase_start_date_source }}
+                  </span>
+                }
+              </dd>
+            </div>
+            <div class="px-3 py-2.5">
+              <dt class="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                End
+              </dt>
+              <dd class="mt-1 font-mono text-[13px] tabular-nums text-slate-900">
+                {{ (t.phase_end_date | date: 'mediumDate') || '--' }}
+                @if (t.phase_end_date_source) {
+                  <span class="ml-1 text-[9px] uppercase tracking-wider text-slate-500">
+                    {{ t.phase_end_date_source }}
+                  </span>
+                }
+              </dd>
+            </div>
+            @if (spaceRole.canEdit()) {
+              <div class="col-span-2 border-t border-slate-100 px-3 py-2.5">
+                <dt class="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                  Display order
+                </dt>
+                <dd class="mt-1 font-mono text-[13px] tabular-nums text-slate-900">
+                  {{ t.display_order }}
+                </dd>
+              </div>
+            }
+          </dl>
+          @if (!(t.phase_type || t.phase_start_date || t.phase_end_date) && spaceRole.canEdit()) {
+            <p class="border-t border-slate-100 px-3 py-2.5 text-xs text-slate-500">
+              No phase set.
+              <a
+                href="#"
+                class="text-brand-700 hover:underline"
+                (click)="$event.preventDefault(); editingTrial.set(true)"
+                >Edit this trial</a
+              >
+              to add phase, start, and end dates.
+            </p>
+          }
+          @if (t.notes) {
+            <div class="border-t border-slate-100 px-3 py-2.5">
+              <dt class="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400">
+                Notes
+              </dt>
+              <dd class="mt-1 text-[13px] text-slate-700">{{ t.notes }}</dd>
+            </div>
+          }
+        </section>
+
+        <!-- CT.gov data block -->
+        <div id="ctgov">
+          <app-section-card title="CT.gov data">
+            <div actions class="flex items-center gap-1">
+              @if (spaceRole.canEdit()) {
+                <span
+                  [pTooltip]="!t.identifier ? 'Add an NCT identifier to enable CT.gov sync.' : ''"
+                  tooltipPosition="bottom"
+                >
+                  <p-button
+                    label="Sync"
+                    icon="fa-solid fa-rotate"
+                    [text]="true"
+                    size="small"
+                    [loading]="syncing()"
+                    [disabled]="!t.identifier"
+                    (onClick)="syncCtgov()"
+                  />
+                </span>
+              }
+            </div>
+
+            @if (t.identifier && nctValidity() === 'not_found') {
+              <p-message severity="error" [closable]="false" styleClass="mb-3">
+                <span class="text-xs">
+                  <span class="font-mono">{{ t.identifier }}</span> was not found at CT.gov. Edit the
+                  trial to fix the NCT, or remove it.
+                </span>
+              </p-message>
+            }
+
+            <dl class="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1.5 text-[13px]">
+              <dt class="text-slate-500">Registry phase</dt>
+              <dd class="text-right text-slate-900">
+                {{ t.phase ? phaseLabel(t.phase) : '(not set)' }}
+              </dd>
+              <dt class="text-slate-500">Recruitment status</dt>
+              <dd class="text-right text-slate-900">{{ t.recruitment_status ?? '(not set)' }}</dd>
+              <dt class="text-slate-500">Study type</dt>
+              <dd class="text-right text-slate-900">{{ t.study_type ?? '(not set)' }}</dd>
+            </dl>
+
+            @if (snapshot()?.payload && detailExtraPaths().length) {
+              <div class="mt-3">
+                <app-ctgov-field-renderer
+                  [snapshot]="snapshot()!.payload"
+                  [paths]="detailExtraPaths()"
+                  [dense]="true"
+                />
+              </div>
+            }
+
+            @if (snapshot()) {
+              <p-button
+                label="Show all CT.gov data"
+                [text]="true"
+                size="small"
+                styleClass="!px-0 mt-2"
+                (onClick)="showAllCtgovModal.set(true)"
+              />
+            }
+
+            @if (t.ctgov_last_synced_at; as lastSynced) {
+              <p class="mt-3 font-mono text-[11px] text-slate-500 tabular-nums">
+                Last synced: {{ lastSynced | date: 'short' }}
+              </p>
+            } @else {
+              <p class="mt-3 font-mono text-[11px] text-slate-500">Not yet synced from CT.gov.</p>
+            }
+          </app-section-card>
+        </div>
+
+        <p-dialog
+          [(visible)]="showAllCtgovModal"
+          header="All CT.gov data"
+          [modal]="true"
+          styleClass="!w-[60rem]"
+        >
+          @if (snapshot(); as snap) {
+            <app-ctgov-field-renderer [snapshot]="snap.payload" [paths]="allCatalogPaths" />
+          } @else {
+            <p class="py-4 text-sm text-slate-500">No CT.gov snapshot is available yet.</p>
+          }
+        </p-dialog>
+
+        <!-- Change events -->
+        <section class="mb-4 border border-slate-200 bg-white" aria-label="Change events">
+          <header
+            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+          >
+            <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+              Events
+            </h2>
+          </header>
+          @if (trial(); as t) {
+            <app-entity-events-panel
+              [spaceId]="spaceIdSig()"
+              [tenantId]="tenantIdSig() ?? ''"
+              entityLevel="trial"
+              [entityId]="t.id"
+            />
+          }
+        </section>
+
+        <!-- Referenced in -->
+        <section
+          id="referenced-in"
+          class="mb-4 border border-slate-200 bg-white"
+          aria-label="Reads referencing this trial"
+        >
+          <header
+            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+          >
+            <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+              Referenced in
+            </h2>
+            <span class="font-mono text-[10px] tabular-nums text-slate-400">
+              {{ (intelligence()?.referenced_in ?? []).length }}
+              {{ (intelligence()?.referenced_in ?? []).length === 1 ? 'read' : 'reads' }}
+            </span>
+          </header>
+          <div class="px-4 py-3">
+            @if ((intelligence()?.referenced_in ?? []).length === 0) {
+              <p class="text-xs italic text-slate-400">Not referenced by any read yet.</p>
+            } @else {
+              <ul class="divide-y divide-slate-100">
+                @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
+                  <li class="flex flex-wrap items-baseline gap-2 py-2">
+                    <span
+                      class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
+                    >
+                      {{ ref.entity_type }}
+                    </span>
+                    <span class="text-sm text-slate-800">{{ ref.headline }}</span>
+                    @if (ref.relationship_type) {
+                      <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                        {{ ref.relationship_type }}
+                      </span>
+                    }
+                    @if (ref.gloss) {
+                      <span class="text-xs text-slate-500">-- {{ ref.gloss }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </section>
+
+        <!-- Materials section: file uploads linked to this trial. -->
+        <section
+          id="materials"
+          class="materials-section mb-4 border border-slate-200 bg-white"
+          aria-label="Engagement materials"
+        >
+          <header
+            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
+          >
+            <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+              Materials
+            </h2>
+          </header>
+          @if (trial(); as t) {
+            <app-materials-section entityType="trial" [entityId]="t.id" [spaceId]="t.space_id" />
+          }
+        </section>
+      </div>
       </div>
 
       <!-- Authoring drawer -->
