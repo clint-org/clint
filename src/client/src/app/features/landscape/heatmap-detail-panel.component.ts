@@ -101,6 +101,8 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
             <app-detail-panel-competitor-race
               [groups]="competitorGroups()"
               [showPreclinical]="showPreclinical()"
+              [tenantId]="tenantId()"
+              [spaceId]="spaceId()"
             />
           </app-detail-panel-section>
         }
@@ -140,6 +142,9 @@ export class HeatmapDetailPanelComponent {
   readonly grouping = input<HeatmapGrouping>('moa');
   /** Whether the space tracks preclinical; forwarded to the phase-race scale. */
   readonly showPreclinical = input(true);
+  /** Route scope forwarded to the competitor race for company / asset links. */
+  readonly tenantId = input<string | null>(null);
+  readonly spaceId = input<string | null>(null);
 
   readonly clearSelection = output<void>();
   readonly openAsset = output<string>();

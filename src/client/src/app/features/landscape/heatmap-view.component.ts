@@ -112,6 +112,8 @@ import { buildHeatmapSheets } from './heatmap-export.util';
                   [totalBubbles]="data.bubbles.length"
                   [grouping]="state.heatmapGrouping()"
                   [showPreclinical]="state.showPreclinical()"
+                  [tenantId]="tenantId()"
+                  [spaceId]="spaceId()"
                   (clearSelection)="selectedBubble.set(null)"
                   (openAsset)="onOpenAsset($event)"
                   (openInBullseye)="onOpenInBullseye()"
