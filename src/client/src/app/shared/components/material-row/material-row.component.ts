@@ -39,7 +39,9 @@ interface MaterialLinkChip {
   standalone: true,
   imports: [RouterLink, TooltipModule],
   template: `
-    <div class="group flex w-full items-center gap-3.5 px-5 py-3 transition-colors hover:bg-slate-50">
+    <div
+      class="group @container/matrow flex w-full items-center gap-3.5 px-5 py-3 transition-colors hover:bg-slate-50"
+    >
       <!-- File-type glyph (PowerPoint amber, PDF red, Word blue, other slate) -->
       <span class="flex h-10 w-7 shrink-0 items-center justify-center" aria-hidden="true">
         <i [class]="'fa-regular text-[26px] ' + iconGlyph() + ' ' + iconColor()"></i>
@@ -56,6 +58,14 @@ interface MaterialLinkChip {
           >
             {{ typeLabel() }}
           </span>
+        </div>
+        <!-- Compact date/size: shown only in narrow containers (detail-pane
+             rails) where the right-hand column is hidden, so the title keeps
+             full width instead of truncating to a few characters. -->
+        <div
+          class="mt-1 font-mono text-[10px] tabular-nums text-slate-400 @[26rem]/matrow:hidden"
+        >
+          {{ formattedDate() }} · {{ formattedSize() }}
         </div>
         @if (showLinks() && chips().length) {
           <div class="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
@@ -90,8 +100,10 @@ interface MaterialLinkChip {
         }
       </div>
 
-      <!-- Date / size, right-aligned tabular figures -->
-      <div class="hidden shrink-0 text-right sm:block">
+      <!-- Date / size, right-aligned tabular figures. Gated on the row's own
+           width (container query) rather than the viewport, so it appears on
+           the wide browse list but yields to the title in narrow detail rails. -->
+      <div class="hidden shrink-0 text-right @[26rem]/matrow:block">
         <div class="font-mono text-[11px] font-semibold tabular-nums text-slate-700">
           {{ formattedDate() }}
         </div>
