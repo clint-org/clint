@@ -15,6 +15,13 @@ import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
  * Recency-ordered feed of published primary intelligence reads. Used on the
  * engagement landing's "Latest from Stout" surface and on the browse view.
  *
+ * Each row reads as a scannable analyst read: a thin entity-colored spine
+ * (engagement = brand accent, every other entity = neutral slate so data
+ * colors never decorate), the shared entity chip + tabular date on top, the
+ * headline leading, a two-line summary clamp, then a quiet author byline with
+ * a READ affordance. The whole row is a single click target via the title's
+ * stretched ::before overlay.
+ *
  * Strictly editorial: change events live in the "What changed" widget and
  * the Activity page. Mixing the two surfaces here in the past produced
  * duplicate rows visible to the same user.
@@ -24,30 +31,49 @@ import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
   standalone: true,
   imports: [RouterLink, DatePipe],
   template: `
-    <ul class="divide-y divide-slate-100 border border-slate-200 bg-white">
+    <ul class="bg-white">
       @for (row of rows(); track row.id) {
-        <li class="group relative px-4 py-3 transition-colors hover:bg-slate-50">
-          <div class="mb-1 flex flex-wrap items-baseline gap-2">
-            <span
-              class="rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
-            >
-              {{ entityLabel(row) }}
-            </span>
+        <li class="group relative flex border-b border-slate-100 last:border-b-0">
+          <span
+            class="w-[3px] shrink-0"
+            [class.bg-brand-500]="row.entity_type === 'space'"
+            [class.bg-slate-300]="row.entity_type !== 'space'"
+            aria-hidden="true"
+          ></span>
+          <div class="min-w-0 flex-1 px-4 py-3.5 transition-colors group-hover:bg-slate-50">
+            <div class="mb-2 flex items-center gap-2.5">
+              <span
+                class="inline-flex items-center border border-slate-200 bg-white px-2 py-1 font-mono text-[9px] font-bold uppercase leading-none tracking-[0.1em]"
+                [class.text-brand-700]="row.entity_type === 'space'"
+                [class.text-slate-500]="row.entity_type !== 'space'"
+              >
+                {{ entityLabel(row) }}
+              </span>
+              <span class="ml-auto font-mono text-[10px] font-semibold tabular-nums text-slate-400">
+                {{ row.updated_at | date: 'mediumDate' }}
+              </span>
+            </div>
             <a
               [routerLink]="entityRouterLink(row)"
-              class="text-sm font-semibold text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+              class="block text-[15px] font-semibold leading-snug text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
               [innerHTML]="headline(row)"
             ></a>
-            <span class="ml-auto font-mono text-[10px] text-slate-400 tabular-nums">
-              {{ row.updated_at | date: 'mediumDate' }}
-            </span>
+            @if (excerpt(row); as e) {
+              <p class="mt-1.5 text-[13px] leading-relaxed text-slate-600 line-clamp-2" [innerHTML]="e"></p>
+            }
+            <div class="mt-2.5 flex items-center gap-2">
+              <span class="h-[18px] w-[18px] shrink-0 rounded-full bg-slate-200" aria-hidden="true"></span>
+              <span class="font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-slate-400">
+                {{ agencyName() }}
+              </span>
+              <span
+                class="relative ml-auto font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-brand-700"
+                aria-hidden="true"
+              >
+                Read &rarr;
+              </span>
+            </div>
           </div>
-          @if (excerpt(row); as e) {
-            <p class="mb-1 text-sm text-slate-600 line-clamp-2" [innerHTML]="e"></p>
-          }
-          <p class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-            By {{ agencyName() }}
-          </p>
         </li>
       } @empty {
         <li class="px-4 py-6 text-sm text-slate-400">No published reads yet.</li>
