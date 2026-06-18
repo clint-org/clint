@@ -106,8 +106,8 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
     .section-label {
       font-family: 'JetBrains Mono', ui-monospace, monospace;
       font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
+      font-weight: 700;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       color: #94a3b8;
     }
@@ -140,20 +140,26 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
     .stat {
       display: flex;
       flex-direction: column;
-      padding: 8px;
+      gap: 2px;
+      padding: 9px 10px;
       border: 1px solid #e2e8f0;
-      border-radius: 6px;
     }
 
     .stat-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 16px;
-      font-weight: 600;
-      color: #1e293b;
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      color: #0f172a;
     }
 
     .stat-label {
-      font-size: 11px;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       color: #94a3b8;
     }
 
