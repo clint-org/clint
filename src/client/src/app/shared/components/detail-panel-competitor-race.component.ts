@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import {
   PHASE_COLOR,
@@ -8,6 +9,7 @@ import {
 } from '../../core/models/landscape.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
 import { CompanyTileComponent } from './company-tile.component';
+import { DetailPanelEntityLinkDirective } from './detail-panel-entity-link.directive';
 import { DetailPanelMiniPhaseBarComponent } from './detail-panel-mini-phase-bar.component';
 
 export interface CompetitorRaceAsset {
@@ -40,7 +42,12 @@ export interface CompetitorRaceGroup {
 @Component({
   selector: 'app-detail-panel-competitor-race',
   standalone: true,
-  imports: [CompanyTileComponent, DetailPanelMiniPhaseBarComponent],
+  imports: [
+    CompanyTileComponent,
+    DetailPanelEntityLinkDirective,
+    DetailPanelMiniPhaseBarComponent,
+    RouterLink,
+  ],
   template: `
     <!-- Shared phase axis, aligned to the bars below it. -->
     <div class="mb-2.5 flex items-center gap-3">
@@ -70,9 +77,18 @@ export interface CompetitorRaceGroup {
             [logoUrl]="group.companyLogoUrl"
             [size]="20"
           />
-          <span class="truncate text-[12.5px] font-bold text-slate-900">{{
-            group.companyName
-          }}</span>
+          @if (canLink()) {
+            <a
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', group.companyId]"
+              appDetailPanelEntityLink
+              class="truncate rounded-sm text-[12.5px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              >{{ group.companyName }}</a
+            >
+          } @else {
+            <span class="truncate text-[12.5px] font-bold text-slate-900">{{
+              group.companyName
+            }}</span>
+          }
           <span class="shrink-0 font-mono text-[10px] text-slate-300"
             >{{ group.assets.length }} {{ group.assets.length === 1 ? 'asset' : 'assets' }}</span
           >
@@ -84,12 +100,23 @@ export interface CompetitorRaceGroup {
             [class.border-transparent]="asset.id !== leaderId()"
           >
             <div class="w-[140px] shrink-0 truncate">
-              <span
-                class="text-[13px] text-slate-900"
-                [class.font-bold]="asset.id === leaderId()"
-                [class.font-medium]="asset.id !== leaderId()"
-                >{{ asset.name }}</span
-              >
+              @if (canLink()) {
+                <a
+                  [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', asset.id]"
+                  appDetailPanelEntityLink
+                  class="rounded-sm text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  [class.font-bold]="asset.id === leaderId()"
+                  [class.font-medium]="asset.id !== leaderId()"
+                  >{{ asset.name }}</a
+                >
+              } @else {
+                <span
+                  class="text-[13px] text-slate-900"
+                  [class.font-bold]="asset.id === leaderId()"
+                  [class.font-medium]="asset.id !== leaderId()"
+                  >{{ asset.name }}</span
+                >
+              }
               @if (asset.trialCount !== null) {
                 <span class="text-[11px] text-slate-400"
                   >&nbsp;· {{ asset.trialCount }}
@@ -117,6 +144,15 @@ export class DetailPanelCompetitorRaceComponent {
   readonly groups = input.required<CompetitorRaceGroup[]>();
   /** When false, the PRECLIN axis segment is omitted. */
   readonly showPreclinical = input(true);
+  /**
+   * Route scope for the company / asset manage-page links. When either is
+   * absent the names render as plain text (no dead links).
+   */
+  readonly tenantId = input<string | null>(null);
+  readonly spaceId = input<string | null>(null);
+
+  /** True when both route scope ids are present, so names become links. */
+  protected readonly canLink = computed(() => !!this.tenantId() && !!this.spaceId());
 
   protected readonly axis = computed(() =>
     visibleRingOrder(this.showPreclinical()).map((phase) => ({

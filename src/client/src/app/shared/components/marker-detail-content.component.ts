@@ -403,18 +403,32 @@ export class MarkerDetailContentComponent {
     () => this.projectionPill()?.tone === 'amber'
   );
 
-  /** Status-band label: reuse the projection pill text so wording stays faithful. */
-  protected readonly statusLabel = computed<string | null>(
-    () => this.projectionPill()?.text ?? null
-  );
+  /**
+   * Status-band label: just the status word (Projected / Confirmed). The
+   * estimate source moves to the band's source line so the label never wraps.
+   */
+  protected readonly statusLabel = computed<string | null>(() => {
+    const pill = this.projectionPill();
+    if (!pill) return null;
+    return pill.tone === 'amber' ? 'Projected' : 'Confirmed';
+  });
 
   /**
-   * Concise provenance string for the status band. Only the CT.gov date-type
-   * label when the marker was auto-derived; null otherwise (no invented copy).
+   * Concise provenance string for the status band's source line. For a
+   * projected marker this is the estimate source (company / Stout / primary);
+   * for an auto-derived marker it is the CT.gov date-type label; null otherwise
+   * (no invented copy).
    */
-  protected readonly statusSource = computed<string | null>(
-    () => this.ctgovProvenance()?.dateTypeLabel ?? null
-  );
+  protected readonly statusSource = computed<string | null>(() => {
+    const projection = this.detail()?.catalyst.projection;
+    const estimateSource: Record<string, string> = {
+      stout: 'Stout estimate',
+      company: 'Company guidance',
+      primary: 'Primary source estimate',
+    };
+    if (projection && estimateSource[projection]) return estimateSource[projection];
+    return this.ctgovProvenance()?.dateTypeLabel ?? null;
+  });
 
   /** Formats an ISO date the same way the inline meta strip did. */
   protected formattedDate(iso: string): string {

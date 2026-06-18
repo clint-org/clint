@@ -12,6 +12,7 @@ import type {
 } from './filter-types';
 import { encodeFilterState, decodeFilterState } from './url-codec';
 import { applyAll } from './filter-algebra';
+import { mergeForeignParams } from './foreign-params';
 
 const DEFAULT_PAGE_SIZE = 25;
 const GLOBAL_SEARCH_DEBOUNCE_MS = 200;
@@ -103,10 +104,18 @@ export function createGridState<T>(config: GridConfig<T>): GridState<T> {
     };
     const encoded = encodeFilterState(state, { defaultPage });
     const current = paramsMapFromSnapshot(route.snapshot.queryParamMap);
-    if (sameParams(encoded, current)) return;
+    // Preserve any foreign (non-grid) query params -- e.g. a deep-link
+    // `eventId` / `detectedId` or an entity `scope` carried by another feature
+    // on the same route. router.navigate replaces the entire query string, so
+    // without this merge the grid's sync would silently strip those params and
+    // break cross-feature deep links (the events page opens a detail pane from
+    // `?eventId=`). The grid owns only its own namespace; everything else
+    // rides through untouched.
+    const desired = mergeForeignParams(encoded, current);
+    if (sameParams(desired, current)) return;
     router.navigate([], {
       relativeTo: route,
-      queryParams: encoded,
+      queryParams: desired,
       replaceUrl: true,
     });
   });

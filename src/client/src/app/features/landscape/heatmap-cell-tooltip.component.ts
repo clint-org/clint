@@ -60,7 +60,11 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
           </p>
           @for (a of here; track a.id) {
             <div class="flex items-center gap-2.5 py-1.5">
-              <app-company-tile [name]="a.company_name" [size]="20" />
+              <app-company-tile
+                [name]="a.company_name"
+                [logoUrl]="a.company_logo_url"
+                [size]="20"
+              />
               <div class="min-w-0 flex-1">
                 <div class="truncate text-[13px] font-semibold text-slate-900">{{ a.name }}</div>
                 <div class="truncate text-[11px] text-slate-500">{{ a.company_name }}</div>

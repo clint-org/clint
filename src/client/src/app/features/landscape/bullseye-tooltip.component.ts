@@ -7,8 +7,10 @@ import {
   visibleRingOrder,
 } from '../../core/models/landscape.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
+import { CompanyTileComponent } from '../../shared/components/company-tile.component';
 import { recentChangeLabel } from '../../shared/components/change-badge/change-badge.logic';
 import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
+import { BullseyeSignalMarkComponent } from './bullseye-signal-mark.component';
 
 interface LadderCell {
   phase: RingPhase;
@@ -27,7 +29,7 @@ interface LadderCell {
  */
 @Component({
   selector: 'app-bullseye-tooltip',
-  imports: [],
+  imports: [CompanyTileComponent, BullseyeSignalMarkComponent],
   animations: [fadeTooltipAnimation],
   template: `
     @if (product()) {
@@ -42,6 +44,12 @@ interface LadderCell {
       >
         <!-- Identity strip -->
         <div class="flex items-start gap-2.5 border-b border-slate-100 px-3.5 py-3">
+          <app-company-tile
+            class="mt-0.5"
+            [name]="p.company_name"
+            [logoUrl]="p.company_logo_url"
+            [size]="22"
+          />
           <div class="min-w-0 flex-1">
             <div class="truncate text-[14px] font-semibold leading-tight text-slate-900">
               {{ p.name }}
@@ -55,27 +63,16 @@ interface LadderCell {
           </div>
           <!-- Live chart mark: phase-colored core ringed by the same signal
                rings the bullseye plots (orange = recent activity, blue =
-               intelligence, dashed slate = multiple spokes). -->
-          <svg
-            class="mt-0.5 block shrink-0"
-            width="30"
-            height="30"
-            viewBox="0 0 30 30"
-            aria-hidden="true"
-          >
-            @for (ring of dotRings(); track ring.kind) {
-              <circle
-                cx="15"
-                cy="15"
-                fill="none"
-                [attr.r]="ring.r"
-                [attr.stroke]="ring.stroke"
-                [attr.stroke-width]="ring.width"
-                [attr.stroke-dasharray]="ring.dash"
-              />
-            }
-            <circle cx="15" cy="15" r="4.5" [attr.fill]="phaseColor(p.highest_phase)" />
-          </svg>
+               intelligence, dashed slate = multiple spokes). Shared geometry
+               with the chart dot and detail pane. -->
+          <app-bullseye-signal-mark
+            class="mt-0.5"
+            [phase]="p.highest_phase"
+            [hasRecentActivity]="p.has_recent_activity"
+            [hasIntelligence]="p.intelligence_count > 0"
+            [multiSpoke]="spokeCount() > 1"
+            [size]="30"
+          />
         </div>
 
         <div class="px-3.5 py-3">
@@ -148,7 +145,7 @@ interface LadderCell {
                     class="h-[10px] w-[10px] shrink-0 rounded-full border-2 border-[#2563eb]"
                     aria-hidden="true"
                   ></span>
-                  {{ p.intelligence_count }} {{ p.intelligence_count === 1 ? 'note' : 'notes' }}
+                  {{ p.intelligence_count }} {{ p.intelligence_count === 1 ? 'read' : 'reads' }}
                 </span>
               }
             </div>
@@ -196,36 +193,6 @@ export class BullseyeTooltipComponent {
       top: Math.min(Math.max(y, 130), vh - 130),
       transform: placeRight ? 'translate(0, -50%)' : 'translate(-100%, -50%)',
     };
-  });
-
-  /**
-   * Concentric signal rings for the header mark, faithful to the bullseye
-   * PhaseDot: orange for recent activity, blue for attached intelligence,
-   * dashed slate for an asset that appears on multiple spokes. Rings step
-   * outward from the phase-colored core (size 30 geometry: core r=4.5,
-   * step=3.45). These are fixed chart-mark colors, never whitelabeled.
-   */
-  protected readonly dotRings = computed<
-    { kind: string; r: number; stroke: string; width: number; dash: string | null }[]
-  >(() => {
-    const p = this.product();
-    if (!p) return [];
-    const rings: { kind: string; r: number; stroke: string; width: number; dash: string | null }[] =
-      [];
-    let r = 4.5 + 3.45;
-    if (p.has_recent_activity) {
-      rings.push({ kind: 'activity', r, stroke: '#f97316', width: 2.1, dash: null });
-      r += 3.45;
-    }
-    if (p.intelligence_count > 0) {
-      rings.push({ kind: 'intel', r, stroke: '#2563eb', width: 2.1, dash: null });
-      r += 3.45;
-    }
-    if (this.spokeCount() > 1) {
-      rings.push({ kind: 'spokes', r, stroke: '#94a3b8', width: 1.5, dash: '1.5 1.5' });
-      r += 3.45;
-    }
-    return rings;
   });
 
   readonly moaList = computed<string[]>(() => {
