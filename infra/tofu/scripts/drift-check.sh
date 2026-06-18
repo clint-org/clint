@@ -12,9 +12,12 @@ PROJECT_ID="7c227e8b-b355-46cb-8912-701104e2415b"
 IRUN=(infisical run --projectId "$PROJECT_ID" --env=shared --path=/iac --silent --)
 
 run_plan() {  # $1 = root; $2 = log path; returns tofu exit code
+  # -lock=false: a drift plan is read-only (never writes state), so it needs no lock.
+  # This keeps the Scalr CI token least-privilege (read-only, no workspaces:lock) and
+  # ensures the drift check can never block a real apply by holding a state lock.
   ( cd "$HERE/$1" \
     && "${IRUN[@]}" tofu init -input=false >/dev/null 2>&1 \
-    && "${IRUN[@]}" tofu plan -detailed-exitcode -input=false -no-color >"$2" 2>&1 )
+    && "${IRUN[@]}" tofu plan -detailed-exitcode -input=false -lock=false -no-color >"$2" 2>&1 )
   return $?
 }
 

@@ -67,3 +67,22 @@ infisical run --env=shared --path=/iac -- tofu apply  # make changes real
 
 State is never committed (see `.gitignore`). The provider lock
 (`.terraform.lock.hcl`) is committed.
+
+## Drift detection (WS3 Phase E)
+Reality and config are kept in sync by two checks:
+
+- `scripts/drift-check.sh` runs `tofu plan -detailed-exitcode -lock=false` in each
+  root via `infisical run` and exits 0 (in sync), 2 (drift), or 1 (check error).
+  Run it on demand: `bash infra/tofu/scripts/drift-check.sh`. It runs daily in CI via
+  `.github/workflows/iac-drift.yml`, which authenticates to Infisical with the
+  read-only GitHub-OIDC machine identity and opens an `iac-drift` issue on failure.
+  `-lock=false` keeps the CI Scalr token least-privilege (read-only, no
+  `workspaces:lock`); a drift plan never writes state.
+- `scripts/config_parity_check.py` asserts the should-match Supabase auth policy
+  fields agree across `supabase/config.toml`, `dev/supabase.tf`, and
+  `prod/supabase.tf` (credential-free; unit-tested in `test_config_parity.py`).
+
+PRs touching `infra/tofu/**` or `supabase/config.toml` are gated (credential-free) by
+`.github/workflows/iac-pr-check.yml`: `tofu fmt -check`, `tofu validate` per root, and
+the parity check. The scheduled drift plan needs credentials, so it runs only in
+`iac-drift.yml`, which requires `TF_TOKEN_clintapp_scalr_io` in Infisical `shared/iac`.
