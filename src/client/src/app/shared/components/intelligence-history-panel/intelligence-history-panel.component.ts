@@ -36,6 +36,12 @@ interface DiffSection {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [],
   templateUrl: './intelligence-history-panel.component.html',
+  // Hide the whole panel when there is no history at all (no published reads,
+  // drafts, or prior versions) so an entity with no primary intelligence does
+  // not show an empty "History / No prior versions" block.
+  host: {
+    '[style.display]': "eventCount() > 0 ? null : 'none'",
+  },
 })
 export class IntelligenceHistoryPanelComponent {
   readonly payload = input.required<IntelligenceHistoryPayload>();
