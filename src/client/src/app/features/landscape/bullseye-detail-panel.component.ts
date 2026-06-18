@@ -26,20 +26,23 @@ import {
   ENTITY_TYPE_LABEL,
   IntelligenceEntityType,
 } from '../../core/models/primary-intelligence.model';
-import { phaseShortLabel } from '../../core/models/phase-colors';
+import { DEVELOPMENT_STATUS_LABELS, phaseShortLabel } from '../../core/models/phase-colors';
 import { resolveScopeFromRoute } from '../../core/utils/route-scope';
 import { recentChangeLabel } from '../../shared/components/change-badge/change-badge.logic';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
 import { TrialService } from '../../core/services/trial.service';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
+import { CompanyTileComponent } from '../../shared/components/company-tile.component';
 import { CtgovFieldRendererComponent } from '../../shared/components/ctgov-field-renderer/ctgov-field-renderer.component';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
 import { DetailPanelEntityRowComponent } from '../../shared/components/detail-panel-entity-row.component';
+import { DetailPanelPhaseLadderComponent } from '../../shared/components/detail-panel-phase-ladder.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
+import { BullseyeSignalMarkComponent } from './bullseye-signal-mark.component';
 
 interface RingHistogramEntry {
   phase: RingPhase;
@@ -51,14 +54,17 @@ interface RingHistogramEntry {
   standalone: true,
   imports: [
     ChangeBadgeComponent,
+    CompanyTileComponent,
     CtgovFieldRendererComponent,
     DatePipe,
     DetailPanelEmptyStateComponent,
     DetailPanelEntityListComponent,
     DetailPanelEntityRowComponent,
+    DetailPanelPhaseLadderComponent,
     DetailPanelSectionComponent,
     DetailPanelShellComponent,
     MarkerIconComponent,
+    BullseyeSignalMarkComponent,
   ],
   templateUrl: './bullseye-detail-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,6 +75,9 @@ export class BullseyeDetailPanelComponent {
   readonly loading = input<boolean>(false);
   readonly trialListCap = input<number>(8);
   readonly dimension = input<BullseyeDimension>('indication');
+  /** Whether the selected asset appears on more than one spoke. Drives the
+   *  dashed multi-spoke ring on the identity chart mark. */
+  readonly multiSpoke = input<boolean>(false);
 
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();
@@ -81,6 +90,29 @@ export class BullseyeDetailPanelComponent {
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';
   }
+
+  protected phaseLongLabel(p: RingPhase): string {
+    return DEVELOPMENT_STATUS_LABELS[p] ?? phaseShortLabel(p);
+  }
+
+  /** Forwarded to the phase ladder so its scale matches the chart. */
+  protected readonly showPreclinical = computed(() => this.state.showPreclinical());
+
+  /**
+   * Trials section label. When every tracked trial shares one phase, appends
+   * an "ALL PH N" hint so the analyst reads the common phase without scanning
+   * each row (matches the mockup's trailing header hint).
+   */
+  protected readonly trialsSectionLabel = computed<string>(() => {
+    const trials = this.selectedAsset()?.trials ?? [];
+    const base = `Trials (${trials.length})`;
+    if (trials.length < 2) return base;
+    const first = trials[0].phase;
+    if (!first || first === 'OBS') return base;
+    return trials.every((t) => t.phase === first)
+      ? `${base} · ALL ${phaseShortLabel(first)}`
+      : base;
+  });
 
   protected readonly recentChangeLabel = recentChangeLabel;
 
@@ -250,7 +282,7 @@ export class BullseyeDetailPanelComponent {
   protected readonly spokeLabel = computed(() => this.data()?.spoke_label ?? 'Companies');
 
   protected readonly headerLabel = computed(() =>
-    this.selectedAsset() ? 'Drug' : 'Bullseye · overview'
+    this.selectedAsset() ? 'Asset' : 'Bullseye · overview'
   );
 
   protected isScopedMoa(moaId: string): boolean {

@@ -926,4 +926,10 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260615131000_dashboard_data_marker_precision.sql`
 - `20260616120000_marker_ranges.sql`
 - `20260616120100_dashboard_data_marker_range_fields.sql`
+- `20260618120000_material_links_entity_name.sql`
+- `20260618130000_catalyst_detail_upcoming_marker_glyph.sql`
+- `20260618140000_events_feed_status_glyph.sql`
+- `20260618150000_backfill_active_trial_phase_end.sql`
+- `20260618160000_seed_completed_trial_readouts_confirmed.sql`
+- `20260618170000_landscape_rpcs_company_logo_url.sql`
 <!-- /AUTO-GEN:DRIFT -->

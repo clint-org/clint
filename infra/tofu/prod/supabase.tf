@@ -41,14 +41,14 @@ resource "supabase_settings" "prod" {
     mfa_phone_verify_enabled              = false
     # rate_limit_email_sent / rate_limit_sms_sent omitted: the API rejects writing
     # them without custom SMTP / an SMS provider (prod uses the default mailer).
-    rate_limit_anonymous_users            = 30
-    rate_limit_token_refresh              = 150
-    rate_limit_verify                     = 30
-    rate_limit_otp                        = 30
-    external_google_enabled               = true
-    external_google_client_id             = "567708662585-j8eqkc9tbq4dih6at9dl5fqqql05c482.apps.googleusercontent.com"
-    external_azure_enabled                = true
-    external_azure_client_id              = "829264b4-fd5b-48d4-a518-b793f78f0da9"
-    external_azure_url                    = "https://login.microsoftonline.com/common"
+    rate_limit_anonymous_users = 30
+    rate_limit_token_refresh   = 150
+    rate_limit_verify          = 30
+    rate_limit_otp             = 30
+    external_google_enabled    = true
+    external_google_client_id  = "567708662585-j8eqkc9tbq4dih6at9dl5fqqql05c482.apps.googleusercontent.com"
+    external_azure_enabled     = true
+    external_azure_client_id   = "829264b4-fd5b-48d4-a518-b793f78f0da9"
+    external_azure_url         = "https://login.microsoftonline.com/common"
   })
 }

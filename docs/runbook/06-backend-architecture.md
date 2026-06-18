@@ -148,10 +148,10 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `list_audit_events` | - | audit_events |
 | `list_draft_intelligence_for_space` | - | primary_intelligence |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
-| `list_materials_for_entity` | - | material_links, materials |
-| `list_materials_for_space` | - | material_links, materials |
+| `list_materials_for_entity` | - | assets, companies, markers, material_links, materials, spaces, trials |
+| `list_materials_for_space` | - | assets, companies, markers, material_links, materials, spaces, trials |
 | `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links |
-| `list_recent_materials_for_space` | - | material_links, materials |
+| `list_recent_materials_for_space` | - | assets, companies, markers, material_links, materials, spaces, trials |
 | `list_space_members` | - | space_members |
 | `list_tenant_members` | - | agency_members, tenant_members, tenants |
 | `lookup_user_by_email` | - | agency_members |

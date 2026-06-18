@@ -12,6 +12,13 @@ export interface MaterialLink {
   entity_type: MaterialEntityType;
   entity_id: string;
   display_order: number;
+  /**
+   * Display name of the linked entity, resolved server-side by the list RPCs
+   * (trial acronym/name, marker title, company/asset/space name). Optional
+   * because it is read-only output: the register/update inputs do not send it.
+   * Null when the linked entity has been deleted.
+   */
+  entity_name?: string | null;
 }
 
 export interface Material {

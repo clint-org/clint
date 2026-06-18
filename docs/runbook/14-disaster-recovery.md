@@ -39,7 +39,7 @@ goal, "actual" is what evidence supports today.
 | 3 | Secrets and encryption keys | key lost or leaked; Infisical unavailable | varies by secret; age key loss blocks all DB restores | weekly break-glass export (opens an issue on failure) | n/a / minutes (edit in Infisical) | Infisical Cloud is the source of truth, syncing to GHA + Workers + tofu; weekly age-encrypted break-glass export to R2 + B2 | automated rotation still manual (own spec); a few provider secrets (OAuth, Resend) not yet migrated |
 | 4 | DNS and domains | registrar lapse, zone change, custom-domain or TLS misconfig | one tenant (custom domain) up to all tenants (apex zone) | none (no cert-expiry or uptime alert) | n/a / minutes to days | Cloudflare-managed certs; brand resolution by host | DNS sits in the same single Cloudflare account; zone/records + prod platform domains/route now in IaC, per-tenant custom domains still manual |
 | 5 | Identity and auth | OAuth client deleted/expired, redirect drift, Auth config loss | nobody can log in (provider-scoped or total) | user reports / login failures | n/a / ~1h | Google + Microsoft providers; live redirect allow-list codified in `infra/tofu/{dev,prod}/supabase.tf` | provider client secrets stay console-only by design (API returns them hashed) |
-| 6 | Supabase project (config, not data) | project deleted; dashboard config lost | all auth, RLS, storage, pooler, edge function config | none | n/a / hours | schema/RLS/extensions in migrations; live auth (redirect allow-list + OAuth setup) codified in `infra/tofu/{dev,prod}/supabase.tf` | residue: OAuth client secrets (regenerate from Google/Azure console), edge secrets, invite webhook; pooler/storage left at Supabase defaults |
+| 6 | Supabase project (config, not data) | project deleted; dashboard config lost | all auth, RLS, storage, pooler, edge function config | daily IaC drift check (`iac-drift.yml`) | n/a / hours | schema/RLS/extensions in migrations; live auth (redirect allow-list + OAuth setup) codified in `infra/tofu/{dev,prod}/supabase.tf` | residue: OAuth client secrets (regenerate from Google/Azure console), edge secrets, invite webhook; pooler/storage left at Supabase defaults |
 | 7 | Cloudflare account and Workers | bad deploy, wrangler config loss, account compromise/suspension | bad deploy: all tenants briefly. Account loss: app + DNS + materials + primary DB backups | none (no uptime check) | n/a / minutes (deploy) to days (account) | GHA deploy with prod approval gate; rollback via redeploy | account is the largest single blast radius; B2 is the only DB backup outside it |
 | 8 | CI/CD and source (GitHub) | repo/account loss, GHA secrets loss | cannot deploy via the normal path | push failures, workflow errors | n/a / minutes to hours | local `wrangler deploy` + `supabase db push` work without GitHub | deploy secrets live in GHA; partial offline copy only |
 | 9 | Third-party vendors and billing | vendor outage, account termination, billing lapse, free-tier auto-pause | degrade (most) to hard-down (Supabase, Cloudflare) | in-app `/api/ai/health` for Anthropic only | varies | feature gates; non-blocking design for Brandfetch/Resend/CT.gov | Supabase free-tier auto-pause and project quota are live failure modes |
@@ -284,6 +284,11 @@ the edge function and its secrets, and OAuth setup.
   `EMAIL_WEBHOOK_SECRET`, `EMAIL_FROM`, `EMAIL_BASE_URL`), and the DB webhook that
   triggers the invite email. The pooler, storage, network, and API settings are left
   at Supabase defaults (nothing was changed from them, so there is nothing to restore).
+- Detection: a daily drift check (`.github/workflows/iac-drift.yml`) runs `tofu plan`
+  across the roots and opens an `iac-drift` issue if a live project diverges from
+  `supabase.tf`; PRs touching `infra/tofu/` or `supabase/config.toml` are gated by
+  `iac-pr-check.yml` (fmt, validate, and the `config.toml`<->tofu auth-policy parity
+  check `infra/tofu/scripts/config_parity_check.py`).
 - Recovery procedure (re-provision from scratch):
   1. Create a fresh Supabase project. Record its session-mode pooler URL.
   2. `supabase db push` (or restore a bundle per domain 1) to rebuild the schema,
@@ -315,7 +320,11 @@ the edge function and its secrets, and OAuth setup.
   every host). Account loss is the worst case in this document: app, DNS,
   materials, and the primary DB backup bucket all go at once (see Concentration
   risks). Only the B2 DB copy, the Supabase project, and the GitHub repo survive.
-- Detection: none. No uptime check on `clintapp.com` or a tenant host.
+- Detection: no uptime check on `clintapp.com` or a tenant host (see domains 4/10).
+  Configuration drift of the IaC-managed Cloudflare resources (the `clintapp.com`
+  zone + records, both R2 buckets, the prod Worker custom domains + tenant-wildcard
+  route, dev routes) is caught by the daily `iac-drift.yml` check, with PRs gated by
+  `iac-pr-check.yml`.
 - Recovery procedure (bad deploy): redeploy the prior known-good build. Prod
   deploys run through `deploy-prod.yml` behind the `production` environment approval
   gate; roll back by deploying the previous commit, or run `wrangler deploy` locally
@@ -450,6 +459,7 @@ Likelihood x impact, with effort and free-tier constraints flagged.
 | 3 | No app-level error monitoring (Sentry/Logpush) and no `public.materials`-to-R2 reconciliation; issue-based alert sink is a baseline, no Slack/PagerDuty routing. | 10 | medium x medium | medium | no | UNKNOWN | open |
 | 2 | Cloudflare account is one blast radius (app + materials + DNS + primary DB backups). | 7 | low x catastrophic | medium: enforce hardware-key MFA, add a break-glass second admin, confirm account-recovery contacts; consider moving backup R2 or DNS out of the account | no | UNKNOWN | open |
 | done | Secrets escrow was partial and unaudited. WS4: Infisical Cloud is now the source of truth, syncing to GHA + Cloudflare Workers + tofu (`infisical run`), with a weekly read-only-OIDC break-glass export age-encrypted to R2 + B2. Re-provision after account loss is one restore + re-populate. | 3 | medium x high | done | no | UNKNOWN | done |
+| done | No way to tell if live infra drifted from the IaC. WS3 Phase E: a daily `iac-drift.yml` runs `tofu plan` across all roots (read-only, `-lock=false`; OIDC->Infisical creds, read-only Scalr token) and opens an `iac-drift` issue on divergence; PRs touching `infra/tofu/` or `supabase/config.toml` are gated by `iac-pr-check.yml` (fmt, validate, `config.toml`<->tofu auth-policy parity). Satisfies the WS3 "drift-check command exists" criterion; WS3 complete. | 4,6,7 | low x medium | done | no | UNKNOWN | done |
 | 3 | Automated secret rotation is still manual (WS4 deferred it to a follow-on spec), and a few provider secrets (Google/Microsoft OAuth, Resend) are not yet migrated into Infisical. | 3 | low x medium | medium: write the rotation spec; migrate the remaining provider secrets | no | UNKNOWN | open |
 | 2 | Supabase auth config (redirect allow-list + OAuth setup) is now codified in `infra/tofu/{dev,prod}/supabase.tf` (WS3 Phase D, create-path partial management). Residual dashboard-only: OAuth client secrets (intentional -- API returns them hashed; from Google/Azure console), edge function secrets, and the invite DB webhook definition. | 6 | low x medium | low: document the edge secrets + webhook; secrets stay console-sourced by design | no | UNKNOWN | partial |
 | 3 | Cloud-target restore is now proven (drill 2026-06-10, ~29s into a real cloud project); the one step still untested end-to-end is the DNS repoint to a restored project (the drill tore down the throwaway before repoint). | 1 | low x medium | low | no | UNKNOWN | open |

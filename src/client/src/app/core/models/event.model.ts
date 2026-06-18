@@ -34,6 +34,7 @@ export interface EventLink {
 }
 
 import { ChangeEventSource, ChangeEventType } from './change-event.model';
+import type { InnerMark, MarkerShape } from './marker.model';
 
 export type EventPriority = 'high' | 'low';
 
@@ -89,6 +90,19 @@ export interface FeedItem {
   has_annotation: boolean;
   observed_at: string | null;
   company_logo_url: string | null;
+  /**
+   * Marker-taxonomy glyph + projection status. Populated only for
+   * source_type === 'marker' (null on event / detected rows): the category
+   * cell renders the marker glyph (shape + color + inner mark) and the status
+   * column shows a Projected/Confirmed pill. `category_color` colors the
+   * overview distribution bar for marker categories (events keep their
+   * client-side category palette).
+   */
+  is_projected: boolean | null;
+  marker_type_shape: MarkerShape | null;
+  marker_type_color: string | null;
+  marker_type_inner_mark: InnerMark | null;
+  category_color: string | null;
 }
 
 /** Full event detail returned by get_event_detail RPC. */

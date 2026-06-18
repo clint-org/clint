@@ -23,7 +23,9 @@ import { Tooltip } from 'primeng/tooltip';
 import { CatalystDetail } from '../../core/models/catalyst.model';
 import { ChangeEvent } from '../../core/models/change-event.model';
 import { EventCategory, EventDetail, FeedItem } from '../../core/models/event.model';
-import { MarkerCategory } from '../../core/models/marker.model';
+import { FillStyle, MarkerCategory } from '../../core/models/marker.model';
+import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
+import { DetailPanelPillComponent } from '../../shared/components/detail-panel-pill.component';
 import { CatalystService } from '../../core/services/catalyst.service';
 import { EventService } from '../../core/services/event.service';
 import { EventCategoryService } from '../../core/services/event-category.service';
@@ -71,6 +73,8 @@ import { buildEventsExportColumns } from './events-export.util';
     HighlightPipe,
     EntityNounPipe,
     ExportButtonComponent,
+    MarkerIconComponent,
+    DetailPanelPillComponent,
   ],
   templateUrl: './events-page.component.html',
   animations: [slidePanelAnimation],
@@ -304,6 +308,30 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.topbarState.clear();
   }
 
+  /**
+   * Marker glyph fill: projected markers render as an outline (expected),
+   * confirmed markers fill solid. Mirrors the catalyst table mapping so the
+   * same marker reads identically across surfaces.
+   */
+  protected markerFillStyle(item: FeedItem): FillStyle {
+    return item.is_projected ? 'outline' : 'filled';
+  }
+
+  /**
+   * Directional date-shift label for a detected `date_moved` change, e.g.
+   * "120d later" / "30d earlier", else null. Drives the amber shift chip in
+   * the status column so a slip reads at a glance.
+   */
+  protected detectedShift(item: FeedItem): { text: string; later: boolean } | null {
+    if (item.source_type !== 'detected' || item.change_event_type !== 'date_moved') return null;
+    const payload = item.change_payload ?? {};
+    const raw = payload['days_shifted'] ?? payload['days_diff'];
+    if (raw == null) return null;
+    const days = Number(raw);
+    if (!Number.isFinite(days) || days === 0) return null;
+    return { text: `${Math.abs(days)}d ${days > 0 ? 'later' : 'earlier'}`, later: days > 0 };
+  }
+
   protected getDetectedSummary(item: FeedItem): RichSummary {
     const p = (item.change_payload ?? {}) as Record<string, unknown>;
     const stub: ChangeEvent = {
@@ -462,6 +490,11 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         has_annotation: false,
         observed_at: null,
         company_logo_url: null,
+        is_projected: null,
+        marker_type_shape: null,
+        marker_type_color: null,
+        marker_type_inner_mark: null,
+        category_color: null,
       });
       this.selectedDetail.set(detail);
     } catch (err) {
@@ -558,6 +591,11 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         has_annotation: false,
         observed_at: null,
         company_logo_url: null,
+        is_projected: detail.catalyst.is_projected,
+        marker_type_shape: detail.catalyst.marker_type_shape,
+        marker_type_color: detail.catalyst.marker_type_color,
+        marker_type_inner_mark: detail.catalyst.marker_type_inner_mark,
+        category_color: detail.catalyst.marker_type_color,
       });
       this.selectedCatalystDetail.set(detail);
     } catch (err) {

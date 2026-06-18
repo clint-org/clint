@@ -2,15 +2,17 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 import { BullseyeSpoke, SpokeGrouping } from '../../core/models/landscape.model';
 import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
+import { CompetitiveReadStripComponent } from './competitive-read/competitive-read-strip.component';
 
 @Component({
   selector: 'app-competitive-read-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CompetitiveReadStripComponent],
   template: `
-    @if (readText()) {
+    @if (read().text) {
       <div class="read-bar">
         <span class="read-label">READ</span>
-        <span class="read-content" [innerHTML]="readText()"></span>
+        <app-competitive-read-strip class="read-content" [read]="read()" />
       </div>
     }
   `,
@@ -40,27 +42,17 @@ import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
       color: var(--slate-600, #475569);
       line-height: 1.6;
     }
-
-    :host ::ng-deep .read-content strong {
-      color: var(--slate-800, #1e293b);
-      font-weight: 600;
-    }
-
-    :host ::ng-deep .read-content strong.leader-name {
-      color: var(--teal-600, #0d9488);
-    }
   `,
 })
 export class CompetitiveReadBarComponent {
   readonly spokes = input<BullseyeSpoke[]>([]);
   readonly grouping = input<SpokeGrouping>('company');
 
-  readonly readText = computed<string>(() => {
-    const result = buildLandscapeRead({
+  protected readonly read = computed(() =>
+    buildLandscapeRead({
       view: 'radial',
       groupBy: this.grouping(),
       stats: fromSpokes(this.spokes()),
-    });
-    return result.text;
-  });
+    })
+  );
 }
