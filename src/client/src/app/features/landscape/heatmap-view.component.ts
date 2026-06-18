@@ -15,7 +15,12 @@ import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
-import { HeatmapBubble, HeatmapGrouping, RingPhase } from '../../core/models/landscape.model';
+import {
+  HeatmapBubble,
+  HeatmapGrouping,
+  RingPhase,
+  SpokeGrouping,
+} from '../../core/models/landscape.model';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
@@ -297,25 +302,22 @@ export class HeatmapViewComponent implements OnInit {
   }
 
   onOpenInBullseye(): void {
-    this.router.navigate([
-      '/t',
-      this.tenantId(),
-      's',
-      this.spaceId(),
-      'bullseye',
-      this.bullseyeSegment(),
-    ]);
+    // Bullseye groups via in-memory spoke-grouping state (the old per-dimension
+    // path segments are now legacy redirects to the default), so carry the
+    // heatmap grouping across explicitly before navigating to the plain route.
+    this.state.spokeGrouping.set(this.bullseyeSpokeGrouping());
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'bullseye']);
   }
 
-  /** Map heatmap grouping to the closest bullseye dimension segment. */
-  private bullseyeSegment(): string {
-    const map: Record<HeatmapGrouping, string> = {
-      moa: 'by-moa',
-      indication: 'by-indication',
-      'moa+indication': 'by-indication',
-      company: 'by-company',
-      roa: 'by-roa',
+  /** Map the heatmap grouping to the closest bullseye spoke grouping. */
+  private bullseyeSpokeGrouping(): SpokeGrouping {
+    const map: Record<HeatmapGrouping, SpokeGrouping> = {
+      moa: 'moa',
+      indication: 'indication',
+      'moa+indication': 'indication',
+      company: 'company',
+      roa: 'roa',
     };
-    return map[this.state.heatmapGrouping()] ?? 'by-indication';
+    return map[this.state.heatmapGrouping()] ?? 'indication';
   }
 }
