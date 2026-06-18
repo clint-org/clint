@@ -288,10 +288,12 @@ interface CtgovProvenanceBlock {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(um.marker_id)">
                 <app-marker-icon
                   class="shrink-0"
-                  shape="circle"
-                  color="#64748b"
+                  [shape]="um.marker_type_shape"
+                  [color]="um.marker_type_color"
                   [size]="12"
                   [fillStyle]="um.is_projected ? 'outline' : 'filled'"
+                  [innerMark]="um.marker_type_inner_mark"
+                  [isNle]="um.no_longer_expected"
                 />
                 <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   um.event_date | date: 'MMM yyyy'
