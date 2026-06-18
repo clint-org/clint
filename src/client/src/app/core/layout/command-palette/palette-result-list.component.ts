@@ -2,15 +2,16 @@ import { Component, ChangeDetectionStrategy, computed, input, output } from '@an
 import { PaletteResultRowComponent } from './palette-result-row.component';
 import { PaletteItem } from '../../models/palette.model';
 import { noMatchesLabel } from './no-matches-label';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-palette-result-list',
   standalone: true,
-  imports: [PaletteResultRowComponent],
+  imports: [PaletteResultRowComponent, LoaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (loading()) {
-      <div class="px-4 py-2 text-[11px] text-slate-400">Searching...</div>
+      <app-loader class="px-4 py-2" [size]="16" label="Searching" />
     }
     @if (!loading() && items().length === 0) {
       <div class="px-4 py-8 text-center text-sm text-slate-400">

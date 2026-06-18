@@ -11,14 +11,12 @@ import {
 import { RouterLink } from '@angular/router';
 
 import { EntityNounPipe } from '../../pipes/entity-noun.pipe';
-import {
-  EntityEventRow,
-  EntityEventsPanelService,
-} from './entity-events-panel.service';
+import { LoaderComponent } from '../loader/loader.component';
+import { EntityEventRow, EntityEventsPanelService } from './entity-events-panel.service';
 
 @Component({
   selector: 'app-entity-events-panel',
-  imports: [DatePipe, RouterLink, EntityNounPipe],
+  imports: [DatePipe, RouterLink, EntityNounPipe, LoaderComponent],
   templateUrl: './entity-events-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -36,7 +34,11 @@ export class EntityEventsPanelComponent {
   protected readonly error = signal<string | null>(null);
 
   protected readonly seeAllLink = computed(() => [
-    '/t', this.tenantId(), 's', this.spaceId(), 'events',
+    '/t',
+    this.tenantId(),
+    's',
+    this.spaceId(),
+    'events',
   ]);
 
   protected readonly seeAllQueryParams = computed(() => ({
@@ -60,7 +62,7 @@ export class EntityEventsPanelComponent {
     spaceId: string,
     entityLevel: 'trial' | 'product' | 'company',
     entityId: string,
-    limit: number,
+    limit: number
   ): Promise<void> {
     this.loading.set(true);
     this.error.set(null);

@@ -17,6 +17,7 @@ import { FlagIconComponent } from '../../shared/components/svg-icons/flag-icon.c
 import { SquareIconComponent } from '../../shared/components/svg-icons/square-icon.component';
 import { TriangleIconComponent } from '../../shared/components/svg-icons/triangle-icon.component';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 interface MarkerGroup {
   label: string;
@@ -35,6 +36,7 @@ interface MarkerGroup {
     FlagIconComponent,
     TriangleIconComponent,
     SquareIconComponent,
+    LoaderComponent,
   ],
   template: `
     <app-manage-page-shell>
@@ -112,7 +114,7 @@ interface MarkerGroup {
             Marker types in this space
           </h2>
           @if (loading()) {
-            <p class="text-sm text-slate-500">Loading marker types...</p>
+            <app-loader [size]="20" label="Loading marker types" />
           } @else if (groupedMarkerTypes().length === 0) {
             <p class="text-sm text-slate-500">No marker types configured.</p>
           } @else {

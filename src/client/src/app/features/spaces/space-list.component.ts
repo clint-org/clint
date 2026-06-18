@@ -23,6 +23,7 @@ import { Tenant } from '../../core/models/tenant.model';
 import { SpaceService } from '../../core/services/space.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 
 @Component({
@@ -38,18 +39,19 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
     MessageModule,
     TooltipModule,
     ManagePageShellComponent,
+    LoaderComponent,
   ],
   template: `
     <app-manage-page-shell>
       @if (loading()) {
-        <p class="text-sm text-slate-400">Loading spaces...</p>
+        <app-loader [size]="20" label="Loading spaces" />
       } @else if (spaces().length === 0) {
         <div class="border border-slate-200 bg-white px-8 py-16 text-center">
           <p class="text-base font-medium text-slate-700">No spaces yet</p>
           <p class="mx-auto mt-2 max-w-md text-sm text-slate-500">
-            Each space is a firewalled engagement scoped to a domain: an indication, an asset
-            class, a client team. Pipelines, catalysts, and portfolio reads all live inside, with
-            their own members and data.
+            Each space is a firewalled engagement scoped to a domain: an indication, an asset class,
+            a client team. Pipelines, catalysts, and portfolio reads all live inside, with their own
+            members and data.
           </p>
           <div class="mt-6 inline-block">
             <p-button
@@ -63,9 +65,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
           </div>
         </div>
       } @else {
-        <div
-          class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-stagger"
-        >
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
           @for (space of spaces(); track space.id) {
             <button
               type="button"
@@ -73,7 +73,11 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               [class.hover:bg-brand-50/40]="canOpen(space)"
               [class.cursor-not-allowed]="!canOpen(space)"
               [attr.aria-disabled]="!canOpen(space)"
-              [pTooltip]="canOpen(space) ? '' : 'You are not a member of this engagement. Ask an owner to add you.'"
+              [pTooltip]="
+                canOpen(space)
+                  ? ''
+                  : 'You are not a member of this engagement. Ask an owner to add you.'
+              "
               tooltipPosition="top"
               (click)="openSpace(space)"
             >

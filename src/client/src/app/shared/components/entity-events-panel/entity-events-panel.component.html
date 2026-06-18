@@ -20,7 +20,7 @@
   </header>
 
   @if (loading()) {
-    <div class="px-4 py-6 text-sm text-slate-500">Loading events...</div>
+    <app-loader class="px-4 py-6" [size]="20" label="Loading events" />
   } @else if (error()) {
     <div class="px-4 py-6 text-sm text-red-600">{{ error() }}</div>
   } @else if (rows().length === 0) {
@@ -32,10 +32,14 @@
       @for (row of rows(); track row.id) {
         <li class="px-4 py-3">
           <div class="flex items-baseline gap-3">
-            <span class="font-mono text-[10px] font-semibold uppercase tracking-widest text-slate-500 whitespace-nowrap">
+            <span
+              class="font-mono text-[10px] font-semibold uppercase tracking-widest text-slate-500 whitespace-nowrap"
+            >
               {{ row.event_date | date: 'yyyy-MM-dd' }}
             </span>
-            <span class="font-mono text-[10px] font-semibold uppercase tracking-widest text-brand-700">
+            <span
+              class="font-mono text-[10px] font-semibold uppercase tracking-widest text-brand-700"
+            >
               {{ row.category_name }}
             </span>
           </div>

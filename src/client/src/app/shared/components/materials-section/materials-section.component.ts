@@ -22,6 +22,7 @@ import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { confirmDelete } from '../../utils/confirm-delete';
 import { MaterialRowComponent } from '../material-row/material-row.component';
 import { MaterialUploadZoneComponent } from '../material-upload-zone/material-upload-zone.component';
+import { LoaderComponent } from '../loader/loader.component';
 
 type MaterialFilter = MaterialType | 'all';
 
@@ -34,7 +35,7 @@ type MaterialFilter = MaterialType | 'all';
 @Component({
   selector: 'app-materials-section',
   standalone: true,
-  imports: [MaterialRowComponent, MaterialUploadZoneComponent],
+  imports: [MaterialRowComponent, MaterialUploadZoneComponent, LoaderComponent],
   templateUrl: './materials-section.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -100,11 +101,7 @@ export class MaterialsSectionComponent implements OnInit {
    * detail pages) simply do not set hideWhenEmpty, so they keep the zone.
    */
   protected readonly hidden = computed(
-    () =>
-      this.hideWhenEmpty() &&
-      !this.loading() &&
-      !this.error() &&
-      this.materials().length === 0
+    () => this.hideWhenEmpty() && !this.loading() && !this.error() && this.materials().length === 0
   );
 
   // Reload whenever the anchor entity changes. Guards against the
