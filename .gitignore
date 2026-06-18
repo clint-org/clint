@@ -107,3 +107,7 @@ supabase/.env
 .claude/worktrees/
 .playwright-mcp/
 .superpowers/
+
+# Python bytecode
+__pycache__/
+*.pyc

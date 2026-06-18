@@ -39,14 +39,14 @@ resource "supabase_settings" "dev" {
     # rejects writing them unless custom SMTP / an SMS provider is configured
     # (these projects use Supabase's default mailer). They read back fine but are
     # not writable here, so they stay unmanaged.
-    rate_limit_anonymous_users            = 30
-    rate_limit_token_refresh              = 150
-    rate_limit_verify                     = 30
-    rate_limit_otp                        = 30
-    external_google_enabled               = true
-    external_google_client_id             = "567708662585-j8eqkc9tbq4dih6at9dl5fqqql05c482.apps.googleusercontent.com"
-    external_azure_enabled                = true
-    external_azure_client_id              = "ccccbf13-a9f1-42d5-820b-7d2fed67374e"
-    external_azure_url                    = "https://login.microsoftonline.com/common"
+    rate_limit_anonymous_users = 30
+    rate_limit_token_refresh   = 150
+    rate_limit_verify          = 30
+    rate_limit_otp             = 30
+    external_google_enabled    = true
+    external_google_client_id  = "567708662585-j8eqkc9tbq4dih6at9dl5fqqql05c482.apps.googleusercontent.com"
+    external_azure_enabled     = true
+    external_azure_client_id   = "ccccbf13-a9f1-42d5-820b-7d2fed67374e"
+    external_azure_url         = "https://login.microsoftonline.com/common"
   })
 }
