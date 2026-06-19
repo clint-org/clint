@@ -21,6 +21,7 @@ import {
 } from '../../core/models/material.model';
 import { MaterialService } from '../../core/services/material.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { MaterialRowComponent } from '../../shared/components/material-row/material-row.component';
 import { MaterialUploadZoneComponent } from '../../shared/components/material-upload-zone/material-upload-zone.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
@@ -45,12 +46,15 @@ type EntityFilter = MaterialEntityType | 'all';
     ManagePageShellComponent,
     MaterialRowComponent,
     MaterialUploadZoneComponent,
+    LoaderComponent,
   ],
   template: `
     <app-manage-page-shell>
       <div class="border-b border-slate-200 bg-slate-50/60 px-5 py-3">
         <div class="mb-2.5 flex items-center gap-3">
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <span
+            class="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+          >
             Materials
           </span>
           <span class="font-mono text-[10px] uppercase tracking-wider tabular-nums text-slate-400">
@@ -91,7 +95,9 @@ type EntityFilter = MaterialEntityType | 'all';
             </button>
           }
           <span class="mx-1.5 h-4 w-px bg-slate-200" aria-hidden="true"></span>
-          <span class="mr-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+          <span
+            class="mr-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400"
+          >
             Linked to
           </span>
           @for (chip of entityFilters; track chip.value) {
@@ -137,7 +143,7 @@ type EntityFilter = MaterialEntityType | 'all';
 
       <div class="border border-t-0 border-slate-200 bg-white" aria-live="polite">
         @if (loading()) {
-          <p class="px-4 py-4 text-xs text-slate-400">Loading materials...</p>
+          <app-loader class="px-4 py-4" [size]="20" label="Loading materials" />
         } @else if (error()) {
           <p class="px-4 py-4 text-xs text-red-600">{{ error() }}</p>
         } @else if (rows().length === 0) {

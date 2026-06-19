@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { DatePipe, JsonPipe } from '@angular/common';
 
+import { LoaderComponent } from './loader/loader.component';
+
 export interface HistoryFieldDiff {
   /** Raw column / payload key. */
   field: string;
@@ -50,7 +52,7 @@ const CHANGE_TYPE_COLOR: Record<HistoryEntry['changeType'], string> = {
 @Component({
   selector: 'app-detail-panel-history',
   standalone: true,
-  imports: [DatePipe, JsonPipe],
+  imports: [DatePipe, JsonPipe, LoaderComponent],
   template: `
     <button
       type="button"
@@ -73,7 +75,7 @@ const CHANGE_TYPE_COLOR: Record<HistoryEntry['changeType'], string> = {
     @if (open()) {
       <div [id]="panelId" class="mt-2">
         @if (loading()) {
-          <p class="py-2 text-[11px] text-slate-400">Loading history...</p>
+          <app-loader class="py-2" [size]="16" label="Loading history" />
         } @else if (entries() === null) {
           <!-- caller has not yet provided entries; nothing to render -->
         } @else if (entries()!.length === 0) {

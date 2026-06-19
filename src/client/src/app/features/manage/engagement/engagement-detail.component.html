@@ -3,7 +3,7 @@
 
 <app-manage-page-shell [narrow]="true">
   @if (loading()) {
-    <div class="px-4 py-8 text-sm text-slate-500">Loading...</div>
+    <div class="flex justify-center px-4 py-8"><app-loader [size]="28" /></div>
   } @else {
     <header class="mb-4 border border-slate-200 bg-white px-5 py-3.5">
       <h1 class="font-mono text-[13px] font-bold uppercase tracking-[0.1em] text-slate-900">
@@ -28,7 +28,7 @@
           onPurgeRequested(
             {
               id: historyHost.payload().current?.id ?? '',
-              headline: historyHost.payload().current?.headline ?? ''
+              headline: historyHost.payload().current?.headline ?? '',
             },
             false
           )
@@ -45,12 +45,8 @@
       [payload]="historyHost.payload()"
       [currentUserCanEdit]="spaceRole.isAgencyMember()"
       (withdraw)="withdrawDialogOpen.set(true)"
-      (purgeVersion)="
-        onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)
-      "
-      (purgeAnchor)="
-        onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)
-      "
+      (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
+      (purgeAnchor)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
     />
     <app-withdraw-intelligence-dialog
       [visible]="withdrawDialogOpen()"
@@ -65,11 +61,22 @@
       (confirmed)="onPurgeConfirmed($event)"
     />
 
-    <section class="materials-section mb-4 border border-slate-200 bg-white" aria-label="Engagement materials">
-      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-5 py-2.5">
-        <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Materials</h2>
+    <section
+      class="materials-section mb-4 border border-slate-200 bg-white"
+      aria-label="Engagement materials"
+    >
+      <header
+        class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-5 py-2.5"
+      >
+        <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+          Materials
+        </h2>
       </header>
-      <app-materials-section entityType="space" [entityId]="spaceIdSig()" [spaceId]="spaceIdSig()" />
+      <app-materials-section
+        entityType="space"
+        [entityId]="spaceIdSig()"
+        [spaceId]="spaceIdSig()"
+      />
     </section>
 
     @if (spaceIdSig()) {

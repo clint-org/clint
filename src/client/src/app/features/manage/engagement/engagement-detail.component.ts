@@ -21,6 +21,7 @@ import { WithdrawIntelligenceDialogComponent } from '../../../shared/components/
 import { PurgeIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/purge-dialog.component';
 import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
@@ -40,6 +41,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
     WithdrawIntelligenceDialogComponent,
     PurgeIntelligenceDialogComponent,
     MaterialsSectionComponent,
+    LoaderComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './engagement-detail.component.html',

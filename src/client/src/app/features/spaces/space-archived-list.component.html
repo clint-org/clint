@@ -5,7 +5,7 @@
   </p>
 
   @if (loading()) {
-    <p class="text-sm text-slate-400">Loading archived spaces...</p>
+    <app-loader [size]="20" label="Loading archived spaces" />
   } @else if (spaces().length === 0) {
     <div class="border border-slate-200 bg-white px-8 py-16 text-center">
       <p class="text-base font-medium text-slate-700">No archived spaces</p>

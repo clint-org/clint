@@ -17,6 +17,7 @@ import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamo
 import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
 import { TriangleIconComponent } from '../../../shared/components/svg-icons/triangle-icon.component';
 import { SquareIconComponent } from '../../../shared/components/svg-icons/square-icon.component';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-legend',
@@ -29,6 +30,7 @@ import { SquareIconComponent } from '../../../shared/components/svg-icons/square
     FlagIconComponent,
     TriangleIconComponent,
     SquareIconComponent,
+    LoaderComponent,
   ],
   templateUrl: './legend.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

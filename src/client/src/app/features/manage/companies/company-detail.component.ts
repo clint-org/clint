@@ -28,6 +28,7 @@ import { TimelineViewComponent } from '../../landscape/timeline-view.component';
 import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 
 import { CompanyService } from '../../../core/services/company.service';
@@ -60,6 +61,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     TimelineViewComponent,
     EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
+    LoaderComponent,
   ],
   providers: [ConfirmationService, MessageService, LandscapeStateService],
   templateUrl: './company-detail.component.html',

@@ -4,6 +4,7 @@ import { ButtonModule } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 
 import { BrandContextService } from '../../../core/services/brand-context.service';
+import { agencyLogoFromBrand } from './agency-byline-logo';
 import {
   IntelligencePayload,
   PrimaryIntelligenceLink,
@@ -11,6 +12,7 @@ import {
 import { renderMarkdownInline } from '../../utils/markdown-render';
 import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
 import { resolveAuthorName, resolveContributorLine } from '../../utils/intelligence-authors';
+import { BrandLogoComponent } from '../brand-logo.component';
 
 /**
  * Display-only presenter for a primary intelligence read. Shows the
@@ -21,7 +23,7 @@ import { resolveAuthorName, resolveContributorLine } from '../../utils/intellige
 @Component({
   selector: 'app-intelligence-block',
   standalone: true,
-  imports: [ButtonModule, RouterLink, Tooltip],
+  imports: [ButtonModule, RouterLink, Tooltip, BrandLogoComponent],
   templateUrl: './intelligence-block.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -111,6 +113,21 @@ export class IntelligenceBlockComponent {
     const name = this.bylineLeadName().trim();
     return name ? name.charAt(0).toUpperCase() : '?';
   });
+
+  /** The agency's logo, when one is set. On a tenant host it is the parent
+   * agency's logo; on an agency host the brand's own logo is the agency. */
+  protected readonly agencyLogoUrl = computed<string | null>(() =>
+    agencyLogoFromBrand(this.brand.brand())
+  );
+
+  /**
+   * Logo shown in place of the initials tile in the byline. Only when the lead
+   * is the agency (the client-facing byline). In the agency-internal view the
+   * lead is a person, so the initials avatar stays.
+   */
+  protected readonly bylineLogoUrl = computed<string | null>(() =>
+    this.agencyView() ? null : this.agencyLogoUrl()
+  );
 
   /**
    * Contributor line for the agency-internal view only. Shown as a quiet
