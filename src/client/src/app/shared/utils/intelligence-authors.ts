@@ -40,3 +40,20 @@ export function resolveContributorLine(
     .filter((s) => !!s);
   return names.length ? names.join(', ') : '--';
 }
+
+/**
+ * Resolve only the contributors who are not the lead editor, comma-joined.
+ * Returns null when no one other than the lead contributed -- the byline
+ * already names the lead, so a contributor line that just repeats it is noise.
+ */
+export function resolveOtherContributorsLine(
+  ids: readonly (string | null | undefined)[] | null | undefined,
+  leadId: string | null | undefined,
+  authors?: Record<string, string> | null,
+  override?: Record<string, string> | null,
+): string | null {
+  const others = (ids ?? []).filter((id) => !!id && id !== leadId);
+  if (!others.length) return null;
+  const line = resolveContributorLine(others, authors, override);
+  return line === '--' ? null : line;
+}

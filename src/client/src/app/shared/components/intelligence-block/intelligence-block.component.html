@@ -83,20 +83,22 @@
     <div class="px-5 pb-5 pt-4">
       <h3 class="text-[22px] font-bold leading-tight text-slate-900">{{ c.record.headline }}</h3>
       <div class="mt-2.5 flex items-center gap-2 text-xs text-slate-500">
-        <app-brand-logo
-          [url]="bylineLogoUrl()"
-          [alt]="bylineLeadName() + ' logo'"
-          [width]="22"
-          [height]="22"
-          imgClass="h-[22px] w-[22px] shrink-0 rounded-sm object-contain"
-        >
-          <span
-            class="flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-brand-700 font-mono text-[12px] font-bold italic leading-none text-white"
-            aria-hidden="true"
+        @if (!agencyView()) {
+          <app-brand-logo
+            [url]="bylineLogoUrl()"
+            [alt]="bylineLeadName() + ' logo'"
+            [width]="22"
+            [height]="22"
+            imgClass="h-[22px] w-[22px] shrink-0 rounded-sm object-contain"
           >
-            {{ bylineInitial() }}
-          </span>
-        </app-brand-logo>
+            <span
+              class="flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-brand-700 font-mono text-[12px] font-bold italic leading-none text-white"
+              aria-hidden="true"
+            >
+              {{ bylineInitial() }}
+            </span>
+          </app-brand-logo>
+        }
         <span class="font-medium text-slate-700">{{ bylineLeadName() }}</span>
         <span class="text-slate-300" aria-hidden="true">·</span>
         <span class="tabular-nums">Updated {{ updatedLabel() }}</span>
