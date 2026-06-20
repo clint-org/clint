@@ -122,7 +122,7 @@ const LEVEL_OPTIONS: { label: string; value: IntelligenceEntityType }[] = [
       <ng-template #footer>
         <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="onCancel()" />
         <p-button
-          label="Author read"
+          label="Write analysis"
           icon="fa-solid fa-pen-nib"
           size="small"
           [disabled]="!canContinue()"

@@ -128,7 +128,7 @@ function buildComputeds(
       },
       {
         key: 'newIntel',
-        label: pluralize(s?.new_intel_7d, 'New read'),
+        label: pluralize(s?.new_intel_7d, 'New analysis', 'New analyses'),
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
         display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
@@ -243,7 +243,7 @@ describe('EngagementLandingComponent header computeds', () => {
     const byKey = Object.fromEntries(motionStats().map((cell) => [cell.key, cell]));
     expect(byKey['p3Readouts'].label).toBe('P3 readout');
     expect(byKey['catalysts'].label).toBe('Catalyst');
-    expect(byKey['newIntel'].label).toBe('New read');
+    expect(byKey['newIntel'].label).toBe('New analysis');
     expect(byKey['trialMoves'].label).toBe('Trial move');
   });
 
@@ -255,7 +255,7 @@ describe('EngagementLandingComponent header computeds', () => {
     const byKey = Object.fromEntries(motionStats().map((cell) => [cell.key, cell]));
     expect(byKey['p3Readouts'].label).toBe('P3 readouts');
     expect(byKey['catalysts'].label).toBe('Catalysts');
-    expect(byKey['newIntel'].label).toBe('New reads');
+    expect(byKey['newIntel'].label).toBe('New analyses');
     expect(byKey['trialMoves'].label).toBe('Trial moves');
   });
 

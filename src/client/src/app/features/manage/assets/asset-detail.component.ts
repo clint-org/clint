@@ -231,7 +231,7 @@ export class AssetDetailComponent implements OnDestroy {
       await Promise.all([this.loadIntelligence(), this.loadAsset()]);
       this.messageService.add({
         severity: 'success',
-        summary: 'Read withdrawn.',
+        summary: 'Analysis withdrawn.',
         life: 3000,
       });
     } catch (err) {
@@ -260,7 +260,7 @@ export class AssetDetailComponent implements OnDestroy {
       await Promise.all([this.loadIntelligence(), this.loadAsset()]);
       this.messageService.add({
         severity: 'success',
-        summary: 'Read purged.',
+        summary: 'Analysis purged.',
         life: 3000,
       });
     } catch (err) {
@@ -293,7 +293,7 @@ export class AssetDetailComponent implements OnDestroy {
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
     await this.loadIntelligence();
-    this.messageService.add({ severity: 'success', summary: 'Read published.', life: 3000 });
+    this.messageService.add({ severity: 'success', summary: 'Analysis published.', life: 3000 });
   }
 
   protected onIntelligenceDelete(): void {

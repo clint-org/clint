@@ -22,7 +22,7 @@ import { LandscapeStateService } from './landscape-state.service';
         <div class="flex flex-col gap-1 flex-1 min-w-0">
           <span
             class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
-            >READ</span
+            >SUMMARY</span
           >
           @if (read().text) {
             <app-competitive-read-strip

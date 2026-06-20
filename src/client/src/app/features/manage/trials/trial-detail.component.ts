@@ -498,7 +498,7 @@ export class TrialDetailComponent implements OnDestroy {
       await Promise.all([this.loadIntelligence(), this.loadTrial()]);
       this.messageService.add({
         severity: 'success',
-        summary: 'Read withdrawn.',
+        summary: 'Analysis withdrawn.',
         life: 3000,
       });
     } catch (err) {
@@ -527,7 +527,7 @@ export class TrialDetailComponent implements OnDestroy {
       await Promise.all([this.loadIntelligence(), this.loadTrial()]);
       this.messageService.add({
         severity: 'success',
-        summary: 'Read purged.',
+        summary: 'Analysis purged.',
         life: 3000,
       });
     } catch (err) {
@@ -623,7 +623,7 @@ export class TrialDetailComponent implements OnDestroy {
   async onIntelligencePublished(): Promise<void> {
     this.intelligenceDrawerOpen.set(false);
     await this.loadIntelligence();
-    this.messageService.add({ severity: 'success', summary: 'Read published.', life: 3000 });
+    this.messageService.add({ severity: 'success', summary: 'Analysis published.', life: 3000 });
   }
 
   onIntelligenceDelete(): void {

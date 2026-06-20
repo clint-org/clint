@@ -175,7 +175,7 @@ const DRAFTS_LIMIT = 200;
 
       <div class="border border-t-0 border-slate-200 bg-white" aria-live="polite">
         @if (loading()) {
-          <ul aria-busy="true" aria-label="Loading reads">
+          <ul aria-busy="true" aria-label="Loading analyses">
             @for (i of skeletonRows; track i) {
               <li class="flex border-b border-slate-100 last:border-b-0" aria-hidden="true">
                 <span class="w-[3px] shrink-0 bg-slate-200"></span>
@@ -285,7 +285,7 @@ export class IntelligenceBrowseComponent implements OnInit {
   protected readonly totalLabel = computed(() => {
     const t = this.total();
     if (this.status() === 'drafts') return t === 1 ? '1 draft' : `${t} drafts`;
-    return t === 1 ? '1 read' : `${t} reads`;
+    return t === 1 ? '1 analysis' : `${t} analyses`;
   });
 
   protected readonly headingTitle = computed(() =>
@@ -294,13 +294,13 @@ export class IntelligenceBrowseComponent implements OnInit {
 
   protected readonly headingSubtitle = computed(() =>
     this.status() === 'drafts'
-      ? 'In-progress reads visible to your agency.'
-      : 'All published reads in this engagement, recency-ordered.'
+      ? 'In-progress analyses visible to your agency.'
+      : 'All published analyses in this engagement, recency-ordered.'
   );
 
   protected readonly emptyMessage = computed(() => {
     if (this.status() === 'drafts') return 'No drafts match the current filters.';
-    return 'No published reads match the current filters.';
+    return 'No published analyses match the current filters.';
   });
 
   protected readonly hasAnyActive = computed(() => {
@@ -379,7 +379,7 @@ export class IntelligenceBrowseComponent implements OnInit {
 
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
-    this.messageService.add({ severity: 'success', summary: 'Read published.', life: 3000 });
+    this.messageService.add({ severity: 'success', summary: 'Analysis published.', life: 3000 });
     await this.load();
   }
 

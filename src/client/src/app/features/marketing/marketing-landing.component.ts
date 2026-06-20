@@ -66,7 +66,7 @@ import { MarketingTimelinePreviewComponent } from './marketing-timeline-preview.
               Competitive intelligence for pharma
             </p>
             <h1 class="mt-3 text-3xl font-semibold leading-tight tracking-tight text-slate-900">
-              The competitive read on a drug program, in seconds.
+              The competitive analysis on a drug program, in seconds.
             </h1>
             <p class="mt-3 text-sm leading-relaxed text-slate-600">
               Pipeline intelligence, catalyst tracking, and clinical-trial timelines for the teams
