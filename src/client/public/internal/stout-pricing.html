@@ -453,6 +453,12 @@
         .cad-axis {
           margin-left: 90px;
         }
+        /* On narrow screens the bar is too short for in-segment labels; drop the
+           text and let the legend carry it, so the bars stay clean color shares. */
+        .bar .seg {
+          font-size: 0;
+          padding: 0;
+        }
       }
     </style>
   </head>
