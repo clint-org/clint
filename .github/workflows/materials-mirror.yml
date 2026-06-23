@@ -1,0 +1,97 @@
+name: Mirror materials buckets
+# WS1 materials durability: daily add-only mirror of each R2 materials bucket to
+# its B2 backup bucket. No --delete, so a bad R2 deletion never propagates to the
+# off-cloud copy. Detection signal for the materials durability domain in
+# docs/runbook/14-disaster-recovery.md.
+on:
+  schedule:
+    - cron: "30 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: materials-mirror
+  cancel-in-progress: false
+
+# Two explicit jobs (not a matrix) so every secret is referenced statically.
+# Indexing `secrets[...]` with a dynamic key forces GitHub to pass the entire
+# secrets context to the runner (CodeQL: actions/excessive-secrets-exposure).
+jobs:
+  prod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mirror prod
+        env:
+          R2_SRC_BUCKET: clint-materials
+          R2_S3_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_MATERIALS_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_MATERIALS_SECRET_ACCESS_KEY }}
+          B2_DST_BUCKET: clint-materials-backup
+          B2_S3_ENDPOINT: ${{ secrets.B2_S3_ENDPOINT }}
+          B2_KEY_ID: ${{ secrets.B2_MATERIALS_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_MATERIALS_APP_KEY }}
+        run: scripts/materials/mirror.sh
+
+  dev:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mirror dev
+        env:
+          R2_SRC_BUCKET: clint-materials-dev
+          R2_S3_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_MATERIALS_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_MATERIALS_SECRET_ACCESS_KEY }}
+          B2_DST_BUCKET: clint-materials-backup-dev
+          B2_S3_ENDPOINT: ${{ secrets.B2_S3_ENDPOINT }}
+          B2_KEY_ID: ${{ secrets.B2_MATERIALS_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_MATERIALS_APP_KEY }}
+        run: scripts/materials/mirror.sh
+
+  # A failed mirror must not be silent. On any failure open or update a
+  # deduplicated GitHub issue. Least-privilege: only this job gets issues: write.
+  notify-failure:
+    needs: [prod, dev]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const label = 'materials-mirror-failure';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              'The scheduled materials mirror workflow failed.',
+              '',
+              `Run: ${runUrl}`,
+              '',
+              'Detection signal for the materials durability domain in docs/runbook/14-disaster-recovery.md.',
+              'Investigate before the next daily window so the off-cloud copy does not silently fall behind.',
+            ].join('\n');
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Materials mirror failed',
+                body,
+                labels: [label],
+              });
+            }
