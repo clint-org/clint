@@ -3,6 +3,7 @@ import {
   initialsFromId,
   resolveAuthorName,
   resolveContributorLine,
+  resolveOtherContributorsLine,
 } from './intelligence-authors';
 
 const UID = '00000000-0000-0000-0000-00000000000d';
@@ -46,6 +47,27 @@ describe('resolveContributorLine (P1.2)', () => {
   it('returns "--" for an empty or missing list', () => {
     expect(resolveContributorLine([])).toBe('--');
     expect(resolveContributorLine(null)).toBe('--');
+  });
+});
+
+describe('resolveOtherContributorsLine', () => {
+  const authors = { [UID]: 'Daniel Reyes', [UID2]: 'Mara Singh' };
+
+  it('returns null when the only contributor is the lead', () => {
+    expect(resolveOtherContributorsLine([UID], UID, authors)).toBeNull();
+  });
+
+  it('drops the lead and lists the remaining contributors', () => {
+    expect(resolveOtherContributorsLine([UID, UID2], UID, authors)).toBe('Mara Singh');
+  });
+
+  it('returns null for an empty or missing list', () => {
+    expect(resolveOtherContributorsLine([], UID, authors)).toBeNull();
+    expect(resolveOtherContributorsLine(null, UID, authors)).toBeNull();
+  });
+
+  it('lists everyone when the lead is not among the contributors', () => {
+    expect(resolveOtherContributorsLine([UID, UID2], null, authors)).toBe('Daniel Reyes, Mara Singh');
   });
 });
 

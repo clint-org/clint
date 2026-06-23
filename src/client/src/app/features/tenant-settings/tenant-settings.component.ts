@@ -269,7 +269,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
             Material upload limits
           </h3>
           <p class="mt-1 text-[11px] text-slate-500">
-            Per-tenant caps applied to every engagement material upload. Files exceeding the size
+            Per-tenant caps applied to every space material upload. Files exceeding the size
             limit or using a mime type outside the allowlist are rejected by the server.
           </p>
 

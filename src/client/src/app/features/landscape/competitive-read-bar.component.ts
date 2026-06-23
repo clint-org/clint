@@ -11,7 +11,7 @@ import { CompetitiveReadStripComponent } from './competitive-read/competitive-re
   template: `
     @if (read().text) {
       <div class="read-bar">
-        <span class="read-label">READ</span>
+        <span class="read-label">SUMMARY</span>
         <app-competitive-read-strip class="read-content" [read]="read()" />
       </div>
     }

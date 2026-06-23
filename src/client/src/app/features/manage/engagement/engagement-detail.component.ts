@@ -124,7 +124,7 @@ export class EngagementDetailComponent implements OnInit {
       await this.loadIntelligence();
       this.messageService.add({
         severity: 'success',
-        summary: 'Read withdrawn.',
+        summary: 'Analysis withdrawn.',
         life: 3000,
       });
     } catch (err) {
@@ -153,7 +153,7 @@ export class EngagementDetailComponent implements OnInit {
       await this.loadIntelligence();
       this.messageService.add({
         severity: 'success',
-        summary: 'Read purged.',
+        summary: 'Analysis purged.',
         life: 3000,
       });
     } catch (err) {
@@ -178,7 +178,7 @@ export class EngagementDetailComponent implements OnInit {
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
     await this.loadIntelligence();
-    this.messageService.add({ severity: 'success', summary: 'Read published.', life: 3000 });
+    this.messageService.add({ severity: 'success', summary: 'Analysis published.', life: 3000 });
   }
 
   protected async onIntelligenceDelete(): Promise<void> {
@@ -189,7 +189,7 @@ export class EngagementDetailComponent implements OnInit {
     // require the literal word 'delete' to gate the destructive action.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete primary intelligence',
-      message: 'Delete the primary intelligence read for this engagement?',
+      message: 'Delete the primary intelligence analysis for this space?',
       requireTypedConfirmation: true,
       typedConfirmationValue: 'delete',
     });

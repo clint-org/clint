@@ -348,11 +348,6 @@
         border-top: 1px solid var(--slate-100);
         color: var(--slate-600);
       }
-      table.cap tbody tr.cap-row td {
-        background: var(--brand-50);
-        color: var(--slate-900);
-        font-weight: 600;
-      }
       table.cap tbody tr.here td {
         outline: 1.5px solid var(--brand-600);
         outline-offset: -1.5px;
@@ -438,13 +433,14 @@
           <span class="unit">per engagement space, per year</span>
         </div>
         <p class="subhead">
-          Capped at <strong>$300,000 / year</strong> firmwide, however many engagements you run.
+          The more engagements you run, the <strong>less each space costs</strong>. No cap, no
+          ceiling.
         </p>
 
         <p class="lede">
-          Priced per engagement, with a cap, and meant to be flexible. The goal right now is to get
-          Clint in front of your team on a live engagement and shape it around how you work. It
-          starts with a 90-day pilot on one engagement.
+          Priced per engagement, with volume pricing, and meant to be flexible. The goal right now
+          is to get Clint in front of your team on a live engagement and shape it around how you
+          work. It starts with a 90-day pilot on one engagement.
         </p>
 
         <div class="block">
@@ -459,8 +455,9 @@
               client's people. No per-seat charge, no counting.
             </li>
             <li>
-              <strong>Capped.</strong> Total cost never exceeds $300,000 a year. Past twelve
-              engagements, additional spaces are included.
+              <strong>Volume pricing.</strong> The per-space rate steps down as your book grows:
+              $25K for your first five spaces, $21K through twelve, $18K beyond. No cap, and the
+              rate keeps improving the more you run.
             </li>
           </ul>
         </div>
@@ -473,8 +470,8 @@
             <div class="roi-anchor">
               <div class="big" id="anchorBig">It pays for itself on a single engagement.</div>
               <div class="sub">
-                One space costs less than a single seat on the big data platforms, and it covers your
-                whole team plus the client.
+                One space costs less than a single seat on the big data platforms, and it covers
+                your whole team plus the client.
               </div>
             </div>
 
@@ -486,8 +483,9 @@
 
               <p class="boundary">
                 <strong>What Clint replaces:</strong> finding the data, checking it, and keeping it
-                current for every report. <strong>What stays yours:</strong> the analysis, the story,
-                and the final deck. The hours below count only the part Clint takes off your plate.
+                current for every report. <strong>What stays yours:</strong> the analysis, the
+                story, and the final deck. The hours below count only the part Clint takes off your
+                plate.
               </p>
 
               <div class="inputs">
@@ -504,7 +502,8 @@
 
                 <div class="field">
                   <label class="flabel" for="deckhrs"
-                    >Data &amp; assembly hrs per deck <span class="val" id="deckhrsV">3</span></label
+                    >Data &amp; assembly hrs per deck
+                    <span class="val" id="deckhrsV">3</span></label
                   >
                   <input type="range" id="deckhrs" min="0" max="40" step="1" value="3" />
                   <span class="fhint"
@@ -517,7 +516,9 @@
                     >Deck builds / yr <span class="val" id="cyclesV">52</span></label
                   >
                   <input type="range" id="cycles" min="0" max="72" step="1" value="52" />
-                  <span class="fhint">12 monthly landscape + ~40 conference &amp; adhoc reports</span>
+                  <span class="fhint"
+                    >12 monthly landscape + ~40 conference &amp; adhoc reports</span
+                  >
                 </div>
 
                 <div class="field">
@@ -546,7 +547,7 @@
                 <div class="stat">
                   <div class="k">Your cost / engagement</div>
                   <div class="v" id="effEng">$25,000</div>
-                  <div class="note" id="effNote">list rate, below the cap</div>
+                  <div class="note" id="effNote">list rate, $25K / space</div>
                 </div>
                 <div class="stat hero">
                   <div class="k">Net saved / yr</div>
@@ -561,6 +562,7 @@
                   <tr>
                     <th>Active engagements</th>
                     <th>Your cost</th>
+                    <th>Eff. $/space</th>
                     <th>Labor saved</th>
                     <th>Net</th>
                   </tr>
@@ -581,8 +583,12 @@
 
     <script>
       (function () {
-        var PRICE = 25000;
-        var CAP = 300000;
+        var PRICE = 25000; // entry rate, spaces 1-5
+        var BRACKETS = [
+          { upTo: 5, rate: 25000 },
+          { upTo: 12, rate: 21000 },
+          { upTo: Infinity, rate: 18000 },
+        ];
         var ROWS = [1, 3, 5, 8, 12, 15, 20];
 
         var el = function (id) {
@@ -596,9 +602,21 @@
           if (Math.abs(n) >= 1000000) return '$' + Math.round(n / 100000) / 10 + 'M';
           return '$' + Math.round(n / 1000) + 'K';
         };
+        var fmtK1 = function (n) {
+          return '$' + Math.round(n / 100) / 10 + 'K';
+        };
 
-        function capped(n) {
-          return Math.min(n * PRICE, CAP);
+        // marginal volume pricing: each band priced on the spaces that fall inside it
+        function cost(n) {
+          var total = 0;
+          var prev = 0;
+          for (var i = 0; i < BRACKETS.length; i++) {
+            var upTo = Math.min(n, BRACKETS[i].upTo);
+            if (upTo > prev) total += (upTo - prev) * BRACKETS[i].rate;
+            prev = BRACKETS[i].upTo;
+            if (n <= BRACKETS[i].upTo) break;
+          }
+          return total;
         }
 
         function render() {
@@ -619,7 +637,7 @@
           var perEngHrs = upkeepWk * 52 + cycles * deckhrs;
           var perEngSaved = perEngHrs * rate;
           var totalSaved = perEngSaved * engs;
-          var totalCost = capped(engs);
+          var totalCost = cost(engs);
           var net = totalSaved - totalCost;
           var effEng = totalCost / engs;
 
@@ -627,7 +645,9 @@
           el('perEngHrs').textContent = perEngHrs + ' hrs × $' + rate;
           el('effEng').textContent = fmt(effEng);
           el('effNote').textContent =
-            engs * PRICE > CAP ? 'effective, after the $300K cap' : 'list rate, below the cap';
+            engs <= 5
+              ? 'list rate, $25K / space'
+              : 'blended volume rate across ' + engs + ' spaces';
           el('netYr').textContent = (net >= 0 ? '+' : '−') + fmt(Math.abs(net));
           el('netNote').textContent = 'across ' + engs + ' engagement' + (engs === 1 ? '' : 's');
 
@@ -648,18 +668,18 @@
           var body = el('growBody');
           body.innerHTML = '';
           ROWS.forEach(function (n) {
-            var cost = capped(n);
+            var rowCost = cost(n);
             var saved = perEngSaved * n;
-            var rowNet = saved - cost;
+            var rowNet = saved - rowCost;
             var tr = document.createElement('tr');
-            if (n === 12) tr.className = 'cap-row';
-            if (n === engs) tr.className = (tr.className ? tr.className + ' ' : '') + 'here';
+            if (n === engs) tr.className = 'here';
             tr.innerHTML =
               '<td>' +
               n +
               '</td><td>' +
-              fmtK(cost) +
-              (n * PRICE >= CAP ? ' (cap)' : '') +
+              fmtK(rowCost) +
+              '</td><td>' +
+              fmtK1(rowCost / n) +
               '</td><td>' +
               fmtK(saved) +
               '</td><td class="' +
@@ -671,7 +691,7 @@
             body.appendChild(tr);
           });
 
-          // narrative: anchor to their current book, then the cap upside
+          // narrative: anchor to their current book, then the volume upside
           el('gapLine').innerHTML =
             'At your ' +
             engs +
@@ -681,9 +701,9 @@
             fmtK(totalSaved) +
             '</strong> of analyst time displaced against a <strong>' +
             fmtK(totalCost) +
-            '</strong> cost. It keeps going: past twelve engagements your cost stays at ' +
-            '<strong>$300K</strong> while the hours saved keep rising. Every engagement you add ' +
-            'past the cap is free.';
+            '</strong> cost. And it scales in your favor: past five engagements each new space ' +
+            'drops to <strong>$21K</strong>, past twelve to <strong>$18K</strong>. No cap, no ' +
+            'ceiling, no fine print, the more you run the less each one costs.';
         }
 
         ids.forEach(function (id) {

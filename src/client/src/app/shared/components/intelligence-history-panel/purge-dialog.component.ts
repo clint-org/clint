@@ -15,7 +15,7 @@ import { Dialog } from 'primeng/dialog';
     <p-dialog
       [visible]="visible()"
       (visibleChange)="onVisibleChange($event)"
-      header="Purge this read"
+      header="Purge this analysis"
       [modal]="true"
       styleClass="!w-[32rem]"
       [closable]="true"

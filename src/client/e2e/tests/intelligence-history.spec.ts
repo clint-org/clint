@@ -216,7 +216,7 @@ test.describe('intelligence version history', () => {
 
     // Withdraw v2 via the IntelligenceBlock control.
     await page.getByRole('button', { name: 'Withdraw' }).first().click();
-    const withdrawDialog = page.getByRole('dialog', { name: 'Withdraw this read' });
+    const withdrawDialog = page.getByRole('dialog', { name: 'Withdraw this analysis' });
     await expect(withdrawDialog).toBeVisible({ timeout: 5000 });
     await withdrawDialog.getByLabel(/reason/i).fill('superseded by external press release');
     await Promise.all([
@@ -314,7 +314,7 @@ test.describe('intelligence version history', () => {
 
     // Trigger the overflow Purge button on the IntelligenceBlock.
     await page.getByRole('button', { name: 'Purge this version' }).click();
-    const purgeDialog = page.getByRole('dialog', { name: 'Purge this read' });
+    const purgeDialog = page.getByRole('dialog', { name: 'Purge this analysis' });
     await expect(purgeDialog).toBeVisible({ timeout: 5000 });
 
     const purgeInput = purgeDialog.getByLabel(`Type ${headline} to confirm purge`);

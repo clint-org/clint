@@ -76,7 +76,7 @@ import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
           </div>
         </li>
       } @empty {
-        <li class="px-4 py-6 text-sm text-slate-400">No published reads yet.</li>
+        <li class="px-4 py-6 text-sm text-slate-400">No published analyses yet.</li>
       }
     </ul>
   `,

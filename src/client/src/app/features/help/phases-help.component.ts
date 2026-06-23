@@ -139,7 +139,7 @@ export class PhasesHelpComponent {
         a: `Regulatory approval and commercial launch are different competitive events. APPROVED marks the regulatory clearance; LAUNCHED marks revenue exposure. Distinct colors let ${subject} spot assets that are approved-but-not-launched at a glance.`,
       },
       {
-        q: 'What does PRECLIN mean for a competitor read?',
+        q: 'What does PRECLIN mean for a competitor analysis?',
         a: 'Preclinical assets are early-signal indicators. They appear muted because they are weak signals individually but matter in aggregate -- a cluster of preclinical activity in an area is itself a competitive datum.',
       },
       {
@@ -148,7 +148,7 @@ export class PhasesHelpComponent {
       },
       {
         q: 'Can the colors change per tenant?',
-        a: 'No. Phase colors are a global semantic and stay consistent across all tenants and engagements so anyone moving between spaces reads the same signal the same way.',
+        a: 'No. Phase colors are a global semantic and stay consistent across all tenants and spaces so anyone moving between them reads the same signal the same way.',
       },
     ];
   });

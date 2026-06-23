@@ -10,6 +10,7 @@ import {
   MaterialFileKind,
   MaterialLink,
   classifyMaterialMime,
+  materialExtLabel,
 } from '../../../core/models/material.model';
 import { SupabaseService } from '../../../core/services/supabase.service';
 
@@ -29,10 +30,13 @@ interface MaterialLinkChip {
 }
 
 /**
- * Single row in a materials list. File-type icon (PPTX amber, PDF red,
- * DOCX blue) leads; title and metadata follow; inline Download and
- * (uploader-only) Delete actions sit at the end. The row itself is no
- * longer a button.
+ * Single card in a materials list, laid out in three zones:
+ * `icon | content | actions`. The icon is a slate document tile whose
+ * extension label is tinted by file kind (PPTX amber, PDF red, DOCX blue,
+ * other slate). The content column stacks the title (the hero — full width,
+ * wraps to two lines then ellipsis), a meta line (type badge + date · size),
+ * and the linked-entity chips. Download and (uploader-only) Delete icon
+ * buttons sit top-right. The card itself is not a button.
  */
 @Component({
   selector: 'app-material-row',
@@ -40,44 +44,54 @@ interface MaterialLinkChip {
   imports: [RouterLink, TooltipModule],
   template: `
     <div
-      class="group @container/matrow flex w-full items-center gap-3.5 px-5 py-3 transition-colors hover:bg-slate-50"
+      class="group flex w-full items-start gap-3 rounded-sm border border-slate-200 bg-white p-3 transition-colors hover:border-slate-300 hover:bg-slate-50"
     >
-      <!-- File-type glyph (PowerPoint amber, PDF red, Word blue, other slate) -->
-      <span class="flex h-10 w-7 shrink-0 items-center justify-center" aria-hidden="true">
-        <i [class]="'fa-regular text-[26px] ' + iconGlyph() + ' ' + iconColor()"></i>
+      <!-- File-type tile: slate document with a folded corner; the extension
+           label is tinted by kind (PPTX amber, PDF red, DOCX blue, other slate). -->
+      <span
+        class="relative flex h-12 w-10 shrink-0 items-end justify-center rounded-sm border border-slate-300 bg-white pb-1.5"
+        aria-hidden="true"
+      >
+        <span
+          class="absolute right-0 top-0 h-2.5 w-2.5 border-b border-l border-slate-300 bg-slate-100"
+        ></span>
+        <span [class]="'font-mono text-[8px] font-bold tracking-wider ' + iconColor()">{{
+          extLabel()
+        }}</span>
       </span>
 
-      <!-- Title + linked-entity chips -->
-      <div class="min-w-0 flex-1">
-        <div class="flex min-w-0 items-center gap-2">
-          <p class="min-w-0 truncate text-sm font-semibold text-slate-900">
-            {{ material().title }}
-          </p>
+      <!-- Content: title (hero) + meta line + linked-entity chips -->
+      <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+        <h3
+          class="line-clamp-2 text-sm font-semibold leading-snug text-slate-900"
+          [title]="material().title"
+        >
+          {{ material().title }}
+        </h3>
+
+        <div class="flex flex-wrap items-center gap-2">
           <span
-            class="shrink-0 rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-slate-500"
+            class="shrink-0 rounded-sm border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500"
           >
             {{ typeLabel() }}
           </span>
+          <span class="font-mono text-[11px] tabular-nums text-slate-500">
+            {{ formattedDate() }} · {{ formattedSize() }}
+          </span>
         </div>
-        <!-- Compact date/size: shown only in narrow containers (detail-pane
-             rails) where the right-hand column is hidden, so the title keeps
-             full width instead of truncating to a few characters. -->
-        <div
-          class="mt-1 font-mono text-[10px] tabular-nums text-slate-400 @[26rem]/matrow:hidden"
-        >
-          {{ formattedDate() }} · {{ formattedSize() }}
-        </div>
+
         @if (showLinks() && chips().length) {
-          <div class="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+          <div class="flex min-w-0 flex-wrap items-center gap-1.5">
             @for (chip of chips(); track chip.key) {
               @if (chip.route) {
                 <a
                   [routerLink]="chip.route"
                   class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] text-slate-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 >
-                  <span class="shrink-0 font-mono text-[9px] uppercase tracking-wider text-slate-400">{{
-                    chip.typeLabel
-                  }}</span>
+                  <span
+                    class="shrink-0 font-mono text-[9px] uppercase tracking-wider text-slate-400"
+                    >{{ chip.typeLabel }}</span
+                  >
                   <span class="min-w-0 truncate font-medium">{{ chip.name }}</span>
                 </a>
               } @else {
@@ -87,36 +101,25 @@ interface MaterialLinkChip {
                   [class.text-slate-600]="!chip.deleted"
                   [class.italic]="chip.deleted"
                 >
-                  <span class="shrink-0 font-mono text-[9px] uppercase tracking-wider text-slate-400">{{
-                    chip.typeLabel
-                  }}</span>
+                  <span
+                    class="shrink-0 font-mono text-[9px] uppercase tracking-wider text-slate-400"
+                    >{{ chip.typeLabel }}</span
+                  >
                   <span class="min-w-0 truncate">{{ chip.name }}</span>
                 </span>
               }
             }
           </div>
         } @else if (showLinks() && fallbackSummary()) {
-          <div class="mt-1.5 text-[11px] text-slate-500">{{ fallbackSummary() }}</div>
+          <div class="text-[11px] text-slate-500">{{ fallbackSummary() }}</div>
         }
       </div>
 
-      <!-- Date / size, right-aligned tabular figures. Gated on the row's own
-           width (container query) rather than the viewport, so it appears on
-           the wide browse list but yields to the title in narrow detail rails. -->
-      <div class="hidden shrink-0 text-right @[26rem]/matrow:block">
-        <div class="font-mono text-[11px] font-semibold tabular-nums text-slate-700">
-          {{ formattedDate() }}
-        </div>
-        <div class="mt-0.5 font-mono text-[10px] tabular-nums text-slate-400">
-          {{ formattedSize() }}
-        </div>
-      </div>
-
-      <!-- Action buttons (fixed slot; revealed on hover, always keyboard-reachable) -->
+      <!-- Action buttons (fixed top-right slot; subtle, intensify on hover) -->
       <div class="flex shrink-0 items-center gap-1">
         <button
           type="button"
-          class="flex h-7 w-7 items-center justify-center rounded-sm border border-slate-200 text-slate-400 opacity-40 transition-opacity hover:bg-slate-100 hover:text-slate-700 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-brand-500 group-hover:opacity-100"
+          class="flex h-7 w-7 items-center justify-center rounded-sm border border-transparent text-slate-400 transition-colors hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
           (click)="downloadClick.emit(material())"
           [pTooltip]="'Download ' + material().title"
           tooltipPosition="top"
@@ -127,7 +130,7 @@ interface MaterialLinkChip {
         @if (canDelete()) {
           <button
             type="button"
-            class="flex h-7 w-7 items-center justify-center rounded-sm border border-slate-200 text-slate-400 opacity-40 transition-opacity hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-red-400 group-hover:opacity-100"
+            class="flex h-7 w-7 items-center justify-center rounded-sm border border-transparent text-slate-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-1 focus:ring-red-400"
             (click)="deleteClick.emit(material())"
             [pTooltip]="'Delete ' + material().title"
             tooltipPosition="top"
@@ -167,18 +170,9 @@ export class MaterialRowComponent {
     classifyMaterialMime(this.material().mime_type, this.material().file_name)
   );
 
-  protected readonly iconGlyph = computed(() => {
-    switch (this.kind()) {
-      case 'pptx':
-        return 'fa-file-powerpoint';
-      case 'pdf':
-        return 'fa-file-pdf';
-      case 'docx':
-        return 'fa-file-word';
-      default:
-        return 'fa-file-lines';
-    }
-  });
+  protected readonly extLabel = computed(() =>
+    materialExtLabel(this.material().file_name, this.kind())
+  );
 
   protected readonly iconColor = computed(() => {
     switch (this.kind()) {

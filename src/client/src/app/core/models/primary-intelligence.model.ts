@@ -143,7 +143,7 @@ export const ENTITY_TYPE_LABEL: Record<
   marker: 'Marker',
   company: 'Company',
   product: 'Asset',
-  space: 'Engagement',
+  space: 'Space',
 };
 
 /**

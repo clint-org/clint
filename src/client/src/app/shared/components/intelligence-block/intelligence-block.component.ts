@@ -11,7 +11,7 @@ import {
 } from '../../../core/models/primary-intelligence.model';
 import { renderMarkdownInline } from '../../utils/markdown-render';
 import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
-import { resolveAuthorName, resolveContributorLine } from '../../utils/intelligence-authors';
+import { resolveAuthorName, resolveOtherContributorsLine } from '../../utils/intelligence-authors';
 import { BrandLogoComponent } from '../brand-logo.component';
 
 /**
@@ -131,17 +131,19 @@ export class IntelligenceBlockComponent {
 
   /**
    * Contributor line for the agency-internal view only. Shown as a quiet
-   * secondary line under the lead byline when there is more than one
-   * contributor, so the redesign keeps the credit without the loud mono row.
+   * secondary line under the lead byline, but only when someone other than the
+   * lead editor contributed -- otherwise it would just repeat the byline name.
    */
   protected readonly contributorLine = computed<string | null>(() => {
     if (!this.agencyView()) return null;
     const c = this.current();
     if (!c) return null;
-    const override = this.authorMap();
-    const line = resolveContributorLine(c.contributors, c.authors, override);
-    if (!line || line === '--') return null;
-    return line;
+    return resolveOtherContributorsLine(
+      c.contributors,
+      c.record.last_edited_by,
+      c.authors,
+      this.authorMap(),
+    );
   });
 
   protected readonly publishNote = computed<string | null>(() => {
