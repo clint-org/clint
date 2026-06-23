@@ -33,7 +33,6 @@ import {
 import { HeatmapCellTooltipComponent } from './heatmap-cell-tooltip.component';
 import { HeatmapControlsPanelComponent } from './heatmap-controls-panel.component';
 import { HeatmapDetailPanelComponent } from './heatmap-detail-panel.component';
-import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
 import { type ExportAction } from '../../shared/export/export-button.component';
 import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
@@ -51,7 +50,6 @@ import { buildHeatmapSheets } from './heatmap-export.util';
     HeatmapCellTooltipComponent,
     HeatmapControlsPanelComponent,
     HeatmapDetailPanelComponent,
-    MarkWatermarkComponent,
     SkeletonComponent,
     MessageModule,
     ButtonModule,
@@ -123,9 +121,8 @@ import { buildHeatmapSheets } from './heatmap-export.util';
           </div>
         </div>
       } @else if (data) {
-        <div class="relative flex items-center justify-center h-full">
-          <app-mark-watermark />
-          <p-message class="relative" severity="info" [closable]="false">
+        <div class="flex items-center justify-center h-full">
+          <p-message severity="info" [closable]="false">
             No data matches the current filters. Try adjusting your selections.
           </p-message>
         </div>

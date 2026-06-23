@@ -83,7 +83,7 @@ interface ImportRow {
               <button
                 pButton
                 [text]="true"
-                icon="pi pi-arrow-left"
+                icon="fa-solid fa-arrow-left"
                 (click)="navigateBack()"
                 pTooltip="Back"
                 tooltipPosition="right"

@@ -141,7 +141,7 @@ function looksLikeUrl(s: string): boolean {
                       <div class="flex items-center gap-2.5">
                         @if (extractStepIndex() > $index) {
                           <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
-                            <i class="pi pi-check text-[13px] font-semibold text-white"></i>
+                            <i class="fa-solid fa-check text-[11px] text-white"></i>
                           </span>
                           <span class="text-xs text-slate-500">{{ extractStepLabels[s] }}</span>
                         } @else if (extractStepIndex() === $index) {
@@ -236,7 +236,7 @@ function looksLikeUrl(s: string): boolean {
                       <div class="flex items-center gap-2.5">
                         @if (extractStepIndex() > $index) {
                           <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
-                            <i class="pi pi-check text-[13px] font-semibold text-white"></i>
+                            <i class="fa-solid fa-check text-[11px] text-white"></i>
                           </span>
                           <span class="text-xs text-slate-500">{{ extractStepLabels[s] }}</span>
                         } @else if (extractStepIndex() === $index) {

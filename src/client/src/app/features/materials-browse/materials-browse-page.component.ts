@@ -63,7 +63,7 @@ type EntityFilter = MaterialEntityType | 'all';
           @if (canUpload()) {
             <p-button
               class="ml-auto"
-              label="Register material"
+              label="Upload material"
               icon="fa-solid fa-cloud-arrow-up"
               size="small"
               [outlined]="registerOpen()"
@@ -158,7 +158,7 @@ type EntityFilter = MaterialEntityType | 'all';
             }
           </p>
         } @else {
-          <ul class="divide-y divide-slate-100">
+          <ul class="flex flex-col gap-2.5 px-4 py-3">
             @for (material of rows(); track material.id) {
               <li>
                 <app-material-row
