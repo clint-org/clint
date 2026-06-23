@@ -79,8 +79,8 @@ that coexists with immutability and cannot run away.
 2. Daily R2-to-B2 add-only mirror into dedicated B2 buckets under a 30-day compliance
    lock.
 3. Weekly materials-to-object reconciliation that alerts via a GitHub issue.
-4. Drain rework: lock-aware reschedule plus a per-run delete cap with alerting
-   (folds in action register P3).
+4. Drain rework: lock-aware reschedule plus a check-first volume guard
+   (deny-by-default, one-shot approval; folds in action register P3).
 
 **Out of scope (documented follow-ups).**
 - B2 lagged-prune (bounding cold-copy growth and flushing deletions from B2). Add-only
@@ -88,6 +88,9 @@ that coexists with immutability and cannot run away.
   prune is added.
 - Event-driven near-real-time mirror (sub-24h RPO). Deferred until a customer needs
   tighter RPO; the daily cron meets the stated 24h target.
+- Provenance-based auto-approve for the drain guard (authorized bulk actions skip the
+  pause; only unexplained bulk deletes alert). v1 pauses on raw volume; this refinement
+  removes the rare false-trip once it becomes worth the plumbing.
 - The materials-restore drill itself (a tabletop/live exercise) belongs to WS6, but
   this spec must leave it possible (it is impossible today: nothing to restore from).
 
@@ -132,13 +135,13 @@ flowchart TD
   U --> DB[(public.materials<br/>pointer row)]
   R2 -- daily add-only sync --> B2[(B2 clint-materials-backup<br/>30-day compliance lock)]
   DEL[Material row deleted] --> Q[r2_pending_deletes queue]
-  Q --> DR[Drain worker<br/>lock-aware + delete cap]
+  Q --> DR[Drain worker<br/>lock-aware + check-first volume guard]
   DR -- DELETE after lock expiry --> R2
   REC[Weekly reconciliation] -. diff .-> DB
   REC -. diff .-> R2
   REC -. diff .-> B2
   REC -- divergence --> ISS[GitHub issue]
-  DR -- cap exceeded --> ISS
+  DR -- would-delete > threshold:<br/>delete nothing, pause --> ISS
 ```
 
 ### Layer 1: R2 bucket lock (in-account immutability)
@@ -196,10 +199,30 @@ Two changes to `src/client/worker/r2-drain/queue.ts`:
    expires (it can compute expiry from object age) instead of consuming the retry
    budget. Without this, locked rejections would burn the 5-attempt budget and orphan
    the object. This is mandatory; lock and drain cannot coexist otherwise.
-2. **Per-run delete cap + alert.** Never delete more than N objects per run; if the
-   queue wants more, stop and open a GitHub issue. Turns a runaway (buggy or malicious
-   enqueue) into a paused, alerted event. Safe to be strict because locked objects
-   cannot be destroyed anyway. Default N configurable via env (start ~100).
+2. **Check-first volume guard (deny-by-default).** Before issuing any DELETE, the run
+   counts how many objects the queue wants removed. If that count exceeds a threshold,
+   the run deletes **nothing**, pauses, and opens a GitHub issue. A normal-sized run
+   proceeds and purges as usual. This is a pre-flight check, not a "delete N then
+   stop" cap: in a runaway the blast radius is zero, not a capped batch. The pause is
+   denial; resuming requires an explicit, auditable one-shot approval (see below).
+   Safe to set the threshold conservatively because a trip costs nothing.
+
+   The issue states the count, a sample of keys, and a cause hint (the
+   tenant/space the keys cluster under) so the decision is usually obvious at a glance.
+   - **Allow** (it was an expected bulk event, e.g. a tenant offboarding): trigger a
+     manual "approve materials drain" GitHub Actions dispatch with a max-count input;
+     it authorizes a single run, which then purges the batch (next tick or immediately)
+     and auto-closes the issue.
+   - **Deny** is the default and needs no action: the run already deleted nothing and
+     stays paused. Investigate the unexplained enqueue, fix the cause, and drop the bad
+     queue rows. Nothing was destroyed (recent objects are lock-protected; all objects
+     remain in B2).
+
+   The asymmetry is the safety property: allow takes a deliberate action, deny takes
+   none. A mass deletion can only happen if a human actively approves it. Threshold
+   configurable via env. (Provenance-based auto-approve, so authorized bulk actions
+   skip the pause entirely and only truly-unexplained deletes alert, is a documented
+   follow-up; not built for v1.)
 
 ## 6. Components
 
@@ -209,7 +232,8 @@ Two changes to `src/client/worker/r2-drain/queue.ts`:
 | 6.2 | B2 materials buckets | `infra/tofu/shared/b2.tf` | dedicated 30-day compliance-locked copy targets |
 | 6.3 | Mirror job | `.github/workflows/materials-mirror.yml` + script | daily add-only R2-to-B2 sync, Infisical creds, notify-on-failure |
 | 6.4 | Reconciliation job | `.github/workflows/materials-reconcile.yml` + script | weekly three-way diff, issue on divergence |
-| 6.5 | Drain rework | `src/client/worker/r2-drain/queue.ts` + Vitest specs | lock-aware reschedule + delete cap + alert |
+| 6.5 | Drain rework | `src/client/worker/r2-drain/queue.ts` + Vitest specs | lock-aware reschedule + check-first volume guard (deny-by-default) |
+| 6.5a | Drain approval | `.github/workflows/materials-drain-approve.yml` | manual one-shot dispatch authorizing a single over-threshold run |
 | 6.6 | Deletion ledger | `public.r2_pending_deletes` (existing) | succeeded rows retained as the timestamped record of deletions; data source for the future B2 lagged-prune |
 | 6.7 | Runbook + register | `docs/runbook/14-disaster-recovery.md` | domain 2 rewritten to immutability model; action register P1 + drain-guardrail rows closed |
 
@@ -220,7 +244,7 @@ Two changes to `src/client/worker/r2-drain/queue.ts`:
 | Fat-finger / leaked-token delete of a recent object | **Impossible to lose** | R2 lock refuses the delete (storage-enforced) |
 | Overwrite / corruption of a recent object | **Impossible** | lock forbids overwrite |
 | Drain runaway targeting recent files (< 7d) | **Impossible to lose** | lock refuses every delete in-window |
-| Drain runaway targeting old files (> 7d) | **Recoverable, not impossible** | delete cap throttles + alerts (loud case, ~1 run); reconciliation catches the slow drip (< 1 week); add-only B2 copy is always intact to restore from |
+| Drain runaway targeting old files (> 7d) | **Prevented in the loud case, else recoverable** | check-first guard deletes nothing and pauses when a run is anomalous; reconciliation catches a sub-threshold slow drip (< 1 week); add-only B2 copy is always intact to restore from |
 | Whole Cloudflare account / bucket loss | **Recoverable, 24h RPO** | rehydrate from B2 into a fresh bucket, repoint the Worker binding; lose at most the uploads since the last daily sync |
 | Silent pointer/object divergence | **Detected < 1 week** | weekly reconciliation opens an issue |
 
@@ -234,6 +258,24 @@ The key honesty: protection against accidental destruction **within the window i
 storage-enforced, not dependent on our code being bug-free**. Tests confirm the lock
 is on and that our surrounding code cooperates; they do not carry the guarantee.
 
+### Recovery from a wrongful bulk delete (written down before it happens)
+If a batch of valid materials is wrongly deleted (bad cascade, bad migration, hostile
+enqueue), this is a restore event, not a loss event. Procedure:
+1. **Stop the bleeding.** Disable the drain trigger (or set the threshold to 0) so no
+   further deletes run. (In the common path the check-first guard already paused it.)
+2. **List the affected keys.** Three sources name them: the guard's issue (the keys it
+   was about to delete), the `r2_pending_deletes` ledger (succeeded rows, timestamped),
+   and reconciliation's dangling-pointer list (rows whose objects are now missing).
+3. **Sort legitimate from erroneous.** Deletes that match a known authorized action
+   (a real offboarding) are correct; leave them. The rest are the mistakes.
+4. **Restore the mistakes from B2.** Recent objects (< 7d) need no action: the lock
+   refused those deletes, the bytes never left R2. For older objects, copy each key
+   from the B2 materials bucket back into R2 (the same S3 `cp` the disaster restore
+   uses, scoped to a key list). If a pointer row was also deleted, restore it from the
+   latest DB backup or recreate it.
+5. **Root-cause and re-enable.** Find and fix what enqueued the bad deletes, drop the
+   bad queue rows, restore the threshold, re-enable the drain.
+
 ## 8. Testing strategy
 
 Each task ships with its tests inline (project convention). Coverage maps to the
@@ -241,8 +283,9 @@ scenarios in section 7:
 - **Lock proof** (highest value): assert the live bucket carries the rule, then prove
   it by attempting a delete of a freshly written object and asserting R2 rejects it.
 - **Drain unit tests** (most code risk): locked rejection reschedules (does not consume
-  the retry budget); already-deleted key is a no-op; cap stops at N and opens the
-  issue; non-lock errors still retry then surface at MAX_ATTEMPTS.
+  the retry budget); already-deleted key is a no-op; an anomalous run deletes **nothing**
+  and opens the issue (deny-by-default), a normal run proceeds, and an approved run
+  purges its batch; non-lock errors still retry then surface at MAX_ATTEMPTS.
 - **Mirror tests**: a new R2 object appears in B2 after a sync; an object deleted from
   R2 is NOT removed from B2 (proves add-only / runaway recoverability for old files).
 - **Reconciliation tests**: inject each divergence type (dangling, orphan, mirror gap)
@@ -270,8 +313,9 @@ lock can be applied to existing objects with no migration.
 - Daily mirror runs green; B2 holds a copy of every current materials object;
   notify-on-failure wired.
 - Weekly reconciliation runs green and proven to alert on each divergence type.
-- Drain reschedules locked rejections (no budget burn) and caps + alerts on a runaway,
-  with passing Vitest specs.
+- Drain reschedules locked rejections (no budget burn) and, on an anomalous run,
+  deletes nothing and opens an issue (deny-by-default) with a one-shot approval path,
+  all with passing Vitest specs.
 - A restore-from-B2 exercise has rehydrated objects into a throwaway bucket.
 - Runbook 14 domain 2 rewritten to the immutability model; action register P1 and the
   drain-guardrail row closed; the materials-restore drill is now possible (handed to
