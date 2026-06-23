@@ -1,0 +1,172 @@
+name: Monitor materials drain volume-guard
+# WS1 materials durability: the R2 pending-delete drain has a volume guard that
+# pauses itself when a run would exceed the per-window deletion cap (a signal of
+# runaway or malicious deletes). A pause is a silent backlog if nobody is told,
+# so this checks the drain control row daily and, when it paused recently, opens
+# a deduplicated issue instructing the operator to review and (if legitimate)
+# authorize a single over-cap run via the approve workflow. Detection signal for
+# the materials durability domain in docs/runbook/14-disaster-recovery.md.
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: materials-drain-monitor
+  cancel-in-progress: false
+
+# Two explicit jobs (not a matrix) so every secret is referenced statically.
+# Each job reads the drain control row, parses the recently-paused flag, and
+# exports the paused count + sample keys for the notify step. Only the notify
+# step gets issues: write (least privilege).
+jobs:
+  prod:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Inspect prod drain control
+        id: check
+        env:
+          POOLER_URL: ${{ secrets.SUPABASE_PROD_DB_POOLER_URL }}
+        run: |
+          row=$(psql "$POOLER_URL" -At -F'|' -c "select coalesce(extract(epoch from (now() - last_paused_at)) < 90000, false) as recently_paused, coalesce(last_paused_count, 0), (select count(*) from public.r2_pending_deletes where succeeded_at is null and attempted_at is null), coalesce((select string_agg(file_path, '; ') from (select file_path from public.r2_pending_deletes where succeeded_at is null and attempted_at is null order by queued_at limit 10) s), '') from public.r2_drain_control where id = 1;")
+          recently_paused=$(printf '%s' "$row" | cut -d'|' -f1)
+          paused_count=$(printf '%s' "$row" | cut -d'|' -f2)
+          pending_count=$(printf '%s' "$row" | cut -d'|' -f3)
+          sample=$(printf '%s' "$row" | cut -d'|' -f4)
+          {
+            echo "recently_paused=$recently_paused"
+            echo "paused_count=$paused_count"
+            echo "pending_count=$pending_count"
+            echo "sample=$sample"
+          } >> "$GITHUB_OUTPUT"
+      - name: Notify if paused
+        if: ${{ steps.check.outputs.recently_paused == 't' || steps.check.outputs.recently_paused == 'true' }}
+        uses: actions/github-script@v7
+        env:
+          ENV_NAME: prod
+          PAUSED_COUNT: ${{ steps.check.outputs.paused_count }}
+          PENDING_COUNT: ${{ steps.check.outputs.pending_count }}
+          SAMPLE: ${{ steps.check.outputs.sample }}
+        with:
+          script: |
+            const label = 'materials-drain-paused';
+            const env = process.env.ENV_NAME;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `The materials R2 pending-delete drain volume-guard paused itself in **${env}** within the last ~25h.`,
+              '',
+              `Paused at cap: ${process.env.PAUSED_COUNT} deletes in the offending run.`,
+              `Pending deletes still queued: ${process.env.PENDING_COUNT}.`,
+              '',
+              'Sample queued keys:',
+              '```',
+              process.env.SAMPLE || '(none)',
+              '```',
+              '',
+              `Run: ${runUrl}`,
+              '',
+              `If this deletion volume is legitimate, run the "Materials drain approve" workflow (environment: ${env}) to authorize a single over-cap drain run.`,
+              'Detection signal for the materials durability domain in docs/runbook/14-disaster-recovery.md.',
+            ].join('\n');
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Materials drain paused by volume guard',
+                body,
+                labels: [label],
+              });
+            }
+
+  dev:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Inspect dev drain control
+        id: check
+        env:
+          POOLER_URL: ${{ secrets.SUPABASE_DEV_DB_POOLER_URL }}
+        run: |
+          row=$(psql "$POOLER_URL" -At -F'|' -c "select coalesce(extract(epoch from (now() - last_paused_at)) < 90000, false) as recently_paused, coalesce(last_paused_count, 0), (select count(*) from public.r2_pending_deletes where succeeded_at is null and attempted_at is null), coalesce((select string_agg(file_path, '; ') from (select file_path from public.r2_pending_deletes where succeeded_at is null and attempted_at is null order by queued_at limit 10) s), '') from public.r2_drain_control where id = 1;")
+          recently_paused=$(printf '%s' "$row" | cut -d'|' -f1)
+          paused_count=$(printf '%s' "$row" | cut -d'|' -f2)
+          pending_count=$(printf '%s' "$row" | cut -d'|' -f3)
+          sample=$(printf '%s' "$row" | cut -d'|' -f4)
+          {
+            echo "recently_paused=$recently_paused"
+            echo "paused_count=$paused_count"
+            echo "pending_count=$pending_count"
+            echo "sample=$sample"
+          } >> "$GITHUB_OUTPUT"
+      - name: Notify if paused
+        if: ${{ steps.check.outputs.recently_paused == 't' || steps.check.outputs.recently_paused == 'true' }}
+        uses: actions/github-script@v7
+        env:
+          ENV_NAME: dev
+          PAUSED_COUNT: ${{ steps.check.outputs.paused_count }}
+          PENDING_COUNT: ${{ steps.check.outputs.pending_count }}
+          SAMPLE: ${{ steps.check.outputs.sample }}
+        with:
+          script: |
+            const label = 'materials-drain-paused';
+            const env = process.env.ENV_NAME;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `The materials R2 pending-delete drain volume-guard paused itself in **${env}** within the last ~25h.`,
+              '',
+              `Paused at cap: ${process.env.PAUSED_COUNT} deletes in the offending run.`,
+              `Pending deletes still queued: ${process.env.PENDING_COUNT}.`,
+              '',
+              'Sample queued keys:',
+              '```',
+              process.env.SAMPLE || '(none)',
+              '```',
+              '',
+              `Run: ${runUrl}`,
+              '',
+              `If this deletion volume is legitimate, run the "Materials drain approve" workflow (environment: ${env}) to authorize a single over-cap drain run.`,
+              'Detection signal for the materials durability domain in docs/runbook/14-disaster-recovery.md.',
+            ].join('\n');
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Materials drain paused by volume guard',
+                body,
+                labels: [label],
+              });
+            }
