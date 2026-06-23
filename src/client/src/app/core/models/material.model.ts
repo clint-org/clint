@@ -80,7 +80,7 @@ export const MATERIAL_ENTITY_LABEL: Record<MaterialEntityType, string> = {
   marker: 'Marker',
   company: 'Company',
   product: 'Asset',
-  space: 'Engagement',
+  space: 'Space',
 };
 
 /**

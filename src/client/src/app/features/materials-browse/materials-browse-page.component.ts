@@ -151,10 +151,10 @@ type EntityFilter = MaterialEntityType | 'all';
             @if (isFiltered()) {
               No materials match the current filters.
             } @else if (canUpload()) {
-              No materials in this engagement yet. Register a briefing, conference report, or
+              No materials in this space yet. Register a briefing, conference report, or
               priority notice and attach it to a trial, asset, company, or marker.
             } @else {
-              No materials in this engagement yet. An owner or editor can register them.
+              No materials in this space yet. An owner or editor can register them.
             }
           </p>
         } @else {
@@ -216,7 +216,7 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
     { label: 'Marker', value: 'marker' },
     { label: 'Company', value: 'company' },
     { label: 'Asset', value: 'product' },
-    { label: 'Engagement', value: 'space' },
+    { label: 'Space', value: 'space' },
   ];
 
   // Reload when any filter changes.

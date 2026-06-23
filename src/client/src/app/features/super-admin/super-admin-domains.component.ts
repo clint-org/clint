@@ -142,7 +142,7 @@ import { StatusTagComponent } from '../../shared/components/status-tag.component
           </p>
           <p class="text-xs text-slate-500">
             Use this only after a deliberate super-admin delete. For real customer decommissions,
-            leave the 90-day holdback in place — it prevents takeover via stale session cookies and
+            leave the 90-day holdback in place. It prevents takeover via stale session cookies and
             bookmarked links.
           </p>
           @if (releaseError()) {

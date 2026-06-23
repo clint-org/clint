@@ -174,63 +174,63 @@ export class RolesHelpComponent {
 
   protected readonly capabilityRows: CapabilityRow[] = [
     {
-      group: 'Engagement data',
+      group: 'Space data',
       capability: 'View companies, assets, trials, catalysts, events',
       owner: 'yes',
       contributor: 'yes',
       reader: 'yes',
     },
     {
-      group: 'Engagement data',
+      group: 'Space data',
       capability: 'Add or edit catalysts, markers, trials, trial notes',
       owner: 'yes',
       contributor: 'yes',
       reader: 'no',
     },
     {
-      group: 'Engagement data',
+      group: 'Space data',
       capability: 'Add or edit events, sources, threads, links',
       owner: 'yes',
       contributor: 'yes',
       reader: 'no',
     },
     {
-      group: 'Engagement data',
+      group: 'Space data',
       capability: 'Add or edit indications, mechanisms, routes of administration',
       owner: 'yes',
       contributor: 'yes',
       reader: 'no',
     },
     {
-      group: 'Engagement structure',
+      group: 'Space structure',
       capability: 'Invite people to the space',
       owner: 'yes',
       contributor: 'no',
       reader: 'no',
     },
     {
-      group: 'Engagement structure',
+      group: 'Space structure',
       capability: 'Change someone else’s role in the space',
       owner: 'yes',
       contributor: 'no',
       reader: 'no',
     },
     {
-      group: 'Engagement structure',
+      group: 'Space structure',
       capability: 'Remove someone from the space',
       owner: 'yes',
       contributor: 'no',
       reader: 'no',
     },
     {
-      group: 'Engagement structure',
+      group: 'Space structure',
       capability: 'Rename the space, edit description',
       owner: 'yes',
       contributor: 'no',
       reader: 'no',
     },
     {
-      group: 'Engagement structure',
+      group: 'Space structure',
       capability: 'Delete the space',
       owner: 'yes',
       contributor: 'no',
@@ -257,7 +257,7 @@ export class RolesHelpComponent {
     return [
       {
         q: 'When should I make someone a Contributor instead of an Owner?',
-        a: `Make people Contributors by default. Owner status is for the people who decide who else gets in and what the space contains. Most ${teammates} working an engagement should be Contributors. Promote to Owner only when someone needs to manage the space itself.`,
+        a: `Make people Contributors by default. Owner status is for the people who decide who else gets in and what the space contains. Most ${teammates} working in a space should be Contributors. Promote to Owner only when someone needs to manage the space itself.`,
       },
       {
         q: 'When is Reader the right role?',
@@ -265,7 +265,7 @@ export class RolesHelpComponent {
       },
       {
         q: 'What happens when I add an agency colleague to a space?',
-        a: 'They get the role you assign in this space, the same as anyone else. Agency membership outside the space does not grant any data access; the firewall between engagements is enforced per space.',
+        a: 'They get the role you assign in this space, the same as anyone else. Agency membership outside the space does not grant any data access; the firewall between spaces is enforced per space.',
       },
       {
         q: 'Can a Reader see who else is in the space?',

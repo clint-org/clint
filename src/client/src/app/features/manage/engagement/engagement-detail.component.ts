@@ -189,7 +189,7 @@ export class EngagementDetailComponent implements OnInit {
     // require the literal word 'delete' to gate the destructive action.
     const ok = await confirmDelete(this.confirmation, {
       header: 'Delete primary intelligence',
-      message: 'Delete the primary intelligence analysis for this engagement?',
+      message: 'Delete the primary intelligence analysis for this space?',
       requireTypedConfirmation: true,
       typedConfirmationValue: 'delete',
     });

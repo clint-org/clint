@@ -36,7 +36,7 @@ const ENTITY_TYPES: { label: string; value: IntelligenceEntityType }[] = [
   { label: 'Trial', value: 'trial' },
   { label: 'Company', value: 'company' },
   { label: 'Asset', value: 'product' },
-  { label: 'Engagement', value: 'space' },
+  { label: 'Space', value: 'space' },
 ];
 
 type StatusFilter = 'published' | 'drafts';
@@ -295,7 +295,7 @@ export class IntelligenceBrowseComponent implements OnInit {
   protected readonly headingSubtitle = computed(() =>
     this.status() === 'drafts'
       ? 'In-progress analyses visible to your agency.'
-      : 'All published analyses in this engagement, recency-ordered.'
+      : 'All published analyses in this space, recency-ordered.'
   );
 
   protected readonly emptyMessage = computed(() => {

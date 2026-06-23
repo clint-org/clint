@@ -204,7 +204,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
           </div>
           <p class="mb-3 text-[11px] text-slate-500 max-w-xl">
             Tenant owners can manage this tenant and add/remove other owners. They do NOT
-            automatically see space data &mdash; they must be added to a space explicitly.
+            automatically see space data; they must be added to a space explicitly.
           </p>
           <p-table
             styleClass="data-table"

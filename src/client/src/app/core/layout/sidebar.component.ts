@@ -594,7 +594,7 @@ export class SidebarComponent {
   /** Product wordmark: the platform name, tracked uppercase via CSS. */
   protected readonly wordmark = PLATFORM_OPERATOR;
   readonly logoLabel = computed(() => 'Go to home');
-  readonly logoTooltip = computed(() => (this.hasSpace() ? 'Engagement home' : 'Spaces'));
+  readonly logoTooltip = computed(() => (this.hasSpace() ? 'Space home' : 'Spaces'));
 
   readonly pinToggle = output<void>();
   readonly navItemClick = output<string>();

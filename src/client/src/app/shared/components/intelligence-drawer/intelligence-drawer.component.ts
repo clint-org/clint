@@ -465,7 +465,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
         severity: 'error',
         summary: isPermission ? 'Not allowed to publish intelligence' : 'Save failed',
         detail: isPermission
-          ? 'Primary intelligence is the agency deliverable. Ask an agency member of this engagement to publish it.'
+          ? 'Primary intelligence is the agency deliverable. Ask an agency member of this space to publish it.'
           : error instanceof Error
             ? error.message
             : 'Unknown error',

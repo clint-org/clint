@@ -32,7 +32,7 @@ const LEVEL_OPTIONS: { label: string; value: IntelligenceEntityType }[] = [
   { label: 'Trial', value: 'trial' },
   { label: 'Company', value: 'company' },
   { label: 'Asset', value: 'product' },
-  { label: 'Engagement', value: 'space' },
+  { label: 'Space', value: 'space' },
 ];
 
 /**
@@ -61,7 +61,7 @@ const LEVEL_OPTIONS: { label: string; value: IntelligenceEntityType }[] = [
     >
       <div class="space-y-4">
         <p class="text-sm text-slate-700">
-          The feed spans the whole engagement, so choose what this read is about before authoring it.
+          The feed spans the whole space, so choose what this analysis is about before authoring it.
         </p>
         <div>
           <label
@@ -174,7 +174,7 @@ export class IntelligenceComposeDialogComponent {
   );
 
   protected readonly emptyMessage = computed<string>(
-    () => `No ${this.entityLabel().toLowerCase()} records in this engagement yet.`
+    () => `No ${this.entityLabel().toLowerCase()} records in this space yet.`
   );
 
   protected readonly canContinue = computed<boolean>(() => {

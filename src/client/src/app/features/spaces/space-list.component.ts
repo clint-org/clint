@@ -76,7 +76,7 @@ import { TopbarStateService } from '../../core/services/topbar-state.service';
               [pTooltip]="
                 canOpen(space)
                   ? ''
-                  : 'You are not a member of this engagement. Ask an owner to add you.'
+                  : 'You are not a member of this space. Ask an owner to add you.'
               "
               tooltipPosition="top"
               (click)="openSpace(space)"
@@ -264,7 +264,7 @@ export class SpaceListComponent implements OnInit, OnDestroy {
     if (!this.canOpen(space)) {
       this.messageService.add({
         severity: 'info',
-        summary: 'No access to this engagement',
+        summary: 'No access to this space',
         detail: `Ask an owner of "${space.name}" to add you as a member.`,
         life: 6000,
       });
