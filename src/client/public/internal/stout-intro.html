@@ -501,6 +501,187 @@
         object-fit: cover;
         object-position: top left;
       }
+      /* Generic, stylized pipeline timeline shown on the cover in place of a
+         real product screenshot — it evokes the product without exposing its
+         actual UI or data. */
+      .cover-tl {
+        overflow: visible;
+        padding: 24px 32px 20px;
+      }
+      .tl-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 26px;
+      }
+      .tl-title {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--slate-700);
+      }
+      .tl-tag {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--slate-400);
+      }
+      .tl-field {
+        position: relative;
+      }
+      .tl-years,
+      .tl-overlay {
+        position: absolute;
+        left: 88px;
+        right: 8px;
+      }
+      .tl-years {
+        top: -4px;
+        height: 16px;
+      }
+      .tl-year {
+        position: absolute;
+        top: 0;
+        transform: translateX(-50%);
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        letter-spacing: 0.1em;
+        color: var(--slate-400);
+      }
+      .tl-overlay {
+        top: 18px;
+        bottom: 22px;
+        pointer-events: none;
+      }
+      .tl-gl {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--slate-100);
+      }
+      .tl-today {
+        position: absolute;
+        top: -2px;
+        bottom: -2px;
+        width: 0;
+        border-left: 1.5px dashed var(--brand-500);
+      }
+      .tl-today .lbl {
+        position: absolute;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        color: var(--brand-700);
+        white-space: nowrap;
+      }
+      .tl-rows {
+        position: relative;
+        padding-top: 18px;
+        padding-bottom: 22px;
+      }
+      .tl-row {
+        position: relative;
+        height: 40px;
+      }
+      .tl-co {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 80px;
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        color: var(--slate-600);
+      }
+      .tl-track {
+        position: absolute;
+        left: 88px;
+        right: 8px;
+        top: 0;
+        bottom: 0;
+      }
+      .tl-bar {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 11px;
+        border-radius: 6px;
+        display: flex;
+        overflow: hidden;
+      }
+      .tl-seg {
+        height: 100%;
+      }
+      .seg-pre {
+        background: var(--slate-300);
+      }
+      .seg-p2 {
+        background: var(--brand-300);
+      }
+      .seg-p3 {
+        background: var(--brand-600);
+      }
+      .tl-mk {
+        position: absolute;
+        top: 50%;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+      }
+      .mk-data {
+        background: var(--green-600);
+      }
+      .mk-info {
+        background: #2563eb;
+      }
+      .mk-slate {
+        background: var(--slate-400);
+      }
+      .tl-mk.diamond {
+        border-radius: 2px;
+        width: 12px;
+        height: 12px;
+        transform: translate(-50%, -50%) rotate(45deg);
+        background: var(--amber-600);
+      }
+      .tl-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin-top: 8px;
+        padding-top: 14px;
+        border-top: 1px solid var(--slate-100);
+      }
+      .tl-legend .li {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11px;
+        color: var(--slate-500);
+      }
+      .tl-legend .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex: none;
+      }
+      .tl-legend .dot.dia {
+        border-radius: 2px;
+        transform: rotate(45deg);
+      }
       /* Compact thumbnail floated top-right so body text wraps around and
      below it. Avoids the empty column the prior grid layout produced
      under tall card bodies. Clickable -> lightbox. */
@@ -858,6 +1039,190 @@
       .reveal-link:focus-visible {
         border-bottom-color: var(--brand-600);
       }
+      /* === Build / reveal motion ===========================================
+         Each slide's elements rise + fade in sequence when it becomes active,
+         so a live presenter controls where the room looks. Driven purely by the
+         .slide.active class (toggled synchronously) plus CSS @keyframes — no JS
+         timing, no requestAnimationFrame. The RESTING state is fully visible, so
+         print, reduced motion, and any non-animating context show the complete
+         slide rather than a blank one. */
+      @keyframes reveal-rise {
+        from {
+          transform: translateY(12px);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+      @keyframes reveal-hero {
+        from {
+          transform: translateY(26px) scale(0.985);
+        }
+        to {
+          transform: none;
+        }
+      }
+      @keyframes accent-wipe {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+      .accent-bar {
+        transform-origin: left center;
+      }
+      .slide.active .accent-bar {
+        animation: accent-wipe 0.7s cubic-bezier(0.21, 0.7, 0.25, 1) both;
+      }
+      .slide.active .big-logo,
+      .slide.active .wordmark,
+      .slide.active .cover h1,
+      .slide.active .footer-line,
+      .slide.active h2.slide-title,
+      .slide.active .lede,
+      .slide.active .roadmap-line,
+      .slide.active .card,
+      .slide.active .shot,
+      .slide.active .rm-stage,
+      .slide.active .shift-row,
+      .slide.active .shift-foot,
+      .slide.active ul.points > li,
+      .slide.active .close-note {
+        animation: reveal-rise 0.55s cubic-bezier(0.21, 0.7, 0.25, 1) both;
+      }
+      .slide.active .cover-hero {
+        animation: reveal-hero 0.6s cubic-bezier(0.21, 0.7, 0.25, 1) both;
+      }
+      /* stagger: header */
+      .slide.active .wordmark,
+      .slide.active .big-logo {
+        animation-delay: 0ms;
+      }
+      .slide.active h2.slide-title {
+        animation-delay: 70ms;
+      }
+      .slide.active .cover h1 {
+        animation-delay: 120ms;
+      }
+      .slide.active .lede {
+        animation-delay: 150ms;
+      }
+      .slide.active .roadmap-line {
+        animation-delay: 160ms;
+      }
+      .slide.active .cover-hero {
+        animation-delay: 260ms;
+      }
+      .slide.active .footer-line {
+        animation-delay: 400ms;
+      }
+      /* stagger: body groups — cards, roadmap stages, bullet points */
+      .slide.active .grid-2 .card:nth-child(1),
+      .slide.active .grid-3 .card:nth-child(1),
+      .slide.active .rm-stage:nth-child(1),
+      .slide.active ul.points > li:nth-child(1) {
+        animation-delay: 220ms;
+      }
+      .slide.active .grid-2 .card:nth-child(2),
+      .slide.active .grid-3 .card:nth-child(2),
+      .slide.active .rm-stage:nth-child(2),
+      .slide.active ul.points > li:nth-child(2) {
+        animation-delay: 290ms;
+      }
+      .slide.active .grid-2 .card:nth-child(3),
+      .slide.active .grid-3 .card:nth-child(3),
+      .slide.active .rm-stage:nth-child(3),
+      .slide.active ul.points > li:nth-child(3) {
+        animation-delay: 360ms;
+      }
+      .slide.active .grid-2 .card:nth-child(4),
+      .slide.active .grid-3 .card:nth-child(4) {
+        animation-delay: 430ms;
+      }
+      .slide.active .grid-2 .card:nth-child(5) {
+        animation-delay: 500ms;
+      }
+      .slide.active .grid-2 .card:nth-child(6) {
+        animation-delay: 570ms;
+      }
+      /* stagger: the before/after shift rows (a .shift-head is the first child) */
+      .slide.active .shift-row:nth-child(2) {
+        animation-delay: 220ms;
+      }
+      .slide.active .shift-row:nth-child(3) {
+        animation-delay: 330ms;
+      }
+      .slide.active .shift-row:nth-child(4) {
+        animation-delay: 440ms;
+      }
+      .slide.active .shift-foot {
+        animation-delay: 560ms;
+      }
+      .slide.active .close-note {
+        animation-delay: 430ms;
+      }
+      /* stagger: the demo grid — a quick cascade across the screenshots */
+      .slide.active .shot:nth-child(1) {
+        animation-delay: 180ms;
+      }
+      .slide.active .shot:nth-child(2) {
+        animation-delay: 215ms;
+      }
+      .slide.active .shot:nth-child(3) {
+        animation-delay: 250ms;
+      }
+      .slide.active .shot:nth-child(4) {
+        animation-delay: 285ms;
+      }
+      .slide.active .shot:nth-child(5) {
+        animation-delay: 320ms;
+      }
+      .slide.active .shot:nth-child(6) {
+        animation-delay: 355ms;
+      }
+      .slide.active .shot:nth-child(7) {
+        animation-delay: 390ms;
+      }
+      .slide.active .shot:nth-child(8) {
+        animation-delay: 425ms;
+      }
+      .slide.active .shot:nth-child(9) {
+        animation-delay: 460ms;
+      }
+      .slide.active .shot:nth-child(10) {
+        animation-delay: 495ms;
+      }
+      .slide.active .shot:nth-child(11) {
+        animation-delay: 530ms;
+      }
+      .slide.active .shot:nth-child(12) {
+        animation-delay: 565ms;
+      }
+      .slide.active .shot:nth-child(13) {
+        animation-delay: 600ms;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .slide.active .accent-bar,
+        .slide.active .big-logo,
+        .slide.active .wordmark,
+        .slide.active .cover h1,
+        .slide.active .cover-hero,
+        .slide.active .footer-line,
+        .slide.active h2.slide-title,
+        .slide.active .lede,
+        .slide.active .roadmap-line,
+        .slide.active .card,
+        .slide.active .shot,
+        .slide.active .rm-stage,
+        .slide.active .shift-row,
+        .slide.active .shift-foot,
+        .slide.active ul.points > li,
+        .slide.active .close-note {
+          animation: none !important;
+        }
+      }
       @media (max-width: 768px) {
         .deck {
           height: 100dvh;
@@ -1118,6 +1483,24 @@
         .body {
           overflow: visible;
         }
+        .slide.active .accent-bar,
+        .slide.active .big-logo,
+        .slide.active .wordmark,
+        .slide.active .cover h1,
+        .slide.active .cover-hero,
+        .slide.active .footer-line,
+        .slide.active h2.slide-title,
+        .slide.active .lede,
+        .slide.active .roadmap-line,
+        .slide.active .card,
+        .slide.active .shot,
+        .slide.active .rm-stage,
+        .slide.active .shift-row,
+        .slide.active .shift-foot,
+        .slide.active ul.points > li,
+        .slide.active .close-note {
+          animation: none !important;
+        }
       }
       @page {
         size: 11in 8.5in landscape;
@@ -1358,9 +1741,11 @@
             file, and the live view your client sees.
           </h2>
           <p class="lede">
-            Each Stout client engagement runs as its own space in Clint, with its data firewalled to that engagement and visible only to that engagement's users. It doesn't replace the data tools Stout already runs. It's the layer where Stout's analysis
-            sits on top of them: where the CI work lives, where deliverables get filed, and where
-            the client sees it all in real time.
+            Each Stout client engagement runs as its own space in Clint, with its data firewalled to
+            that engagement and visible only to that engagement's users. It doesn't replace the data
+            tools Stout already runs. It's the layer where Stout's analysis sits on top of them:
+            where the CI work lives, where deliverables get filed, and where the client sees it all
+            in real time.
           </p>
           <div class="body">
             <div class="grid-2">
@@ -1379,9 +1764,9 @@
                 <h3>Every space opens to a live view</h3>
                 <p>
                   The landing page is the first thing clients see: the next catalyst front and
-                  center, a quick snapshot of what's moving, the latest analysis from Stout, and what
-                  changed this week. The headline numbers take you straight into the data behind
-                  them.
+                  center, a quick snapshot of what's moving, the latest analysis from Stout, and
+                  what changed this week. The headline numbers take you straight into the data
+                  behind them.
                 </p>
               </div>
               <div class="card">
@@ -1626,7 +2011,8 @@
                   <span class="pill">On the roadmap</span>
                   <h3>Draft, model, and ask inside Clint</h3>
                   <p>
-                    Draft briefs, run quick what-if scenarios, and ask questions across the whole space, all in the platform, without sending client data to outside tools.
+                    Draft briefs, run quick what-if scenarios, and ask questions across the whole
+                    space, all in the platform, without sending client data to outside tools.
                   </p>
                 </div>
                 <div class="rm-stage">
@@ -1701,8 +2087,8 @@
                   engagement.
                 </div>
                 <div class="shift-after">
-                  <strong>AI assembles the baseline; analysts start at the analysis.</strong> Their time
-                  goes to interpretation and recommendations, not setup.
+                  <strong>AI assembles the baseline; analysts start at the analysis.</strong> Their
+                  time goes to interpretation and recommendations, not setup.
                 </div>
               </div>
               <div class="shift-row">
@@ -1727,8 +2113,8 @@
             </div>
             <p class="shift-foot">
               <strong>And the client seeing it doesn't make Stout any less needed.</strong>
-              Assembling the picture was never the value; Stout's analysis is. A live, annotated view
-              puts that analysis in front of the client every week, not just at the readout.
+              Assembling the picture was never the value; Stout's analysis is. A live, annotated
+              view puts that analysis in front of the client every week, not just at the readout.
             </p>
             <p class="shift-foot">
               <strong>And no engineering investment.</strong> Clint runs the syncs, the
@@ -2039,7 +2425,8 @@
                 <div class="card-label">Your data</div>
                 <h3>Separated and access-controlled</h3>
                 <p>
-                  Each client's information is kept separate, and access is tightly controlled. One space can never see another's.
+                  Each client's information is kept separate, and access is tightly controlled. One
+                  space can never see another's.
                 </p>
               </div>
               <div class="card">
@@ -2114,8 +2501,9 @@
           <div class="body">
             <ul class="points">
               <li>
-                <strong>You pay for what you run.</strong> One price per space, with no firm license,
-                no seat counts, and no minimum. The total goes up only when you add a space.
+                <strong>You pay for what you run.</strong> One price per space, with no firm
+                license, no seat counts, and no minimum. The total goes up only when you add a
+                space.
               </li>
               <li>
                 <strong>Costs less as you grow.</strong> The more spaces you run, the less each one
