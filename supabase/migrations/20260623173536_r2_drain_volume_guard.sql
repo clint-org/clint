@@ -67,7 +67,9 @@ declare
   v_new      int;
   v_base_cap int;
   v_override int;
+  v_set_at   timestamptz;
   v_consumed timestamptz;
+  v_active   boolean;
   v_eff_cap  int;
 begin
   perform public._verify_r2_drain_worker_secret(p_secret);
@@ -77,14 +79,22 @@ begin
    where succeeded_at is null
      and attempted_at is null;
 
-  select max_per_run, override_max, override_consumed_at
-    into v_base_cap, v_override, v_consumed
+  select max_per_run, override_max, override_set_at, override_consumed_at
+    into v_base_cap, v_override, v_set_at, v_consumed
     from public.r2_drain_control
    where id = 1;
 
+  v_active := v_override is not null
+              and v_consumed is null
+              and v_set_at is not null
+              and v_set_at > now() - interval '48 hours';
+
   v_eff_cap := v_base_cap;
-  if v_override is not null and v_consumed is null then
+  if v_active then
     v_eff_cap := greatest(v_base_cap, v_override);
+    -- one-shot: consume on this first evaluation regardless of outcome, so a
+    -- not-needed or stale override can never silently permit a later run.
+    update public.r2_drain_control set override_consumed_at = now() where id = 1;
   end if;
 
   if v_new > v_eff_cap then
@@ -95,10 +105,6 @@ begin
     return;
   end if;
 
-  if v_override is not null and v_consumed is null and v_new > v_base_cap then
-    update public.r2_drain_control set override_consumed_at = now() where id = 1;
-  end if;
-
   return query select true, v_new, v_eff_cap, 'ok'::text;
 end;
 $$;
@@ -107,7 +113,7 @@ revoke execute on function public.r2_drain_gate(text) from public, anon;
 grant  execute on function public.r2_drain_gate(text) to authenticated;
 
 comment on function public.r2_drain_gate(text) is
-  'R2 drain RPC (WS1). Worker-secret gated. Deny-by-default volume guard: returns allowed=false (deleting nothing) when the count of brand-new pending deletes (attempted_at IS NULL) exceeds the effective cap. A one-shot override raises the cap for a single run and is consumed on use. Records the trip in r2_drain_control for the monitor workflow.';
+  'R2 drain RPC (WS1). Worker-secret gated. Deny-by-default volume guard: returns allowed=false (deleting nothing) when the count of brand-new pending deletes (attempted_at IS NULL) exceeds the effective cap. A one-shot override raises the cap and is consumed on the first gate evaluation regardless of outcome (allowed or denied, needed or not), so a not-needed or stale override can never silently permit a later run; an override is also ignored (treated as expired) once it is older than 48 hours. Records the trip in r2_drain_control for the monitor workflow.';
 
 notify pgrst, 'reload schema';
 
@@ -150,6 +156,28 @@ begin
   if (select attempt_count from public.r2_pending_deletes where id = v_id) <> 0 then
     raise exception 'smoke FAIL: defer must not advance attempt_count';
   end if;
+
+  -- case A (regression): a not-needed override is still consumed on first eval.
+  -- v_new (1) <= base cap (3) so the override is not required; it must still be
+  -- consumed so it cannot silently raise the cap on a later anomalous run.
+  delete from public.r2_pending_deletes;
+  update public.r2_drain_control set max_per_run = 3, override_max = 10, override_set_at = now(), override_consumed_at = null where id = 1;
+  insert into public.r2_pending_deletes (file_path)
+  values ('materials/smoke/' || gen_random_uuid() || '/x.pdf');
+  select allowed into v_allowed from public.r2_drain_gate(v_secret);
+  if not v_allowed then raise exception 'smoke FAIL: 1 new under cap 3 should be allowed'; end if;
+  if (select override_consumed_at from public.r2_drain_control where id = 1) is null then
+    raise exception 'smoke FAIL: not-needed override must still be consumed on first evaluation';
+  end if;
+
+  -- case B (regression): a stale override (set > 48h ago) is ignored and must
+  -- not raise the cap, so an anomalous run is denied by default.
+  delete from public.r2_pending_deletes;
+  update public.r2_drain_control set max_per_run = 3, override_max = 100, override_set_at = now() - interval '72 hours', override_consumed_at = null where id = 1;
+  insert into public.r2_pending_deletes (file_path)
+  select 'materials/smoke/' || gen_random_uuid() || '/x.pdf' from generate_series(1,5);
+  select allowed into v_allowed from public.r2_drain_gate(v_secret);
+  if v_allowed then raise exception 'smoke FAIL: stale override must not raise the cap'; end if;
 
   delete from public.r2_pending_deletes;
   update public.r2_drain_control set max_per_run = 200, override_max = null, override_set_at = null, override_consumed_at = null, last_paused_at = null, last_paused_count = null where id = 1;
