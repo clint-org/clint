@@ -560,7 +560,7 @@ export class AppShellComponent implements OnInit {
       case 'intelligence':
         return [
           {
-            label: 'Space',
+            label: 'Engagement',
             value: 'manage/engagement',
             active: route === 'manage/engagement',
             icon: NAV_ICONS['engagement'],
