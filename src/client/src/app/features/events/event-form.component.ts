@@ -347,6 +347,11 @@ export class EventFormComponent implements OnInit {
   readonly newThreadTitle = signal('');
   readonly linkedEventIds = signal<string[]>([]);
 
+  // Original thread membership of the event being edited, so an unchanged
+  // thread keeps its existing position instead of being re-ordered to the end.
+  private readonly originalThreadId = signal<string | null>(null);
+  private readonly originalThreadOrder = signal<number | null>(null);
+
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
 
@@ -444,10 +449,16 @@ export class EventFormComponent implements OnInit {
       }
     }
 
-    // Compute thread_order if joining a thread
+    // Compute thread_order. `thread_order` is a small int ordinal: keep the
+    // existing position when the thread membership is unchanged, otherwise take
+    // the next position at the end of the (possibly new) thread.
     let threadOrder: number | null = null;
     if (resolvedThreadId) {
-      threadOrder = Date.now();
+      if (resolvedThreadId === this.originalThreadId() && this.originalThreadOrder() !== null) {
+        threadOrder = this.originalThreadOrder();
+      } else {
+        threadOrder = await this.eventService.nextThreadOrder(resolvedThreadId);
+      }
     }
 
     const eventDate = this.formatDate(this.eventDateValue()!);
@@ -499,6 +510,8 @@ export class EventFormComponent implements OnInit {
     this.sources.set([]);
     this.threadId.set(null);
     this.newThreadTitle.set('');
+    this.originalThreadId.set(null);
+    this.originalThreadOrder.set(null);
     this.linkedEventIds.set([]);
     this.entityOptions.set([]);
     this.error.set(null);
@@ -533,6 +546,8 @@ export class EventFormComponent implements OnInit {
       this.description.set(detail.description ?? '');
       this.tags.set(detail.tags);
       this.threadId.set(detail.thread_id);
+      this.originalThreadId.set(detail.thread_id);
+      this.originalThreadOrder.set(detail.thread_order);
 
       // Determine entity level
       if (detail.entity_level === 'company' && detail.entity_id) {
