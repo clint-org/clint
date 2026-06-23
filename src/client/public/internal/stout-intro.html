@@ -1040,28 +1040,12 @@
         border-bottom-color: var(--brand-600);
       }
       /* === Build / reveal motion ===========================================
-         Each slide's elements rise + fade in sequence when it becomes active,
-         so a live presenter controls where the room looks. Driven purely by the
-         .slide.active class (toggled synchronously) plus CSS @keyframes — no JS
-         timing, no requestAnimationFrame. The RESTING state is fully visible, so
-         print, reduced motion, and any non-animating context show the complete
-         slide rather than a blank one. */
-      @keyframes reveal-rise {
-        from {
-          transform: translateY(12px);
-        }
-        to {
-          transform: translateY(0);
-        }
-      }
-      @keyframes reveal-hero {
-        from {
-          transform: translateY(26px) scale(0.985);
-        }
-        to {
-          transform: none;
-        }
-      }
+         When a slide becomes active, the accent bar wipes in and the slide's
+         content fades + rises as a SINGLE motion on the content wrapper, rather
+         than many staggered per-element nudges (which read as jittery). Driven
+         purely by the .slide.active class plus CSS @keyframes, no JS timing. The
+         RESTING state is fully visible (opacity 1, no transform), so print,
+         reduced motion, and any non-animating context show the complete slide. */
       @keyframes accent-wipe {
         from {
           transform: scaleX(0);
@@ -1070,156 +1054,32 @@
           transform: scaleX(1);
         }
       }
+      @keyframes slide-content-in {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
       .accent-bar {
         transform-origin: left center;
       }
       .slide.active .accent-bar {
         animation: accent-wipe 0.7s cubic-bezier(0.21, 0.7, 0.25, 1) both;
       }
-      .slide.active .big-logo,
-      .slide.active .wordmark,
-      .slide.active .cover h1,
-      .slide.active .footer-line,
-      .slide.active h2.slide-title,
-      .slide.active .lede,
-      .slide.active .roadmap-line,
-      .slide.active .card,
-      .slide.active .shot,
-      .slide.active .rm-stage,
-      .slide.active .shift-row,
-      .slide.active .shift-foot,
-      .slide.active ul.points > li,
-      .slide.active .close-note {
-        animation: reveal-rise 0.55s cubic-bezier(0.21, 0.7, 0.25, 1) both;
-      }
-      .slide.active .cover-hero {
-        animation: reveal-hero 0.6s cubic-bezier(0.21, 0.7, 0.25, 1) both;
-      }
-      /* stagger: header */
-      .slide.active .wordmark,
-      .slide.active .big-logo {
-        animation-delay: 0ms;
-      }
-      .slide.active h2.slide-title {
-        animation-delay: 70ms;
-      }
-      .slide.active .cover h1 {
-        animation-delay: 120ms;
-      }
-      .slide.active .lede {
-        animation-delay: 150ms;
-      }
-      .slide.active .roadmap-line {
-        animation-delay: 160ms;
-      }
-      .slide.active .cover-hero {
-        animation-delay: 260ms;
-      }
-      .slide.active .footer-line {
-        animation-delay: 400ms;
-      }
-      /* stagger: body groups — cards, roadmap stages, bullet points */
-      .slide.active .grid-2 .card:nth-child(1),
-      .slide.active .grid-3 .card:nth-child(1),
-      .slide.active .rm-stage:nth-child(1),
-      .slide.active ul.points > li:nth-child(1) {
-        animation-delay: 220ms;
-      }
-      .slide.active .grid-2 .card:nth-child(2),
-      .slide.active .grid-3 .card:nth-child(2),
-      .slide.active .rm-stage:nth-child(2),
-      .slide.active ul.points > li:nth-child(2) {
-        animation-delay: 290ms;
-      }
-      .slide.active .grid-2 .card:nth-child(3),
-      .slide.active .grid-3 .card:nth-child(3),
-      .slide.active .rm-stage:nth-child(3),
-      .slide.active ul.points > li:nth-child(3) {
-        animation-delay: 360ms;
-      }
-      .slide.active .grid-2 .card:nth-child(4),
-      .slide.active .grid-3 .card:nth-child(4) {
-        animation-delay: 430ms;
-      }
-      .slide.active .grid-2 .card:nth-child(5) {
-        animation-delay: 500ms;
-      }
-      .slide.active .grid-2 .card:nth-child(6) {
-        animation-delay: 570ms;
-      }
-      /* stagger: the before/after shift rows (a .shift-head is the first child) */
-      .slide.active .shift-row:nth-child(2) {
-        animation-delay: 220ms;
-      }
-      .slide.active .shift-row:nth-child(3) {
-        animation-delay: 330ms;
-      }
-      .slide.active .shift-row:nth-child(4) {
-        animation-delay: 440ms;
-      }
-      .slide.active .shift-foot {
-        animation-delay: 560ms;
-      }
-      .slide.active .close-note {
-        animation-delay: 430ms;
-      }
-      /* stagger: the demo grid — a quick cascade across the screenshots */
-      .slide.active .shot:nth-child(1) {
-        animation-delay: 180ms;
-      }
-      .slide.active .shot:nth-child(2) {
-        animation-delay: 215ms;
-      }
-      .slide.active .shot:nth-child(3) {
-        animation-delay: 250ms;
-      }
-      .slide.active .shot:nth-child(4) {
-        animation-delay: 285ms;
-      }
-      .slide.active .shot:nth-child(5) {
-        animation-delay: 320ms;
-      }
-      .slide.active .shot:nth-child(6) {
-        animation-delay: 355ms;
-      }
-      .slide.active .shot:nth-child(7) {
-        animation-delay: 390ms;
-      }
-      .slide.active .shot:nth-child(8) {
-        animation-delay: 425ms;
-      }
-      .slide.active .shot:nth-child(9) {
-        animation-delay: 460ms;
-      }
-      .slide.active .shot:nth-child(10) {
-        animation-delay: 495ms;
-      }
-      .slide.active .shot:nth-child(11) {
-        animation-delay: 530ms;
-      }
-      .slide.active .shot:nth-child(12) {
-        animation-delay: 565ms;
-      }
-      .slide.active .shot:nth-child(13) {
-        animation-delay: 600ms;
+      /* the whole slide content arrives as one piece; the accent bar leads it */
+      .slide.active .slide-inner,
+      .slide.active .cover {
+        animation: slide-content-in 0.5s cubic-bezier(0.21, 0.7, 0.25, 1) both;
+        animation-delay: 0.12s;
       }
       @media (prefers-reduced-motion: reduce) {
         .slide.active .accent-bar,
-        .slide.active .big-logo,
-        .slide.active .wordmark,
-        .slide.active .cover h1,
-        .slide.active .cover-hero,
-        .slide.active .footer-line,
-        .slide.active h2.slide-title,
-        .slide.active .lede,
-        .slide.active .roadmap-line,
-        .slide.active .card,
-        .slide.active .shot,
-        .slide.active .rm-stage,
-        .slide.active .shift-row,
-        .slide.active .shift-foot,
-        .slide.active ul.points > li,
-        .slide.active .close-note {
+        .slide.active .slide-inner,
+        .slide.active .cover {
           animation: none !important;
         }
       }
@@ -1484,21 +1344,8 @@
           overflow: visible;
         }
         .slide.active .accent-bar,
-        .slide.active .big-logo,
-        .slide.active .wordmark,
-        .slide.active .cover h1,
-        .slide.active .cover-hero,
-        .slide.active .footer-line,
-        .slide.active h2.slide-title,
-        .slide.active .lede,
-        .slide.active .roadmap-line,
-        .slide.active .card,
-        .slide.active .shot,
-        .slide.active .rm-stage,
-        .slide.active .shift-row,
-        .slide.active .shift-foot,
-        .slide.active ul.points > li,
-        .slide.active .close-note {
+        .slide.active .slide-inner,
+        .slide.active .cover {
           animation: none !important;
         }
       }
