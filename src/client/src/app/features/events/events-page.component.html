@@ -277,14 +277,16 @@
                 @if (ec.parents.length) {
                   <span class="text-slate-400">{{ ec.parents.join(' / ') }}</span>
                 }
-                @if (item.has_annotation) {
+                <!-- Analyst note indicator hidden until we leverage notes elsewhere (table + RPCs retained) -->
+                <!-- @if (item.has_annotation) {
                   <i
                     class="fa-solid fa-message text-[8px] text-brand-500"
                     pTooltip="Analyst note attached"
                     tooltipPosition="top"
                     aria-label="Analyst note attached"
                   ></i>
-                }
+                } -->
+
               </span>
             </td>
             <td class="col-status whitespace-nowrap text-right">
