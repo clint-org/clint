@@ -13,6 +13,7 @@ import { ButtonModule } from 'primeng/button';
 import { SelectButton } from 'primeng/selectbutton';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import { MessageModule } from 'primeng/message';
 import { Tooltip } from 'primeng/tooltip';
@@ -70,6 +71,7 @@ interface ImportRow {
     SelectButton,
     Dialog,
     InputText,
+    InputNumberModule,
     ToggleSwitch,
     MessageModule,
     Tooltip,
@@ -128,6 +130,7 @@ interface ImportRow {
             <tr>
               <th>Tenant</th>
               <th>AI enabled</th>
+              <th>Limits</th>
               <th pSortableColumn="imports">Imports <p-sortIcon field="imports" /></th>
               <th pSortableColumn="cost_usd">Cost ($) <p-sortIcon field="cost_usd" /></th>
               <th pSortableColumn="success_rate">
@@ -154,6 +157,20 @@ interface ImportRow {
                   (click)="$event.stopPropagation()"
                 />
               </td>
+              <td>
+                <button
+                  pButton
+                  type="button"
+                  [text]="true"
+                  size="small"
+                  icon="fa-solid fa-sliders"
+                  label="Edit limits"
+                  aria-label="Edit AI limits"
+                  (click)="openEditLimits(row, $event)"
+                  pTooltip="Set cost caps and rate limits"
+                  tooltipPosition="top"
+                ></button>
+              </td>
               <td class="tabular-nums">{{ row.imports }}</td>
               <td class="tabular-nums">{{ row.cost_usd | number: '1.2-2' }}</td>
               <td class="tabular-nums">{{ row.success_rate | percent: '1.0-0' }}</td>
@@ -163,7 +180,7 @@ interface ImportRow {
           </ng-template>
           <ng-template #emptymessage>
             <tr>
-              <td colspan="7" class="py-8 text-center text-sm text-slate-500">
+              <td colspan="8" class="py-8 text-center text-sm text-slate-500">
                 No AI usage data in this window.
               </td>
             </tr>
@@ -317,6 +334,116 @@ interface ImportRow {
           ></button>
         </ng-template>
       </p-dialog>
+
+      <!-- Edit cost caps + rate limits (platform-admin-only spend controls) -->
+      <p-dialog
+        header="AI spend limits"
+        [visible]="editVisible()"
+        (visibleChange)="editVisible.set($event)"
+        [modal]="true"
+        [closable]="true"
+        styleClass="w-[30rem]"
+      >
+        <div class="flex flex-col gap-4">
+          <p class="text-sm text-slate-700">
+            Limits for <strong>{{ editTenantName() }}</strong>. These cap Clint's AI spend for this
+            tenant.
+          </p>
+
+          @if (editError()) {
+            <p-message severity="error" [closable]="false">{{ editError() }}</p-message>
+          }
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-slate-600" for="edit-daily-cap">
+                Daily cost cap (cents)
+              </label>
+              <p-inputnumber
+                inputId="edit-daily-cap"
+                [ngModel]="editDailyCapCents()"
+                (ngModelChange)="editDailyCapCents.set($event)"
+                [min]="0"
+                [max]="1000000"
+                inputStyleClass="w-full text-right"
+                styleClass="w-full"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-slate-600" for="edit-percall-cap">
+                Per-call cost cap (cents)
+              </label>
+              <p-inputnumber
+                inputId="edit-percall-cap"
+                [ngModel]="editPerCallCapCents()"
+                (ngModelChange)="editPerCallCapCents.set($event)"
+                [min]="0"
+                [max]="100000"
+                inputStyleClass="w-full text-right"
+                styleClass="w-full"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-slate-600" for="edit-rate-min">
+                Per-user rate (per minute)
+              </label>
+              <p-inputnumber
+                inputId="edit-rate-min"
+                [ngModel]="editRatePerMin()"
+                (ngModelChange)="editRatePerMin.set($event)"
+                [min]="1"
+                [max]="120"
+                inputStyleClass="w-full text-right"
+                styleClass="w-full"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-semibold text-slate-600" for="edit-rate-hour">
+                Per-user rate (per hour)
+              </label>
+              <p-inputnumber
+                inputId="edit-rate-hour"
+                [ngModel]="editRatePerHour()"
+                (ngModelChange)="editRatePerHour.set($event)"
+                [min]="1"
+                [max]="2000"
+                inputStyleClass="w-full text-right"
+                styleClass="w-full"
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-600" for="edit-reason">
+              Reason (required)
+            </label>
+            <input
+              pInputText
+              id="edit-reason"
+              [ngModel]="editReason()"
+              (ngModelChange)="editReason.set($event)"
+              placeholder="Reason for change"
+            />
+          </div>
+        </div>
+        <ng-template #footer>
+          <button
+            pButton
+            label="Cancel"
+            [text]="true"
+            aria-label="Cancel"
+            (click)="editVisible.set(false)"
+          ></button>
+          <button
+            pButton
+            label="Save limits"
+            aria-label="Save limits"
+            [loading]="savingLimits()"
+            [disabled]="!editReason().trim() || savingLimits()"
+            (click)="saveLimits()"
+          ></button>
+        </ng-template>
+      </p-dialog>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -349,6 +476,18 @@ export class SuperAdminAiUsageComponent implements OnInit {
   readonly confirmAction = signal<'enable' | 'disable'>('disable');
   readonly confirmTenantName = signal('');
   private pendingToggleRow: TenantRow | null = null;
+
+  // Edit cost caps + rate limits (platform-admin-only spend controls).
+  readonly editVisible = signal(false);
+  readonly editTenantName = signal('');
+  readonly editDailyCapCents = signal(500);
+  readonly editPerCallCapCents = signal(5);
+  readonly editRatePerMin = signal(6);
+  readonly editRatePerHour = signal(60);
+  readonly editReason = signal('');
+  readonly savingLimits = signal(false);
+  readonly editError = signal<string | null>(null);
+  private editTenantId: string | null = null;
 
   readonly heading = computed(() => {
     switch (this.scope()) {
@@ -435,6 +574,51 @@ export class SuperAdminAiUsageComponent implements OnInit {
     }
     row.ai_enabled = enabled;
     this.tenantRows.update((rows) => [...rows]);
+  }
+
+  async openEditLimits(row: TenantRow, event: Event): Promise<void> {
+    event.stopPropagation();
+    this.editTenantId = row.tenant_id;
+    this.editTenantName.set(row.tenant_name);
+    this.editReason.set('');
+    this.editError.set(null);
+    // Platform admins can read ai_config directly (RLS allows is_platform_admin).
+    const { data } = await this.supabase.client
+      .from('ai_config')
+      .select(
+        'daily_cost_cap_cents, per_call_cost_cap_cents, per_user_rate_per_min, per_user_rate_per_hour',
+      )
+      .eq('tenant_id', row.tenant_id)
+      .maybeSingle();
+    this.editDailyCapCents.set((data?.['daily_cost_cap_cents'] as number) ?? 500);
+    this.editPerCallCapCents.set((data?.['per_call_cost_cap_cents'] as number) ?? 5);
+    this.editRatePerMin.set((data?.['per_user_rate_per_min'] as number) ?? 6);
+    this.editRatePerHour.set((data?.['per_user_rate_per_hour'] as number) ?? 60);
+    this.editVisible.set(true);
+  }
+
+  async saveLimits(): Promise<void> {
+    if (!this.editTenantId) return;
+    const reason = this.editReason().trim();
+    if (!reason) return;
+    this.savingLimits.set(true);
+    this.editError.set(null);
+
+    const { error } = await this.supabase.client.rpc('platform_admin_update_ai_config', {
+      p_tenant_id: this.editTenantId,
+      p_reason: reason,
+      p_daily_cost_cap_cents: this.editDailyCapCents(),
+      p_per_call_cost_cap_cents: this.editPerCallCapCents(),
+      p_per_user_rate_per_min: this.editRatePerMin(),
+      p_per_user_rate_per_hour: this.editRatePerHour(),
+    });
+
+    this.savingLimits.set(false);
+    if (error) {
+      this.editError.set(error.message);
+      return;
+    }
+    this.editVisible.set(false);
   }
 
   outcomeClass(outcome: string): string {

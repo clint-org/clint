@@ -343,7 +343,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
           </h3>
           <p class="mt-1 text-[11px] text-slate-500">
             When enabled, space editors can import structured data from press releases and articles
-            using AI extraction. Usage is metered per tenant.
+            using AI extraction. Spend limits are set by your platform administrator.
           </p>
 
           <div class="mt-4 space-y-4">
@@ -359,80 +359,46 @@ import { extractErrorMessage } from '../../core/util/error-message';
             </div>
 
             @if (aiEnabled()) {
-              <div>
-                <label
-                  for="ai-daily-cap"
-                  class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-                >
-                  Daily cost cap (cents)
-                </label>
-                <p-inputnumber
-                  inputId="ai-daily-cap"
-                  [ngModel]="aiDailyCostCapCents()"
-                  (ngModelChange)="aiDailyCostCapCents.set($event)"
-                  [min]="0"
-                  [max]="100000"
-                  [showButtons]="true"
-                  buttonLayout="horizontal"
-                  inputStyleClass="w-32 text-right"
-                  styleClass="w-44"
-                />
-              </div>
+              <div class="space-y-4 rounded-md border border-slate-200 bg-slate-50/60 p-3">
+                <div>
+                  <div class="mb-1 flex items-baseline justify-between">
+                    <span
+                      class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                    >
+                      Daily AI budget used
+                    </span>
+                    <span class="text-xs font-medium tabular-nums text-slate-700">
+                      {{ aiDailyUsagePct() ?? 0 }}%
+                    </span>
+                  </div>
+                  <div
+                    class="h-1.5 w-full overflow-hidden rounded-full bg-slate-200"
+                    role="progressbar"
+                    aria-label="Daily AI budget used"
+                    [attr.aria-valuenow]="aiDailyUsagePct() ?? 0"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  >
+                    <div
+                      class="h-full rounded-full bg-brand-500"
+                      [style.width.%]="aiDailyUsagePct() ?? 0"
+                    ></div>
+                  </div>
+                  <p class="mt-1 text-[11px] text-slate-500">
+                    Rolling 24-hour window. Contact your platform administrator to adjust limits.
+                  </p>
+                </div>
 
-              <div>
-                <label
-                  for="ai-rate-min"
-                  class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-                >
-                  Per-user rate limit (per minute)
-                </label>
-                <p-inputnumber
-                  inputId="ai-rate-min"
-                  [ngModel]="aiRatePerMin()"
-                  (ngModelChange)="aiRatePerMin.set($event)"
-                  [min]="1"
-                  [max]="120"
-                  [showButtons]="true"
-                  buttonLayout="horizontal"
-                  inputStyleClass="w-32 text-right"
-                  styleClass="w-44"
-                />
-              </div>
-
-              <div>
-                <label
-                  for="ai-rate-hour"
-                  class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-                >
-                  Per-user rate limit (per hour)
-                </label>
-                <p-inputnumber
-                  inputId="ai-rate-hour"
-                  [ngModel]="aiRatePerHour()"
-                  (ngModelChange)="aiRatePerHour.set($event)"
-                  [min]="1"
-                  [max]="1000"
-                  [showButtons]="true"
-                  buttonLayout="horizontal"
-                  inputStyleClass="w-32 text-right"
-                  styleClass="w-44"
-                />
-              </div>
-
-              @if (aiSettingsError()) {
-                <p-message severity="error" [closable]="false">
-                  {{ aiSettingsError() }}
-                </p-message>
-              }
-
-              <div class="flex items-center gap-3">
-                <p-button
-                  label="Save limits"
-                  size="small"
-                  [loading]="savingAiSettings()"
-                  [disabled]="!aiSettingsChanged()"
-                  (onClick)="saveAiSettings()"
-                />
+                <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                  <dt class="text-slate-500">Per-user limit (per minute)</dt>
+                  <dd class="text-right tabular-nums text-slate-700">
+                    {{ aiRatePerMinView() ?? 'n/a' }}
+                  </dd>
+                  <dt class="text-slate-500">Per-user limit (per hour)</dt>
+                  <dd class="text-right tabular-nums text-slate-700">
+                    {{ aiRatePerHourView() ?? 'n/a' }}
+                  </dd>
+                </dl>
               </div>
             }
           </div>
@@ -587,28 +553,15 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
     },
   ];
 
-  // AI config drafts (owner-only UI)
+  // AI config (owner-only UI). Cost caps and rate limits are platform-admin
+  // controlled (they drive Clint's own AI spend), so the owner gets an on/off
+  // switch plus a read-only view. The dollar cost cap never reaches the client --
+  // get_tenant_ai_status returns a usage percentage instead.
   readonly aiEnabled = signal(false);
-  readonly aiDailyCostCapCents = signal(500);
-  readonly aiRatePerMin = signal(6);
-  readonly aiRatePerHour = signal(60);
-  readonly savingAiSettings = signal(false);
-  readonly aiSettingsError = signal<string | null>(null);
   readonly aiToggleError = signal<string | null>(null);
-
-  private aiConfigSnapshot = {
-    dailyCostCapCents: 500,
-    ratePerMin: 6,
-    ratePerHour: 60,
-  };
-
-  readonly aiSettingsChanged = computed(() => {
-    return (
-      this.aiDailyCostCapCents() !== this.aiConfigSnapshot.dailyCostCapCents ||
-      this.aiRatePerMin() !== this.aiConfigSnapshot.ratePerMin ||
-      this.aiRatePerHour() !== this.aiConfigSnapshot.ratePerHour
-    );
-  });
+  readonly aiDailyUsagePct = signal<number | null>(null);
+  readonly aiRatePerMinView = signal<number | null>(null);
+  readonly aiRatePerHourView = signal<number | null>(null);
 
   readonly materialSettingsChanged = computed(() => {
     const t = this.tenant();
@@ -877,63 +830,36 @@ export class TenantSettingsComponent implements OnInit, OnDestroy {
         summary: `Source import ${enabled ? 'enabled' : 'disabled'}.`,
         life: 3000,
       });
+      // Refresh the read-only usage view (percentage + rate limits) now that the
+      // flag changed.
+      await this.loadAiConfig();
     } catch (e) {
       this.aiEnabled.set(!enabled);
       this.aiToggleError.set(extractErrorMessage(e, 'Failed to update AI config'));
     }
   }
 
-  async saveAiSettings(): Promise<void> {
-    if (!this.aiSettingsChanged()) return;
-    this.savingAiSettings.set(true);
-    this.aiSettingsError.set(null);
-    try {
-      const { data, error } = await this.supabase.client.rpc('tenant_owner_update_ai_config', {
-        p_tenant_id: this.tenantId,
-        p_daily_cost_cap_cents: this.aiDailyCostCapCents(),
-        p_per_user_rate_per_min: this.aiRatePerMin(),
-        p_per_user_rate_per_hour: this.aiRatePerHour(),
-      });
-      if (error) {
-        this.aiSettingsError.set(error.message);
-        return;
-      }
-      this.seedAiConfigDrafts(data as Record<string, unknown>);
-      this.messageService.add({
-        severity: 'success',
-        summary: 'AI rate limits saved.',
-        life: 3000,
-      });
-    } catch (e) {
-      this.aiSettingsError.set(extractErrorMessage(e, 'Failed to save AI config'));
-    } finally {
-      this.savingAiSettings.set(false);
+  private applyAiStatus(row: Record<string, unknown> | null): void {
+    if (!row) {
+      this.aiEnabled.set(false);
+      this.aiDailyUsagePct.set(null);
+      this.aiRatePerMinView.set(null);
+      this.aiRatePerHourView.set(null);
+      return;
     }
-  }
-
-  private seedAiConfigDrafts(row: Record<string, unknown> | null): void {
-    if (!row) return;
     this.aiEnabled.set(row['ai_enabled'] === true);
-    const daily = (row['daily_cost_cap_cents'] as number) ?? 500;
-    const rateMin = (row['per_user_rate_per_min'] as number) ?? 6;
-    const rateHour = (row['per_user_rate_per_hour'] as number) ?? 60;
-    this.aiDailyCostCapCents.set(daily);
-    this.aiRatePerMin.set(rateMin);
-    this.aiRatePerHour.set(rateHour);
-    this.aiConfigSnapshot = {
-      dailyCostCapCents: daily,
-      ratePerMin: rateMin,
-      ratePerHour: rateHour,
-    };
+    this.aiDailyUsagePct.set((row['daily_usage_pct'] as number | null) ?? null);
+    this.aiRatePerMinView.set((row['per_user_rate_per_min'] as number | null) ?? null);
+    this.aiRatePerHourView.set((row['per_user_rate_per_hour'] as number | null) ?? null);
   }
 
   private async loadAiConfig(): Promise<void> {
-    const { data } = await this.supabase.client
-      .from('ai_config')
-      .select('ai_enabled, daily_cost_cap_cents, per_user_rate_per_min, per_user_rate_per_hour')
-      .eq('tenant_id', this.tenantId)
-      .maybeSingle();
-    this.seedAiConfigDrafts(data);
+    // Owner-safe read: get_tenant_ai_status returns a usage percentage, never the
+    // dollar cost cap (ai_config table RLS is platform-admin-only).
+    const { data } = await this.supabase.client.rpc('get_tenant_ai_status', {
+      p_tenant_id: this.tenantId,
+    });
+    this.applyAiStatus(data as Record<string, unknown> | null);
   }
 
   async removeMember(member: TenantMember): Promise<void> {

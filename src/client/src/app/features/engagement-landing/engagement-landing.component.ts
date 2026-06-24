@@ -497,12 +497,12 @@ export class EngagementLandingComponent implements OnInit {
     if (spaceRes.status === 'fulfilled') this.space.set(spaceRes.value);
     if (tenantRes.status === 'fulfilled') {
       this.tenant.set(tenantRes.value);
-      const { data } = await this.supabase.client
-        .from('ai_config')
-        .select('ai_enabled')
-        .eq('tenant_id', tid)
-        .maybeSingle();
-      this.aiEnabled.set(data?.ai_enabled === true);
+      // Via the SECURITY DEFINER RPC: ai_config RLS is platform-admin-only, so a
+      // direct select returns nothing for non-owner members on the landing page.
+      const { data } = await this.supabase.client.rpc('get_tenant_ai_status', {
+        p_tenant_id: tid,
+      });
+      this.aiEnabled.set((data as { ai_enabled?: boolean } | null)?.ai_enabled === true);
     }
     if (statsRes.status === 'fulfilled') {
       this.stats.set(statsRes.value);

@@ -15,7 +15,7 @@
     },
     "ai_config": {
       "authenticated": ["select"],
-      "justification": "client: import.guard, engagement-landing, and tenant-settings read AI availability flags. Writes go through tenant-settings RPCs and service-role fixtures (source-import-rpc.spec uses the admin client)."
+      "justification": "client: super-admin AI usage edit-limits dialog reads the full row (RLS is platform-admin-only). Owner/member reads (import.guard, engagement-landing, tenant-settings) go through get_tenant_ai_status, which never exposes cost caps. Writes go through tenant_owner_update_ai_config (on/off) and platform_admin_update_ai_config (caps); fixtures use the admin client."
     },
     "asset_indications": {
       "authenticated": ["select", "insert"],
