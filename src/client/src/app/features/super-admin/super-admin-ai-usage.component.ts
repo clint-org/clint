@@ -275,8 +275,18 @@ interface ModelRow {
           </ng-template>
           <ng-template #body let-row>
             <tr>
-              <td class="max-w-[20rem] truncate font-medium text-slate-900">
-                {{ row.source_title }}
+              <td class="max-w-[20rem] font-medium text-slate-900">
+                <div class="truncate">{{ row.source_title }}</div>
+                @if (row.error_message) {
+                  <div class="mt-0.5 text-[11px] font-normal text-red-700">
+                    {{ row.error_message }}
+                  </div>
+                }
+                @if (row.warnings?.length) {
+                  <div class="mt-0.5 text-[11px] font-normal text-amber-700">
+                    {{ row.warnings.join(', ') }}
+                  </div>
+                }
               </td>
               <td class="text-xs text-slate-600">{{ row.user_email }}</td>
               <td>

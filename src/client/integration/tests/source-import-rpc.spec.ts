@@ -116,11 +116,11 @@ describe('ai_call_preflight', () => {
     expect(data.reason).toBe('ai_disabled');
   });
 
-  it('returns allowed when ai_enabled=true', async () => {
+  it('returns allowed (with a resolved model) when ai_enabled=true', async () => {
     await admin.from('ai_config').upsert({
       tenant_id: p.org.tenantId,
       ai_enabled: true,
-      daily_cost_cap_cents: 500,
+      daily_token_cap: 1000000,
       per_user_rate_per_min: 60,
       per_user_rate_per_hour: 600,
     });
@@ -132,19 +132,20 @@ describe('ai_call_preflight', () => {
     });
     expect(error).toBeNull();
     expect(data.allowed).toBe(true);
+    expect(typeof data.model).toBe('string');
+    expect(data.model.length).toBeGreaterThan(0);
   });
 
-  it('enforces daily cost cap', async () => {
+  it('enforces the daily token cap', async () => {
     await admin.from('ai_config').upsert({
       tenant_id: p.org.tenantId,
       ai_enabled: true,
-      daily_cost_cap_cents: 10, // very low cap
+      daily_token_cap: 100, // very low cap
       per_user_rate_per_min: 60,
       per_user_rate_per_hour: 600,
     });
 
-    // Seed ai_calls that blow past the cap.
-    const ids: string[] = [];
+    // Seed ai_calls whose token counts blow past the cap (3 x 50 = 150 > 100).
     for (let i = 0; i < 3; i++) {
       const { data: callId } = await anon.rpc('ai_call_open', {
         p_secret: WORKER_SECRET,
@@ -154,14 +155,13 @@ describe('ai_call_preflight', () => {
         p_model: 'claude-sonnet-4-6',
         p_feature: 'source_extract',
       });
-      ids.push(callId as string);
       createdAiCallIds.push(callId as string);
-
       await anon.rpc('ai_call_close', {
         p_secret: WORKER_SECRET,
         p_ai_call_id: callId,
         p_outcome: 'success',
-        p_cost_cents: 5.0,
+        p_prompt_tokens: 50,
+        p_completion_tokens: 0,
       });
     }
 
@@ -172,7 +172,105 @@ describe('ai_call_preflight', () => {
     });
     expect(error).toBeNull();
     expect(data.allowed).toBe(false);
-    expect(data.reason).toBe('daily_cost_cap');
+    expect(data.reason).toBe('daily_token_cap');
+  });
+
+  it('enforces the per-user per-minute rate limit', async () => {
+    await admin.from('ai_config').upsert({
+      tenant_id: p.org.tenantId,
+      ai_enabled: true,
+      daily_token_cap: 100000000,
+      per_user_rate_per_min: 2,
+      per_user_rate_per_hour: 600,
+    });
+    // Two opens in the last minute reach the per-minute limit (count-based).
+    for (let i = 0; i < 2; i++) {
+      const { data: callId } = await anon.rpc('ai_call_open', {
+        p_secret: WORKER_SECRET,
+        p_tenant_id: p.org.tenantId,
+        p_space_id: p.org.spaceId,
+        p_user_id: p.ids.contributor,
+        p_model: 'claude-sonnet-4-6',
+        p_feature: 'source_extract',
+      });
+      createdAiCallIds.push(callId as string);
+    }
+    const { data } = await anon.rpc('ai_call_preflight', {
+      p_secret: WORKER_SECRET,
+      p_tenant_id: p.org.tenantId,
+      p_user_id: p.ids.contributor,
+    });
+    expect(data.allowed).toBe(false);
+    expect(data.reason).toBe('rate_limited_minute');
+  });
+
+  it('enforces the per-user per-hour rate limit', async () => {
+    await admin.from('ai_config').upsert({
+      tenant_id: p.org.tenantId,
+      ai_enabled: true,
+      daily_token_cap: 100000000,
+      per_user_rate_per_min: 100, // high so the minute limit does not trip first
+      per_user_rate_per_hour: 2,
+    });
+    for (let i = 0; i < 2; i++) {
+      const { data: callId } = await anon.rpc('ai_call_open', {
+        p_secret: WORKER_SECRET,
+        p_tenant_id: p.org.tenantId,
+        p_space_id: p.org.spaceId,
+        p_user_id: p.ids.reader,
+        p_model: 'claude-sonnet-4-6',
+        p_feature: 'source_extract',
+      });
+      createdAiCallIds.push(callId as string);
+    }
+    const { data } = await anon.rpc('ai_call_preflight', {
+      p_secret: WORKER_SECRET,
+      p_tenant_id: p.org.tenantId,
+      p_user_id: p.ids.reader,
+    });
+    expect(data.allowed).toBe(false);
+    expect(data.reason).toBe('rate_limited_hour');
+  });
+});
+
+describe('ai_call cost is computed server-side from the model price', () => {
+  it('stamps the configured model and computes cost from tokens, ignoring worker cost', async () => {
+    await admin.from('ai_config').upsert({
+      tenant_id: p.org.tenantId,
+      ai_enabled: true,
+      ai_model: 'claude-opus-4-8',
+      daily_token_cap: 100000000,
+      per_user_rate_per_min: 60,
+      per_user_rate_per_hour: 600,
+    });
+
+    const { data: callId } = await anon.rpc('ai_call_open', {
+      p_secret: WORKER_SECRET,
+      p_tenant_id: p.org.tenantId,
+      p_space_id: p.org.spaceId,
+      p_user_id: p.ids.space_owner,
+      p_model: 'claude-sonnet-4-6', // worker default; server resolves to the configured Opus
+      p_feature: 'source_extract',
+    });
+    createdAiCallIds.push(callId as string);
+
+    await anon.rpc('ai_call_close', {
+      p_secret: WORKER_SECRET,
+      p_ai_call_id: callId,
+      p_outcome: 'success',
+      p_prompt_tokens: 1000,
+      p_completion_tokens: 500,
+      p_cost_cents: 999, // must be ignored
+    });
+
+    const { data: row } = await admin
+      .from('ai_calls')
+      .select('model, cost_estimate_cents')
+      .eq('id', callId as string)
+      .single();
+    expect(row!.model).toBe('claude-opus-4-8');
+    // Opus 1000/500: 1000/1e6*500 + 500/1e6*2500 = 1.75 cents
+    expect(Number(row!.cost_estimate_cents)).toBeCloseTo(1.75, 4);
   });
 });
 

@@ -67,9 +67,11 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `add_agency_member` | agency_invites, agency_members | agencies |
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
 | `ai_call_close` | ai_calls | - |
-| `ai_call_open` | ai_calls | - |
+| `ai_call_open` | ai_calls | ai_config |
 | `ai_call_preflight` | - | ai_calls, ai_config |
+| `ai_estimate_cost_cents` | - | ai_model_pricing |
 | `ai_import_status` | - | ai_calls, ai_config |
+| `ai_resolve_model` | - | ai_model_pricing |
 | `archive_space` | spaces | tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
@@ -164,7 +166,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `palette_unpin` | palette_pinned | - |
 | `permanently_delete_space` | markers, spaces | assets, companies, events, marker_types, materials, primary_intelligence, tenants, trials |
 | `platform_admin_set_ai_enabled` | ai_config | - |
-| `platform_admin_update_ai_config` | ai_config | - |
+| `platform_admin_update_ai_config` | ai_config | ai_model_pricing |
+| `platform_admin_upsert_ai_model_pricing` | ai_model_pricing | - |
 | `prepare_material_upload` | - | materials |
 | `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_assets, trial_notes, trials |
 | `preview_company_delete` | - | assets, companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
@@ -682,7 +685,9 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `ai_call_close`
 - `ai_call_open`
 - `ai_call_preflight`
+- `ai_estimate_cost_cents`
 - `ai_import_status`
+- `ai_resolve_model`
 - `archive_space`
 - `assign_primary_intelligence_version`
 - `auto_join_demo_tenant_local`
@@ -749,6 +754,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `permanently_delete_space`
 - `platform_admin_set_ai_enabled`
 - `platform_admin_update_ai_config`
+- `platform_admin_upsert_ai_model_pricing`
 - `preview_asset_delete`
 - `preview_company_delete`
 - `preview_trial_delete`
