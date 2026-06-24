@@ -50,7 +50,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_seed_demo_asset_indications` | asset_indications | - |
 | `_seed_demo_assets` | assets | - |
 | `_seed_demo_companies` | companies | - |
-| `_seed_demo_events` | events | assets |
+| `_seed_demo_events` | event_threads, events | assets |
 | `_seed_demo_indications` | condition_indication_map, conditions, indications | - |
 | `_seed_demo_markers` | marker_assignments, markers | events, materials |
 | `_seed_demo_materials` | material_links, materials | - |
@@ -129,6 +129,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
 | `get_space_tags` | - | events |
 | `get_tenant_access_settings` | - | tenants |
+| `get_tenant_ai_status` | - | ai_calls, ai_config |
 | `get_trial_activity` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
 | `get_trial_detail_with_intelligence` | - | trials |
 | `get_trial_indications` | - | condition_indication_map, indications, trial_conditions, trials |
@@ -163,6 +164,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `palette_unpin` | palette_pinned | - |
 | `permanently_delete_space` | markers, spaces | assets, companies, events, marker_types, materials, primary_intelligence, tenants, trials |
 | `platform_admin_set_ai_enabled` | ai_config | - |
+| `platform_admin_update_ai_config` | ai_config | - |
 | `prepare_material_upload` | - | materials |
 | `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_assets, trial_notes, trials |
 | `preview_company_delete` | - | assets, companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
@@ -722,6 +724,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_space_inventory_snapshot`
 - `get_space_landing_stats`
 - `get_space_tags`
+- `get_tenant_ai_status`
 - `get_trial_detail_with_intelligence`
 - `get_trial_indications`
 - `guard_primary_intelligence_state`
@@ -745,6 +748,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `palette_unpin`
 - `permanently_delete_space`
 - `platform_admin_set_ai_enabled`
+- `platform_admin_update_ai_config`
 - `preview_asset_delete`
 - `preview_company_delete`
 - `preview_trial_delete`

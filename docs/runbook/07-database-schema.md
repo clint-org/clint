@@ -933,4 +933,11 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260618160000_seed_completed_trial_readouts_confirmed.sql`
 - `20260618170000_landscape_rpcs_company_logo_url.sql`
 - `20260618180000_bullseye_assets_trial_filter.sql`
+- `20260618190000_restore_preclinical_guard_bullseye_assets.sql`
+- `20260623120000_seed_demo_event_thread.sql`
+- `20260623130000_fix_detected_date_moved_title.sql`
+- `20260624100000_rpc_tenant_owner_update_ai_config_enabled_only.sql`
+- `20260624100100_rpc_platform_admin_update_ai_config.sql`
+- `20260624100200_rpc_get_tenant_ai_status.sql`
+- `20260624100300_ai_config_platform_admin_only_rls.sql`
 <!-- /AUTO-GEN:DRIFT -->
