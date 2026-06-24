@@ -30,7 +30,8 @@
         </button>
       }
       <span class="ml-auto font-mono text-[10px] text-slate-400 tabular-nums">
-        {{ visibleMaterials().length }} {{ visibleMaterials().length === 1 ? 'item' : 'items' }}
+        {{ visibleMaterials().length }}
+        {{ visibleMaterials().length === 1 ? 'material' : 'materials' }}
       </span>
     </div>
 
@@ -41,13 +42,15 @@
       } @else if (error()) {
         <p class="px-4 py-3 text-xs text-red-600">{{ error() }}</p>
       } @else if (visibleMaterials().length === 0) {
-        <p class="px-4 py-3 text-xs text-slate-400">
-          @if (activeFilter() === 'all') {
-            No materials linked to this entity yet.
-          } @else {
-            No materials of this type yet.
-          }
-        </p>
+        <!-- When the section is wholly empty and the user can upload, the drop
+             zone below names the empty (its `empty` input), so we don't repeat
+             it here. We still name it for viewers (no drop zone) and for an
+             empty type-filter (materials exist, just none of this type). -->
+        @if (activeFilter() !== 'all') {
+          <p class="px-4 py-3 text-xs text-slate-400">No materials of this type yet.</p>
+        } @else if (!canUpload()) {
+          <p class="px-4 py-3 text-xs text-slate-400">No materials linked to this entity yet.</p>
+        }
       } @else {
         <ul class="flex flex-col gap-2.5 px-4 py-3">
           @for (material of visibleMaterials(); track material.id) {
@@ -73,6 +76,7 @@
           [spaceId]="spaceId()"
           [entityType]="entityType()"
           [entityId]="entityId()"
+          [empty]="materials().length === 0"
           (uploaded)="onUploaded()"
         />
       </div>

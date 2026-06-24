@@ -156,7 +156,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
                 </div>
               }
               <p class="mt-2 text-[11px] text-slate-500">
-                Branding for this workspace is managed by
+                Branding for this tenant is managed by
                 {{ agencyName() ?? 'your agency' }}.
                 @if (agencyPortalUrl()) {
                   <a [href]="agencyPortalUrl()" class="text-brand-700 hover:underline"
@@ -324,7 +324,7 @@ import { extractErrorMessage } from '../../core/util/error-message';
 
             <div class="flex items-center gap-3">
               <p-button
-                label="Save limits"
+                label="Save upload limits"
                 size="small"
                 [loading]="savingMaterialSettings()"
                 [disabled]="!materialSettingsChanged()"

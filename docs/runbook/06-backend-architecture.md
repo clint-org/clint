@@ -88,8 +88,9 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `create_trial` | asset_indications, condition_indication_map, conditions, indications, trial_conditions, trials | - |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
 | `delete_change_event_annotation` | change_event_annotations | trial_change_events |
-| `delete_material` | materials | - |
+| `delete_material` | materials | space_members, spaces, tenants |
 | `delete_primary_intelligence` | primary_intelligence | - |
+| `discard_pending_material` | materials | - |
 | `download_material` | - | materials |
 | `enforce_agency_member_guards` | - | agency_members |
 | `enforce_custom_domain_unique_across_tables` | - | agencies, tenants |
@@ -698,6 +699,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `create_trial`
 - `delete_change_event_annotation`
 - `delete_material`
+- `discard_pending_material`
 - `export_audit_events_csv`
 - `finalize_material`
 - `get_ai_usage_rollup`
