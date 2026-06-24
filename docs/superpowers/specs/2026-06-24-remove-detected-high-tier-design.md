@@ -86,10 +86,19 @@ null::text as priority,
 ```
 
 The `priority` column stays in the return shape (the events leg still uses it); the
-detected leg simply always emits `null`. The function signature (argument list and
-returned columns) is unchanged, so no PostgREST schema reload is strictly required,
-but end the migration with `notify pgrst, 'reload schema';` per project convention for
-RPC body changes.
+detected leg simply always emits `null`.
+
+The detected leg also has a **second copy** of the same `CASE` in its `WHERE` clause,
+implementing the `p_priority` filter (the `and ( p_priority is null or p_priority =
+case … end )` block). Since detected rows can no longer carry a priority, this becomes
+`and (p_priority is null)` — i.e. detected rows are excluded whenever any priority
+filter is active, exactly matching the markers leg (`and (p_priority is null)`). A user
+filtering by "high" sees only authored high-priority events; detected rows, having no
+priority, correctly drop out.
+
+The function signature (argument list and returned columns) is unchanged, so no
+PostgREST schema reload is strictly required, but end the migration with
+`notify pgrst, 'reload schema';` per project convention for RPC body changes.
 
 Naming: `YYYYMMDDHHmmss_remove_detected_event_priority.sql`.
 
