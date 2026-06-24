@@ -98,7 +98,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     if (this.spaceRole.canEdit()) {
       this.topbarState.actions.set([
         {
-          label: 'New Event',
+          label: 'Log event',
           icon: 'fa-solid fa-plus',
           text: true,
           callback: () => this.openCreateModal(),

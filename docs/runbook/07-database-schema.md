@@ -31,7 +31,6 @@ erDiagram
   SPACES ||--o{ AI_CALLS : "space_id"
   TENANTS ||--o{ AI_CALLS : "tenant_id"
   TENANTS ||--o{ AI_CONFIG : "tenant_id"
-  AI_MODEL_PRICING ||--o{ AI_MODEL_PRICING : "superseded_by"
   ASSETS ||--o{ ASSET_INDICATIONS : "asset_id"
   INDICATIONS ||--o{ ASSET_INDICATIONS : "indication_id"
   SPACES ||--o{ ASSET_INDICATIONS : "space_id"
@@ -682,7 +681,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 **Tables in `public` schema not mentioned:**
 - `ai_calls`
 - `ai_config`
-- `ai_model_pricing`
 - `asset_mechanisms_of_action`
 - `asset_routes_of_administration`
 - `audit_events`
@@ -943,10 +941,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260624100200_rpc_get_tenant_ai_status.sql`
 - `20260624100300_ai_config_platform_admin_only_rls.sql`
 - `20260624120000_remove_detected_event_priority.sql`
-- `20260624150000_create_ai_model_pricing.sql`
-- `20260624150050_ai_config_token_cap.sql`
-- `20260624150100_ai_call_server_side_cost_and_model.sql`
-- `20260624150200_backfill_ai_call_cost.sql`
-- `20260624150300_rollup_failure_log.sql`
-- `20260624150400_rpc_platform_admin_upsert_ai_model_pricing.sql`
+- `20260624140000_discard_pending_material.sql`
+- `20260624140100_material_delete_editor_audit.sql`
+- `20260624140200_intelligence_author_editor_owner.sql`
 <!-- /AUTO-GEN:DRIFT -->

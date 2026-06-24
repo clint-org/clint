@@ -23,6 +23,7 @@ The institutional memory layer. Every PPTX, PDF, and DOCX produced for an engage
 
 **RPCs.**
 - `register_material(p_space_id, p_file_path, p_file_name, p_file_size_bytes, p_mime_type, p_material_type, p_title, p_links jsonb)` -- editor-or-owner; validates tenant size and mime allowlist; inserts row (with `finalized_at = NULL`) plus links; returns the new material id.
+- `discard_pending_material(p_material_id)` -- best-effort rollback of an orphaned registration. Deletes the row only when it has never been finalized (`finalized_at IS NULL`) and the caller is the uploader; no-op otherwise. Called from the upload flow's catch handler when a step after `register_material` fails. Not audited (it undoes an upload that never completed).
 - `prepare_material_upload(p_material_id)` -- uploader-only. Returns `{ space_id, material_id, file_name, mime_type }` if the row exists, the caller is the uploader, has editor access, and the row is not yet finalized. Backs the worker's `/api/materials/sign-upload` endpoint.
 - `finalize_material(p_material_id)` -- uploader-only. Sets `finalized_at = now()`. Idempotent: re-finalize is a no-op so a retried browser-side call after a transient failure does not error.
 - `list_materials_for_entity(p_entity_type, p_entity_id, p_material_types, p_limit, p_offset)` -- recency-ordered list filtered by entity, with optional type filter. Filters on `finalized_at is not null`.
@@ -30,11 +31,11 @@ The institutional memory layer. Every PPTX, PDF, and DOCX produced for an engage
 - `list_materials_for_space(p_space_id, p_material_types, p_entity_type, p_entity_id, p_limit, p_offset)` -- backs the cross-cutting "All materials" page; filters by type and entity. Filters on `finalized_at is not null`.
 - `download_material(p_material_id)` -- validates `has_space_access` and `finalized_at is not null`, returns `{ file_path, file_name, mime_type }`. The Worker mints a 60-second R2 GET URL with `ResponseContentDisposition: attachment`. Backs `/api/materials/sign-download`.
 - `update_material(p_id, p_title, p_material_type, p_links jsonb)` -- uploader-only edits. Wholesale link replacement when an array is supplied.
-- `delete_material(p_id)` -- uploader-only. Removes the row and cascades the link rows. Returns `{ material_id }`. R2 object cleanup is enqueued by the `AFTER DELETE` trigger on `public.materials` into `public.r2_pending_deletes` and drained by the daily cloudflare worker scheduled handler (07:00 UTC, alongside the CT.gov sync) via `claim_pending_r2_deletes` / `mark_r2_delete_succeeded` / `mark_r2_delete_failed`. Cascade deletes from space, tenant, company, product, or trial paths enqueue the same way. Orphaned R2 objects clear within 24 hours.
+- `delete_material(p_id)` -- any space editor/owner (the uploader-only gate was dropped). Writes a `material.deleted` audit event (space/tenant/agency scope; metadata carries title, material_type, uploaded_by). Removes the row and cascades the link rows. Returns `{ material_id }`. R2 object cleanup is enqueued by the `AFTER DELETE` trigger on `public.materials` into `public.r2_pending_deletes` and drained by the daily cloudflare worker scheduled handler (07:00 UTC, alongside the CT.gov sync) via `claim_pending_r2_deletes` / `mark_r2_delete_succeeded` / `mark_r2_delete_failed`. Cascade deletes from space, tenant, company, product, or trial paths enqueue the same way. Orphaned R2 objects clear within 24 hours.
 
 **Frontend surfaces.**
 - `app-materials-section` is the entity-level list. Sits on trial detail and inside the marker detail panel (and is ready for company and product detail pages). Includes a chip filter strip (All / Briefing / Priority Notice / Ad Hoc), a recency-ordered list of `app-material-row` rows, and a drag-drop / browse upload zone at the bottom for owners and editors.
-- `app-material-row` renders one row: file-type badge (PPTX amber, PDF red, DOCX blue, other slate), title, type pill, upload date, link count, file size, and two hover-revealed action buttons. Download is shown to anyone who can see the row; delete (trash icon) is shown only when the current user is the uploader. The row is not itself a button; there is no preview drawer.
+- `app-material-row` renders one row: file-type badge (PPTX amber, PDF red, DOCX blue, other slate), title, type pill, upload date, link count, file size, and two hover-revealed action buttons. Download is shown to anyone who can see the row; delete (trash icon) is shown to any space editor/owner (the row gates it on `SpaceRoleService.canEdit()`). The row is not itself a button; there is no preview drawer.
 - `app-material-upload-zone` is the drag-drop add slot plus the upload dialog. Dialog fields: file preview, type select, title input (defaults to filename without extension), and the linked-entities chip picker (current entity pre-selected when not space-level). Drives the register-first upload flow against the Worker.
 - `app-recent-materials-widget` (in `features/engagement-landing/recent-materials-widget/`) is the engagement-landing surface. Calls `list_recent_materials_for_space` and renders `app-material-row` cards plus an "All materials" link to the browse page.
 - `MaterialsBrowsePageComponent` at `/t/:tenant/s/:space/materials` is the cross-cutting list filterable by type and entity.
@@ -55,7 +56,7 @@ Each list-surface component owns its own delete handler: confirmation via `confi
 7. Frontend calls `finalize_material`; sets `finalized_at = now()`. The row becomes visible to all readers.
 8. Section refreshes; the new row appears at the top.
 
-If the browser dies between steps 3 and 7 the row stays invisible; a future janitor cleans up rows older than N hours with no R2 object. If the network drops at step 7 specifically, the browser retries `finalize_material` once with a 1s backoff before surfacing the failure to the user.
+If a step after `register_material` (steps 4-7) throws, the upload flow's catch handler calls `discard_pending_material` to roll the orphaned registration back immediately (best-effort; its own errors are swallowed so the original failure surfaces). If the browser dies outright before that runs, the row stays invisible (`finalized_at IS NULL`) and is harmless. If the network drops at step 7 specifically, the browser retries `finalize_material` once with a 1s backoff before surfacing the failure to the user.
 
 ## Capabilities
 
@@ -97,10 +98,11 @@ If the browser dies between steps 3 and 7 the row stays invisible; a future jani
   role: editor
   status: active
 - id: materials-register
-  summary: Editor or owner register-first RPC that validates tenant size and mime allowlist, inserts the row, and writes links.
+  summary: Editor or owner register-first RPC that validates tenant size and mime allowlist, inserts the row, and writes links. discard_pending_material rolls back the registration if a later upload step fails.
   routes: []
   rpcs:
     - register_material
+    - discard_pending_material
     - validate_material_links_payload
   tables:
     - materials
@@ -179,7 +181,7 @@ If the browser dies between steps 3 and 7 the row stays invisible; a future jani
   role: editor
   status: active
 - id: materials-delete
-  summary: Uploader-only delete that removes the row and cascades link rows. R2 object cleanup is enqueued by the AFTER DELETE trigger on materials and drained by the daily cloudflare worker scheduled handler.
+  summary: Any space editor/owner can delete a material (not just the uploader); the delete writes a material.deleted audit event. Removes the row and cascades link rows. R2 object cleanup is enqueued by the AFTER DELETE trigger on materials and drained by the daily cloudflare worker scheduled handler.
   routes: []
   rpcs:
     - delete_material

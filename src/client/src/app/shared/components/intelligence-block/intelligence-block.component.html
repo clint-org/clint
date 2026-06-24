@@ -65,16 +65,18 @@
               size="small"
               (onClick)="withdraw.emit()"
             />
-            <p-button
-              icon="fa-solid fa-ellipsis"
-              [text]="true"
-              severity="secondary"
-              size="small"
-              pTooltip="Purge"
-              tooltipPosition="bottom"
-              ariaLabel="Purge this version"
-              (onClick)="purge.emit()"
-            />
+            @if (canPurge()) {
+              <p-button
+                icon="fa-solid fa-ellipsis"
+                [text]="true"
+                severity="secondary"
+                size="small"
+                pTooltip="Purge"
+                tooltipPosition="bottom"
+                ariaLabel="Purge this version"
+                (onClick)="purge.emit()"
+              />
+            }
           }
         </div>
       }

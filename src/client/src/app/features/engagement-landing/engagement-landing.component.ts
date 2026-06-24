@@ -222,7 +222,7 @@ export class EngagementLandingComponent implements OnInit {
         label: pluralize(s?.new_intel_7d, 'New analysis', 'New analyses'),
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
-        display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
+        display: s?.new_intel_7d == null ? '' : String(s.new_intel_7d),
         route: hasRoute ? ['/t', tid, 's', sid, 'intelligence'] : null,
         queryParams: hasRoute ? { since: '7d' } : null,
         warn: false,

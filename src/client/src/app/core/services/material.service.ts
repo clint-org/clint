@@ -145,6 +145,19 @@ export class MaterialService {
   }
 
   /**
+   * Best-effort rollback of an orphaned registration. The upload flow
+   * registers the row before the file is confirmed in R2; if a later step
+   * fails, this removes the never-finalized row so it does not linger. The
+   * RPC no-ops on a finalized row or another user's row, so callers can
+   * invoke it from a catch handler without further guarding.
+   */
+  async discardPending(materialId: string): Promise<void> {
+    await this.supabase.client
+      .rpc('discard_pending_material', { p_material_id: materialId })
+      .throwOnError();
+  }
+
+  /**
    * Updates materials.file_path directly via PostgREST (RLS enforces
    * uploader-only). Called from the upload flow after the R2 PUT
    * succeeds, so the canonical R2 key is what download_material

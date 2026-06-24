@@ -58,7 +58,7 @@ type EntityFilter = MaterialEntityType | 'all';
             Materials
           </span>
           <span class="font-mono text-[10px] uppercase tracking-wider tabular-nums text-slate-400">
-            {{ rows().length }} {{ rows().length === 1 ? 'item' : 'items' }}
+            {{ rows().length }} {{ rows().length === 1 ? 'material' : 'materials' }}
           </span>
           @if (canUpload()) {
             <p-button

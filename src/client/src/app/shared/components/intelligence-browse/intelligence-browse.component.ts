@@ -83,7 +83,7 @@ const DRAFTS_LIMIT = 200;
           <h1 class="text-lg font-semibold text-slate-900">{{ headingTitle() }}</h1>
           <p class="text-xs text-slate-500">{{ headingSubtitle() }}</p>
         </div>
-        @if (spaceRole.isAgencyMember() && spaceId()) {
+        @if (spaceRole.canAuthorIntelligence() && spaceId()) {
           <p-button
             label="Publish intelligence"
             icon="fa-solid fa-pen-nib"

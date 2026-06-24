@@ -70,7 +70,7 @@ import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
                 class="relative ml-auto font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-brand-700"
                 aria-hidden="true"
               >
-                Read &rarr;
+                Open analysis &rarr;
               </span>
             </div>
           </div>
