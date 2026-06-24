@@ -203,9 +203,6 @@
     <!-- Signal row: date + priority -->
     <div class="mt-2 flex items-center gap-2 text-[12px] text-slate-500">
       <span class="font-mono tabular-nums">{{ item.event_date | date: 'MMM d, y' }}</span>
-      @if (item.priority === 'high') {
-        <app-detail-panel-pill tone="red">High signal</app-detail-panel-pill>
-      }
     </div>
 
     <!-- Diff hero: WAS -> NOW for a detected date shift -->

@@ -155,12 +155,15 @@ describe('get_events_page_data detected date_moved title', () => {
     expect(noDays?.title).toBe('Primary Completion delayed');
   });
 
-  it('flags >60-day shifts as high priority and leaves smaller shifts normal', async () => {
+  it('never assigns a priority to detected rows (no auto high tier)', async () => {
     const items = await detectedItems();
     const big = items.find((i) => i.title.includes('369 days'));
     const small = items.find((i) => i.title.includes('52 days'));
-    expect(big?.priority).toBe('high');
+    expect(big).toBeDefined();
+    expect(small).toBeDefined();
+    expect(big?.priority ?? null).toBeNull();
     expect(small?.priority ?? null).toBeNull();
+    expect(items.every((i) => (i.priority ?? null) === null)).toBe(true);
   });
 
   it('matches the rendered title in search (previously blank, unsearchable)', async () => {
