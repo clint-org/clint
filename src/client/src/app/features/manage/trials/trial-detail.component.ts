@@ -222,6 +222,14 @@ export class TrialDetailComponent implements OnDestroy {
     initialValue: this.route.snapshot.paramMap,
   });
 
+  // Query params as a signal so ?marker=<id> opens the inline editor even on
+  // a same-page navigation. The "Edit" action on the read-only marker drawer
+  // round-trips through the URL; the trial id is unchanged, so loadTrial never
+  // re-runs and a one-shot read would miss it (see markerEditParamEffect).
+  private readonly queryParamMapSig = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
+
   readonly trial = signal<Trial | null>(null);
   readonly indications = signal<{ id: string; name: string }[]>([]);
   readonly trialId = computed(() => this.paramMapSig().get('id') ?? '');
@@ -313,6 +321,48 @@ export class TrialDetailComponent implements OnDestroy {
     void this.loadTrialActivity();
     void this.loadFieldVisibility();
   });
+
+  // When ?marker=<id> is present, open that marker in the inline editor and
+  // scroll to the markers section. Markers have no detail page; the read-only
+  // drawer's "Edit" action and catalyst-panel "Edit marker" both route here
+  // via the URL. Reactive (not a one-shot in loadTrial) so it fires on a
+  // same-page navigation where trialId is unchanged. The lastApplied guard
+  // stops it re-opening after a save reloads the trial with the param still set.
+  private lastAppliedMarkerParam: string | null = null;
+  private readonly markerEditParamEffect = effect(() => {
+    const markerId = this.queryParamMapSig().get('marker');
+    const trial = this.trial();
+    if (!trial) return;
+    if (!markerId) {
+      this.lastAppliedMarkerParam = null;
+      return;
+    }
+    if (markerId === this.lastAppliedMarkerParam) return;
+    const target = trial.markers?.find((m) => m.id === markerId);
+    if (!target) return;
+    this.lastAppliedMarkerParam = markerId;
+    // Close the read-only drawer as we transition into editing.
+    this.landscape.clearSelection();
+    this.editingMarker.set(target);
+    this.addingMarker.set(false);
+    // Double-rAF defers the scroll until Angular has committed both the loaded
+    // trial and the expanded editor, so #markers exists at its final height.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.getElementById('markers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  });
+
+  /**
+   * Open the read-only marker detail drawer (Field / Date type / Last synced /
+   * source link) for a markers-table row, mirroring the embedded timeline's
+   * marker click. The drawer's "Edit" action (editors only) round-trips through
+   * ?marker=<id> to the inline editor via markerEditParamEffect.
+   */
+  protected viewMarkerDetail(marker: Marker): void {
+    void this.landscape.selectMarker(marker.id);
+  }
 
   private async loadFieldVisibility(): Promise<void> {
     const spaceId = this.route.snapshot.paramMap.get('spaceId');
@@ -440,28 +490,8 @@ export class TrialDetailComponent implements OnDestroy {
     } finally {
       this.loading.set(false);
     }
-    // Run after loading flips false so the #markers div is in the DOM.
-    this.applyMarkerQueryParam();
-  }
-
-  // When the page is reached via ?marker=<id> (e.g. "Edit marker" on a
-  // catalyst panel), open that marker in the inline editor and scroll to
-  // the markers section. Markers no longer have their own detail page.
-  // Double-rAF defers the scroll until after Angular has committed the
-  // newly-loaded trial AND the editingMarker form expansion to the DOM,
-  // so #markers exists and is at its final post-expansion height.
-  private applyMarkerQueryParam(): void {
-    const markerId = this.route.snapshot.queryParamMap.get('marker');
-    if (!markerId) return;
-    const target = this.trial()?.markers?.find((m) => m.id === markerId);
-    if (!target) return;
-    this.editingMarker.set(target);
-    this.addingMarker.set(false);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        document.getElementById('markers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    });
+    // The inline editor for ?marker=<id> is opened reactively by
+    // markerEditParamEffect once the trial (with its markers) resolves.
   }
 
   async loadIntelligence(): Promise<void> {
@@ -543,8 +573,28 @@ export class TrialDetailComponent implements OnDestroy {
   async onMarkerSaved(): Promise<void> {
     this.addingMarker.set(false);
     this.editingMarker.set(null);
+    this.clearMarkerParam();
     await this.loadTrial();
     this.messageService.add({ severity: 'success', summary: 'Marker saved.', life: 3000 });
+  }
+
+  // Close the inline marker editor (cancel path) and drop any ?marker= param so
+  // re-editing the same marker from the read-only drawer navigates cleanly
+  // rather than hitting Angular's same-URL no-op.
+  protected onMarkerEditClosed(): void {
+    this.addingMarker.set(false);
+    this.editingMarker.set(null);
+    this.clearMarkerParam();
+  }
+
+  private clearMarkerParam(): void {
+    if (!this.route.snapshot.queryParamMap.has('marker')) return;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { marker: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   async deleteMarker(id: string): Promise<void> {

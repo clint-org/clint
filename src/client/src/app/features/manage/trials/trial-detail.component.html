@@ -279,7 +279,7 @@
                 [marker]="editingMarker()"
                 [trialId]="trialId()"
                 (saved)="onMarkerSaved()"
-                (cancelled)="addingMarker.set(false); editingMarker.set(null)"
+                (cancelled)="onMarkerEditClosed()"
               />
             </div>
           }
@@ -344,17 +344,13 @@
                 <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
                 <td class="col-secondary max-w-xs">
                   <div class="flex items-center gap-1.5">
-                    @if (spaceRole.canEdit()) {
-                      <button
-                        type="button"
-                        class="truncate text-left text-brand-700 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
-                        (click)="editingMarker.set(marker); addingMarker.set(false)"
-                      >
-                        {{ marker.title }}
-                      </button>
-                    } @else {
-                      <span class="truncate text-slate-900">{{ marker.title }}</span>
-                    }
+                    <button
+                      type="button"
+                      class="truncate text-left text-brand-700 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      (click)="viewMarkerDetail(marker)"
+                    >
+                      {{ marker.title }}
+                    </button>
                     <app-ctgov-source-tag [metadata]="marker.metadata" />
                   </div>
                 </td>
