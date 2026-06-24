@@ -144,11 +144,6 @@
           <tr
             class="cursor-pointer transition-colors hover:bg-slate-50"
             [class.selected-row]="selectedItem()?.id === item.id"
-            [style.border-left]="
-              item.source_type === 'detected' && item.priority === 'high'
-                ? '3px solid rgb(217 119 6)'
-                : ''
-            "
             (click)="onRowClick(item)"
             (keydown.enter)="onRowClick(item)"
             tabindex="0"
@@ -310,8 +305,6 @@
                       ></i>
                       {{ shift.text }}
                     </span>
-                  } @else if (item.priority === 'high') {
-                    <app-detail-panel-pill tone="red">High</app-detail-panel-pill>
                   }
                 }
                 @default {
