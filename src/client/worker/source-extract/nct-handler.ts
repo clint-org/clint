@@ -139,6 +139,11 @@ export async function handleNctResolve(
     p_model: 'claude-sonnet-4-6',
     p_feature: 'source_extract',
     p_input_hash: textHash,
+    // Reproducibility capture: the requested NCT ids are enough to re-run.
+    p_request: {
+      kind: 'nct',
+      input: { nct_ids: body.nct_ids },
+    },
   });
 
   const preflight = await callRpc<{
@@ -178,6 +183,9 @@ export async function handleNctResolve(
   });
 
   const prompt = buildNctPrompt(studyRecords, inventory);
+  // Captured into ai_calls.output at close for exact replay/analysis.
+  const promptText = `${prompt.system}\n\n${prompt.user}`;
+  const aiParams = { model: preflight.model, max_tokens: 8192 };
 
   let rawOutput: string;
   let promptTokens = 0;
@@ -213,7 +221,8 @@ export async function handleNctResolve(
         Date.now() - start,
         promptTokens,
         completionTokens,
-        'no_text_block'
+        'no_text_block',
+        { prompt: promptText, params: aiParams }
       );
       return jsonErrorWithCode(
         502,
@@ -234,7 +243,8 @@ export async function handleNctResolve(
       Date.now() - start,
       promptTokens,
       completionTokens,
-      reason
+      reason,
+      { prompt: promptText, params: aiParams }
     );
     return jsonErrorWithCode(
       502,
@@ -256,7 +266,7 @@ export async function handleNctResolve(
       promptTokens,
       completionTokens,
       validation.reason,
-      { raw_output: rawOutput.substring(0, 5000) }
+      { prompt: promptText, params: aiParams, raw: rawOutput }
     );
     return jsonErrorWithCode(
       502,
@@ -321,7 +331,7 @@ export async function handleNctResolve(
     promptTokens,
     completionTokens,
     null,
-    { proposals, dropped },
+    { proposals, dropped, prompt: promptText, params: aiParams, raw: rawOutput },
     warnings
   );
 

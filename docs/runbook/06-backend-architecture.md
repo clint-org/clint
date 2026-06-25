@@ -75,8 +75,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -102,6 +102,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `export_audit_events_csv` | - | audit_events |
 | `finalize_material` | materials | - |
 | `get_activity_feed` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
+| `get_ai_call_detail` | - | ai_calls, source_documents |
 | `get_ai_usage_rollup` | - | ai_calls, ai_config, assets, companies, events, indications, markers, source_documents, spaces, tenants, trials |
 | `get_asset_detail_with_intelligence` | - | assets |
 | `get_brand_by_host` | - | agencies, tenants |
@@ -705,6 +706,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `discard_pending_material`
 - `export_audit_events_csv`
 - `finalize_material`
+- `get_ai_call_detail`
 - `get_ai_usage_rollup`
 - `get_asset_detail_with_intelligence`
 - `get_bullseye_assets`
