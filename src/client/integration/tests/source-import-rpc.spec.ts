@@ -82,6 +82,82 @@ describe('ai_call_open', () => {
     expect(row!.feature).toBe('source_extract');
   });
 
+  it('captures p_request on open and surfaces request + full output in the rollup', async () => {
+    const request = {
+      kind: 'nct',
+      input: { nct_ids: ['NCT03548935', 'NCT04184622'] },
+      prompt: 'Resolve these NCT studies into companies and assets.',
+      params: { model: 'claude-opus-4-8', max_tokens: 8192 },
+    };
+    const { data: callId, error } = await anon.rpc('ai_call_open', {
+      p_secret: WORKER_SECRET,
+      p_tenant_id: p.org.tenantId,
+      p_space_id: p.org.spaceId,
+      p_user_id: p.ids.contributor,
+      p_model: 'claude-opus-4-8',
+      p_feature: 'source_extract',
+      p_input_hash: 'capture-test-1',
+      p_request: request,
+    });
+    expect(error).toBeNull();
+    createdAiCallIds.push(callId as string);
+
+    // request is persisted on the row
+    const { data: openedRow } = await admin
+      .from('ai_calls')
+      .select('request')
+      .eq('id', callId as string)
+      .single();
+    expect(openedRow!.request).toMatchObject({
+      kind: 'nct',
+      input: { nct_ids: ['NCT03548935', 'NCT04184622'] },
+    });
+
+    // close with full (untruncated) output
+    const bigRaw = 'FULL RAW MODEL OUTPUT '.repeat(500); // > 5000 chars
+    const close = await anon.rpc('ai_call_close', {
+      p_secret: WORKER_SECRET,
+      p_ai_call_id: callId,
+      p_outcome: 'success',
+      p_prompt_tokens: 100,
+      p_completion_tokens: 50,
+      p_output: { proposals: [], dropped: [], raw: bigRaw },
+    });
+    expect(close.error).toBeNull();
+
+    // rollup space scope surfaces request + output for the super-admin drill
+    const r = await as(p, 'platform_admin').rpc('get_ai_usage_rollup', {
+      p_scope: 'space',
+      p_id: p.org.spaceId,
+      p_window: '7 days',
+    });
+    const payload = expectOk(r) as { data: Record<string, unknown>[] };
+    const detail = payload.data.find((x) => x['ai_call_id'] === callId);
+    expect(detail).toBeTruthy();
+    // list row is light: just the import mode
+    expect(detail!['import_kind']).toBe('nct');
+
+    // full request + (untruncated) output fetched on expand, platform-admin only
+    const d = await as(p, 'platform_admin').rpc('get_ai_call_detail', {
+      p_ai_call_id: callId,
+    });
+    const full = expectOk(d) as {
+      request: { kind: string; input: { nct_ids: string[] } };
+      output: { raw?: string };
+    };
+    expect(full.request).toMatchObject({
+      kind: 'nct',
+      input: { nct_ids: ['NCT03548935', 'NCT04184622'] },
+    });
+    expect(full.output.raw?.length).toBeGreaterThan(5000);
+
+    // non-admin cannot read call detail
+    const denied = await as(p, 'contributor').rpc('get_ai_call_detail', {
+      p_ai_call_id: callId,
+    });
+    expectCode(denied, '42501');
+  });
+
   it('rejects wrong secret with 42501', async () => {
     const r = await anon.rpc('ai_call_open', {
       p_secret: 'wrong-secret',
