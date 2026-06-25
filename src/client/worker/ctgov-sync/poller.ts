@@ -19,9 +19,12 @@
  *     are NOT marked polled (they retry next run). One error per NCT in
  *     the chunk is logged.
  *   - CT.gov 404 during full pull -> trial is treated as withdrawn:
- *     no ingest, but the trial IS marked polled so it doesn't retry
- *     tomorrow. One soft error is logged. (The `trial_withdrawn` event
- *     emission lives in ingest; a 404-only path is a v2 enhancement.)
+ *     no ingest. The trial id is collected into withdrawnTrialIds and the
+ *     caller calls mark_trials_ctgov_withdrawn, which stamps
+ *     ctgov_withdrawn_at (removing it from the polling queue), emits a
+ *     one-time trial_withdrawn event, and bumps last_polled_at. A 404 is
+ *     expected attrition, NOT a sync error: it pushes nothing to errors[]
+ *     and never drags the run to status=partial.
  *   - ingest_ctgov_snapshot RPC error on one trial -> log + continue.
  *     That trial is NOT marked polled.
  *
@@ -46,7 +49,7 @@ interface ErrorEntry {
   // kind discriminates non-CT.gov errors so future UIs can render them
   // distinctly (e.g. an unknown-NCT request vs a transient bulk-update
   // failure). Absent on the common per-NCT or per-trial CT.gov errors.
-  kind?: 'bulk_update_last_polled' | 'unknown_nct';
+  kind?: 'bulk_update_last_polled' | 'unknown_nct' | 'mark_withdrawn' | 'fatal';
 }
 
 interface SupabaseCfg {
@@ -116,6 +119,7 @@ async function fetchAndIngestNct(
   snapshotsWritten: number;
   eventsEmitted: number;
   polledTrialIds: string[];
+  withdrawnTrialIds: string[];
   errors: ErrorEntry[];
 }> {
   const errors: ErrorEntry[] = [];
@@ -125,16 +129,21 @@ async function fetchAndIngestNct(
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     errors.push({ nct_id: nctId, message: msg });
-    return { snapshotsWritten: 0, eventsEmitted: 0, polledTrialIds: [], errors };
+    return { snapshotsWritten: 0, eventsEmitted: 0, polledTrialIds: [], withdrawnTrialIds: [], errors };
   }
   if (study === null) {
-    // 404: treat as soft error. Mark assignments polled so we don't retry
-    // tomorrow. Withdrawn-event emission is a future enhancement.
-    errors.push({ nct_id: nctId, status: 404 });
+    // 404: the study was removed from CT.gov. Mark the assignments withdrawn
+    // (the caller calls mark_trials_ctgov_withdrawn, which stamps
+    // ctgov_withdrawn_at, emits a one-time trial_withdrawn event, and excludes
+    // them from future polling). This is forward progress, NOT an error, so we
+    // do not push to errors[] -- a withdrawn trial must not drag the run to
+    // status=partial. Withdrawn trials are reported via withdrawnTrialIds (not
+    // polledTrialIds: the mark RPC bumps last_polled_at itself).
     return {
       snapshotsWritten: 0,
       eventsEmitted: 0,
-      polledTrialIds: assignments.map((a) => a.trial_id),
+      polledTrialIds: [],
+      withdrawnTrialIds: assignments.map((a) => a.trial_id),
       errors,
     };
   }
@@ -175,6 +184,7 @@ async function fetchAndIngestNct(
       snapshotsWritten: 0,
       eventsEmitted: 0,
       polledTrialIds: assignments.map((a) => a.trial_id),
+      withdrawnTrialIds: [],
       errors,
     };
   }
@@ -218,7 +228,34 @@ async function fetchAndIngestNct(
     }
   }
 
-  return { snapshotsWritten, eventsEmitted, polledTrialIds, errors };
+  return { snapshotsWritten, eventsEmitted, polledTrialIds, withdrawnTrialIds: [], errors };
+}
+
+// markWithdrawn flags trials whose NCT 404'd as removed from CT.gov via the
+// mark_trials_ctgov_withdrawn RPC. The RPC stamps ctgov_withdrawn_at (so the
+// trial leaves the polling queue), emits a one-time trial_withdrawn event, and
+// bumps last_polled_at. A 404 is expected attrition, not a sync failure, so we
+// only push to errors[] if the RPC call itself fails (a real, transient error
+// worth surfacing) -- the 404 itself never affects run status.
+async function markWithdrawn(
+  env: CtgovSyncEnv,
+  withdrawnTrialIds: string[],
+  errors: ErrorEntry[]
+): Promise<void> {
+  if (withdrawnTrialIds.length === 0) return;
+  try {
+    await callRpc<number>(cfgFrom(env), null, 'mark_trials_ctgov_withdrawn', {
+      p_secret: env.CTGOV_WORKER_SECRET,
+      p_trial_ids: withdrawnTrialIds,
+    });
+  } catch (e) {
+    const err = e as { message?: string; httpStatus?: number };
+    errors.push({
+      kind: 'mark_withdrawn',
+      status: err.httpStatus,
+      message: err.message,
+    });
+  }
 }
 
 async function recordRun(env: CtgovSyncEnv, summary: SyncRunSummary): Promise<void> {
@@ -269,8 +306,49 @@ function buildSummary(args: {
   };
 }
 
+// buildFatalSummary produces a status=failed run summary for an exception that
+// escaped the per-NCT / per-batch handling (e.g. get_trials_for_polling threw,
+// or record_sync_run threw). Without this, a fatal throw left NO row in
+// ctgov_sync_runs -- the sync just vanished into an unread Worker log (the cause
+// of the observed multi-day gaps). Recording a failed row makes the failure
+// visible to both the activity feed and the ctgov-sync-health watchdog.
+function buildFatalSummary(startedAt: string, err: unknown): SyncRunSummary {
+  const message = err instanceof Error ? err.message : String(err);
+  return {
+    started_at: startedAt,
+    ended_at: new Date().toISOString(),
+    trials_checked: 0,
+    ncts_with_changes: 0,
+    snapshots_written: 0,
+    events_emitted: 0,
+    errors_count: 1,
+    error_summary: { errors: [{ kind: 'fatal', message }] },
+    status: 'failed',
+  };
+}
+
 export async function runScheduledSync(env: CtgovSyncEnv): Promise<SyncRunSummary> {
   const startedAt = new Date().toISOString();
+  try {
+    return await runScheduledSyncInner(env, startedAt);
+  } catch (err) {
+    // Best effort: record a failed run so the gap is never silent. If this
+    // record_sync_run also fails (e.g. the DB is unreachable), swallow and let
+    // the original error propagate to the handler's log() -- the external
+    // ctgov-sync-health watchdog still catches the missing/stale run.
+    try {
+      await recordRun(env, buildFatalSummary(startedAt, err));
+    } catch {
+      /* swallow: nothing more we can do here */
+    }
+    throw err;
+  }
+}
+
+async function runScheduledSyncInner(
+  env: CtgovSyncEnv,
+  startedAt: string
+): Promise<SyncRunSummary> {
   const batchSize = parseIntEnv(env.CTGOV_BATCH_SIZE, 100);
   const parallel = parseIntEnv(env.CTGOV_PARALLEL_FETCHES, 10);
   const limit = batchSize * parallel;
@@ -350,15 +428,18 @@ export async function runScheduledSync(env: CtgovSyncEnv): Promise<SyncRunSummar
     return await fetchAndIngestNct(env, client, nct, assignments, 'v2_poll');
   });
 
+  const withdrawnTrialIds = new Set<string>();
   for (const r of perNctResults) {
     snapshotsWritten += r.snapshotsWritten;
     eventsEmitted += r.eventsEmitted;
     for (const id of r.polledTrialIds) polledTrialIds.add(id);
+    for (const id of r.withdrawnTrialIds) withdrawnTrialIds.add(id);
     errors.push(...r.errors);
-    // An NCT counts as "successful" if at least one assignment ingested
-    // without error, OR if it short-circuited as 404 (we still made forward
-    // progress and won't retry tomorrow).
-    if (r.errors.length === 0 || r.errors.some((e) => e.status === 404)) {
+    // An NCT counts as "successful" if it made forward progress: at least one
+    // assignment ingested without error, or it was withdrawn (404) and is now
+    // out of the queue. A withdrawn NCT pushes no error, so errors.length === 0
+    // covers it.
+    if (r.errors.length === 0) {
       successfulNcts += 1;
     }
   }
@@ -379,6 +460,8 @@ export async function runScheduledSync(env: CtgovSyncEnv): Promise<SyncRunSummar
       });
     }
   }
+
+  await markWithdrawn(env, [...withdrawnTrialIds], errors);
 
   const summary = buildSummary({
     startedAt,
@@ -445,12 +528,16 @@ export async function runManualBackfill(
     return await fetchAndIngestNct(env, client, nct, assignments, 'manual_sync');
   });
 
+  const withdrawnTrialIds = new Set<string>();
   for (const r of perNctResults) {
     snapshotsWritten += r.snapshotsWritten;
     eventsEmitted += r.eventsEmitted;
     for (const id of r.polledTrialIds) polledTrialIds.add(id);
+    for (const id of r.withdrawnTrialIds) withdrawnTrialIds.add(id);
     errors.push(...r.errors);
-    if (r.errors.length === 0 || r.errors.some((e) => e.status === 404)) {
+    // Forward progress (ingested or withdrawn) counts as a successful NCT; a
+    // withdrawn (404) NCT pushes no error, so errors.length === 0 covers it.
+    if (r.errors.length === 0) {
       successfulNcts += 1;
     }
   }
@@ -471,6 +558,8 @@ export async function runManualBackfill(
       });
     }
   }
+
+  await markWithdrawn(env, [...withdrawnTrialIds], errors);
 
   // totalNctsAttempted counts known NCTs we actually pulled PLUS unknown
   // NCTs the operator asked for, so a request of all-unknowns yields
