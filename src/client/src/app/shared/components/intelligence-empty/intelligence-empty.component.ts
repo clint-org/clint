@@ -25,15 +25,16 @@ import { BrandContextService } from '../../../core/services/brand-context.servic
               Primary intelligence
             </h3>
             <p class="mt-1 text-sm text-slate-600">
-              No read yet. Capture {{ agencyName() }}'s summary and implications for this
+              No analysis yet. Capture {{ agencyName() }}'s summary and implications for this
               {{ entityLabel() }}.
             </p>
           </div>
           <p-button
-            label="Add primary intelligence"
+            label="Add intelligence"
             icon="fa-solid fa-plus"
             size="small"
             [text]="false"
+            styleClass="shrink-0 whitespace-nowrap"
             (onClick)="add.emit()"
           />
         </div>
