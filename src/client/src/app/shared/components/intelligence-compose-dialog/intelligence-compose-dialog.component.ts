@@ -39,7 +39,7 @@ const LEVEL_OPTIONS: { label: string; value: IntelligenceEntityType }[] = [
  * Entity picker that fronts the primary-intelligence author drawer when
  * composing from the Intelligence feed (which is not entity-scoped). The
  * author picks a level (trial / company / asset / engagement) and, for the
- * entity-scoped levels, the specific entity to attach the read to. On
+ * entity-scoped levels, the specific entity to attach the intelligence to. On
  * confirm it emits the chosen anchor; the feed opens the shared
  * IntelligenceDrawerComponent against it. No author form is duplicated here.
  *
@@ -61,7 +61,8 @@ const LEVEL_OPTIONS: { label: string; value: IntelligenceEntityType }[] = [
     >
       <div class="space-y-4">
         <p class="text-sm text-slate-700">
-          The feed spans the whole space, so choose what this analysis is about before authoring it.
+          The feed spans the whole space, so choose what this intelligence is about before authoring
+          it.
         </p>
         <div>
           <label
@@ -122,7 +123,7 @@ const LEVEL_OPTIONS: { label: string; value: IntelligenceEntityType }[] = [
       <ng-template #footer>
         <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="onCancel()" />
         <p-button
-          label="Write analysis"
+          label="Write intelligence"
           icon="fa-solid fa-pen-nib"
           size="small"
           [disabled]="!canContinue()"
@@ -225,11 +226,7 @@ export class IntelligenceComposeDialogComponent {
       const [trials, companies, assets] = await Promise.all([
         client.from('trials').select('id, name, identifier').eq('space_id', sid).order('name'),
         client.from('companies').select('id, name').eq('space_id', sid).order('name'),
-        client
-          .from('assets')
-          .select('id, name, companies(name)')
-          .eq('space_id', sid)
-          .order('name'),
+        client.from('assets').select('id, name, companies(name)').eq('space_id', sid).order('name'),
       ]);
       this.rows.set(
         buildComposeEntityOptions({

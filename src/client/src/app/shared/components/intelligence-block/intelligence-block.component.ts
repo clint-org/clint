@@ -34,7 +34,7 @@ export class IntelligenceBlockComponent {
   readonly draft = input<IntelligencePayload | null>(null);
   readonly agencyView = input<boolean>(false);
   /**
-   * Whether the viewer may PURGE (hard-delete) this read. Distinct from
+   * Whether the viewer may PURGE (hard-delete) this intelligence. Distinct from
    * `agencyView`: space editors author (edit/withdraw) but cannot purge, so
    * the purge affordance gates on this separately. Owners + agency only.
    */
@@ -102,7 +102,7 @@ export class IntelligenceBlockComponent {
 
   /**
    * The lead name shown beside the avatar tile in the byline. For clients it
-   * is the agency; for agency members it is the person who last edited the read.
+   * is the agency; for agency members it is the person who last edited the intelligence.
    */
   protected readonly bylineLeadName = computed(() => {
     const c = this.current();

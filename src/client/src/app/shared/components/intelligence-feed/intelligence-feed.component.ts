@@ -12,14 +12,14 @@ import { highlightHtml, highlightPlain } from '../../utils/highlight-search';
 import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
 
 /**
- * Recency-ordered feed of published primary intelligence reads. Used on the
+ * Recency-ordered feed of published primary intelligence entries. Used on the
  * engagement landing's "Latest from Stout" surface and on the browse view.
  *
- * Each row reads as a scannable analyst read: a thin entity-colored spine
+ * Each row reads as a scannable intelligence entry: a thin entity-colored spine
  * (engagement = brand accent, every other entity = neutral slate so data
  * colors never decorate), the shared entity chip + tabular date on top, the
  * headline leading, a two-line summary clamp, then a quiet author byline with
- * a READ affordance. The whole row is a single click target via the title's
+ * an OPEN affordance. The whole row is a single click target via the title's
  * stretched ::before overlay.
  *
  * Strictly editorial: change events live in the "What changed" widget and
@@ -78,13 +78,13 @@ import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
                 class="relative ml-auto font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-brand-700"
                 aria-hidden="true"
               >
-                Open analysis &rarr;
+                Open intelligence &rarr;
               </span>
             </div>
           </div>
         </li>
       } @empty {
-        <li class="px-4 py-6 text-sm text-slate-400">No published analyses yet.</li>
+        <li class="px-4 py-6 text-sm text-slate-400">No published intelligence yet.</li>
       }
     </ul>
   `,

@@ -25,7 +25,7 @@ import { BrandContextService } from '../../../core/services/brand-context.servic
               Primary intelligence
             </h3>
             <p class="mt-1 text-sm text-slate-600">
-              No analysis yet. Capture {{ agencyName() }}'s summary and implications for this
+              No intelligence yet. Capture {{ agencyName() }}'s summary and implications for this
               {{ entityLabel() }}.
             </p>
           </div>

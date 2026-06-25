@@ -59,7 +59,12 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
               <g app-flag-icon [size]="12" [color]="typeColor()" [fillStyle]="typedFillStyle()" />
             }
             @case ('triangle') {
-              <g app-triangle-icon [size]="12" [color]="typeColor()" [fillStyle]="typedFillStyle()" />
+              <g
+                app-triangle-icon
+                [size]="12"
+                [color]="typeColor()"
+                [fillStyle]="typedFillStyle()"
+              />
             }
             @case ('square') {
               <g
@@ -81,7 +86,9 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
             }
           }
         </svg>
-        <span class="min-w-0 flex-1 truncate font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500">
+        <span
+          class="min-w-0 flex-1 truncate font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500"
+        >
           @if (categoryName() && typeName()) {
             {{ categoryName() }} · {{ typeName() }}
           } @else {
@@ -89,9 +96,10 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
           }
         </span>
         @if (trialName()) {
-          <span class="shrink-0 font-mono text-[9px] uppercase tracking-wide text-slate-400 tabular-nums">{{
-            trialName()
-          }}</span>
+          <span
+            class="shrink-0 font-mono text-[9px] uppercase tracking-wide text-slate-400 tabular-nums"
+            >{{ trialName() }}</span
+          >
         }
       </div>
 
@@ -108,7 +116,9 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
             formattedDate()
           }}</span>
           @if (noLongerExpected()) {
-            <span class="inline-flex items-center gap-1 border border-slate-200 bg-slate-50 px-1.5 py-1 font-mono text-[9px] font-bold uppercase tracking-wider leading-none text-slate-600">
+            <span
+              class="inline-flex items-center gap-1 border border-slate-200 bg-slate-50 px-1.5 py-1 font-mono text-[9px] font-bold uppercase tracking-wider leading-none text-slate-600"
+            >
               <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
               No longer expected
             </span>
@@ -146,7 +156,9 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
           <div class="flex items-center gap-2 border-t border-slate-100 pt-2.5">
             <app-company-tile [name]="companyName()" [logoUrl]="companyLogoUrl()" [size]="20" />
             <div class="min-w-0 flex-1">
-              <div class="truncate font-mono text-[10px] font-bold uppercase tracking-widest text-slate-700">
+              <div
+                class="truncate font-mono text-[10px] font-bold uppercase tracking-widest text-slate-700"
+              >
                 {{ companyName() }}
               </div>
               @if (assetName()) {
@@ -154,9 +166,10 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
               }
             </div>
             @if (phaseChipLabel()) {
-              <span class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600">{{
-                phaseChipLabel()
-              }}</span>
+              <span
+                class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
+                >{{ phaseChipLabel() }}</span
+              >
             }
           </div>
         }
@@ -170,7 +183,7 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
         @if (intelligenceHeadline()) {
           <div class="mt-2 border-t border-slate-100 pt-2">
             <p class="text-[9px] font-semibold uppercase tracking-wider text-brand-700">
-              Primary intelligence
+              Intelligence
             </p>
             <p class="mt-0.5 text-[11px] leading-snug text-slate-700">
               {{ intelligenceHeadline() }}
@@ -226,8 +239,8 @@ export class MarkerTooltipComponent implements AfterViewInit {
 
   /**
    * Optional primary-intelligence headline to surface on the tooltip.
-   * The grid hosts this only when the marker has a published read; the
-   * tooltip stays lean and does not query for the read itself.
+   * The grid hosts this only when the marker has published intelligence; the
+   * tooltip stays lean and does not query for the intelligence itself.
    */
   readonly intelligenceHeadline = input<string | null>(null);
 

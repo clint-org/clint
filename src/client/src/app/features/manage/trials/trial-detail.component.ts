@@ -284,7 +284,7 @@ export class TrialDetailComponent implements OnDestroy {
     () => this.route.snapshot.paramMap.get('tenantId') ?? this.findAncestorParam('tenantId')
   );
 
-  /** Router link to the anchor entity whose analysis references this trial. */
+  /** Router link to the anchor entity whose intelligence references this trial. */
   protected referencedRouterLink(ref: ReferencedInRow): unknown[] {
     return (
       buildEntityRouterLink(
@@ -564,7 +564,7 @@ export class TrialDetailComponent implements OnDestroy {
       await Promise.all([this.loadIntelligence(), this.loadTrial()]);
       this.messageService.add({
         severity: 'success',
-        summary: 'Analysis withdrawn.',
+        summary: 'Intelligence withdrawn.',
         life: 3000,
       });
     } catch (err) {
@@ -593,7 +593,7 @@ export class TrialDetailComponent implements OnDestroy {
       await Promise.all([this.loadIntelligence(), this.loadTrial()]);
       this.messageService.add({
         severity: 'success',
-        summary: 'Analysis purged.',
+        summary: 'Intelligence purged.',
         life: 3000,
       });
     } catch (err) {
@@ -709,7 +709,11 @@ export class TrialDetailComponent implements OnDestroy {
   async onIntelligencePublished(): Promise<void> {
     this.intelligenceDrawerOpen.set(false);
     await this.loadIntelligence();
-    this.messageService.add({ severity: 'success', summary: 'Analysis published.', life: 3000 });
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Intelligence published.',
+      life: 3000,
+    });
   }
 
   onIntelligenceDelete(): void {
@@ -717,7 +721,7 @@ export class TrialDetailComponent implements OnDestroy {
     const id = i?.published?.record.id ?? i?.draft?.record.id;
     if (!id) return;
     this.confirmation.confirm({
-      header: 'Delete primary intelligence?',
+      header: 'Delete this intelligence?',
       message: 'This cannot be undone.',
       acceptLabel: 'Delete',
       acceptButtonStyleClass: 'p-button-danger',
@@ -728,7 +732,7 @@ export class TrialDetailComponent implements OnDestroy {
           this.messageService.add({
             severity: 'success',
             summary: 'Deleted',
-            detail: 'Primary intelligence removed.',
+            detail: 'Intelligence removed.',
           });
           await this.loadIntelligence();
         } catch (err) {

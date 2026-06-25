@@ -165,11 +165,15 @@ export class AssetDetailComponent implements OnDestroy {
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
 
-  /** Router link to the anchor entity whose analysis references this asset. */
+  /** Router link to the anchor entity whose intelligence references this asset. */
   protected referencedRouterLink(ref: ReferencedInRow): unknown[] {
     return (
-      buildEntityRouterLink(this.tenantIdSig(), this.spaceIdSig(), ref.entity_type, ref.entity_id) ??
-      []
+      buildEntityRouterLink(
+        this.tenantIdSig(),
+        this.spaceIdSig(),
+        ref.entity_type,
+        ref.entity_id
+      ) ?? []
     );
   }
 
@@ -243,7 +247,7 @@ export class AssetDetailComponent implements OnDestroy {
       await Promise.all([this.loadIntelligence(), this.loadAsset()]);
       this.messageService.add({
         severity: 'success',
-        summary: 'Analysis withdrawn.',
+        summary: 'Intelligence withdrawn.',
         life: 3000,
       });
     } catch (err) {
@@ -272,7 +276,7 @@ export class AssetDetailComponent implements OnDestroy {
       await Promise.all([this.loadIntelligence(), this.loadAsset()]);
       this.messageService.add({
         severity: 'success',
-        summary: 'Analysis purged.',
+        summary: 'Intelligence purged.',
         life: 3000,
       });
     } catch (err) {
@@ -305,7 +309,11 @@ export class AssetDetailComponent implements OnDestroy {
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
     await this.loadIntelligence();
-    this.messageService.add({ severity: 'success', summary: 'Analysis published.', life: 3000 });
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Intelligence published.',
+      life: 3000,
+    });
   }
 
   protected onIntelligenceDelete(): void {
@@ -313,7 +321,7 @@ export class AssetDetailComponent implements OnDestroy {
     const id = i?.published?.record.id ?? i?.draft?.record.id;
     if (!id) return;
     this.confirmation.confirm({
-      header: 'Delete primary intelligence?',
+      header: 'Delete this intelligence?',
       message: 'This cannot be undone.',
       acceptLabel: 'Delete',
       acceptButtonStyleClass: 'p-button-danger',
@@ -324,7 +332,7 @@ export class AssetDetailComponent implements OnDestroy {
           this.messageService.add({
             severity: 'success',
             summary: 'Deleted',
-            detail: 'Primary intelligence removed.',
+            detail: 'Intelligence removed.',
           });
           await this.loadIntelligence();
         } catch (err) {
