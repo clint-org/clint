@@ -176,6 +176,7 @@ interface PendingFile {
             <app-linked-entities-picker
               [spaceId]="spaceId()"
               [value]="pickerLinks()"
+              [showRelationship]="false"
               (valueChange)="onPickerChange($event)"
             />
           </div>

@@ -52,22 +52,24 @@ interface EntityOption {
             <span class="min-w-0 flex-1 truncate text-sm text-slate-800">
               {{ entityLabel(link) }}
             </span>
-            <p-select
-              [options]="relationshipOptions"
-              [ngModel]="link.relationship_type"
-              (ngModelChange)="updateRelationship($index, $event)"
-              placeholder="Relationship"
-              styleClass="w-44 text-xs"
-              appendTo="body"
-            />
-            <input
-              pInputText
-              type="text"
-              [ngModel]="link.gloss ?? ''"
-              (ngModelChange)="updateGloss($index, $event)"
-              placeholder="Gloss (optional)"
-              class="!h-8 w-48 text-xs"
-            />
+            @if (showRelationship()) {
+              <p-select
+                [options]="relationshipOptions"
+                [ngModel]="link.relationship_type"
+                (ngModelChange)="updateRelationship($index, $event)"
+                placeholder="Relationship"
+                styleClass="w-44 text-xs"
+                appendTo="body"
+              />
+              <input
+                pInputText
+                type="text"
+                [ngModel]="link.gloss ?? ''"
+                (ngModelChange)="updateGloss($index, $event)"
+                placeholder="Gloss (optional)"
+                class="!h-8 w-48 text-xs"
+              />
+            }
             <p-button
               icon="fa-solid fa-xmark"
               [text]="true"
@@ -89,6 +91,7 @@ interface EntityOption {
           (ngModelChange)="addEntityType.set($event); refreshOptions()"
           placeholder="Type"
           styleClass="w-32"
+          appendTo="body"
         />
         <p-select
           [options]="filteredEntityOptions()"
@@ -102,14 +105,16 @@ interface EntityOption {
           [virtualScroll]="filteredEntityOptions().length > 20"
           [virtualScrollItemSize]="38"
         />
-        <p-select
-          [options]="relationshipOptions"
-          [ngModel]="addRelationship()"
-          (ngModelChange)="addRelationship.set($event)"
-          placeholder="Relationship"
-          styleClass="w-44"
-          appendTo="body"
-        />
+        @if (showRelationship()) {
+          <p-select
+            [options]="relationshipOptions"
+            [ngModel]="addRelationship()"
+            (ngModelChange)="addRelationship.set($event)"
+            placeholder="Relationship"
+            styleClass="w-44"
+            appendTo="body"
+          />
+        }
       </div>
     </div>
   `,
@@ -121,6 +126,14 @@ export class LinkedEntitiesPickerComponent implements OnInit {
   readonly spaceId = input.required<string>();
   readonly value = input<PrimaryIntelligenceLink[]>([]);
   readonly valueChange = output<PrimaryIntelligenceLink[]>();
+  /**
+   * Whether the relationship/gloss controls are shown and required. Primary
+   * intelligence links carry a relationship_type + gloss; material links do
+   * not (material_links has no such columns and nothing renders them), so the
+   * materials host sets this false: the picker then just attaches entities,
+   * with no meaningless required relationship to choose.
+   */
+  readonly showRelationship = input<boolean>(true);
 
   protected readonly links = signal<PrimaryIntelligenceLink[]>([]);
   protected readonly addEntityType = signal<IntelligenceLinkEntityType | null>(null);
@@ -154,9 +167,12 @@ export class LinkedEntitiesPickerComponent implements OnInit {
       .map((o) => ({ label: o.label, sub_label: o.sub_label, value: o.entity_id }));
   });
 
-  protected readonly canAdd = computed(
-    () => !!this.addEntityType() && !!this.addEntityId() && !!this.addRelationship().trim()
-  );
+  protected readonly canAdd = computed(() => {
+    if (!this.addEntityType() || !this.addEntityId()) return false;
+    // Relationship is only required when the relationship control is shown
+    // (primary intelligence). For materials it is hidden and not required.
+    return this.showRelationship() ? !!this.addRelationship().trim() : true;
+  });
 
   // Auto-commit pending entity when all three fields are filled. An explicit
   // "Add link" click was easy to skip: users would pick type/entity/relationship,

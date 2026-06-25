@@ -74,7 +74,7 @@ import { LandscapeStateService } from './landscape-state.service';
                 [class.text-slate-800]="stats().catalystCount90d === 0"
                 >{{ stats().catalystCount90d }}</span
               >
-              <span class="text-[11px] text-slate-500">Catalysts (90d)</span>
+              <span class="text-[11px] text-slate-500">catalysts (90d)</span>
             </div>
           </div>
         </div>

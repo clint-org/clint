@@ -13,6 +13,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
+import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
@@ -34,6 +35,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
     ConfirmDialogModule,
     ToastModule,
     ManagePageShellComponent,
+    SectionHeaderComponent,
     IntelligenceBlockComponent,
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,

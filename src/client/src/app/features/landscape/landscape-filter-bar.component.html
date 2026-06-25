@@ -1,17 +1,21 @@
 <div class="border-b border-slate-200 bg-white">
   <!--
-    flex-wrap, not overflow-x-auto: at laptop widths the Period group and the
-    sync caption were pushed past the right edge with no scroll affordance,
-    so they read as missing (UI review 2026-06-12, item 1).
+    Single-row layout: the filter controls scroll horizontally (overflow-x-auto)
+    instead of wrapping to a second line. The sync caption is kept OUTSIDE the
+    scroll region so it stays pinned at the right and is never lost off-screen
+    (the original concern that motivated flex-wrap; UI review 2026-06-24).
+    All dropdown panels use appendTo="body", so overflow-x-auto does not clip
+    them.
   -->
   <div
-    class="flex flex-wrap items-center gap-x-1.5 gap-y-1 px-3 py-1.5"
+    class="flex items-center gap-x-2 px-3 py-1.5"
     role="toolbar"
     aria-label="Landscape filters"
   >
     @if (loading()) {
       <app-loader [size]="20" label="Loading filters..." />
     } @else {
+      <div class="flex min-w-0 flex-1 items-center gap-x-1.5 overflow-x-auto pb-0.5">
       <!-- View-specific: zoom (timeline) -->
       @if (viewMode() === 'timeline') {
         <p-selectbutton
@@ -278,10 +282,11 @@
           "
         />
       }
+      </div>
 
       @if (state.lastSyncedAt(); as ts) {
         <span
-          class="ml-auto shrink-0 font-mono text-[10px] tabular-nums text-slate-500"
+          class="shrink-0 font-mono text-[10px] tabular-nums text-slate-500"
           [pTooltip]="'Most recent CT.gov sync across all trials. Individual trials may be older or not yet synced.'"
           tooltipPosition="left"
         >
