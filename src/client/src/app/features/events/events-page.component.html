@@ -3,6 +3,18 @@
     <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
   }
 
+  <app-section-header label="Events" [detail]="serverTotal() ? serverTotal() + ' logged' : ''">
+    @if (spaceRole.canEdit()) {
+      <p-button
+        actions
+        label="Log event"
+        icon="fa-solid fa-plus"
+        size="small"
+        (onClick)="openCreateModal()"
+      />
+    }
+  </app-section-header>
+
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search events...">
     <app-export-button gridToolbarEnd [actions]="exportActions" />
   </app-grid-toolbar>
@@ -382,7 +394,7 @@
 </app-manage-page-shell>
 
 <p-dialog
-  [header]="editingEventId() ? 'Edit event' : 'New event'"
+  [header]="editingEventId() ? 'Edit event' : 'Log event'"
   [(visible)]="modalOpen"
   [modal]="true"
   styleClass="!w-[42rem]"

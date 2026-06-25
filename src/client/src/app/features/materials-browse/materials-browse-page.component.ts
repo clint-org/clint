@@ -21,6 +21,7 @@ import {
 } from '../../core/models/material.model';
 import { MaterialService } from '../../core/services/material.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { SectionHeaderComponent } from '../../shared/components/section-header/section-header.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { MaterialRowComponent } from '../../shared/components/material-row/material-row.component';
 import { MaterialUploadZoneComponent } from '../../shared/components/material-upload-zone/material-upload-zone.component';
@@ -44,6 +45,7 @@ type EntityFilter = MaterialEntityType | 'all';
     FormsModule,
     ButtonModule,
     ManagePageShellComponent,
+    SectionHeaderComponent,
     MaterialRowComponent,
     MaterialUploadZoneComponent,
     LoaderComponent,
@@ -51,18 +53,15 @@ type EntityFilter = MaterialEntityType | 'all';
   template: `
     <app-manage-page-shell>
       <div class="border-b border-slate-200 bg-slate-50/60 px-5 py-3">
-        <div class="mb-2.5 flex items-center gap-3">
-          <span
-            class="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-          >
-            Materials
-          </span>
-          <span class="font-mono text-[10px] uppercase tracking-wider tabular-nums text-slate-400">
-            {{ rows().length }} {{ rows().length === 1 ? 'material' : 'materials' }}
-          </span>
+        <app-section-header
+          label="Materials"
+          [detail]="rows().length.toString()"
+          [bordered]="false"
+          class="mb-2.5 block"
+        >
           @if (canUpload()) {
             <p-button
-              class="ml-auto"
+              actions
               label="Upload material"
               icon="fa-solid fa-cloud-arrow-up"
               size="small"
@@ -70,7 +69,7 @@ type EntityFilter = MaterialEntityType | 'all';
               (onClick)="toggleRegister()"
             />
           }
-        </div>
+        </app-section-header>
         <div class="flex flex-wrap items-center gap-1.5">
           <span
             class="mr-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400"

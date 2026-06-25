@@ -27,25 +27,16 @@ export function computeStatusStrip(
   health: AiHealthResult | null,
   quota: AiImportStatusResult | null,
 ): AiStatusStrip | null {
+  // We only surface states the user can actually act on: a hard outage that
+  // blocks import, and the user's own quota/rate situation. Softer upstream
+  // status (partial_outage, degraded_performance) and the status-page
+  // incidents[] feed are deliberately NOT shown -- they are non-actionable
+  // and lingered for days, reading as noise to end users.
   if (health?.status === 'major_outage') {
     return {
       level: 'block',
       message:
         'The AI service is currently experiencing an outage. Import is unavailable until the service recovers.',
-    };
-  }
-
-  if (health?.status === 'partial_outage') {
-    return {
-      level: 'warn',
-      message: 'The AI service is experiencing partial disruptions. Import may fail or be slow.',
-    };
-  }
-
-  if (health?.status === 'degraded_performance') {
-    return {
-      level: 'warn',
-      message: 'The AI service is running with reduced performance. Import may be slower than usual.',
     };
   }
 
@@ -73,14 +64,6 @@ export function computeStatusStrip(
     return {
       level: 'warn',
       message: `AI usage at ${quota.daily_usage_pct}% of the daily limit.`,
-    };
-  }
-
-  if (health?.incidents && health.incidents.length > 0) {
-    const incident = health.incidents[0];
-    return {
-      level: 'info',
-      message: `The AI service has an active incident: ${incident.name}.`,
     };
   }
 

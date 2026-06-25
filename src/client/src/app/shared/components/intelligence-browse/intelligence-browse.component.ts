@@ -23,6 +23,7 @@ import {
 } from '../../../core/models/primary-intelligence.model';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import { SectionHeaderComponent } from '../section-header/section-header.component';
 import { IntelligenceFeedComponent } from '../intelligence-feed/intelligence-feed.component';
 import { IntelligenceDrawerComponent } from '../intelligence-drawer/intelligence-drawer.component';
 import {
@@ -71,6 +72,7 @@ const DRAFTS_LIMIT = 200;
     DatePickerModule,
     PaginatorModule,
     SelectButtonModule,
+    SectionHeaderComponent,
     IntelligenceFeedComponent,
     IntelligenceComposeDialogComponent,
     IntelligenceDrawerComponent,
@@ -78,20 +80,17 @@ const DRAFTS_LIMIT = 200;
   ],
   template: `
     <div class="page-shell">
-      <header class="mb-4 flex items-baseline justify-between gap-2 border-b border-slate-200 pb-2">
-        <div>
-          <h1 class="text-lg font-semibold text-slate-900">{{ headingTitle() }}</h1>
-          <p class="text-xs text-slate-500">{{ headingSubtitle() }}</p>
-        </div>
+      <app-section-header [label]="headingTitle()" [detail]="headingSubtitle()">
         @if (spaceRole.canAuthorIntelligence() && spaceId()) {
           <p-button
+            actions
             label="Publish intelligence"
             icon="fa-solid fa-pen-nib"
             size="small"
             (onClick)="composeDialogOpen.set(true)"
           />
         }
-      </header>
+      </app-section-header>
 
       <div
         class="flex flex-wrap items-center gap-2 border border-slate-200 bg-slate-50/50 px-4 py-2"

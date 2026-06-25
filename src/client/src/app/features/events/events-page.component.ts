@@ -32,6 +32,7 @@ import { EventCategoryService } from '../../core/services/event-category.service
 import { MarkerCategoryService } from '../../core/services/marker-category.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { SectionHeaderComponent } from '../../shared/components/section-header/section-header.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
@@ -66,6 +67,7 @@ import { buildEventsExportColumns } from './events-export.util';
     TableModule,
     Tooltip,
     ManagePageShellComponent,
+    SectionHeaderComponent,
     GridToolbarComponent,
     TableSkeletonBodyComponent,
     EventDetailPanelComponent,
@@ -93,21 +95,6 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   private readonly excel = inject(GridExcelExportService);
   private readonly exportNaming = inject(ExportNamingService);
   protected spaceRole = inject(SpaceRoleService);
-
-  private readonly topbarActionsEffect = effect(() => {
-    if (this.spaceRole.canEdit()) {
-      this.topbarState.actions.set([
-        {
-          label: 'Log event',
-          icon: 'fa-solid fa-plus',
-          text: true,
-          callback: () => this.openCreateModal(),
-        },
-      ]);
-    } else {
-      this.topbarState.actions.set([]);
-    }
-  });
 
   readonly spaceId = signal('');
   tenantId = '';

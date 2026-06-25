@@ -33,20 +33,16 @@ describe('computeStatusStrip', () => {
     expect(result!.message).toContain('outage');
   });
 
-  it('priority 2: returns warn on partial outage', () => {
+  it('does NOT surface partial outage (non-actionable upstream status)', () => {
     const health = { ...healthOperational, status: 'partial_outage' };
     const result = computeStatusStrip(health, quotaAllClear);
-    expect(result).not.toBeNull();
-    expect(result!.level).toBe('warn');
-    expect(result!.message).toContain('partial disruptions');
+    expect(result).toBeNull();
   });
 
-  it('priority 3: returns warn on degraded performance', () => {
+  it('does NOT surface degraded performance (non-actionable upstream status)', () => {
     const health = { ...healthOperational, status: 'degraded_performance' };
     const result = computeStatusStrip(health, quotaAllClear);
-    expect(result).not.toBeNull();
-    expect(result!.level).toBe('warn');
-    expect(result!.message).toContain('reduced performance');
+    expect(result).toBeNull();
   });
 
   it('priority 4: returns block when AI is disabled', () => {
@@ -89,15 +85,26 @@ describe('computeStatusStrip', () => {
     expect(result!.message).toContain('80%');
   });
 
-  it('priority 7: returns info on active incidents', () => {
+  it('does NOT surface upstream incidents to users (non-actionable)', () => {
+    // Upstream status-page incidents lingered for days and users can't act on
+    // them; only the user's own quota/rate state and hard outages are shown.
     const health = {
       ...healthOperational,
       incidents: [{ name: 'Elevated error rates', status: 'investigating', impact: 'minor' }],
     };
     const result = computeStatusStrip(health, quotaAllClear);
+    expect(result).toBeNull();
+  });
+
+  it('still surfaces a major outage even with incidents present', () => {
+    const health = {
+      ...healthOperational,
+      status: 'major_outage',
+      incidents: [{ name: 'Elevated error rates', status: 'investigating', impact: 'minor' }],
+    };
+    const result = computeStatusStrip(health, quotaAllClear);
     expect(result).not.toBeNull();
-    expect(result!.level).toBe('info');
-    expect(result!.message).toContain('Elevated error rates');
+    expect(result!.level).toBe('block');
   });
 
   it('major outage takes priority over AI disabled', () => {
