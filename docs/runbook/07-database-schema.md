@@ -954,4 +954,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260624150400_rpc_platform_admin_upsert_ai_model_pricing.sql`
 - `20260624160000_drop_ai_import_status.sql`
 - `20260624170000_material_links_marker_trial_id.sql`
+- `20260624180000_rollup_imports_detail.sql`
 <!-- /AUTO-GEN:DRIFT -->

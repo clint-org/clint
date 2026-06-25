@@ -50,17 +50,31 @@ interface SpaceRow {
   entity_count: number;
 }
 
+interface EntityCounts {
+  companies: number;
+  assets: number;
+  trials: number;
+  markers: number;
+  events: number;
+}
+
 interface ImportRow {
   ai_call_id: string;
   source_title: string;
+  source_kind?: string | null;
   user_email: string;
   outcome: string;
   cost_usd: number;
   duration_ms: number;
   created_at: string;
+  closed_at?: string | null;
   model?: string;
+  prompt_tokens?: number | null;
+  completion_tokens?: number | null;
+  error_code?: string | null;
   error_message?: string | null;
   warnings?: string[] | null;
+  entity_counts?: EntityCounts | null;
 }
 
 interface ModelRow {
@@ -272,17 +286,43 @@ interface ModelRow {
           <ng-template #body let-row>
             <tr>
               <td class="max-w-[20rem] font-medium text-slate-900">
-                <div class="truncate">{{ row.source_title }}</div>
-                @if (row.error_message) {
-                  <div class="mt-0.5 text-[11px] font-normal text-red-700">
-                    {{ row.error_message }}
+                <div class="flex items-start gap-1.5">
+                  <button
+                    type="button"
+                    class="mt-0.5 shrink-0 text-slate-400 hover:text-slate-700"
+                    [attr.aria-expanded]="expandedCallId() === row.ai_call_id"
+                    [attr.aria-label]="
+                      expandedCallId() === row.ai_call_id
+                        ? 'Hide import details'
+                        : 'Show import details'
+                    "
+                    pTooltip="Toggle details"
+                    tooltipPosition="top"
+                    (click)="toggleRow(row.ai_call_id)"
+                  >
+                    <i
+                      [class]="
+                        'fa-solid text-[11px] ' +
+                        (expandedCallId() === row.ai_call_id
+                          ? 'fa-chevron-down'
+                          : 'fa-chevron-right')
+                      "
+                    ></i>
+                  </button>
+                  <div class="min-w-0">
+                    <div class="truncate">{{ row.source_title }}</div>
+                    @if (row.error_message) {
+                      <div class="mt-0.5 text-[11px] font-normal text-red-700">
+                        {{ row.error_message }}
+                      </div>
+                    }
+                    @if (row.warnings?.length) {
+                      <div class="mt-0.5 text-[11px] font-normal text-amber-700">
+                        {{ row.warnings.join(', ') }}
+                      </div>
+                    }
                   </div>
-                }
-                @if (row.warnings?.length) {
-                  <div class="mt-0.5 text-[11px] font-normal text-amber-700">
-                    {{ row.warnings.join(', ') }}
-                  </div>
-                }
+                </div>
               </td>
               <td class="text-xs text-slate-600">{{ row.user_email }}</td>
               <td>
@@ -301,6 +341,54 @@ interface ModelRow {
                 {{ row.created_at | date: 'MMM d, y HH:mm' }}
               </td>
             </tr>
+            @if (expandedCallId() === row.ai_call_id) {
+              <tr class="bg-slate-50/60">
+                <td colspan="6" class="px-4 py-3">
+                  <dl class="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-1.5 text-xs">
+                    <dt class="text-slate-500">Model</dt>
+                    <dd class="text-slate-800">{{ row.model ?? 'n/a' }}</dd>
+
+                    <dt class="text-slate-500">Tokens</dt>
+                    <dd class="tabular-nums text-slate-800">
+                      {{ (row.prompt_tokens ?? 0) | number }} in /
+                      {{ (row.completion_tokens ?? 0) | number }} out
+                    </dd>
+
+                    <dt class="text-slate-500">Source</dt>
+                    <dd class="text-slate-800">
+                      {{ row.source_title ?? 'n/a' }}
+                      @if (row.source_kind) {
+                        <span class="text-slate-400">({{ row.source_kind }})</span>
+                      }
+                    </dd>
+
+                    <dt class="text-slate-500">Created entities</dt>
+                    <dd class="text-slate-800">{{ entitySummary(row.entity_counts) }}</dd>
+
+                    @if (row.error_code) {
+                      <dt class="text-slate-500">Error</dt>
+                      <dd class="text-red-700">
+                        {{ row.error_code }}@if (row.error_message) {
+                          : {{ row.error_message }}
+                        }
+                      </dd>
+                    }
+
+                    @if (row.warnings?.length) {
+                      <dt class="text-slate-500">Warnings</dt>
+                      <dd class="text-amber-700">{{ row.warnings.join(', ') }}</dd>
+                    }
+
+                    @if (row.closed_at) {
+                      <dt class="text-slate-500">Completed</dt>
+                      <dd class="tabular-nums text-slate-800">
+                        {{ row.closed_at | date: 'MMM d, y HH:mm:ss' }}
+                      </dd>
+                    }
+                  </dl>
+                </td>
+              </tr>
+            }
           </ng-template>
           <ng-template #emptymessage>
             <tr>
@@ -493,6 +581,8 @@ export class SuperAdminAiUsageComponent implements OnInit {
   readonly tenantRows = signal<TenantRow[]>([]);
   readonly spaceRows = signal<SpaceRow[]>([]);
   readonly importRows = signal<ImportRow[]>([]);
+  // Which import row's detail panel is expanded (one at a time).
+  readonly expandedCallId = signal<string | null>(null);
 
   readonly confirmVisible = signal(false);
   readonly confirmReason = signal('');
@@ -680,6 +770,26 @@ export class SuperAdminAiUsageComponent implements OnInit {
       default:
         return 'bg-slate-50 text-slate-700';
     }
+  }
+
+  toggleRow(callId: string): void {
+    this.expandedCallId.update((cur) => (cur === callId ? null : callId));
+  }
+
+  // "3 companies, 2 assets, 1 trial" -- omits zero counts; falls back when the
+  // import produced nothing (or has no provenance link, e.g. a failed call).
+  entitySummary(counts: EntityCounts | null | undefined): string {
+    if (!counts) return 'No entities created';
+    const parts: string[] = [];
+    const add = (n: number, singular: string, plural: string) => {
+      if (n > 0) parts.push(`${n} ${n === 1 ? singular : plural}`);
+    };
+    add(counts.companies, 'company', 'companies');
+    add(counts.assets, 'asset', 'assets');
+    add(counts.trials, 'trial', 'trials');
+    add(counts.markers, 'marker', 'markers');
+    add(counts.events, 'event', 'events');
+    return parts.length ? parts.join(', ') : 'No entities created';
   }
 
   private async loadData(): Promise<void> {

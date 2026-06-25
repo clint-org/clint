@@ -254,4 +254,85 @@ describe('get_ai_usage_rollup failure log', () => {
 
     await admin.from('ai_calls').delete().eq('id', row!.id);
   });
+
+  it('returns user_email, cost_usd, and entity_counts for a successful import at space scope', async () => {
+    // Seed a source document, a successful priced ai_call linked to it, and two
+    // companies created from that import (provenance via source_doc_id).
+    const { data: doc } = await admin
+      .from('source_documents')
+      .insert({
+        space_id: p.org.spaceId,
+        source_kind: 'text',
+        source_title: 'Imports drill detail test',
+        source_text: 'seed',
+        text_hash: 'finding4-drill-1',
+        fetch_outcome: 'paste',
+        created_by: p.ids.contributor,
+      })
+      .select('id')
+      .single();
+
+    const { data: call } = await admin
+      .from('ai_calls')
+      .insert({
+        tenant_id: p.org.tenantId,
+        space_id: p.org.spaceId,
+        user_id: p.ids.contributor,
+        source_doc_id: doc!.id,
+        model: 'claude-opus-4-8',
+        feature: 'source_extract',
+        outcome: 'success',
+        prompt_tokens: 1000,
+        completion_tokens: 500,
+        cost_estimate_cents: 7.5,
+        duration_ms: 1234,
+      })
+      .select('id')
+      .single();
+
+    // Two companies created from this import (exercise the real provenance path).
+    for (const name of ['F4 Pharma A', 'F4 Pharma B']) {
+      const c = await as(p, 'contributor').rpc('create_company', {
+        p_space_id: p.org.spaceId,
+        p_name: name,
+        p_logo_url: null,
+        p_source_doc_id: doc!.id,
+      });
+      expectOk(c);
+    }
+
+    const r = await as(p, 'platform_admin').rpc('get_ai_usage_rollup', {
+      p_scope: 'space',
+      p_id: p.org.spaceId,
+      p_window: '7 days',
+    });
+    const payload = expectOk(r) as { data: Record<string, unknown>[] };
+    const detail = payload.data.find((x) => x['ai_call_id'] === call!.id);
+    expect(detail).toBeTruthy();
+    // Display contract the imports grid renders (was previously user_id / cost_cents).
+    expect(detail!['user_email']).toBe('contributor@personas.test');
+    expect(detail!['cost_usd']).toBeCloseTo(0.075, 4); // 7.5 cents -> $0.075
+    expect(detail!['entity_counts']).toMatchObject({
+      companies: 2,
+      assets: 0,
+      trials: 0,
+      markers: 0,
+      events: 0,
+    });
+
+    // tenant scope feeds the spaces drill's "Entities" column (flat total).
+    const tr = await as(p, 'platform_admin').rpc('get_ai_usage_rollup', {
+      p_scope: 'tenant',
+      p_id: p.org.tenantId,
+      p_window: '7 days',
+    });
+    const tPayload = expectOk(tr) as { data: Record<string, unknown>[] };
+    const spaceRow = tPayload.data.find((x) => x['space_id'] === p.org.spaceId);
+    expect(spaceRow).toBeTruthy();
+    expect(spaceRow!['entity_count']).toBeGreaterThanOrEqual(2);
+
+    await admin.from('companies').delete().eq('source_doc_id', doc!.id);
+    await admin.from('ai_calls').delete().eq('id', call!.id);
+    await admin.from('source_documents').delete().eq('id', doc!.id);
+  });
 });
