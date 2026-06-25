@@ -407,7 +407,7 @@ export async function handleSourceExtract(
     promptTokens,
     completionTokens,
     null,
-    { proposals, dropped },
+    { proposals, dropped, prompt: promptText, params: aiParams, raw: rawOutput },
     warnings
   );
 
