@@ -31,7 +31,11 @@ import { TrialNoteService } from '../../../core/services/trial-note.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
-import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
+import {
+  IntelligenceDetailBundle,
+  ReferencedInRow,
+} from '../../../core/models/primary-intelligence.model';
+import { buildEntityRouterLink } from '../../../shared/utils/intelligence-router-link';
 import { ChangeEvent } from '../../../core/models/change-event.model';
 import {
   CTGOV_DETAIL_DEFAULT_PATHS,
@@ -280,6 +284,18 @@ export class TrialDetailComponent implements OnDestroy {
     () => this.route.snapshot.paramMap.get('tenantId') ?? this.findAncestorParam('tenantId')
   );
 
+  /** Router link to the anchor entity whose analysis references this trial. */
+  protected referencedRouterLink(ref: ReferencedInRow): unknown[] {
+    return (
+      buildEntityRouterLink(
+        this.tenantIdSig(),
+        this.spaceIdSig(),
+        ref.entity_type,
+        ref.entity_id
+      ) ?? []
+    );
+  }
+
   private readonly landscape = inject(LandscapeStateService);
 
   private readonly landscapeInitEffect = effect(() => {
@@ -354,6 +370,27 @@ export class TrialDetailComponent implements OnDestroy {
     });
   });
 
+  // When ?markerId=<id> is present, open that marker in the read-only detail
+  // drawer (the repo-wide deep-link convention used by the catalysts and
+  // landscape pages). Distinct from ?marker=<id>, which opens the inline editor.
+  // A material's MARKER chip deep-links here since markers have no standalone
+  // page. openMarker (not selectMarker) so a restored selection of the same
+  // marker is not toggled closed; the lastApplied guard stops it re-opening
+  // after the user dismisses the drawer with the param still in the URL.
+  private lastAppliedMarkerIdParam: string | null = null;
+  private readonly markerViewParamEffect = effect(() => {
+    const markerId = this.queryParamMapSig().get('markerId');
+    const trial = this.trial();
+    if (!trial) return;
+    if (!markerId) {
+      this.lastAppliedMarkerIdParam = null;
+      return;
+    }
+    if (markerId === this.lastAppliedMarkerIdParam) return;
+    this.lastAppliedMarkerIdParam = markerId;
+    void this.landscape.openMarker(markerId);
+  });
+
   /**
    * Open the read-only marker detail drawer (Field / Date type / Last synced /
    * source link) for a markers-table row, mirroring the embedded timeline's
@@ -419,7 +456,8 @@ export class TrialDetailComponent implements OnDestroy {
   // is projected when its is_projected flag is set or its projection is not
   // the literal 'actual'.
   protected markerFillStyle(marker: Marker): 'outline' | 'filled' {
-    const projected = marker.is_projected || (!!marker.projection && marker.projection !== 'actual');
+    const projected =
+      marker.is_projected || (!!marker.projection && marker.projection !== 'actual');
     return projected ? 'outline' : 'filled';
   }
 
@@ -479,9 +517,7 @@ export class TrialDetailComponent implements OnDestroy {
       const trial = await this.trialService.getById(id);
       this.trial.set(trial);
       this.menuCache.clear();
-      this.indications.set(
-        await fetchIndicationsSafe(() => this.trialService.listIndications(id))
-      );
+      this.indications.set(await fetchIndicationsSafe(() => this.trialService.listIndications(id)));
       // History panel depends on the loaded trial's space_id; refresh once
       // the trial resolves so the inline panel reflects the latest versions.
       await this.refreshHistory();

@@ -13,12 +13,14 @@ import {
   materialExtLabel,
 } from '../../../core/models/material.model';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { routeForLink } from './material-link-route';
 
 /**
  * A single linked-entity chip the row renders. `route` is null when the
- * entity has no standalone page (markers) or when tenant/space context is
- * unavailable; the template then renders the chip as plain, non-link text.
- * `deleted` flags a link whose entity name resolved null server-side.
+ * entity has no standalone page (an unassigned marker) or when tenant/space
+ * context is unavailable; the template then renders the chip as plain,
+ * non-link text. `deleted` flags a link whose entity name resolved null
+ * server-side.
  */
 interface MaterialLinkChip {
   key: string;
@@ -26,6 +28,7 @@ interface MaterialLinkChip {
   typeLabel: string;
   name: string;
   route: unknown[] | null;
+  queryParams: Record<string, string> | null;
   deleted: boolean;
 }
 
@@ -86,6 +89,7 @@ interface MaterialLinkChip {
               @if (chip.route) {
                 <a
                   [routerLink]="chip.route"
+                  [queryParams]="chip.queryParams"
                   class="inline-flex min-w-0 max-w-full items-center gap-1 rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] text-slate-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 >
                   <span
@@ -255,41 +259,20 @@ export class MaterialRowComponent {
     const typeLabel = this.entityLabel(link.entity_type);
     const deleted = link.entity_name == null;
     const name = deleted ? `(deleted ${typeLabel.toLowerCase()})` : link.entity_name!;
+    const target = deleted ? null : routeForLink(link, tenant, space);
     return {
       key: `${link.entity_type}:${link.entity_id}:${index}`,
       type: link.entity_type,
       typeLabel,
       name,
-      route: deleted ? null : routeForLink(link, tenant, space),
+      route: target?.commands ?? null,
+      queryParams: target?.queryParams ?? null,
       deleted,
     };
   }
 
   protected entityLabel(t: string): string {
     return MATERIAL_ENTITY_LABEL[t as keyof typeof MATERIAL_ENTITY_LABEL] ?? t;
-  }
-}
-
-/**
- * Route commands for a linked entity, or null when the type has no standalone
- * page (markers) or tenant/space context is missing. Mirrors the entity
- * routes used by marker-detail-content.
- */
-function routeForLink(link: MaterialLink, tenant: string, space: string): unknown[] | null {
-  if (!tenant || !space) return null;
-  const base = ['/t', tenant, 's', space];
-  switch (link.entity_type) {
-    case 'company':
-      return [...base, 'manage', 'companies', link.entity_id];
-    case 'product':
-      return [...base, 'manage', 'assets', link.entity_id];
-    case 'trial':
-      return [...base, 'manage', 'trials', link.entity_id];
-    case 'space':
-      return base;
-    case 'marker':
-    default:
-      return null;
   }
 }
 
