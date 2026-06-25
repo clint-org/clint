@@ -36,7 +36,11 @@ import { PrimaryIntelligenceService } from '../../../core/services/primary-intel
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { Asset } from '../../../core/models/asset.model';
-import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
+import {
+  IntelligenceDetailBundle,
+  ReferencedInRow,
+} from '../../../core/models/primary-intelligence.model';
+import { buildEntityRouterLink } from '../../../shared/utils/intelligence-router-link';
 import { AssetFormComponent } from './asset-form.component';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
@@ -160,6 +164,14 @@ export class AssetDetailComponent implements OnDestroy {
 
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
+
+  /** Router link to the anchor entity whose analysis references this asset. */
+  protected referencedRouterLink(ref: ReferencedInRow): unknown[] {
+    return (
+      buildEntityRouterLink(this.tenantIdSig(), this.spaceIdSig(), ref.entity_type, ref.entity_id) ??
+      []
+    );
+  }
 
   private readonly landscape = inject(LandscapeStateService);
 

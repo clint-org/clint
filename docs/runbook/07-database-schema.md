@@ -31,6 +31,7 @@ erDiagram
   SPACES ||--o{ AI_CALLS : "space_id"
   TENANTS ||--o{ AI_CALLS : "tenant_id"
   TENANTS ||--o{ AI_CONFIG : "tenant_id"
+  AI_MODEL_PRICING ||--o{ AI_MODEL_PRICING : "superseded_by"
   ASSETS ||--o{ ASSET_INDICATIONS : "asset_id"
   INDICATIONS ||--o{ ASSET_INDICATIONS : "indication_id"
   SPACES ||--o{ ASSET_INDICATIONS : "space_id"
@@ -681,6 +682,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 **Tables in `public` schema not mentioned:**
 - `ai_calls`
 - `ai_config`
+- `ai_model_pricing`
 - `asset_mechanisms_of_action`
 - `asset_routes_of_administration`
 - `audit_events`
@@ -933,4 +935,9 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260618160000_seed_completed_trial_readouts_confirmed.sql`
 - `20260618170000_landscape_rpcs_company_logo_url.sql`
 - `20260618180000_bullseye_assets_trial_filter.sql`
+- `20260618190000_restore_preclinical_guard_bullseye_assets.sql`
+- `20260623120000_seed_demo_event_thread.sql`
+- `20260623130000_fix_detected_date_moved_title.sql`
+- `20260624120000_material_links_marker_trial_id.sql`
+- `20260624120000_remove_detected_event_priority.sql`
 <!-- /AUTO-GEN:DRIFT -->

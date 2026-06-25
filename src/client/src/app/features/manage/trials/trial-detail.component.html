@@ -676,13 +676,20 @@
             } @else {
               <ul class="divide-y divide-slate-100">
                 @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
-                  <li class="flex flex-wrap items-baseline gap-2 py-2">
+                  <li
+                    class="group relative -mx-2 flex flex-wrap items-baseline gap-2 px-2 py-2 transition-colors hover:bg-slate-50"
+                  >
                     <span
-                      class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
+                      class="rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
                     >
                       {{ ref.entity_type }}
                     </span>
-                    <span class="text-sm text-slate-800">{{ ref.headline }}</span>
+                    <a
+                      [routerLink]="referencedRouterLink(ref)"
+                      class="text-sm text-slate-800 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+                    >
+                      {{ ref.headline }}
+                    </a>
                     @if (ref.relationship_type) {
                       <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
                         {{ ref.relationship_type }}
