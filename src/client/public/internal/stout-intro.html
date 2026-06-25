@@ -1590,9 +1590,9 @@
           <p class="lede">
             Each Stout client engagement runs as its own space in Clint, with its data firewalled to
             that engagement and visible only to that engagement's users. It doesn't replace the data
-            tools Stout already runs. It's the layer where Stout's analysis sits on top of them:
-            where the CI work lives, where deliverables get filed, and where the client sees it all
-            in real time.
+            tools Stout already runs (Evaluate, Citeline, and the rest). It's the layer where
+            Stout's analysis sits on top of them: where the CI work lives, where deliverables get
+            filed, and where the client sees it all in real time.
           </p>
           <div class="body">
             <div class="grid-2">
@@ -1648,12 +1648,12 @@
                     alt="Primary analysis on a trial detail page: a published note with its author, the entities it is linked to, and a history panel below showing how the analysis has changed from one version to the next"
                   />
                 </button>
-                <h3>Stout's analysis, with its full history</h3>
+                <h3>Stout's strategic read, with its full history</h3>
                 <p>
-                  Stout's analysts write their analysis directly onto any trial, company, asset, or
-                  catalyst in a rich text editor. Each time they publish, Clint keeps the version
-                  before it, so the client always sees the latest thinking and anyone can look back
-                  at how it got there.
+                  Stout's analysts write the read directly onto any trial, company, asset, or
+                  catalyst: what the event means, what it shifts, and what the client should do
+                  about it. Every version is kept, so the client always sees the latest thinking and
+                  can trace how it changed.
                 </p>
               </div>
               <div class="card">
@@ -1918,7 +1918,8 @@
           <h2 class="slide-title">The work shifts from assembly to interpretation.</h2>
           <p class="lede">
             Clint doesn't just make the work faster. It changes what a Stout engagement is, and
-            where Stout's hours go.
+            where Stout's hours go. No advisory firm delivers competitive intelligence this way
+            today; Stout would be first.
           </p>
           <div class="body">
             <div class="shift">
@@ -1954,7 +1955,9 @@
                 <div class="shift-after">
                   <strong>Analysis, its full history, and filed deliverables accumulate.</strong>
                   The watchlist and annotations from Q1 carry into Q2; a year in, the account holds
-                  a full year of Stout's thinking, and that is hard to walk away from.
+                  dozens of annotated catalysts, four quarters of analysis with its full edit
+                  history, and the client's own watchlist. Walking away means leaving all of it
+                  behind.
                 </div>
               </div>
             </div>
@@ -1962,6 +1965,8 @@
               <strong>And the client seeing it doesn't make Stout any less needed.</strong>
               Assembling the picture was never the value; Stout's analysis is. A live, annotated
               view puts that analysis in front of the client every week, not just at the readout.
+              The quarterly briefing doesn't disappear; it sharpens to "here is what we recommend
+              you do," on top of a view the client already trusts.
             </p>
             <p class="shift-foot">
               <strong>And no engineering investment.</strong> Clint runs the syncs, the
@@ -2304,7 +2309,10 @@
       </section>
 
       <!-- ============ SLIDE 8: HOW IT'S PRICED ============ -->
-      <section class="slide">
+      <!-- Presenter-only: removed from the DOM unless the deck is opened with
+           ?present, so the bare shareable URL sent ahead of time carries no
+           pricing slide and no link to the pricing-detail page. -->
+      <section class="slide" data-present-only>
         <div class="accent-bar"></div>
         <div class="slide-inner">
           <div class="wordmark">
@@ -2476,6 +2484,15 @@
 
     <script>
       (function () {
+        // Presenter mode: open the deck with ?present to include the
+        // pricing slide (and its link to the pricing-detail page). Without
+        // the flag — the link sent to the client ahead of the call — every
+        // [data-present-only] slide is stripped from the DOM, so it never
+        // appears, the counter total drops, and nav skips it cleanly.
+        const presentMode = new URLSearchParams(location.search).has('present');
+        if (!presentMode) {
+          document.querySelectorAll('[data-present-only]').forEach((el) => el.remove());
+        }
         const slides = document.querySelectorAll('.slide');
         const counter = document.getElementById('counter');
         const prevBtn = document.getElementById('prev');
