@@ -7,10 +7,12 @@ export interface AiStatusStrip {
 
 export interface AiImportStatusResult {
   ai_enabled: boolean;
-  daily_cap_cents: number | null;
-  spent_today_cents: number;
-  rate_used_hour: number;
-  rate_limit_hour: number | null;
+  // Rolling-24h usage as a percentage of the tenant's daily token cap.
+  // Null for non-owners: organisation-level usage is never exposed to them
+  // (mirrors get_tenant_ai_status, which gates the percentage behind ownership).
+  daily_usage_pct: number | null;
+  per_user_rate_per_min: number | null;
+  per_user_rate_per_hour: number | null;
 }
 
 export interface AiHealthResult {
@@ -55,39 +57,22 @@ export function computeStatusStrip(
     };
   }
 
-  if (
-    quota &&
-    quota.daily_cap_cents !== null &&
-    quota.spent_today_cents >= quota.daily_cap_cents
-  ) {
+  // Daily usage is a rolling-24h percentage of the tenant token cap. It is only
+  // populated for tenant owners/platform admins; non-owners get null and see no
+  // usage strip. Per-user rate limits are enforced server-side at preflight
+  // (HTTP 429 + a countdown in the import dialog), so they are not surfaced here.
+  if (quota && quota.daily_usage_pct !== null && quota.daily_usage_pct >= 100) {
     return {
       level: 'block',
-      message: `Daily AI usage limit reached (resets at midnight UTC). ${quota.spent_today_cents}/${quota.daily_cap_cents} used today.`,
+      message:
+        'Daily AI usage limit reached. It resets on a rolling 24-hour basis.',
     };
   }
 
-  if (
-    quota &&
-    quota.rate_limit_hour !== null &&
-    quota.rate_used_hour >= quota.rate_limit_hour
-  ) {
-    return {
-      level: 'block',
-      message: `Hourly rate limit reached (${quota.rate_used_hour}/${quota.rate_limit_hour} calls this hour). Try again shortly.`,
-    };
-  }
-
-  if (
-    quota &&
-    quota.daily_cap_cents !== null &&
-    quota.daily_cap_cents > 0 &&
-    quota.spent_today_cents >= quota.daily_cap_cents * 0.8
-  ) {
-    const pct = Math.round((quota.spent_today_cents / quota.daily_cap_cents) * 100);
-    const remainingCents = quota.daily_cap_cents - quota.spent_today_cents;
+  if (quota && quota.daily_usage_pct !== null && quota.daily_usage_pct >= 80) {
     return {
       level: 'warn',
-      message: `AI usage at ${pct}% of daily limit. ${remainingCents} cents remaining today.`,
+      message: `AI usage at ${quota.daily_usage_pct}% of the daily limit.`,
     };
   }
 

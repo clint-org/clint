@@ -952,4 +952,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260624150200_backfill_ai_call_cost.sql`
 - `20260624150300_rollup_failure_log.sql`
 - `20260624150400_rpc_platform_admin_upsert_ai_model_pricing.sql`
+- `20260624160000_drop_ai_import_status.sql`
 <!-- /AUTO-GEN:DRIFT -->

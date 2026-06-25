@@ -421,7 +421,7 @@ export class ImportPageComponent implements OnInit, OnDestroy {
   }
 
   private async fetchQuotaStatus(tenantId: string): Promise<AiImportStatusResult | null> {
-    const { data, error } = await this.supabase.client.rpc('ai_import_status', {
+    const { data, error } = await this.supabase.client.rpc('get_tenant_ai_status', {
       p_tenant_id: tenantId,
     });
     if (error || !data) return null;

@@ -10,12 +10,14 @@ describe('computeStatusStrip', () => {
     checked_at: '2026-05-27T00:00:00Z',
   };
 
+  // Token-based, privacy-correct quota shape (mirrors get_tenant_ai_status).
+  // daily_usage_pct is a rolling-24h percentage; it is null for non-owners,
+  // who never see organisation-level usage.
   const quotaAllClear = {
     ai_enabled: true,
-    daily_cap_cents: 1000,
-    spent_today_cents: 200,
-    rate_used_hour: 2,
-    rate_limit_hour: 10,
+    daily_usage_pct: 20,
+    per_user_rate_per_min: 6,
+    per_user_rate_per_hour: 60,
   };
 
   it('returns null when all systems are clear', () => {
@@ -55,50 +57,39 @@ describe('computeStatusStrip', () => {
     expect(result!.message).toContain('not enabled');
   });
 
-  it('priority 5: returns block when daily quota is exhausted', () => {
-    const quota = { ...quotaAllClear, daily_cap_cents: 1000, spent_today_cents: 1000 };
-    const result = computeStatusStrip(healthOperational, quota);
-    expect(result).not.toBeNull();
-    expect(result!.level).toBe('block');
-    expect(result!.message).toContain('Daily AI usage limit reached');
-    expect(result!.message).toContain('1000/1000');
-  });
-
-  it('priority 5: returns block when spent exceeds cap', () => {
-    const quota = { ...quotaAllClear, daily_cap_cents: 500, spent_today_cents: 600 };
+  it('priority 5: returns block when daily usage reaches 100%', () => {
+    const quota = { ...quotaAllClear, daily_usage_pct: 100 };
     const result = computeStatusStrip(healthOperational, quota);
     expect(result).not.toBeNull();
     expect(result!.level).toBe('block');
     expect(result!.message).toContain('Daily AI usage limit reached');
   });
 
-  it('priority 6: returns block when hourly rate limit is reached', () => {
-    const quota = { ...quotaAllClear, rate_used_hour: 10, rate_limit_hour: 10 };
+  it('priority 5: treats usage above 100% as exhausted (defensive)', () => {
+    const quota = { ...quotaAllClear, daily_usage_pct: 130 };
     const result = computeStatusStrip(healthOperational, quota);
     expect(result).not.toBeNull();
     expect(result!.level).toBe('block');
-    expect(result!.message).toContain('Hourly rate limit reached');
-    expect(result!.message).toContain('10/10');
+    expect(result!.message).toContain('Daily AI usage limit reached');
   });
 
-  it('priority 7: returns warn when at 80%+ of daily cap', () => {
-    const quota = { ...quotaAllClear, daily_cap_cents: 1000, spent_today_cents: 850 };
+  it('priority 6: returns warn at 80%+ of daily usage', () => {
+    const quota = { ...quotaAllClear, daily_usage_pct: 85 };
     const result = computeStatusStrip(healthOperational, quota);
     expect(result).not.toBeNull();
     expect(result!.level).toBe('warn');
     expect(result!.message).toContain('85%');
-    expect(result!.message).toContain('150 cents remaining');
   });
 
-  it('priority 7: returns warn at exactly 80%', () => {
-    const quota = { ...quotaAllClear, daily_cap_cents: 1000, spent_today_cents: 800 };
+  it('priority 6: returns warn at exactly 80%', () => {
+    const quota = { ...quotaAllClear, daily_usage_pct: 80 };
     const result = computeStatusStrip(healthOperational, quota);
     expect(result).not.toBeNull();
     expect(result!.level).toBe('warn');
     expect(result!.message).toContain('80%');
   });
 
-  it('priority 8: returns info on active incidents', () => {
+  it('priority 7: returns info on active incidents', () => {
     const health = {
       ...healthOperational,
       incidents: [{ name: 'Elevated error rates', status: 'investigating', impact: 'minor' }],
@@ -117,42 +108,29 @@ describe('computeStatusStrip', () => {
     expect(result!.message).toContain('outage');
   });
 
-  it('AI disabled takes priority over quota exhausted', () => {
-    const quota = {
-      ...quotaAllClear,
-      ai_enabled: false,
-      daily_cap_cents: 100,
-      spent_today_cents: 200,
-    };
+  it('AI disabled takes priority over usage exhausted', () => {
+    const quota = { ...quotaAllClear, ai_enabled: false, daily_usage_pct: 100 };
     const result = computeStatusStrip(healthOperational, quota);
     expect(result!.level).toBe('block');
     expect(result!.message).toContain('not enabled');
   });
 
-  it('quota exhausted takes priority over rate limit', () => {
-    const quota = {
-      ...quotaAllClear,
-      daily_cap_cents: 500,
-      spent_today_cents: 500,
-      rate_used_hour: 10,
-      rate_limit_hour: 10,
-    };
+  it('usage exhausted takes priority over near-limit warning', () => {
+    const quota = { ...quotaAllClear, daily_usage_pct: 100 };
     const result = computeStatusStrip(healthOperational, quota);
     expect(result!.level).toBe('block');
     expect(result!.message).toContain('Daily AI usage limit');
   });
 
-  it('rate limit takes priority over near-limit warning', () => {
-    const quota = {
-      ...quotaAllClear,
-      daily_cap_cents: 1000,
-      spent_today_cents: 850,
-      rate_used_hour: 10,
-      rate_limit_hour: 10,
+  it('near-limit warning takes priority over active incidents', () => {
+    const health = {
+      ...healthOperational,
+      incidents: [{ name: 'Some incident', status: 'monitoring', impact: 'minor' }],
     };
-    const result = computeStatusStrip(healthOperational, quota);
-    expect(result!.level).toBe('block');
-    expect(result!.message).toContain('Hourly rate limit reached');
+    const quota = { ...quotaAllClear, daily_usage_pct: 90 };
+    const result = computeStatusStrip(health, quota);
+    expect(result!.level).toBe('warn');
+    expect(result!.message).toContain('90%');
   });
 
   it('handles null health gracefully', () => {
@@ -176,31 +154,14 @@ describe('computeStatusStrip', () => {
     expect(result).toBeNull();
   });
 
-  it('handles null daily_cap_cents (no cap configured)', () => {
-    const quota = { ...quotaAllClear, daily_cap_cents: null, spent_today_cents: 9999 };
+  it('handles null daily_usage_pct (non-owner, no usage visibility)', () => {
+    const quota = { ...quotaAllClear, daily_usage_pct: null };
     const result = computeStatusStrip(healthOperational, quota);
     expect(result).toBeNull();
   });
 
-  it('handles null rate_limit_hour (no rate limit configured)', () => {
-    const quota = { ...quotaAllClear, rate_limit_hour: null, rate_used_hour: 999 };
-    const result = computeStatusStrip(healthOperational, quota);
-    expect(result).toBeNull();
-  });
-
-  it('near-limit warning takes priority over active incidents', () => {
-    const health = {
-      ...healthOperational,
-      incidents: [{ name: 'Some incident', status: 'monitoring', impact: 'minor' }],
-    };
-    const quota = { ...quotaAllClear, daily_cap_cents: 1000, spent_today_cents: 900 };
-    const result = computeStatusStrip(health, quota);
-    expect(result!.level).toBe('warn');
-    expect(result!.message).toContain('90%');
-  });
-
-  it('does not warn below 80% of daily cap', () => {
-    const quota = { ...quotaAllClear, daily_cap_cents: 1000, spent_today_cents: 790 };
+  it('does not warn below 80% of daily usage', () => {
+    const quota = { ...quotaAllClear, daily_usage_pct: 79 };
     const result = computeStatusStrip(healthOperational, quota);
     expect(result).toBeNull();
   });
