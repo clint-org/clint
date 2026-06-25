@@ -31,9 +31,9 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
         />
       </div>
 
-      <!-- Section: Competitive Summary -->
+      <!-- Section: Competitive read (auto-generated narration) -->
       <div class="controls-section">
-        <div class="section-label">SUMMARY</div>
+        <div class="section-label">AT A GLANCE</div>
         @if (read().text) {
           <app-competitive-read-strip class="read-content" [read]="read()" />
         }
@@ -221,7 +221,9 @@ export class BullseyeControlsPanelComponent {
   }
 
   /** Domain noun for the spoke count, e.g. "companies" under company grouping. */
-  protected readonly spokeNoun = computed(() => spokeGroupingNoun(this.grouping(), this.spokeCount()));
+  protected readonly spokeNoun = computed(() =>
+    spokeGroupingNoun(this.grouping(), this.spokeCount())
+  );
 
   // When grouping by asset, the spoke count and the asset count are the same
   // number with the same noun ("N assets" twice). Collapse to a single box.

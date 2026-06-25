@@ -261,7 +261,7 @@ export class RolesHelpComponent {
       },
       {
         q: 'When is Reader the right role?',
-        a: 'When the person consumes the analysis but should not change it. Typical cases: a client stakeholder who reviews findings, an executive who reads catalysts, an auditor.',
+        a: 'When the person consumes the intelligence but should not change it. Typical cases: a client stakeholder who reviews findings, an executive who reads catalysts, an auditor.',
       },
       {
         q: 'What happens when I add an agency colleague to a space?',

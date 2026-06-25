@@ -50,7 +50,7 @@ export class SpaceRoleService {
   readonly isAgencyMember = this._isAgencyMember.asReadonly();
 
   /**
-   * Who may author primary intelligence ("Analysis"): space editors and
+   * Who may author primary intelligence: space editors and
    * owners, plus agency members. Mirrors the server gate on
    * upsert/withdraw/delete_primary_intelligence
    * (has_space_access(owner/editor) OR is_agency_member_of_space). Space

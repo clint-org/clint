@@ -219,7 +219,7 @@ export class EngagementLandingComponent implements OnInit {
       },
       {
         key: 'newIntel',
-        label: pluralize(s?.new_intel_7d, 'New analysis', 'New analyses'),
+        label: pluralize(s?.new_intel_7d, 'New intelligence entry', 'New intelligence entries'),
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
         display: s?.new_intel_7d == null ? '' : String(s.new_intel_7d),

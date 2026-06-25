@@ -126,7 +126,7 @@ export class EngagementDetailComponent implements OnInit {
       await this.loadIntelligence();
       this.messageService.add({
         severity: 'success',
-        summary: 'Analysis withdrawn.',
+        summary: 'Intelligence withdrawn.',
         life: 3000,
       });
     } catch (err) {
@@ -155,7 +155,7 @@ export class EngagementDetailComponent implements OnInit {
       await this.loadIntelligence();
       this.messageService.add({
         severity: 'success',
-        summary: 'Analysis purged.',
+        summary: 'Intelligence purged.',
         life: 3000,
       });
     } catch (err) {
@@ -180,7 +180,11 @@ export class EngagementDetailComponent implements OnInit {
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
     await this.loadIntelligence();
-    this.messageService.add({ severity: 'success', summary: 'Analysis published.', life: 3000 });
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Intelligence published.',
+      life: 3000,
+    });
   }
 
   protected async onIntelligenceDelete(): Promise<void> {
@@ -190,8 +194,8 @@ export class EngagementDetailComponent implements OnInit {
     // Unnamed-item path: the engagement intelligence is a single read,
     // require the literal word 'delete' to gate the destructive action.
     const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete primary intelligence',
-      message: 'Delete the primary intelligence analysis for this space?',
+      header: 'Delete this intelligence',
+      message: 'Delete the intelligence for this space?',
       requireTypedConfirmation: true,
       typedConfirmationValue: 'delete',
     });
@@ -201,7 +205,7 @@ export class EngagementDetailComponent implements OnInit {
       this.messageService.add({
         severity: 'success',
         summary: 'Deleted',
-        detail: 'Primary intelligence removed.',
+        detail: 'Intelligence removed.',
       });
       await this.loadIntelligence();
     } catch (err) {
