@@ -62,6 +62,7 @@ interface ImportRow {
   ai_call_id: string;
   source_title: string;
   source_kind?: string | null;
+  import_kind?: string | null;
   user_email: string;
   outcome: string;
   cost_usd: number;
@@ -75,6 +76,12 @@ interface ImportRow {
   error_message?: string | null;
   warnings?: string[] | null;
   entity_counts?: EntityCounts | null;
+}
+
+// Full request/response for one call, fetched on expand via get_ai_call_detail.
+interface AiCallDetail {
+  request?: { kind?: string; input?: unknown } | null;
+  output?: { prompt?: string; params?: unknown; raw?: string } | null;
 }
 
 interface ModelRow {
@@ -345,6 +352,9 @@ interface ModelRow {
               <tr class="bg-slate-50/60">
                 <td colspan="6" class="px-4 py-3">
                   <dl class="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-1.5 text-xs">
+                    <dt class="text-slate-500">Mode</dt>
+                    <dd class="text-slate-800">{{ row.import_kind ?? 'n/a' }}</dd>
+
                     <dt class="text-slate-500">Model</dt>
                     <dd class="text-slate-800">{{ row.model ?? 'n/a' }}</dd>
 
@@ -386,6 +396,83 @@ interface ModelRow {
                       </dd>
                     }
                   </dl>
+
+                  @if (detailLoading(row.ai_call_id)) {
+                    <p class="mt-3 text-xs text-slate-400">
+                      Loading request and response&hellip;
+                    </p>
+                  } @else if (detailError(row.ai_call_id)) {
+                    <p class="mt-3 text-xs text-red-600">Could not load request/response.</p>
+                  } @else if (loadedDetail(row.ai_call_id); as detail) {
+                    <div class="mt-3 space-y-3">
+                      @if (detail.request?.input; as input) {
+                        <div>
+                          <div class="mb-1 flex items-center justify-between">
+                            <span
+                              class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                            >
+                              Input
+                            </span>
+                            <button
+                              type="button"
+                              class="text-[11px] font-medium text-brand-600 hover:text-brand-700"
+                              (click)="copy(pretty(input))"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                          <pre
+                            class="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-white p-2 text-[11px] text-slate-700 ring-1 ring-slate-200"
+                            >{{ pretty(input) }}</pre
+                          >
+                        </div>
+                      }
+                      @if (detail.output?.prompt; as prompt) {
+                        <div>
+                          <div class="mb-1 flex items-center justify-between">
+                            <span
+                              class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                            >
+                              Prompt
+                            </span>
+                            <button
+                              type="button"
+                              class="text-[11px] font-medium text-brand-600 hover:text-brand-700"
+                              (click)="copy(prompt)"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                          <pre
+                            class="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-white p-2 text-[11px] text-slate-700 ring-1 ring-slate-200"
+                            >{{ prompt }}</pre
+                          >
+                        </div>
+                      }
+                      @if (detail.output?.raw; as raw) {
+                        <div>
+                          <div class="mb-1 flex items-center justify-between">
+                            <span
+                              class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                            >
+                              Model output
+                            </span>
+                            <button
+                              type="button"
+                              class="text-[11px] font-medium text-brand-600 hover:text-brand-700"
+                              (click)="copy(raw)"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                          <pre
+                            class="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-white p-2 text-[11px] text-slate-700 ring-1 ring-slate-200"
+                            >{{ raw }}</pre
+                          >
+                        </div>
+                      }
+                    </div>
+                  }
                 </td>
               </tr>
             }
@@ -583,6 +670,8 @@ export class SuperAdminAiUsageComponent implements OnInit {
   readonly importRows = signal<ImportRow[]>([]);
   // Which import row's detail panel is expanded (one at a time).
   readonly expandedCallId = signal<string | null>(null);
+  // Lazy-loaded full request/response per ai_call (fetched on first expand).
+  readonly callDetails = signal<Record<string, AiCallDetail | 'loading' | 'error'>>({});
 
   readonly confirmVisible = signal(false);
   readonly confirmReason = signal('');
@@ -772,8 +861,50 @@ export class SuperAdminAiUsageComponent implements OnInit {
     }
   }
 
-  toggleRow(callId: string): void {
-    this.expandedCallId.update((cur) => (cur === callId ? null : callId));
+  async toggleRow(callId: string): Promise<void> {
+    const next = this.expandedCallId() === callId ? null : callId;
+    this.expandedCallId.set(next);
+    if (next && this.callDetails()[next] === undefined) {
+      await this.loadCallDetail(next);
+    }
+  }
+
+  private async loadCallDetail(callId: string): Promise<void> {
+    this.callDetails.update((m) => ({ ...m, [callId]: 'loading' }));
+    const { data, error } = await this.supabase.client.rpc('get_ai_call_detail', {
+      p_ai_call_id: callId,
+    });
+    this.callDetails.update((m) => ({
+      ...m,
+      [callId]: error || !data ? 'error' : (data as AiCallDetail),
+    }));
+  }
+
+  detailLoading(callId: string): boolean {
+    return this.callDetails()[callId] === 'loading';
+  }
+
+  detailError(callId: string): boolean {
+    return this.callDetails()[callId] === 'error';
+  }
+
+  loadedDetail(callId: string): AiCallDetail | null {
+    const d = this.callDetails()[callId];
+    return d && d !== 'loading' && d !== 'error' ? d : null;
+  }
+
+  async copy(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // clipboard may be unavailable (non-secure context); ignore
+    }
+  }
+
+  pretty(value: unknown): string {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value;
+    return JSON.stringify(value, null, 2);
   }
 
   // "3 companies, 2 assets, 1 trial" -- omits zero counts; falls back when the

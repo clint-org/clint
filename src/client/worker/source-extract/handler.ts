@@ -157,6 +157,11 @@ export async function handleSourceExtract(
     p_model: 'claude-sonnet-4-6',
     p_feature: 'source_extract',
     p_input_hash: textHash,
+    // Reproducibility capture: mode + raw input, enough to re-run this import.
+    p_request: {
+      kind: body.source_kind,
+      input: sourceUrl ? { url: sourceUrl, text: sourceText } : { text: sourceText },
+    },
   });
 
   const preflight = await callRpc<{
@@ -196,6 +201,9 @@ export async function handleSourceExtract(
   });
 
   const prompt = buildPrompt(sourceText, inventory);
+  // Captured into ai_calls.output at close for exact replay/analysis.
+  const promptText = `${prompt.system}\n\n${prompt.user}`;
+  const aiParams = { model: preflight.model, max_tokens: 8192 };
   const totalTokens = estimateTokens(prompt.system + prompt.user);
   if (totalTokens > 190_000) {
     await closeAiCall(
@@ -206,7 +214,8 @@ export async function handleSourceExtract(
       Date.now() - start,
       null,
       null,
-      'source_too_large_for_context'
+      'source_too_large_for_context',
+      { prompt: promptText, params: aiParams }
     );
     return jsonErrorWithCode(
       422,
@@ -250,7 +259,8 @@ export async function handleSourceExtract(
         Date.now() - start,
         promptTokens,
         completionTokens,
-        'no_text_block'
+        'no_text_block',
+        { prompt: promptText, params: aiParams }
       );
       return jsonErrorWithCode(
         500,
@@ -274,7 +284,8 @@ export async function handleSourceExtract(
       Date.now() - start,
       promptTokens,
       completionTokens,
-      String(e)
+      String(e),
+      { prompt: promptText, params: aiParams }
     );
     return jsonErrorWithCode(500, outcome, msg, cors);
   }
@@ -290,7 +301,7 @@ export async function handleSourceExtract(
       promptTokens,
       completionTokens,
       validation.reason,
-      { raw_output: rawOutput.substring(0, 5000) }
+      { prompt: promptText, params: aiParams, raw: rawOutput }
     );
     return jsonErrorWithCode(
       500,
@@ -320,7 +331,7 @@ export async function handleSourceExtract(
       promptTokens,
       completionTokens,
       null,
-      { proposals, dropped },
+      { proposals, dropped, prompt: promptText, params: aiParams, raw: rawOutput },
       warnings
     );
     return json(

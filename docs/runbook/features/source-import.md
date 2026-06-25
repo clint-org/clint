@@ -139,6 +139,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - platform_admin_update_ai_config
     - platform_admin_upsert_ai_model_pricing
     - get_ai_usage_rollup
+    - get_ai_call_detail
   tables:
     - ai_config
     - ai_model_pricing
