@@ -17,11 +17,14 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - ai_call_open
     - ai_call_preflight
     - ai_call_close
+    - ai_resolve_model
+    - ai_estimate_cost_cents
     - get_space_inventory_snapshot
     - _verify_extract_source_worker_secret
   tables:
     - ai_calls
     - ai_config
+    - ai_model_pricing
   related:
     - source-import-commit
   user_facing: false
@@ -98,11 +101,11 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   status: active
 
 - id: source-import-page
-  summary: Full-page import shell with three tabs (NCT list, From URL, From text). Replaces the former dialog. Includes an AI status panel that checks quotas, rate limits, and Anthropic service health on load. Disables submit when AI is unavailable. Reachable from the engagement toolbar, manage section, command palette, and empty-space auto-redirect.
+  summary: Full-page import shell with three tabs (NCT list, From URL, From text). Replaces the former dialog. Includes an AI status panel that checks the tenant's daily token-budget usage and Anthropic service health on load (via get_tenant_ai_status; owners see a usage percentage, non-owners only the enabled flag). Disables submit when AI is unavailable. Reachable from the engagement toolbar, manage section, command palette, and empty-space auto-redirect.
   routes:
     - /t/:tenantId/s/:spaceId/import
   rpcs:
-    - ai_import_status
+    - get_tenant_ai_status
   tables:
     - ai_config
     - ai_calls
@@ -128,14 +131,17 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   status: deprecated
 
 - id: ai-admin-toggle
-  summary: Platform-admin RPC to toggle ai_enabled per tenant with required reason. Tier 1 audited.
+  summary: Platform-admin controls on /super-admin/ai-usage. Toggle ai_enabled per tenant, set the model, token cap, and per-user rate limits (platform_admin_update_ai_config), edit the per-model price catalog (platform_admin_upsert_ai_model_pricing), and read the usage rollup with failure log (get_ai_usage_rollup). All mutations are Tier 1 audited with a required reason.
   routes:
     - /super-admin/ai-usage
   rpcs:
     - platform_admin_set_ai_enabled
+    - platform_admin_update_ai_config
+    - platform_admin_upsert_ai_model_pricing
     - get_ai_usage_rollup
   tables:
     - ai_config
+    - ai_model_pricing
     - audit_events
   related:
     - super-admin-shell
@@ -144,7 +150,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   status: active
 
 - id: ai-tenant-config
-  summary: Tenant-owner RPC to update the tenant's AI configuration (model, daily cap, rate limits) for their own tenant, separate from the platform-admin enable/disable toggle.
+  summary: Tenant-owner on/off switch for their own tenant's AI (tenant_owner_update_ai_config, enabled-only). Model, token cap, and rate limits are platform-admin controlled and not editable by owners; the settings page shows owners a read-only usage percentage via get_tenant_ai_status.
   routes:
     - /t/:tenantId/settings
   rpcs:
@@ -162,7 +168,8 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
 
 | Table | Purpose | RLS |
 |---|---|---|
-| `ai_config` | Tenant-level AI settings (model, caps, rates, enabled flag) | Tenant owner + platform admin |
+| `ai_config` | Tenant-level AI settings (model, `daily_token_cap`, per-user rate limits, enabled flag) | Platform admin only (direct table); owners reach it through SECURITY DEFINER RPCs |
+| `ai_model_pricing` | Per-model price catalog (`input_cents_per_mtok`, `output_cents_per_mtok`, family, status, `superseded_by`). Source of truth for the model chooser and server-side cost estimation. | Any authenticated user SELECT; platform admin INSERT/UPDATE/DELETE |
 | `source_documents` | One row per imported source (URL, pasted text, or NCT batch). `source_kind` CHECK allows `'url'`, `'text'`, `'nct'`. | Agency members of space + platform admin SELECT; RPC-only write |
 | `ai_calls` | Every LLM call regardless of outcome | Agency SELECT; RPC-only write; platform admin DELETE |
 | `trial_assets` | Many-to-many between trials and assets; source of truth for the set of assets a trial tests. `is_primary` marks the headline member, mirrored into `trials.asset_id` by a sync trigger. Written via `set_trial_assets` (RPC) and the trial-insert bootstrap trigger. | Agency members of space via parent trial; RPC-only write |
@@ -201,7 +208,10 @@ Env bindings: `ANTHROPIC_API_KEY`, `EXTRACT_SOURCE_WORKER_SECRET` (both via `wra
 
 | RPC | Purpose |
 |---|---|
-| `ai_import_status(p_tenant_id)` | Lightweight pre-check: returns `ai_enabled`, `daily_cap_cents`, `spent_today_cents`, `rate_used_hour`, `rate_limit_hour`. Callable by any authenticated user. STABLE, SECURITY DEFINER. |
+| `get_tenant_ai_status(p_tenant_id)` | Owner-safe status read for the import page and tenant settings. Returns `ai_enabled` to anyone with tenant access; owners/platform admins also get `daily_usage_pct` (rolling-24h token usage as a percentage) plus per-user rate limits. Never returns the token cap or any dollar amount. STABLE, SECURITY DEFINER. Replaces the removed cents-based `ai_import_status`. |
+| `ai_resolve_model(p_requested)` / `ai_estimate_cost_cents(p_model, p_prompt_tokens, p_completion_tokens)` | Server-side helpers. `ai_resolve_model` validates a requested model against the active catalog and falls back to sonnet/newest-active; `ai_estimate_cost_cents` prices token counts against `ai_model_pricing` (per million tokens). Used by `ai_call_open`/`ai_call_close` so cost is snapshotted authoritatively per call. |
+| `platform_admin_update_ai_config(p_tenant_id, p_reason, ...)` | Platform-admin patch of model, `daily_token_cap`, and rate limits. Validates the model against the active catalog. Tier 1 audited. |
+| `platform_admin_upsert_ai_model_pricing(p_model_id, p_reason, ...)` | Platform-admin insert/update of a catalog price. Price changes affect future calls only; historical `ai_calls.cost_estimate_cents` stays snapshotted. Tier 1 audited. |
 
 ## Angular components
 
