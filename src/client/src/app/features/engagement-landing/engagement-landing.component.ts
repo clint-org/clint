@@ -222,7 +222,7 @@ export class EngagementLandingComponent implements OnInit {
         label: pluralize(s?.new_intel_7d, 'New analysis', 'New analyses'),
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
-        display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
+        display: s?.new_intel_7d == null ? '' : String(s.new_intel_7d),
         route: hasRoute ? ['/t', tid, 's', sid, 'intelligence'] : null,
         queryParams: hasRoute ? { since: '7d' } : null,
         warn: false,
@@ -497,12 +497,12 @@ export class EngagementLandingComponent implements OnInit {
     if (spaceRes.status === 'fulfilled') this.space.set(spaceRes.value);
     if (tenantRes.status === 'fulfilled') {
       this.tenant.set(tenantRes.value);
-      const { data } = await this.supabase.client
-        .from('ai_config')
-        .select('ai_enabled')
-        .eq('tenant_id', tid)
-        .maybeSingle();
-      this.aiEnabled.set(data?.ai_enabled === true);
+      // Via the SECURITY DEFINER RPC: ai_config RLS is platform-admin-only, so a
+      // direct select returns nothing for non-owner members on the landing page.
+      const { data } = await this.supabase.client.rpc('get_tenant_ai_status', {
+        p_tenant_id: tid,
+      });
+      this.aiEnabled.set((data as { ai_enabled?: boolean } | null)?.ai_enabled === true);
     }
     if (statsRes.status === 'fulfilled') {
       this.stats.set(statsRes.value);

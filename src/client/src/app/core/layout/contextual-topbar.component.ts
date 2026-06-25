@@ -34,7 +34,14 @@ export interface TopbarTab {
 @Component({
   selector: 'app-contextual-topbar',
   standalone: true,
-  imports: [ButtonModule, Menu, NgOptimizedImage, Tooltip, RowActionsComponent, ExportButtonComponent],
+  imports: [
+    ButtonModule,
+    Menu,
+    NgOptimizedImage,
+    Tooltip,
+    RowActionsComponent,
+    ExportButtonComponent,
+  ],
   template: `
     <div class="topbar" role="banner">
       <!-- Tenant/Space breadcrumb -->
@@ -250,24 +257,6 @@ export interface TopbarTab {
                     }
                     {{ tab.label }}
                   </button>
-                  @if (tab.value === 'timeline' && timelineHintVisible()) {
-                    <div
-                      class="topbar-hint"
-                      role="status"
-                      aria-live="polite"
-                      aria-label="Onboarding hint"
-                    >
-                      <p class="topbar-hint__copy">Your timeline is now under the Timeline tab.</p>
-                      <button
-                        type="button"
-                        class="topbar-hint__dismiss"
-                        (click)="onTimelineHintDismiss()"
-                        aria-label="Dismiss"
-                      >
-                        Got it
-                      </button>
-                    </div>
-                  }
                 </div>
               }
             </div>
@@ -319,7 +308,12 @@ export interface TopbarTab {
               [outlined]="action.outlined ?? false"
               [text]="action.text ?? false"
               size="small"
-              [pt]="{ root: { 'aria-haspopup': 'menu', 'aria-expanded': openActionMenu() === action.label } }"
+              [pt]="{
+                root: {
+                  'aria-haspopup': 'menu',
+                  'aria-expanded': openActionMenu() === action.label,
+                },
+              }"
               (onClick)="actionMenu.toggle($event)"
             />
             <p-menu
@@ -648,70 +642,10 @@ export interface TopbarTab {
         outline-offset: 2px;
       }
 
-      /* Onboarding tooltip pinned to a topbar tab. Renders below the tab,
-         pointing up. Dismissed via the inline button or by clicking the
-         tab itself. Aria-live so screen readers announce it once. */
       .topbar-tab-wrap {
         position: relative;
         display: inline-flex;
         align-items: center;
-      }
-
-      .topbar-hint {
-        position: absolute;
-        top: calc(100% + 6px);
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 40;
-        background: #0f172a;
-        color: white;
-        padding: 8px 10px 8px 12px;
-        border-radius: 4px;
-        box-shadow: 0 6px 18px -8px rgba(15, 23, 42, 0.4);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        white-space: nowrap;
-      }
-
-      .topbar-hint::before {
-        content: '';
-        position: absolute;
-        top: -5px;
-        left: 50%;
-        transform: translateX(-50%) rotate(45deg);
-        width: 10px;
-        height: 10px;
-        background: #0f172a;
-      }
-
-      .topbar-hint__copy {
-        margin: 0;
-        font-size: 11px;
-        font-weight: 500;
-        line-height: 1.4;
-      }
-
-      .topbar-hint__dismiss {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        color: var(--brand-300, #5eead4);
-        background: none;
-        border: none;
-        padding: 2px 4px;
-        cursor: pointer;
-        text-transform: uppercase;
-      }
-
-      .topbar-hint__dismiss:hover {
-        color: white;
-      }
-
-      .topbar-hint__dismiss:focus-visible {
-        outline: 2px solid var(--brand-600);
-        outline-offset: 2px;
-        border-radius: 2px;
       }
 
       .topbar-list-icon {

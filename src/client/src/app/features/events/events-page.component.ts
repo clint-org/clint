@@ -32,6 +32,7 @@ import { EventCategoryService } from '../../core/services/event-category.service
 import { MarkerCategoryService } from '../../core/services/marker-category.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { SectionHeaderComponent } from '../../shared/components/section-header/section-header.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
@@ -48,7 +49,10 @@ import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
 import { EntityScope, parseEntityScope } from './entity-scope';
 import { buildServerQuery, type ServerQuery } from './server-query';
 import { entityCellParts, type EntityCellParts } from './entity-cell';
-import { ExportButtonComponent, type ExportAction } from '../../shared/export/export-button.component';
+import {
+  ExportButtonComponent,
+  type ExportAction,
+} from '../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../shared/export/grid-excel-export.service';
 import { ExportNamingService } from '../../shared/export/export-naming.service';
 import { buildEventsExportColumns } from './events-export.util';
@@ -66,6 +70,7 @@ import { buildEventsExportColumns } from './events-export.util';
     TableModule,
     Tooltip,
     ManagePageShellComponent,
+    SectionHeaderComponent,
     GridToolbarComponent,
     TableSkeletonBodyComponent,
     EventDetailPanelComponent,
@@ -93,21 +98,6 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   private readonly excel = inject(GridExcelExportService);
   private readonly exportNaming = inject(ExportNamingService);
   protected spaceRole = inject(SpaceRoleService);
-
-  private readonly topbarActionsEffect = effect(() => {
-    if (this.spaceRole.canEdit()) {
-      this.topbarState.actions.set([
-        {
-          label: 'New Event',
-          icon: 'fa-solid fa-plus',
-          text: true,
-          callback: () => this.openCreateModal(),
-        },
-      ]);
-    } else {
-      this.topbarState.actions.set([]);
-    }
-  });
 
   readonly spaceId = signal('');
   tenantId = '';
@@ -242,8 +232,8 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       this.grid.page(),
       this.grid.debouncedGlobalSearch(),
       this.scope(),
-      this.spaceId(),
-    ),
+      this.spaceId()
+    )
   );
 
   private lastQueryKey: string | null = null;
@@ -283,8 +273,8 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     this.scope.set(
       parseEntityScope(
         this.route.snapshot.queryParamMap.get('entityLevel'),
-        this.route.snapshot.queryParamMap.get('entityId'),
-      ),
+        this.route.snapshot.queryParamMap.get('entityId')
+      )
     );
 
     // Setting spaceId last lets the reactive feedEffect fire its first fetch
@@ -648,9 +638,12 @@ export class EventsPageComponent implements OnInit, OnDestroy {
     if (item.source_type === 'marker') {
       const trialId = this.selectedCatalystDetail()?.catalyst.trial_id;
       if (!trialId) return;
-      this.router.navigate(['/t', this.tenantId, 's', this.spaceId(), 'manage', 'trials', trialId], {
-        queryParams: { marker: item.id },
-      });
+      this.router.navigate(
+        ['/t', this.tenantId, 's', this.spaceId(), 'manage', 'trials', trialId],
+        {
+          queryParams: { marker: item.id },
+        }
+      );
       return;
     }
     this.openEditModal(item.id);
@@ -717,7 +710,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
         q.spaceId,
         q.filters,
         q.limit,
-        q.offset,
+        q.offset
       );
       if (seq !== this.fetchSeq) return; // a newer query superseded this one
       this.feedItems.set(feed.items);

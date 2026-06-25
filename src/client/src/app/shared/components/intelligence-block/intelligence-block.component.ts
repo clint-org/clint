@@ -33,6 +33,12 @@ export class IntelligenceBlockComponent {
   readonly published = input<IntelligencePayload | null>(null);
   readonly draft = input<IntelligencePayload | null>(null);
   readonly agencyView = input<boolean>(false);
+  /**
+   * Whether the viewer may PURGE (hard-delete) this read. Distinct from
+   * `agencyView`: space editors author (edit/withdraw) but cannot purge, so
+   * the purge affordance gates on this separately. Owners + agency only.
+   */
+  readonly canPurge = input<boolean>(false);
   /** Map of user id -> initials for agency-internal byline. */
   readonly authorMap = input<Record<string, string>>({});
   /** Tenant + space ids used to build clickable links to linked entities. */
@@ -142,7 +148,7 @@ export class IntelligenceBlockComponent {
       c.contributors,
       c.record.last_edited_by,
       c.authors,
-      this.authorMap(),
+      this.authorMap()
     );
   });
 
@@ -193,4 +199,3 @@ function formatDate(iso: string | null | undefined): string {
   const d = new Date(iso);
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
-

@@ -24,7 +24,7 @@ To explore the matrix structurally:
 | Data Management | CRUD interface for pharma/biotech company records (name, logo_url, display_order, color). | [data-management.md](features/data-management.md) |
 | Domain-Allowlist Self-Join | Auto-add a signed-in user as tenant member when their email domain matches the tenant allowlist. | [domain-allowlist-self-join.md](features/domain-allowlist-self-join.md) |
 | Engagement Landing | Slim slate-50 status band with engagement name, active-since subline, and inline trials/companies/assets inventory totals. | [engagement-landing.md](features/engagement-landing.md) |
-| Events | Unified chronological data table mixing analyst events, timeline markers, and detected change events across four entity levels. Server-side pagination via {items, total} return shape. | [events.md](features/events.md) |
+| Events | Unified chronological data table mixing analyst events, timeline markers, and detected change events across four entity levels. Server-side pagination via {items, total} return shape. Marker rows show their category glyph and a projected/confirmed status; the overview pane shows a colour-coded category distribution. | [events.md](features/events.md) |
 | Future Catalysts | Adaptive-bucket dense table of upcoming markers grouped by week, month, and quarter based on distance from today. | [catalysts.md](features/catalysts.md) |
 | In-app Help Pages | Tenant-scoped help page describing space-membership roles and permissions; linked from the Space Members page. | [in-app-help.md](features/in-app-help.md) |
 | Landscape Views | Shared landscape shell hosting Timeline, Bullseye, Heatmap, and Future Catalysts tabs with cross-tab filter and detail-panel continuity. | [landscape-views.md](features/landscape-views.md) |

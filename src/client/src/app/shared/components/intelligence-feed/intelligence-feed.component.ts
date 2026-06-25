@@ -59,18 +59,26 @@ import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
               [innerHTML]="headline(row)"
             ></a>
             @if (excerpt(row); as e) {
-              <p class="mt-[7px] text-[13.5px] leading-relaxed text-slate-600 line-clamp-2" [innerHTML]="e"></p>
+              <p
+                class="mt-[7px] text-[13.5px] leading-relaxed text-slate-600 line-clamp-2"
+                [innerHTML]="e"
+              ></p>
             }
             <div class="mt-2.5 flex items-center gap-2">
-              <span class="h-[18px] w-[18px] shrink-0 rounded-full bg-slate-200" aria-hidden="true"></span>
-              <span class="font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-slate-400">
+              <span
+                class="h-[18px] w-[18px] shrink-0 rounded-full bg-slate-200"
+                aria-hidden="true"
+              ></span>
+              <span
+                class="font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-slate-400"
+              >
                 {{ agencyName() }}
               </span>
               <span
                 class="relative ml-auto font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-brand-700"
                 aria-hidden="true"
               >
-                Read &rarr;
+                Open analysis &rarr;
               </span>
             </div>
           </div>

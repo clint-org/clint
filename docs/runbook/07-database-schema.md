@@ -938,6 +938,20 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260618190000_restore_preclinical_guard_bullseye_assets.sql`
 - `20260623120000_seed_demo_event_thread.sql`
 - `20260623130000_fix_detected_date_moved_title.sql`
-- `20260624120000_material_links_marker_trial_id.sql`
+- `20260624100000_rpc_tenant_owner_update_ai_config_enabled_only.sql`
+- `20260624100100_rpc_platform_admin_update_ai_config.sql`
+- `20260624100200_rpc_get_tenant_ai_status.sql`
+- `20260624100300_ai_config_platform_admin_only_rls.sql`
 - `20260624120000_remove_detected_event_priority.sql`
+- `20260624140000_discard_pending_material.sql`
+- `20260624140100_material_delete_editor_audit.sql`
+- `20260624140200_intelligence_author_editor_owner.sql`
+- `20260624150000_create_ai_model_pricing.sql`
+- `20260624150050_ai_config_token_cap.sql`
+- `20260624150100_ai_call_server_side_cost_and_model.sql`
+- `20260624150200_backfill_ai_call_cost.sql`
+- `20260624150300_rollup_failure_log.sql`
+- `20260624150400_rpc_platform_admin_upsert_ai_model_pricing.sql`
+- `20260624160000_drop_ai_import_status.sql`
+- `20260624170000_material_links_marker_trial_id.sql`
 <!-- /AUTO-GEN:DRIFT -->

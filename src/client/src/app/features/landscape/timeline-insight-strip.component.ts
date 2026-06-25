@@ -74,7 +74,7 @@ import { LandscapeStateService } from './landscape-state.service';
                 [class.text-slate-800]="stats().catalystCount90d === 0"
                 >{{ stats().catalystCount90d }}</span
               >
-              <span class="text-[11px] text-slate-500">cat/90d</span>
+              <span class="text-[11px] text-slate-500">catalysts (90d)</span>
             </div>
           </div>
         </div>
@@ -139,7 +139,7 @@ export class TimelineInsightStripComponent {
       view: 'timeline',
       groupBy: 'company',
       stats: fromCompanies(this.companies()),
-    }),
+    })
   );
   protected readonly stats = computed(() => computeTimelineStats(this.companies()));
 }

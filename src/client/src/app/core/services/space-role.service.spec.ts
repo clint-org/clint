@@ -120,8 +120,9 @@ describe('SpaceRoleService.ensureRole', () => {
   });
 
   it('tracks agency membership separately from the space role (P1.3b)', async () => {
-    // A space editor who is NOT an agency member: canEdit true, but
-    // isAgencyMember false (cannot author intelligence).
+    // A space editor who is NOT an agency member: canEdit true, isAgencyMember
+    // false. (Editors can now author intelligence via canAuthorIntelligence,
+    // which is canEdit OR isAgencyMember -- see the dedicated describe below.)
     const editor = makeHarness({ data: { role: 'editor' }, error: null }, false);
     editor.resolveFetch();
     await editor.service.ensureRole(SPACE_ID);
@@ -133,5 +134,48 @@ describe('SpaceRoleService.ensureRole', () => {
     agency.resolveFetch();
     await agency.service.ensureRole(SPACE_ID);
     expect(agency.service.isAgencyMember()).toBe(true);
+  });
+});
+
+describe('SpaceRoleService intelligence gates (Fix C)', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  async function resolved(role: unknown, isAgencyMember = false): Promise<SpaceRoleService> {
+    const h = makeHarness({ data: role, error: null }, isAgencyMember);
+    h.resolveFetch();
+    await h.service.ensureRole(SPACE_ID);
+    return h.service;
+  }
+
+  it('editor (not agency): may author, may NOT purge', async () => {
+    const s = await resolved({ role: 'editor' }, false);
+    expect(s.canAuthorIntelligence()).toBe(true);
+    expect(s.canPurgeIntelligence()).toBe(false);
+  });
+
+  it('owner (not agency): may author AND purge', async () => {
+    const s = await resolved({ role: 'owner' }, false);
+    expect(s.canAuthorIntelligence()).toBe(true);
+    expect(s.canPurgeIntelligence()).toBe(true);
+  });
+
+  it('viewer: may neither author nor purge', async () => {
+    const s = await resolved({ role: 'viewer' }, false);
+    expect(s.canAuthorIntelligence()).toBe(false);
+    expect(s.canPurgeIntelligence()).toBe(false);
+  });
+
+  it('agency member with no space row: may author AND purge', async () => {
+    const s = await resolved(null, true);
+    expect(s.canAuthorIntelligence()).toBe(true);
+    expect(s.canPurgeIntelligence()).toBe(true);
+  });
+
+  it('no role, not agency: may neither', async () => {
+    const s = await resolved(null, false);
+    expect(s.canAuthorIntelligence()).toBe(false);
+    expect(s.canPurgeIntelligence()).toBe(false);
   });
 });

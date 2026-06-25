@@ -12,7 +12,7 @@ import {
   classifyMaterialMime,
   materialExtLabel,
 } from '../../../core/models/material.model';
-import { SupabaseService } from '../../../core/services/supabase.service';
+import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { routeForLink } from './material-link-route';
 
 /**
@@ -38,7 +38,7 @@ interface MaterialLinkChip {
  * extension label is tinted by file kind (PPTX amber, PDF red, DOCX blue,
  * other slate). The content column stacks the title (the hero — full width,
  * wraps to two lines then ellipsis), a meta line (type badge + date · size),
- * and the linked-entity chips. Download and (uploader-only) Delete icon
+ * and the linked-entity chips. Download and (editor/owner-only) Delete icon
  * buttons sit top-right. The card itself is not a button.
  */
 @Component({
@@ -149,7 +149,7 @@ interface MaterialLinkChip {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MaterialRowComponent {
-  private readonly supabase = inject(SupabaseService);
+  private readonly spaceRole = inject(SpaceRoleService);
   private readonly route = inject(ActivatedRoute);
 
   readonly material = input.required<Material>();
@@ -165,10 +165,10 @@ export class MaterialRowComponent {
   readonly downloadClick = output<Material>();
   readonly deleteClick = output<Material>();
 
-  protected readonly canDelete = computed(() => {
-    const userId = this.supabase.currentUser()?.id;
-    return !!userId && this.material().uploaded_by === userId;
-  });
+  // Any space editor/owner may delete a material -- it is a shared engagement
+  // artifact, not personal to the uploader. Mirrors delete_material's
+  // has_space_access(owner/editor) gate (server remains authoritative).
+  protected readonly canDelete = computed(() => this.spaceRole.canEdit());
 
   protected readonly kind = computed<MaterialFileKind>(() =>
     classifyMaterialMime(this.material().mime_type, this.material().file_name)
