@@ -17,6 +17,10 @@
       "authenticated": ["select"],
       "justification": "client: super-admin AI usage edit-limits dialog reads the full row (RLS is platform-admin-only). Owner/member reads (import.guard, engagement-landing, tenant-settings) go through get_tenant_ai_status, which never exposes cost caps. Writes go through tenant_owner_update_ai_config (on/off) and platform_admin_update_ai_config (caps); fixtures use the admin client."
     },
+    "ai_model_pricing": {
+      "authenticated": ["select"],
+      "justification": "client: super-admin AI usage edit-limits dialog reads the active model catalog for the model chooser. Pricing is public; RLS allows any authenticated read. Writes (add model, change price) are platform-admin-only via RLS + platform_admin_upsert_ai_model_pricing."
+    },
     "asset_indications": {
       "authenticated": ["select", "insert"],
       "justification": "select: the analytic RPCs (get_dashboard_data, get_bullseye_*, get_landscape_index*, get_positioning_data) are SECURITY INVOKER and read asset_indications as the caller; integration preclinical-visibility.spec hit the 42501. insert: _seed_demo_asset_indications (SECURITY INVOKER, runs as authenticated via seed_demo_data) inserts development-status rows. Derived updates run in the SECURITY DEFINER trigger _auto_derive_asset_indication_status."

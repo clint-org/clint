@@ -14,6 +14,7 @@ import { SelectButton } from 'primeng/selectbutton';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { Select } from 'primeng/select';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import { MessageModule } from 'primeng/message';
 import { Tooltip } from 'primeng/tooltip';
@@ -57,6 +58,16 @@ interface ImportRow {
   cost_usd: number;
   duration_ms: number;
   created_at: string;
+  model?: string;
+  error_message?: string | null;
+  warnings?: string[] | null;
+}
+
+interface ModelRow {
+  model_id: string;
+  display_name: string;
+  family: string;
+  released_on: string | null;
 }
 
 @Component({
@@ -72,6 +83,7 @@ interface ImportRow {
     Dialog,
     InputText,
     InputNumberModule,
+    Select,
     ToggleSwitch,
     MessageModule,
     Tooltip,
@@ -263,8 +275,18 @@ interface ImportRow {
           </ng-template>
           <ng-template #body let-row>
             <tr>
-              <td class="max-w-[20rem] truncate font-medium text-slate-900">
-                {{ row.source_title }}
+              <td class="max-w-[20rem] font-medium text-slate-900">
+                <div class="truncate">{{ row.source_title }}</div>
+                @if (row.error_message) {
+                  <div class="mt-0.5 text-[11px] font-normal text-red-700">
+                    {{ row.error_message }}
+                  </div>
+                }
+                @if (row.warnings?.length) {
+                  <div class="mt-0.5 text-[11px] font-normal text-amber-700">
+                    {{ row.warnings.join(', ') }}
+                  </div>
+                }
               </td>
               <td class="text-xs text-slate-600">{{ row.user_email }}</td>
               <td>
@@ -346,8 +368,9 @@ interface ImportRow {
       >
         <div class="flex flex-col gap-4">
           <p class="text-sm text-slate-700">
-            Limits for <strong>{{ editTenantName() }}</strong>. These cap Clint's AI spend for this
-            tenant.
+            Limits and model for <strong>{{ editTenantName() }}</strong>. The daily token cap is a
+            deterministic ceiling on usage; cost shown elsewhere is an estimate from current model
+            prices.
           </p>
 
           @if (editError()) {
@@ -355,30 +378,31 @@ interface ImportRow {
           }
 
           <div class="grid grid-cols-2 gap-3">
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-600" for="edit-daily-cap">
-                Daily cost cap (cents)
-              </label>
-              <p-inputnumber
-                inputId="edit-daily-cap"
-                [ngModel]="editDailyCapCents()"
-                (ngModelChange)="editDailyCapCents.set($event)"
-                [min]="0"
-                [max]="1000000"
-                inputStyleClass="w-full text-right"
+            <div class="col-span-2 flex flex-col gap-1">
+              <label class="text-xs font-semibold text-slate-600" for="edit-model">Model</label>
+              <p-select
+                inputId="edit-model"
+                [options]="modelOptions()"
+                [ngModel]="editModel()"
+                (ngModelChange)="editModel.set($event)"
+                optionLabel="label"
+                optionValue="value"
                 styleClass="w-full"
               />
+              @if (newerModelHint(); as hint) {
+                <span class="text-[11px] text-amber-700">{{ hint }}</span>
+              }
             </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-xs font-semibold text-slate-600" for="edit-percall-cap">
-                Per-call cost cap (cents)
+            <div class="col-span-2 flex flex-col gap-1">
+              <label class="text-xs font-semibold text-slate-600" for="edit-token-cap">
+                Daily token cap (input + output, rolling 24h)
               </label>
               <p-inputnumber
-                inputId="edit-percall-cap"
-                [ngModel]="editPerCallCapCents()"
-                (ngModelChange)="editPerCallCapCents.set($event)"
+                inputId="edit-token-cap"
+                [ngModel]="editTokenCap()"
+                (ngModelChange)="editTokenCap.set($event)"
                 [min]="0"
-                [max]="100000"
+                [max]="1000000000"
                 inputStyleClass="w-full text-right"
                 styleClass="w-full"
               />
@@ -477,17 +501,31 @@ export class SuperAdminAiUsageComponent implements OnInit {
   readonly confirmTenantName = signal('');
   private pendingToggleRow: TenantRow | null = null;
 
-  // Edit cost caps + rate limits (platform-admin-only spend controls).
+  // Edit model + token cap + rate limits (platform-admin-only controls).
   readonly editVisible = signal(false);
   readonly editTenantName = signal('');
-  readonly editDailyCapCents = signal(500);
-  readonly editPerCallCapCents = signal(5);
+  readonly editModel = signal<string>('claude-sonnet-4-6');
+  readonly editTokenCap = signal(1000000);
   readonly editRatePerMin = signal(6);
   readonly editRatePerHour = signal(60);
   readonly editReason = signal('');
   readonly savingLimits = signal(false);
   readonly editError = signal<string | null>(null);
   private editTenantId: string | null = null;
+
+  // Active model catalog (drives the chooser + the "newer available" hint).
+  readonly models = signal<ModelRow[]>([]);
+  readonly modelOptions = computed(() =>
+    this.models().map((m) => ({ label: `${m.display_name} (${m.model_id})`, value: m.model_id })),
+  );
+  readonly newerModelHint = computed<string | null>(() => {
+    const selected = this.models().find((m) => m.model_id === this.editModel());
+    if (!selected) return null;
+    const newer = this.models()
+      .filter((m) => m.family === selected.family && (m.released_on ?? '') > (selected.released_on ?? ''))
+      .sort((a, b) => (b.released_on ?? '').localeCompare(a.released_on ?? ''))[0];
+    return newer ? `A newer ${selected.family} model is available: ${newer.display_name}.` : null;
+  });
 
   readonly heading = computed(() => {
     switch (this.scope()) {
@@ -582,16 +620,25 @@ export class SuperAdminAiUsageComponent implements OnInit {
     this.editTenantName.set(row.tenant_name);
     this.editReason.set('');
     this.editError.set(null);
+
+    // Load the active model catalog for the chooser (any authenticated read).
+    if (this.models().length === 0) {
+      const { data: cat } = await this.supabase.client
+        .from('ai_model_pricing')
+        .select('model_id, display_name, family, released_on')
+        .eq('status', 'active')
+        .order('family', { ascending: true });
+      this.models.set((cat as ModelRow[]) ?? []);
+    }
+
     // Platform admins can read ai_config directly (RLS allows is_platform_admin).
     const { data } = await this.supabase.client
       .from('ai_config')
-      .select(
-        'daily_cost_cap_cents, per_call_cost_cap_cents, per_user_rate_per_min, per_user_rate_per_hour',
-      )
+      .select('ai_model, daily_token_cap, per_user_rate_per_min, per_user_rate_per_hour')
       .eq('tenant_id', row.tenant_id)
       .maybeSingle();
-    this.editDailyCapCents.set((data?.['daily_cost_cap_cents'] as number) ?? 500);
-    this.editPerCallCapCents.set((data?.['per_call_cost_cap_cents'] as number) ?? 5);
+    this.editModel.set((data?.['ai_model'] as string) ?? 'claude-sonnet-4-6');
+    this.editTokenCap.set((data?.['daily_token_cap'] as number) ?? 1000000);
     this.editRatePerMin.set((data?.['per_user_rate_per_min'] as number) ?? 6);
     this.editRatePerHour.set((data?.['per_user_rate_per_hour'] as number) ?? 60);
     this.editVisible.set(true);
@@ -607,8 +654,8 @@ export class SuperAdminAiUsageComponent implements OnInit {
     const { error } = await this.supabase.client.rpc('platform_admin_update_ai_config', {
       p_tenant_id: this.editTenantId,
       p_reason: reason,
-      p_daily_cost_cap_cents: this.editDailyCapCents(),
-      p_per_call_cost_cap_cents: this.editPerCallCapCents(),
+      p_ai_model: this.editModel(),
+      p_daily_token_cap: this.editTokenCap(),
       p_per_user_rate_per_min: this.editRatePerMin(),
       p_per_user_rate_per_hour: this.editRatePerHour(),
     });
