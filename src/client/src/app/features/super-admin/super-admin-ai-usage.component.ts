@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { SelectButton } from 'primeng/selectbutton';
@@ -79,9 +80,26 @@ interface ImportRow {
 }
 
 // Full request/response for one call, fetched on expand via get_ai_call_detail.
+interface EntityRef {
+  id: string;
+  name?: string;
+  title?: string;
+}
+
+interface CreatedEntities {
+  companies?: EntityRef[];
+  assets?: EntityRef[];
+  trials?: EntityRef[];
+  markers?: EntityRef[];
+  events?: EntityRef[];
+}
+
 interface AiCallDetail {
+  tenant_id?: string;
+  space_id?: string;
   request?: { kind?: string; input?: unknown } | null;
   output?: { prompt?: string; params?: unknown; raw?: string } | null;
+  created_entities?: CreatedEntities | null;
 }
 
 interface ModelRow {
@@ -98,6 +116,7 @@ interface ModelRow {
     DecimalPipe,
     PercentPipe,
     FormsModule,
+    RouterLink,
     TableModule,
     ButtonModule,
     SelectButton,
@@ -469,6 +488,73 @@ interface ModelRow {
                             class="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-white p-2 text-[11px] text-slate-700 ring-1 ring-slate-200"
                             >{{ raw }}</pre
                           >
+                        </div>
+                      }
+                      @if (detail.created_entities; as ents) {
+                        <div>
+                          <div class="mb-1">
+                            <span
+                              class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                            >
+                              Created entities
+                            </span>
+                          </div>
+                          <div class="space-y-0.5 text-[11px]">
+                            @if (ents.companies?.length) {
+                              <div>
+                                <span class="text-slate-500">Companies: </span>
+                                @for (c of ents.companies ?? []; track c.id) {
+                                  <a
+                                    class="text-brand-600 hover:underline"
+                                    [routerLink]="manageLink(detail, 'companies', c.id)"
+                                    >{{ c.name }}</a
+                                  >@if (!$last) {<span class="text-slate-400">, </span>}
+                                }
+                              </div>
+                            }
+                            @if (ents.assets?.length) {
+                              <div>
+                                <span class="text-slate-500">Assets: </span>
+                                @for (x of ents.assets ?? []; track x.id) {
+                                  <a
+                                    class="text-brand-600 hover:underline"
+                                    [routerLink]="manageLink(detail, 'assets', x.id)"
+                                    >{{ x.name }}</a
+                                  >@if (!$last) {<span class="text-slate-400">, </span>}
+                                }
+                              </div>
+                            }
+                            @if (ents.trials?.length) {
+                              <div>
+                                <span class="text-slate-500">Trials: </span>
+                                @for (t of ents.trials ?? []; track t.id) {
+                                  <a
+                                    class="text-brand-600 hover:underline"
+                                    [routerLink]="manageLink(detail, 'trials', t.id)"
+                                    >{{ t.name }}</a
+                                  >@if (!$last) {<span class="text-slate-400">, </span>}
+                                }
+                              </div>
+                            }
+                            @if (ents.markers?.length) {
+                              <div>
+                                <span class="text-slate-500">Markers: </span>
+                                @for (m of ents.markers ?? []; track m.id) {
+                                  <span class="text-slate-700">{{ m.title }}</span
+                                  >@if (!$last) {<span class="text-slate-400">, </span>}
+                                }
+                              </div>
+                            }
+                            @if (ents.events?.length) {
+                              <div>
+                                <span class="text-slate-500">Events: </span>
+                                @for (e of ents.events ?? []; track e.id) {
+                                  <span class="text-slate-700">{{ e.title }}</span
+                                  >@if (!$last) {<span class="text-slate-400">, </span>}
+                                }
+                              </div>
+                            }
+                          </div>
                         </div>
                       }
                     </div>
@@ -905,6 +991,10 @@ export class SuperAdminAiUsageComponent implements OnInit {
     if (value === null || value === undefined) return '';
     if (typeof value === 'string') return value;
     return JSON.stringify(value, null, 2);
+  }
+
+  manageLink(detail: AiCallDetail, type: 'companies' | 'assets' | 'trials', id: string): unknown[] {
+    return ['/t', detail.tenant_id, 's', detail.space_id, 'manage', type, id];
   }
 
   // "3 companies, 2 assets, 1 trial" -- omits zero counts; falls back when the

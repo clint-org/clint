@@ -102,7 +102,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `export_audit_events_csv` | - | audit_events |
 | `finalize_material` | materials | - |
 | `get_activity_feed` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
-| `get_ai_call_detail` | - | ai_calls, source_documents |
+| `get_ai_call_detail` | - | ai_calls, assets, companies, events, markers, source_documents, trials |
 | `get_ai_usage_rollup` | - | ai_calls, ai_config, assets, companies, events, indications, markers, source_documents, spaces, tenants, trials |
 | `get_asset_detail_with_intelligence` | - | assets |
 | `get_brand_by_host` | - | agencies, tenants |

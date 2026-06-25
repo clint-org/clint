@@ -331,6 +331,23 @@ describe('get_ai_usage_rollup failure log', () => {
     expect(spaceRow).toBeTruthy();
     expect(spaceRow!['entity_count']).toBeGreaterThanOrEqual(2);
 
+    // get_ai_call_detail returns tenant/space ids + the actual created entities
+    const cd = await as(p, 'platform_admin').rpc('get_ai_call_detail', {
+      p_ai_call_id: call!.id,
+    });
+    const cdFull = cd.data as {
+      tenant_id: string;
+      space_id: string;
+      created_entities: { companies: { id: string; name: string }[] };
+    };
+    expect(cd.error).toBeNull();
+    expect(cdFull.tenant_id).toBe(p.org.tenantId);
+    expect(cdFull.space_id).toBe(p.org.spaceId);
+    expect(cdFull.created_entities.companies.map((c) => c.name).sort()).toEqual([
+      'F4 Pharma A',
+      'F4 Pharma B',
+    ]);
+
     await admin.from('companies').delete().eq('source_doc_id', doc!.id);
     await admin.from('ai_calls').delete().eq('id', call!.id);
     await admin.from('source_documents').delete().eq('id', doc!.id);
