@@ -8,3 +8,6 @@ worker-configuration.d.ts
 # Persona test artifacts
 e2e/persona/.auth-session.json
 e2e/persona/reports/
+
+# deck screenshot capture: real-session browser profile (never commit)
+.shots-profile-run/

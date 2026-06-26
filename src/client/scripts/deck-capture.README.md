@@ -1,0 +1,70 @@
+# Deck screenshot capture
+
+`capture-deck-shots.mjs` refreshes the product screenshots embedded in the Stout
+intro deck (`src/client/public/internal/stout-intro.html`) so they stay current
+when the design changes. Each shot is taken at 2x against a real engagement in a
+working state (selections, detail panels, pasted input), with no env/incident
+chrome.
+
+## Run
+
+From `src/client/`:
+
+```bash
+node scripts/capture-deck-shots.mjs
+```
+
+A headed Chrome window opens. If you are not already signed in, sign in with
+Google to the target account once; the script then captures every shot and
+exits. The login persists in a gitignored profile dir (`.shots-profile-run/`),
+so later runs skip the login.
+
+## Target engagement
+
+Default target is the prod Pfizer/Stout demo engagement **"Obesity Competitive
+Landscape"**. To point at a different engagement, copy any in-app URL of it and
+pass it as `DECK_URL`:
+
+```bash
+DECK_URL="https://<host>/t/<tenantId>/s/<spaceId>" node scripts/capture-deck-shots.mjs
+```
+
+The signed-in account must be able to view that engagement (and, for the
+`source-import` shot, be an owner/editor of a tenant with AI import enabled).
+
+## Refreshing a subset
+
+When only a few surfaces changed, capture just those with `ONLY` (comma-separated
+PNG basenames):
+
+```bash
+ONLY=timeline,materials,bullseye node scripts/capture-deck-shots.mjs
+```
+
+Shot names: `whitelabel-stout-login`, `engagement-landing`, `timeline`,
+`heatmap`, `activity`, `bullseye`, `catalysts`, `events`, `source-import`,
+`command-palette`, `materials`, `intelligence`, `trial-detail`.
+
+## Editing what a shot shows
+
+Each shot is a clearly labelled block in `capture-deck-shots.mjs`. To change what
+a shot captures, edit that block's interactions (which row/dot it selects, what
+text it pastes, which anchor it scrolls to) or its `settle()` delay. Selectors
+can drift when components are refactored (e.g. the import page moved to a tabbed
+`app-nct-input`); update them in place.
+
+## Other options
+
+- `HIDE=0` keep the env banner + AI-incident banner visible (hidden by default)
+- `HEADLESS=1` run headless (only works once a login profile exists)
+- `TRIAL_ID=<uuid>` skip auto-resolving the trial used for the intelligence/markers shots
+
+## Verify and commit
+
+Eyeball the new PNGs (a near-empty file usually means a too-early capture or a
+guard redirect). Stage only the changed PNGs explicitly, never `git add -A`
+here, because the gitignored profile holds a real session.
+
+The repo's pre-push hook runs the full e2e suite, which flakes on cold-start
+timeouts unrelated to image assets. For an assets-only change you can push with
+`--no-verify` after confirming lint/units/build pass; CI is canonical.
