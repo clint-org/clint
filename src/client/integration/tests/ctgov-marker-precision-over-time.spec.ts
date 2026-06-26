@@ -22,7 +22,10 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { adminClient, buildPersonas, Personas } from '../fixtures/personas';
 import { createScratchAgency } from '../fixtures/scratch';
 import { as } from '../harness/as';
-import { precisionMidpointISO } from '../../src/app/core/models/marker-date-precision';
+import {
+  precisionMidpointISO,
+  type DatePrecision,
+} from '../../src/app/core/models/marker-date-precision';
 import {
   deriveTrialPhaseSpan,
   TRIAL_START_MARKER_TYPE_ID,
@@ -183,13 +186,22 @@ async function insertTrial(
 }
 
 // ---------------------------------------------------------------------------
-// get_dashboard_data response shapes (only the fields this spec reads)
+// get_dashboard_data response shapes (only the fields this spec reads).
+//
+// DashboardMarker is intentionally structurally assignable to PhaseSpanMarker
+// (it declares the flat marker_type_id + event_date + date_precision the client
+// deriveTrialPhaseSpan matches on). The spec feeds the RPC markers DIRECTLY to
+// deriveTrialPhaseSpan (no adapter), so if get_dashboard_data ever stopped
+// emitting the flat marker_type_id the span would derive all-null and the
+// Group 6 assertions would fail -- which is exactly the real-client bug this
+// guards (DashboardService maps the RPC marker with a `...m` spread).
 // ---------------------------------------------------------------------------
 
 interface DashboardMarker {
   id: string;
+  marker_type_id: string;
   event_date: string | null;
-  date_precision: string;
+  date_precision: DatePrecision;
   marker_type: { id: string } | null;
 }
 
@@ -225,17 +237,6 @@ function findTrialInDashboard(
     }
   }
   return null;
-}
-
-/** Map dashboard markers to the PhaseSpanMarker shape deriveTrialPhaseSpan expects. */
-function dashboardMarkersToSpanInput(
-  markers: DashboardMarker[]
-): { marker_type_id: string; event_date: string | null; date_precision: 'exact' | 'month' | 'quarter' | 'half' | 'year' }[] {
-  return markers.map((m) => ({
-    marker_type_id: m.marker_type?.id ?? '',
-    event_date: m.event_date,
-    date_precision: m.date_precision as 'exact' | 'month' | 'quarter' | 'half' | 'year',
-  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -851,15 +852,29 @@ describe('group 6: deriveTrialPhaseSpan matches old column behavior (via get_das
     expect(dashTrialE).not.toBeNull();
   });
 
-  it('trial_E dashboard markers include Trial Start / PCD / Trial End', () => {
-    const typeIds = (dashTrialE?.markers ?? []).map((m) => m.marker_type?.id);
+  it('get_dashboard_data markers carry the FLAT marker_type_id (deriveTrialPhaseSpan match key)', () => {
+    // Guards the real-client bug: DashboardService spreads the RPC marker (`...m`),
+    // so the flat marker_type_id must be present or every phase bar derives null.
+    for (const m of dashTrialE?.markers ?? []) {
+      expect(typeof m.marker_type_id).toBe('string');
+      expect(m.marker_type_id.length).toBeGreaterThan(0);
+      // The flat field must equal the nested marker_type.id (same source column).
+      expect(m.marker_type_id).toBe(m.marker_type?.id);
+    }
+  });
+
+  it('trial_E dashboard markers include Trial Start / PCD / Trial End (by flat marker_type_id)', () => {
+    const typeIds = (dashTrialE?.markers ?? []).map((m) => m.marker_type_id);
     expect(typeIds).toContain(TRIAL_START_MARKER_TYPE_ID);
     expect(typeIds).toContain(PCD_MARKER_TYPE_ID);
     expect(typeIds).toContain(TRIAL_END_MARKER_TYPE_ID);
   });
 
-  it('trial_E: span derived from get_dashboard_data markers matches expected start/end', () => {
-    const span = deriveTrialPhaseSpan(dashboardMarkersToSpanInput(dashTrialE!.markers));
+  it('trial_E: span derived DIRECTLY from get_dashboard_data markers matches expected start/end', () => {
+    // No adapter: the RPC markers are fed straight into deriveTrialPhaseSpan.
+    // This is the real client code path (minus the DashboardService `...m` spread,
+    // which preserves marker_type_id). Fails all-null if the flat field is absent.
+    const span = deriveTrialPhaseSpan(dashTrialE!.markers);
     expect(span.start).toBe('2023-01-15');
     expect(span.startPrecision).toBe('exact');
     // Trial End (2024-12-15) wins over PCD (2024-06-15)
@@ -871,15 +886,15 @@ describe('group 6: deriveTrialPhaseSpan matches old column behavior (via get_das
     expect(dashTrialF).not.toBeNull();
   });
 
-  it('trial_F dashboard markers include Trial Start / PCD but NOT Trial End', () => {
-    const typeIds = (dashTrialF?.markers ?? []).map((m) => m.marker_type?.id);
+  it('trial_F dashboard markers include Trial Start / PCD but NOT Trial End (by flat marker_type_id)', () => {
+    const typeIds = (dashTrialF?.markers ?? []).map((m) => m.marker_type_id);
     expect(typeIds).toContain(TRIAL_START_MARKER_TYPE_ID);
     expect(typeIds).toContain(PCD_MARKER_TYPE_ID);
     expect(typeIds).not.toContain(TRIAL_END_MARKER_TYPE_ID);
   });
 
-  it('trial_F PCD fallback: span derived from get_dashboard_data markers ends at PCD', () => {
-    const span = deriveTrialPhaseSpan(dashboardMarkersToSpanInput(dashTrialF!.markers));
+  it('trial_F PCD fallback: span derived DIRECTLY from get_dashboard_data markers ends at PCD', () => {
+    const span = deriveTrialPhaseSpan(dashTrialF!.markers);
     expect(span.start).toBe('2024-03-01');
     // No Trial End marker -> end falls back to PCD (2025-09-01)
     expect(span.end).toBe('2025-09-01');

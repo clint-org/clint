@@ -889,9 +889,17 @@ $function$;
 
 -- ----------------------------------------------------------------------------
 -- (i) Reader: get_dashboard_data() stops projecting the date columns.
---     Re-stated from live (20260616120100). Only the phase_data object changed
+--     Re-stated from live (20260616120100). The phase_data object changed
 --     (drops phase_start_date / phase_end_date; keeps phase_type). The per-trial
---     markers array (which the client now derives the span from) is unchanged.
+--     markers array now ALSO emits the flat 'marker_type_id' alongside the
+--     nested 'marker_type' object: the client phase bar derives its span via
+--     deriveTrialPhaseSpan (trial-phase-span.ts), which matches markers on the
+--     flat marker_type_id field (the Marker model column). DashboardService maps
+--     the RPC marker with a `...m` spread, so without the flat field the client
+--     marker would lack marker_type_id and every phase bar on the dashboard /
+--     landscape / pptx-export (all get_dashboard_data-sourced) would silently
+--     fail to render. The TrialService path (get_trial(s) -> normalizeTrial)
+--     already carries the flat column via marker_assignments.markers.*.
 --     Other readers (get_bullseye_*, get_landscape_index_*, preview_*_delete,
 --     get_events_page_data, get_bullseye_assets) do NOT reference these columns
 --     in their live bodies, so they are intentionally left untouched.
@@ -1014,6 +1022,7 @@ begin
                           select jsonb_agg(
                             jsonb_build_object(
                               'id',                 mk.id,
+                              'marker_type_id',     mk.marker_type_id,
                               'title',              mk.title,
                               'projection',         mk.projection,
                               'event_date',         mk.event_date,
