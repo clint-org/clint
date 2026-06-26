@@ -110,6 +110,7 @@ export function mapDashboardCompanies(data: any[]): any[] {
                 }
               : null,
           })),
+          ctgov_withdrawn_at: t.ctgov_withdrawn_at ?? null,
           trial_notes: t.trial_notes ?? [],
         })),
       };

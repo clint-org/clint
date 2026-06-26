@@ -96,6 +96,8 @@ function iconFor(t: ChangeEventType): string {
       return 'fa-solid fa-list-check';
     case 'trial_withdrawn':
       return 'fa-solid fa-ban';
+    case 'trial_restored':
+      return 'fa-solid fa-rotate-left';
     case 'marker_added':
       return 'fa-solid fa-circle-plus';
     case 'marker_removed':
