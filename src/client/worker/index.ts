@@ -4,6 +4,7 @@ import { mapSupabaseError, errorResponse, type SupabaseRpcError } from './errors
 import { callRpc } from './supabase';
 import { presignPut, presignGet } from './r2';
 import { runScheduledSync, runManualBackfill } from './ctgov-sync/poller';
+import { handleCtgovSecretHealth } from './ctgov-sync/secret-health';
 import { drainR2DeleteQueue, type R2DeleteClient } from './r2-drain/queue';
 import { handleSourceExtract } from './source-extract/handler';
 import { handleNctResolve } from './source-extract/nct-handler';
@@ -81,6 +82,9 @@ export default {
     }
     if (url.pathname === '/api/ai/health' && request.method === 'GET') {
       return handleAiHealth(env, cors);
+    }
+    if (url.pathname === '/api/ctgov/secret-health' && request.method === 'GET') {
+      return handleCtgovSecretHealth(env, cors);
     }
     if (url.pathname === '/api/logo' && request.method === 'GET') {
       return handleLogoProxy(request, cors, ctx);
