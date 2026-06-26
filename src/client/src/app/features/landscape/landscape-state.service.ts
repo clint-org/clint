@@ -15,10 +15,7 @@ import {
   spanOverlapsRange,
   timePeriodToRange,
 } from '../../core/models/landscape.model';
-import {
-  IntelligenceDetailBundle,
-  PiReference,
-} from '../../core/models/primary-intelligence.model';
+import { PiReference } from '../../core/models/primary-intelligence.model';
 import { CatalystService } from '../../core/services/catalyst.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
@@ -104,10 +101,6 @@ export class LandscapeStateService {
   readonly detailLoading = signal(false);
   /** Incoming PI references for the selected marker (entries that cite it). */
   readonly selectedMarkerReferences = signal<PiReference[]>([]);
-  // Trial PI pane: a trial owns its PI, so selecting a trial row opens an owned
-  // PI block (not references). Mutually exclusive with the marker selection.
-  readonly selectedTrialId = signal<string | null>(null);
-  readonly selectedTrialDetail = signal<IntelligenceDetailBundle | null>(null);
 
   // ─── Filtered views (computed) ───────────────────────────────────────
 
@@ -242,9 +235,6 @@ export class LandscapeStateService {
   }
 
   private async fetchAndSet(markerId: string): Promise<void> {
-    // Marker and trial panes are mutually exclusive.
-    this.selectedTrialId.set(null);
-    this.selectedTrialDetail.set(null);
     this.selectedMarkerId.set(markerId);
     this.selectedDetail.set(null);
     this.selectedMarkerReferences.set([]);
@@ -276,31 +266,11 @@ export class LandscapeStateService {
     }
   }
 
-  /**
-   * Open a trial's owned primary intelligence in the detail pane (timeline
-   * trial-row click). Clears any marker selection so only one pane shows.
-   */
-  async selectTrial(trialId: string): Promise<void> {
-    this.clearSelection();
-    this.selectedTrialId.set(trialId);
-    this.detailLoading.set(true);
-    try {
-      const detail = await this.intelligence.getTrialDetail(trialId);
-      if (this.selectedTrialId() === trialId) this.selectedTrialDetail.set(detail);
-    } catch {
-      this.selectedTrialId.set(null);
-    } finally {
-      this.detailLoading.set(false);
-    }
-  }
-
   /** Close the detail panel. */
   clearSelection(): void {
     this.selectedMarkerId.set(null);
     this.selectedDetail.set(null);
     this.selectedMarkerReferences.set([]);
-    this.selectedTrialId.set(null);
-    this.selectedTrialDetail.set(null);
   }
 
   // ─── Private ─────────────────────────────────────────────────────────

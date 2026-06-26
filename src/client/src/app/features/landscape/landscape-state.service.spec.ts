@@ -164,32 +164,6 @@ describe('LandscapeStateService marker references', () => {
   });
 });
 
-describe('LandscapeStateService trial PI pane', () => {
-  it('exposes selectedTrialId / selectedTrialDetail signals and a selectTrial method', () => {
-    expect(stateSrc).toContain('selectedTrialId = signal<string | null>(null)');
-    expect(stateSrc).toContain('selectedTrialDetail = signal<IntelligenceDetailBundle | null>(null)');
-    expect(typeof LandscapeStateService.prototype.selectTrial).toBe('function');
-  });
-
-  it('selectTrial clears any marker selection then loads the trial PI bundle', () => {
-    const body = stateSrc.slice(stateSrc.indexOf('async selectTrial('));
-    expect(body).toContain('this.clearSelection()');
-    expect(body).toContain('this.selectedTrialId.set(trialId)');
-    expect(body).toContain('this.intelligence.getTrialDetail(trialId)');
-    // Race guard: a stale fetch must not clobber a newer selection.
-    expect(body).toContain('if (this.selectedTrialId() === trialId)');
-  });
-
-  it('keeps the marker and trial panes mutually exclusive', () => {
-    // Selecting a marker clears trial state...
-    const fetchBody = stateSrc.slice(stateSrc.indexOf('private async fetchAndSet('));
-    expect(fetchBody).toContain('this.selectedTrialId.set(null)');
-    // ...and clearSelection resets both panes.
-    const clearBody = stateSrc.slice(stateSrc.indexOf('clearSelection(): void'));
-    expect(clearBody).toContain('this.selectedTrialDetail.set(null)');
-  });
-});
-
 describe('LandscapeStateService.init', () => {
   it('exposes an init method that accepts an optional opts arg', () => {
     expect(typeof LandscapeStateService.prototype.init).toBe('function');
