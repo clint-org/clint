@@ -995,6 +995,16 @@ begin
                         (array_agg(eid order by ets desc))[1]     as most_recent_change_event_id
                       from combined
                     ) recent on true
+                    left join lateral (
+                      select pi.headline
+                      from public.primary_intelligence pi
+                      where pi.entity_type = 'trial'
+                        and pi.entity_id   = t.id
+                        and pi.space_id    = p_space_id
+                        and pi.state       = 'published'
+                      order by pi.updated_at desc
+                      limit 1
+                    ) pi_trial on true
                     cross join lateral (
                       select jsonb_build_object(
                         'id', t.id,
@@ -1009,9 +1019,12 @@ begin
                         'study_type', t.study_type,
                         'phase', t.phase,
                         'ctgov_last_synced_at', t.ctgov_last_synced_at,
+                        'ctgov_withdrawn_at', t.ctgov_withdrawn_at,
                         'recent_changes_count', coalesce(recent.recent_changes_count, 0),
                         'most_recent_change_type', recent.most_recent_change_type,
                         'most_recent_change_event_id', recent.most_recent_change_event_id,
+                        'has_intelligence', (pi_trial.headline is not null),
+                        'intelligence_headline', pi_trial.headline,
                         'phase_data', case
                           when t.phase_type is not null then jsonb_build_object(
                             'phase_type', t.phase_type
