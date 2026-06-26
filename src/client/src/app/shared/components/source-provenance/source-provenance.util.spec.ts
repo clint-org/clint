@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { SourceProvenance } from './source-provenance.model';
-import { formatProvenanceDate, provenanceTitle, sourceKindLabel } from './source-provenance.util';
+import {
+  formatProvenanceDate,
+  provenanceTitle,
+  sourceBodyLabel,
+  sourceKindLabel,
+} from './source-provenance.util';
 
 function makeDoc(overrides: Partial<SourceProvenance> = {}): SourceProvenance {
   return {
@@ -48,6 +53,24 @@ describe('sourceKindLabel', () => {
 
   it('labels a text-paste import', () => {
     expect(sourceKindLabel('text')).toBe('Pasted text');
+  });
+
+  it('labels an NCT batch import', () => {
+    expect(sourceKindLabel('nct')).toBe('NCT batch');
+  });
+});
+
+describe('sourceBodyLabel', () => {
+  it('calls a text paste the original text the analyst authored', () => {
+    expect(sourceBodyLabel('text')).toBe('Original text');
+  });
+
+  it('calls a URL import the fetched page', () => {
+    expect(sourceBodyLabel('url')).toBe('Fetched page');
+  });
+
+  it('calls an NCT import the retrieved study data (it is CT.gov JSON, not authored text)', () => {
+    expect(sourceBodyLabel('nct')).toBe('Retrieved study data');
   });
 });
 

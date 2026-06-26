@@ -3,7 +3,12 @@ import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
 
 import { SourceProvenance } from './source-provenance.model';
-import { formatProvenanceDate, provenanceTitle, sourceKindLabel } from './source-provenance.util';
+import {
+  formatProvenanceDate,
+  provenanceTitle,
+  sourceBodyLabel,
+  sourceKindLabel,
+} from './source-provenance.util';
 
 /**
  * Read-only drawer showing the original ingested source an AI import landed
@@ -59,12 +64,6 @@ import { formatProvenanceDate, provenanceTitle, sourceKindLabel } from './source
             <dd class="text-slate-700">{{ d.imported_by_email ?? 'Unknown' }}</dd>
             <dt class="font-semibold uppercase tracking-wider text-slate-400">Imported</dt>
             <dd class="text-slate-700">{{ importedDate() }}</dd>
-            <dt class="font-semibold uppercase tracking-wider text-slate-400">Fetch</dt>
-            <dd class="text-slate-700">{{ d.fetch_outcome }}</dd>
-            @if (d.ai_model) {
-              <dt class="font-semibold uppercase tracking-wider text-slate-400">Model</dt>
-              <dd class="font-mono text-slate-700">{{ d.ai_model }}</dd>
-            }
           </dl>
 
           <div>
@@ -72,7 +71,7 @@ import { formatProvenanceDate, provenanceTitle, sourceKindLabel } from './source
               <span
                 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
               >
-                Original text
+                {{ bodyLabel() }}
               </span>
               <p-button
                 label="Copy"
@@ -103,6 +102,10 @@ export class SourceDocumentDrawerComponent {
   protected readonly kindLabel = computed(() => {
     const d = this.doc();
     return d ? sourceKindLabel(d.source_kind) : '';
+  });
+  protected readonly bodyLabel = computed(() => {
+    const d = this.doc();
+    return d ? sourceBodyLabel(d.source_kind) : '';
   });
   protected readonly importedDate = computed(() => {
     const d = this.doc();
