@@ -43,7 +43,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes, marker_types |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
-| `_materialize_trial_from_snapshot` | trials | - |
+| `_materialize_trial_from_snapshot` | trial_change_events, trials | - |
 | `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_assets, trial_conditions, trials |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
 | `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
@@ -75,8 +75,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -162,6 +162,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `lookup_user_by_email` | - | agency_members |
 | `mark_r2_delete_failed` | r2_pending_deletes | - |
 | `mark_r2_delete_succeeded` | r2_pending_deletes | - |
+| `mark_trials_ctgov_withdrawn` | trial_change_events, trials | - |
 | `palette_empty_state` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `palette_set_pinned` | palette_pinned | - |
 | `palette_touch_recent` | palette_recents | - |
@@ -749,6 +750,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `list_recent_materials_for_space`
 - `mark_r2_delete_failed`
 - `mark_r2_delete_succeeded`
+- `mark_trials_ctgov_withdrawn`
 - `member_guard_mark_cascade_end`
 - `member_guard_mark_cascade_start`
 - `palette_empty_state`
