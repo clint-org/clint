@@ -74,12 +74,13 @@ export class TrialCreateDialogComponent {
   readonly phaseStart = signal<string | null>(null);
   readonly phaseEnd = signal<string | null>(null);
 
-  // tracks whether each value was pre-filled by the ct.gov lookup. when true,
-  // the field renders disabled and saves with source='ctgov'. when false, the
-  // analyst typed it and the save uses source='analyst'.
+  // tracks whether the phase value was pre-filled by the ct.gov lookup. when
+  // true, the Phase select renders disabled (clear the NCT to override). The
+  // phase start/end dates are only ever prefilled values now: every manual
+  // create produces analyst-owned Trial Start / Trial End markers (ct.gov
+  // adoption happens on first sync if an NCT is present), so there is no
+  // source distinction to carry on the date fields.
   protected readonly phaseTypeFromCtgov = signal(false);
-  protected readonly phaseStartFromCtgov = signal(false);
-  protected readonly phaseEndFromCtgov = signal(false);
 
   // p-datepicker binds Date objects; the phaseStart/phaseEnd signals stay
   // YYYY-MM-DD strings (the save payload + ct.gov prefill use strings).
@@ -190,8 +191,6 @@ export class TrialCreateDialogComponent {
         this.phaseStart.set(null);
         this.phaseEnd.set(null);
         this.phaseTypeFromCtgov.set(false);
-        this.phaseStartFromCtgov.set(false);
-        this.phaseEndFromCtgov.set(false);
       }
     });
   }
@@ -212,15 +211,11 @@ export class TrialCreateDialogComponent {
     }
     if (!value) {
       this.phaseTypeFromCtgov.set(false);
-      this.phaseStartFromCtgov.set(false);
-      this.phaseEndFromCtgov.set(false);
       return;
     }
     const trimmed = value.trim();
     if (!/^NCT\d{8}$/i.test(trimmed)) {
       this.phaseTypeFromCtgov.set(false);
-      this.phaseStartFromCtgov.set(false);
-      this.phaseEndFromCtgov.set(false);
       return;
     }
 
@@ -272,12 +267,14 @@ export class TrialCreateDialogComponent {
           this.phaseType.set(derivedPhase);
           this.phaseTypeFromCtgov.set(true);
         }
+        // Prefill the date VALUES only (the analyst can edit them). They become
+        // analyst-owned Trial Start / Trial End markers on create; ct.gov takes
+        // ownership on first sync via adoption, so no source tag is set here.
         const startDate = study.protocolSection?.statusModule?.startDateStruct?.date;
         if (startDate) {
           // ct.gov returns YYYY-MM or YYYY-MM-DD; normalize to YYYY-MM-DD
           const normalized = /^\d{4}-\d{2}$/.test(startDate) ? `${startDate}-01` : startDate;
           this.phaseStart.set(normalized);
-          this.phaseStartFromCtgov.set(true);
         }
         const endDate =
           study.protocolSection?.statusModule?.primaryCompletionDateStruct?.date ??
@@ -285,7 +282,6 @@ export class TrialCreateDialogComponent {
         if (endDate) {
           const normalized = /^\d{4}-\d{2}$/.test(endDate) ? `${endDate}-01` : endDate;
           this.phaseEnd.set(normalized);
-          this.phaseEndFromCtgov.set(true);
         }
       } catch (e) {
         if ((e as { name?: string })?.name === 'AbortError') return;
@@ -351,15 +347,14 @@ export class TrialCreateDialogComponent {
         payload.phase_type = this.phaseType();
         payload.phase_type_source = this.phaseTypeFromCtgov() ? 'ctgov' : 'analyst';
       }
-      if (this.phaseStart()) {
-        payload.phase_start_date = this.phaseStart();
-        payload.phase_start_date_source = this.phaseStartFromCtgov() ? 'ctgov' : 'analyst';
-      }
-      if (this.phaseEnd()) {
-        payload.phase_end_date = this.phaseEnd();
-        payload.phase_end_date_source = this.phaseEndFromCtgov() ? 'ctgov' : 'analyst';
-      }
-      const trial = await this.trialService.create(this.spaceId(), payload);
+      // Phase start/end flow to create_trial as explicit args; the server
+      // creates the analyst-owned Trial Start / Trial End markers from them.
+      const trial = await this.trialService.create(
+        this.spaceId(),
+        payload,
+        this.phaseStart(),
+        this.phaseEnd()
+      );
       if (this.indicationIds().length) {
         await this.trialService.setIndications(trial.id, this.indicationIds(), this.spaceId());
       }
