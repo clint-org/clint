@@ -80,6 +80,9 @@ Each clinical phase has a distinct, meaningful color:
 4. **Authority through restraint** -- premium feel comes from precision alignment, consistent spacing, and typographic discipline, not from effects or animation.
 5. **Accessibility as baseline** -- WCAG 2.1 AA compliance. Keyboard navigable, screen reader friendly, sufficient contrast on all interactive and data elements.
 
+## Email Collateral
+Ready-to-use, brand-aligned email assets (signature, intro email, logo PNG) and the canonical mark + wordmark lockup spec live in [`notes/email-signature-stout-intro.md`](./notes/email-signature-stout-intro.md). The logo deploys to `https://clintapp.com/email/clint-mark.png`.
+
 ## Anti-Patterns (Avoid)
 - Generic indigo-600 as accent (use teal)
 - Pure gray palette (use slate-tinted)
