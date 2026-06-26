@@ -352,8 +352,11 @@ if (want('command-palette')) {
   }
 }
 
-// 9) Materials -- browse page (full-width filter strip + deliverable list).
-await go('/materials', 'materials.png', 2400);
+// 9) Materials -- captured on a trial detail page (SUMMIT) so the deliverables
+//    show in context in the entity's materials section, matching the deck's
+//    "filed where the client looks / attach to the entities they cover" point.
+//    (Handled below alongside the other trial-detail shots, since it needs the
+//    NCT->trial resolver.)
 
 // 10) Trial detail: two pinned trials, resolved by NCT so reseeds (which
 //     regenerate UUIDs) keep working.
@@ -364,6 +367,7 @@ await go('/materials', 'materials.png', 2400);
 //                         every section of #markers and below is populated.
 const ATTRIBUTE_CM_NCT = 'NCT03860935';
 const REDEFINE_2_NCT = 'NCT05394519';
+const MATERIALS_NCT = 'NCT04847557'; // SUMMIT -- a trial with several linked materials
 
 async function resolveTrialIdByNct(nct) {
   await page.goto(`${BASE}/manage/trials`, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -413,7 +417,11 @@ if (want('intelligence') && !intelTrialId) {
 if (want('trial-detail') && !detailTrialId) {
   detailTrialId = await resolveTrialIdByNct(REDEFINE_2_NCT).catch(() => null);
 }
-log('intel trial id:', intelTrialId, '| detail trial id:', detailTrialId);
+let materialsTrialId = process.env['MATERIALS_TRIAL_ID'] || null;
+if (want('materials') && !materialsTrialId) {
+  materialsTrialId = await resolveTrialIdByNct(MATERIALS_NCT).catch(() => null);
+}
+log('intel trial id:', intelTrialId, '| detail trial id:', detailTrialId, '| materials trial id:', materialsTrialId);
 
 if (process.env['SYNC'] === '1') {
   await syncTrialCtgov(intelTrialId);
@@ -439,6 +447,34 @@ async function trialSection(name, anchor, trialId) {
 }
 await trialSection('intelligence.png', '#primary-intelligence', intelTrialId);
 await trialSection('trial-detail.png', '#markers', detailTrialId);
+
+// Materials -- an entity (SUMMIT trial) detail page, framed so the materials
+// section's deliverable list AND its drag-and-drop upload zone are both in view
+// (the drop zone lives beneath the list on entity pages, not on the library).
+if (want('materials')) {
+  if (!materialsTrialId) {
+    log('skip materials.png (no trial)');
+  } else {
+    try {
+      await page.goto(`${BASE}/manage/trials/${materialsTrialId}`, { waitUntil: 'domcontentloaded' });
+      await settle(page, 2200);
+      const drop = page.locator('app-material-upload-zone').first();
+      if (await drop.count()) {
+        await drop.evaluate((el) => el.scrollIntoView({ block: 'end' })).catch(() => {});
+      } else {
+        await page
+          .locator('#materials')
+          .first()
+          .evaluate((el) => el.scrollIntoView({ block: 'start' }))
+          .catch(() => log('  (materials anchor missing)'));
+      }
+      await page.waitForTimeout(800);
+      await shot(page, 'materials.png');
+    } catch (e) {
+      log('FAILED materials.png -', e.message);
+    }
+  }
+}
 
 log('Done. Wrote shots to', OUT);
 await ctx.close().catch(() => {});

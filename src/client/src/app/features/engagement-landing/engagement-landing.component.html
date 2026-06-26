@@ -254,10 +254,21 @@
           >
             <div class="flex min-w-0 items-baseline gap-3.5">
               <h2
-                class="m-0 text-base font-semibold tracking-[-0.01em] text-slate-900"
+                class="m-0 flex items-center gap-2 text-base font-semibold tracking-[-0.01em] text-slate-900"
                 id="latest-heading"
               >
-                Latest from Stout
+                <span>Latest from</span>
+                @if (agencyLogoUrl(); as logo) {
+                  <img
+                    [ngSrc]="logo"
+                    [alt]="agencyName()"
+                    width="140"
+                    height="28"
+                    class="h-[18px] w-auto max-w-[120px] rounded-[3px] bg-slate-50 object-contain"
+                  />
+                } @else {
+                  <span>{{ agencyName() }}</span>
+                }
               </h2>
               @if (hasFeedItems()) {
                 <span
