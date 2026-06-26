@@ -286,6 +286,14 @@
                     row.trial.identifier
                   }}</span>
                 }
+                @if (row.trial.ctgov_withdrawn_at) {
+                  <i
+                    class="fa-solid fa-ban text-[9px] text-amber-700 ml-1"
+                    pTooltip="Removed from CT.gov registry"
+                    tooltipPosition="top"
+                    aria-label="Removed from CT.gov registry"
+                  ></i>
+                }
               </div>
             }
           </div>
@@ -345,6 +353,7 @@
                     [startYear]="startYear()"
                     [endYear]="endYear()"
                     [totalWidth]="totalWidth()"
+                    [withdrawn]="!!row.trial.ctgov_withdrawn_at"
                     (phaseClick)="onPhaseClick(row.trial)"
                   />
                 </svg>

@@ -27,6 +27,8 @@ import {
   placeOptionalCaptions,
   visibleLabelMarkerIds,
 } from './marker-label-layout';
+import { TooltipModule } from 'primeng/tooltip';
+
 import { ChangeBadgeComponent } from '../../../shared/components/change-badge/change-badge.component';
 import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { GridHeaderComponent } from './grid-header.component';
@@ -59,6 +61,7 @@ export interface FlattenedTrial {
     MarkerComponent,
     PhaseBarComponent,
     RowNotesComponent,
+    TooltipModule,
   ],
   templateUrl: './dashboard-grid.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -30,6 +30,8 @@ export class PhaseBarComponent {
   readonly endYear = input.required<number>();
   readonly totalWidth = input.required<number>();
 
+  readonly withdrawn = input(false);
+
   readonly phaseClick = output<void>();
 
   // Present-day frontier, used as the right edge of an open-ended (no end date)
