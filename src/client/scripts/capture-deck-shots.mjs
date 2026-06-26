@@ -219,11 +219,19 @@ if (want('timeline')) {
     // Re-assert in case the grid's initial-scroll effect reset it.
     await page.evaluate(scrollOnce, 560).catch(() => {});
     await page.waitForTimeout(700);
-    // Hover a representative marker to pop its tooltip card.
-    const markers = page.locator('app-marker div[role="button"]');
-    const n = await markers.count();
-    if (n) {
-      const target = markers.nth(Math.min(n - 1, Math.floor(n * 0.45)));
+    // Hover a content-rich data marker (description + readout) so the tooltip
+    // card shows the competitive read, not a bare CT.gov milestone. The marker's
+    // aria-label is its title; target the REDEFINE-1 topline readout (CagriSema,
+    // 2024-12, in frame), falling back to a mid marker if it isn't found.
+    let target = page
+      .locator('app-marker div[role="button"][aria-label^="REDEFINE-1 topline"]')
+      .first();
+    if (!(await target.count())) {
+      const markers = page.locator('app-marker div[role="button"]');
+      const n = await markers.count();
+      target = n ? markers.nth(Math.min(n - 1, Math.floor(n * 0.45))) : null;
+    }
+    if (target) {
       await target.scrollIntoViewIfNeeded().catch(() => {});
       await target.hover({ force: true }).catch(() => {});
       await page.waitForSelector('app-marker-tooltip', { timeout: 4000 }).catch(() => {});
