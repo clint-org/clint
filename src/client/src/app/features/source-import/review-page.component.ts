@@ -40,8 +40,13 @@ import {
   countFilterMatches,
   markerLeafDisplay,
   eventLeafDisplay,
+  pickMarkerType,
+  type MarkerTypeLite,
   type ReviewFlag,
 } from './review-grid.logic';
+import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
+import { MarkerTypeService } from '../../core/services/marker-type.service';
+import type { MarkerType } from '../../core/models/marker.model';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
 import { ReviewEditDialogComponent } from './review-edit-dialog.component';
 
@@ -98,6 +103,10 @@ interface GridRow {
   // and a date. Undefined for company/asset/trial rows.
   category?: string | null;
   date?: string | null;
+  // For a marker row, the resolved marker type whose glyph it will receive on
+  // commit, so the review renders the real app-marker-icon (not a stand-in).
+  // Null while the space's marker types are still loading.
+  markerType?: MarkerTypeLite | null;
 }
 
 // Row kinds that are leaf attributes of an entity (markers, events) rather than
@@ -116,6 +125,7 @@ const LEAF_KINDS = new Set<GridRow['kind']>(['marker', 'event']);
     MessageModule,
     TreeTableModule,
     ReviewEditDialogComponent,
+    MarkerIconComponent,
   ],
   host: {
     class: 'block h-full',
@@ -303,15 +313,28 @@ const LEAF_KINDS = new Set<GridRow['kind']>(['marker', 'event']);
                            horizontal room in the deeply-indented cell. -->
                       <div class="flex items-start gap-2">
                         <p-treeTableToggler [rowNode]="rowNode" />
-                        <!-- Canonical concept icons (shared/constants/nav-icons.ts):
-                             markers render as shape glyphs app-wide (fa-shapes),
-                             events use fa-calendar-day. -->
-                        <i
-                          class="fa-solid mt-1 text-[10px] text-slate-400"
-                          [class.fa-shapes]="row.kind === 'marker'"
-                          [class.fa-calendar-day]="row.kind === 'event'"
-                          aria-hidden="true"
-                        ></i>
+                        <!-- Markers render the real glyph their marker_type
+                             resolves to (same as the legend/timeline); events use
+                             the canonical events icon (shared/constants/nav-icons.ts).
+                             Marker falls back to fa-shapes until types load. -->
+                        @if (row.kind === 'marker' && row.markerType; as mt) {
+                          <span class="mt-0.5 inline-flex">
+                            <app-marker-icon
+                              [shape]="mt.shape"
+                              [color]="mt.color"
+                              [fillStyle]="mt.fill_style"
+                              [innerMark]="mt.inner_mark"
+                              [size]="13"
+                            />
+                          </span>
+                        } @else {
+                          <i
+                            class="fa-solid mt-1 text-[10px] text-slate-400"
+                            [class.fa-shapes]="row.kind === 'marker'"
+                            [class.fa-calendar-day]="row.kind === 'event'"
+                            aria-hidden="true"
+                          ></i>
+                        }
                         <div class="min-w-0">
                           <div class="whitespace-normal break-words text-slate-600">
                             {{ row.name }}
@@ -583,6 +606,11 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   private readonly messages = inject(MessageService);
   private readonly rpcCache = inject(RpcCache);
   private readonly changeEventService = inject(ChangeEventService);
+  private readonly markerTypeService = inject(MarkerTypeService);
+
+  // The space's marker types, loaded once spaceId is known, so marker leaf rows
+  // can render the real glyph their marker_type resolves to (see gridNodes).
+  protected readonly markerTypes = signal<MarkerType[]>([]);
 
   protected readonly entityOrder = ENTITY_ORDER;
 
@@ -862,6 +890,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     // selection key stays per-entity (so a marker shared by two trials toggles
     // together) while the tree-node key is namespaced by the parent node, since
     // the same leaf can appear under several parents (mirrors multi-asset trials).
+    const markerTypes = this.markerTypes();
     const leafRow = (type: 'markers' | 'events', idx: number, parentNodeKey: string): TreeNode => {
       const e = this.entitiesOf(type)[idx];
       const disp = type === 'markers' ? markerLeafDisplay(e) : eventLeafDisplay(e);
@@ -879,6 +908,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         flags: [],
         category: disp.category,
         date: disp.date,
+        markerType: type === 'markers' ? pickMarkerType(disp.category, markerTypes) : null,
       };
       return { key: `${parentNodeKey}/${row.key}`, data: row };
     };
@@ -1045,6 +1075,20 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   ngOnInit(): void {
     this.extractRouteParams();
     this.initSelections();
+    void this.loadMarkerTypes();
+  }
+
+  // Fetch the space's marker types (system + space-scoped) so marker leaf rows
+  // can resolve their real glyph. Best-effort: on failure the rows fall back to
+  // the fa-shapes icon, which is purely cosmetic for the review preview.
+  private async loadMarkerTypes(): Promise<void> {
+    const spaceId = this.spaceId();
+    if (!spaceId) return;
+    try {
+      this.markerTypes.set(await this.markerTypeService.list(spaceId));
+    } catch {
+      this.markerTypes.set([]);
+    }
   }
 
   hasUnsavedChanges(): boolean {
