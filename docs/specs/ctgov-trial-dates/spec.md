@@ -37,7 +37,8 @@ Because the columns are dropped in the same change, `_materialize_trial_from_sna
 | **Bar end fallback (Goal B)** | Bar end = latest `Trial End`, **else** latest `PCD`. Preserves today's column behavior, where `phase_end_date = coalesce(completionDate, primaryCompletionDate)`. PCD remains its own point marker *and* serves as the bar-end fallback. |
 | **ct.gov / analyst ownership + lock** | **Faithful port of today's ct.gov-wins model.** The seeder becomes a source-aware UPSERT keyed on `markers.metadata.source = 'ctgov'`, so ct.gov keeps its markers live each sync. Analyst edits to a ct.gov-owned Trial Start / End / PCD marker are **blocked** (mirrors the current guard trigger). Removing the NCT releases the markers to analyst ownership. |
 | **Event emission on ct.gov marker UPSERT** | **The marker-audit becomes the single emitter, correctly sourced.** Because the date columns are dropped in this same change, `_materialize_*` no longer emits `phase_*_changed` events from a column diff, so there is no double emission to suppress. Instead, `_log_marker_change` must label seeding-driven marker moves as `source='ctgov'` (it currently hardcodes `'analyst'`) — driven by a transaction-local GUC (`clint.ctgov_seeding`) the seeder sets. So a ct.gov date slip emits exactly one `date_moved`-class event, sourced `ctgov`. |
-| **`phase_type` stays a column** | Only the two **date** columns move to markers. `phase_type` / `phase_type_source` remain on `trials`. The guard trigger is **slimmed** (its `phase_start_date` / `phase_end_date` branches removed), not deleted; the `phase_type` ownership lock is retained. |
+| **`phase` and `phase_type` stay columns** | Only the two **date** columns move to markers. Both `phase` (human-readable string, e.g. "Phase 2/Phase 3", written by `_map_phase_array`) and `phase_type` (bucketed code `P1..P4/OBS`, written by `_derive_phase_type` / `create_trial`) remain on `trials`, along with `phase_type_source`. Neither is a Postgres `GENERATED` column — they are function-derived-and-stored. The bar still reads `phase_type` for color/label. The guard trigger is **slimmed** (its `phase_start_date` / `phase_end_date` branches removed), not deleted; the `phase_type` ownership lock is retained. |
+| **Import → first-sync handoff** | The seeder UPSERT gains an **adoption** step so an NCT-bearing import does not spawn a duplicate Trial Start/End (see A2 + the Import handoff section). Preserves today's "ct.gov wins for NCT trials" while keeping the bar visible immediately on import. |
 | **Fuzzy bar-endpoint rendering** | **Option C — marker-carried hollow cap** (chosen against a rendered prototype). An exact endpoint keeps a clean hard bar edge; an approximate (month/quarter/year) endpoint additionally gets the hollow end-cap (white fill, phase-colored ring) borrowed from the existing marker range-tail vocabulary, plus the `~caption`. This stays distinct from the existing ongoing/clipped feather (so "ongoing" never reads as "approximate") and invents no new visual token. Rejected: (A) hard edge + caption only (bar looks more precise than the data); (B) feathered fuzzy edge (collides with the ongoing feather). |
 
 ---
@@ -81,10 +82,13 @@ New behavior, applied to all three system markers (`Trial Start` `…011`, `PCD`
 
 1. Resolve `(event_date, date_precision)` from the ct.gov date string via `_ctgov_resolve_partial_date` instead of `_safe_iso_date`.
 2. Derive `projection` as today: `actual` if ct.gov `type = ACTUAL`, else `company`.
-3. **UPSERT, matched on the marker ct.gov owns** for this trial + type: find the existing marker whose `marker_type_id` matches and `metadata->>'source' = 'ctgov'` (joined through `marker_assignments` to this trial).
-   - If found: `update` `event_date`, `date_precision`, `projection`, and `metadata` (`snapshot_id`, `ctgov_date_type`). Do **not** touch analyst-owned markers of the same type.
-   - If not found: `insert` the marker + assignment as today, with `metadata.source='ctgov'`.
-   - If the resolved date is null (string unparseable/absent): no insert; if a ct.gov-owned marker already exists, leave it (do not delete) — a transient missing field should not destroy history.
+3. **UPSERT with adoption**, matched on this trial + marker type, in priority order:
+   - **(a) ct.gov-owned exists** (`marker_type_id` matches and `metadata->>'source' = 'ctgov'`, joined through `marker_assignments`): `update` `event_date`, `date_precision`, `projection`, and `metadata` (`snapshot_id`, `ctgov_date_type`). This is the steady-state path.
+   - **(b) adoption** — no ct.gov-owned one, but exactly one **un-owned** marker of that type exists for this trial (an import/manual Trial Start/End: `metadata->>'source'` is null or not `'ctgov'`): **adopt it** — re-stamp `metadata.source='ctgov'` (preserving any other metadata keys) and update date/precision/projection. This prevents an NCT-bearing import from producing a duplicate on first sync and reproduces today's "ct.gov takes over the NCT trial's dates" lifecycle. (If two or more un-owned markers of that type exist, do **not** adopt — fall through to insert — to avoid guessing.)
+   - **(c) insert** — otherwise `insert` the marker + assignment, `metadata.source='ctgov'`.
+   - **null resolved date** (string unparseable/absent): no insert/adopt; if a ct.gov-owned marker already exists, leave it (do not delete) — a transient missing field should not destroy history.
+
+   Once a marker is ct.gov-owned (via b or c), the analyst lock applies and ct.gov updates it every sync. Non-NCT trials never reach this function, so their analyst-owned markers are never adopted.
 4. Set the `clint.ctgov_seeding = 'on'` GUC (transaction-local) around the writes so `_log_marker_change` labels the emitted events `source='ctgov'` (see A3).
 
 The return value (count of markers created) becomes count created **or updated**, surfaced in the ingest summary's `markers_seeded`.
@@ -173,6 +177,22 @@ deriveTrialPhaseSpan(markers) -> {
 
 **Drop columns last**, in the same migration, after all the above: `alter table trials drop column phase_start_date, drop column phase_end_date, drop column phase_start_date_source, drop column phase_end_date_source;`
 
+### B-import. The three import paths and the ct.gov handoff
+
+All three trial-creation paths funnel through `create_trial` / `commit_source_import`, so the write-path change in B2 covers them. What each does with phase dates, and how it hands off to ct.gov:
+
+| Import path | Entry | Phase dates origin | Marker created |
+|---|---|---|---|
+| **NCT list import** | worker resolves NCTs → `commit_source_import` → `create_trial` | ct.gov data already in the proposal | analyst-owned Trial Start/End (un-owned tag) |
+| **Source-document import** (URL / paste / PDF) | AI extract → review → `commit_source_import` → `create_trial` | AI-extracted from the document | analyst-owned Trial Start/End |
+| **Manual single-trial** | trial-create dialog → `create_trial` (optionally ct.gov-autofilled) | analyst-typed | analyst-owned Trial Start/End |
+
+**Ownership tag on import:** imports create the Trial Start/End markers **un-owned** (no `metadata.source='ctgov'`). This keeps `create_trial` uniform across all three paths and keeps the bar visible immediately (no "no bar until first sync" gap).
+
+**Handoff to ct.gov:** for an NCT-bearing trial, the **first** `ingest_ctgov_snapshot` runs the seeder, which hits the **adoption** branch (A2 step b): it re-stamps the lone import-created Trial Start/End as `ctgov`-owned and refreshes the date/precision/projection — no duplicate, and from then on ct.gov owns and re-asserts it each sync, with the analyst locked out. This reproduces today's column lifecycle (import sets a provisional date; ct.gov takes over on first sync) without a parallel marker. Non-NCT trials never sync, so their import/manual markers stay analyst-owned permanently.
+
+**Why not tag NCT-import markers `ctgov` up front?** NCT list import does have ct.gov dates in hand, so it *could* stamp `ctgov` directly. Adoption makes that unnecessary and handles all three paths (including doc/manual imports that happen to carry an NCT) with one rule, so imports stay uniform.
+
 ### B3. Client blast radius
 
 Switch every consumer to `deriveTrialPhaseSpan` (and `phase-bar` to render precision):
@@ -210,6 +230,7 @@ The cap reuses the marker range-tail's existing hollow-cap token; no new visual 
 - **Integration** (`npm run test:integration`): after `ingest_ctgov_snapshot`, `get_dashboard_data` returns the markers needed to derive the span, and the derived span matches what the dropped columns would have held (including the PCD fallback case: completion date absent, PCD present -> bar end = PCD).
 - **Component**: `phase-bar` renders Option C — exact endpoint = hard edge (no cap); approximate endpoint = hollow cap + `~caption`; ongoing endpoint = feather (distinct from the cap). Assert an approximate end and an ongoing end render different treatments (no collision).
 - **Regression**: `create_trial` and `commit_source_import` with analyst phase dates produce Trial Start / End markers and a correctly-rendered bar.
+- **Import → ct.gov handoff (adoption)**: import an NCT trial (creates an un-owned Trial Start), then `ingest_ctgov_snapshot` for that NCT → assert there is still exactly **one** Trial Start marker (adopted, now `metadata.source='ctgov'`, date refreshed from ct.gov), not two. Then assert a non-NCT manual trial's analyst Trial Start is never adopted across syncs. Also assert the two-un-owned-markers case falls through to insert (no adoption guess).
 
 ---
 
