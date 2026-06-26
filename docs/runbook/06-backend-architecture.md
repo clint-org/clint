@@ -43,7 +43,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes, marker_types |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
-| `_materialize_trial_from_snapshot` | trials | - |
+| `_materialize_trial_from_snapshot` | trial_change_events, trials | - |
 | `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_assets, trial_conditions, trials |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
 | `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
@@ -128,6 +128,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_marker_history` | - | marker_changes |
 | `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, routes_of_administration, trial_assets, trials |
 | `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_links, trials |
+| `get_source_document` | - | ai_calls, source_documents |
 | `get_space_inventory_snapshot` | - | assets, companies, event_categories, indications, marker_types, mechanisms_of_action, routes_of_administration, trials |
 | `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
 | `get_space_tags` | - | events |
@@ -152,15 +153,16 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `list_audit_events` | - | audit_events |
 | `list_draft_intelligence_for_space` | - | primary_intelligence |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
-| `list_materials_for_entity` | - | assets, companies, marker_assignments, markers, material_links, materials, spaces, trials |
-| `list_materials_for_space` | - | assets, companies, marker_assignments, markers, material_links, materials, spaces, trials |
+| `list_materials_for_entity` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
+| `list_materials_for_space` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
 | `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links |
-| `list_recent_materials_for_space` | - | assets, companies, marker_assignments, markers, material_links, materials, spaces, trials |
+| `list_recent_materials_for_space` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
 | `list_space_members` | - | space_members |
 | `list_tenant_members` | - | agency_members, tenant_members, tenants |
 | `lookup_user_by_email` | - | agency_members |
 | `mark_r2_delete_failed` | r2_pending_deletes | - |
 | `mark_r2_delete_succeeded` | r2_pending_deletes | - |
+| `mark_trials_ctgov_withdrawn` | trial_change_events, trials | - |
 | `palette_empty_state` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `palette_set_pinned` | palette_pinned | - |
 | `palette_touch_recent` | palette_recents | - |
@@ -727,6 +729,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_landscape_index_by_roa`
 - `get_marker_detail_with_intelligence`
 - `get_positioning_data`
+- `get_source_document`
 - `get_space_intelligence`
 - `get_space_inventory_snapshot`
 - `get_space_landing_stats`
@@ -747,6 +750,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `list_recent_materials_for_space`
 - `mark_r2_delete_failed`
 - `mark_r2_delete_succeeded`
+- `mark_trials_ctgov_withdrawn`
 - `member_guard_mark_cascade_end`
 - `member_guard_mark_cascade_start`
 - `palette_empty_state`

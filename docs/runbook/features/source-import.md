@@ -163,6 +163,20 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   user_facing: true
   role: owner
   status: active
+
+- id: import-provenance-visibility
+  summary: Read-only provenance drill for space curators. get_source_document returns the source_documents row an AI-imported entity landed from (raw ingested text, title, URL, fetch outcome), plus the importer email (joined from auth.users in the definer context) and the linked ai_call model/outcome. Gated to space owners and editors via has_space_access; viewers and non-members get 42501; platform admin keeps the support read bypass. Surfaced as a quiet "IMPORTED FROM ..." line on the trial/asset/company detail pages and the marker/event detail panels, which opens a read-only source drawer. Keeps source_documents itself agency-only; this RPC is the single tenant-side read path. get_catalyst_detail and get_event_detail also return source_doc_id so the line can render on those surfaces.
+  routes: []
+  rpcs:
+    - get_source_document
+  tables:
+    - source_documents
+    - ai_calls
+  related:
+    - source-import-commit
+  user_facing: true
+  role: editor
+  status: active
 ```
 
 ## New tables

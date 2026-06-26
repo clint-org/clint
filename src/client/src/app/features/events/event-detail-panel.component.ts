@@ -21,6 +21,7 @@ import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-ic
 import { AnnotationService, Annotation } from '../../core/services/annotation.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { MarkerDetailContentComponent } from '../../shared/components/marker-detail-content.component';
+import { MaterialsSectionComponent } from '../../shared/components/materials-section/materials-section.component';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelEntityLinkDirective } from '../../shared/components/detail-panel-entity-link.directive';
 import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
@@ -29,6 +30,7 @@ import { DetailPanelPillComponent } from '../../shared/components/detail-panel-p
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 import { ExternalLinkComponent } from '../../shared/components/external-link.component';
+import { SourceProvenanceLineComponent } from '../../shared/components/source-provenance/source-provenance-line.component';
 import { BrandLogoComponent } from '../../shared/components/brand-logo.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
@@ -83,9 +85,11 @@ const CATEGORY_COLOR: Record<string, string> = {
     DetailPanelShellComponent,
     ExternalLinkComponent,
     MarkerDetailContentComponent,
+    MaterialsSectionComponent,
     MarkerIconComponent,
     RowActionsComponent,
     LoaderComponent,
+    SourceProvenanceLineComponent,
   ],
   templateUrl: './event-detail-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

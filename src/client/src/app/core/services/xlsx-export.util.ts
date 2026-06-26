@@ -48,6 +48,7 @@ export function buildXlsxWorkbook(companies: Company[], meta: XlsxMeta): ExcelJS
     { header: 'Asset', key: 'asset', width: 20 },
     { header: 'MOA', key: 'moa', width: 26 },
     { header: 'ROA', key: 'roa', width: 12 },
+    { header: 'Indication', key: 'indication', width: 22 },
     { header: 'Trial', key: 'trial', width: 22 },
     { header: 'NCT ID', key: 'nctId', width: 14 },
     { header: 'Phase', key: 'phase', width: 10 },

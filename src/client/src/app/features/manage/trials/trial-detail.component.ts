@@ -18,6 +18,7 @@ import { Dialog } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
+import { SourceProvenanceLineComponent } from '../../../shared/components/source-provenance/source-provenance-line.component';
 import { sectionHashUrl } from './section-hash-url';
 import { Trial, TrialNote } from '../../../core/models/trial.model';
 import { Marker } from '../../../core/models/marker.model';
@@ -83,6 +84,7 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     Dialog,
     TooltipModule,
     SkeletonComponent,
+    SourceProvenanceLineComponent,
     MarkerFormComponent,
     NoteFormComponent,
     SectionCardComponent,

@@ -13,21 +13,46 @@ import type { Company } from '../models/company.model';
 
 describe('computeLeftColumns', () => {
   it('includes only company/asset/trial when all toggles off', () => {
-    const layout = computeLeftColumns({ showMoa: false, showRoa: false, showNotes: false });
+    const layout = computeLeftColumns({
+      showMoa: false,
+      showRoa: false,
+      showIndication: false,
+      showNotes: false,
+    });
     expect(layout.columns.map((c) => c.key)).toEqual(['company', 'asset', 'trial']);
     expect(layout.labelColW).toBeCloseTo(2.9, 5);
   });
 
   it('includes all columns in order when all toggles on', () => {
-    const layout = computeLeftColumns({ showMoa: true, showRoa: true, showNotes: true });
+    const layout = computeLeftColumns({
+      showMoa: true,
+      showRoa: true,
+      showIndication: true,
+      showNotes: true,
+    });
     expect(layout.columns.map((c) => c.key)).toEqual([
-      'company', 'asset', 'moa', 'roa', 'trial', 'notes',
+      'company', 'asset', 'moa', 'roa', 'indication', 'trial', 'notes',
     ]);
-    expect(layout.labelColW).toBeCloseTo(4.5, 5);
+    expect(layout.labelColW).toBeCloseTo(5.4, 5);
+  });
+
+  it('places indication immediately before trial when only it is on', () => {
+    const layout = computeLeftColumns({
+      showMoa: false,
+      showRoa: false,
+      showIndication: true,
+      showNotes: false,
+    });
+    expect(layout.columns.map((c) => c.key)).toEqual(['company', 'asset', 'indication', 'trial']);
   });
 
   it('lays out x positions cumulatively and matches labelColW', () => {
-    const layout = computeLeftColumns({ showMoa: true, showRoa: false, showNotes: false });
+    const layout = computeLeftColumns({
+      showMoa: true,
+      showRoa: false,
+      showIndication: false,
+      showNotes: false,
+    });
     expect(layout.columns.map((c) => c.key)).toEqual(['company', 'asset', 'moa', 'trial']);
     const company = layout.columns[0];
     const asset = layout.columns[1];
@@ -261,6 +286,10 @@ const fixtureCompanies = [
             identifier: 'NCT00000001',
             notes: 'Pivotal readout expected H2.',
             trial_notes: [],
+            _indications: [
+              { id: 'i1', indication_id: 'i1', indication_name: 'Obesity' },
+              { id: 'i2', indication_id: 'i2', indication_name: 'Overweight' },
+            ],
             phase_type: 'P3',
             phase_start_date: '2020-01-01',
             phase_end_date: '2022-06-30',
@@ -299,6 +328,7 @@ describe('flattenTrials', () => {
     expect(rows[0].nctId).toBe('NCT00000001');
     expect(rows[0].moa).toBe('GLP-1 agonist');
     expect(rows[0].roa).toBe('SC');
+    expect(rows[0].indications).toBe('Obesity, Overweight');
     expect(rows[0].isFirstInCompany).toBe(true);
     expect(rows[0].isFirstInAsset).toBe(true);
   });
@@ -356,6 +386,7 @@ describe('buildTrialExportRows', () => {
       asset: 'ACM-101',
       moa: 'GLP-1 agonist',
       roa: 'SC',
+      indication: 'Obesity, Overweight',
       trial: 'ACME-1',
       nctId: 'NCT00000001',
       phase: 'PH 3',

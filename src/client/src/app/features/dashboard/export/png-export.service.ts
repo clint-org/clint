@@ -17,6 +17,7 @@ export interface PngExportSnapshot {
   hideTrialColumn: boolean;
   hideMoaColumn: boolean;
   hideRoaColumn: boolean;
+  hideIndicationColumn: boolean;
   hideNotesColumn: boolean;
   spaceId: string;
   tenantName: string;
@@ -64,6 +65,7 @@ export class PngExportService {
         ref.setInput('hideTrialColumn', snapshot.hideTrialColumn);
         ref.setInput('hideMoaColumn', snapshot.hideMoaColumn);
         ref.setInput('hideRoaColumn', snapshot.hideRoaColumn);
+        ref.setInput('hideIndicationColumn', snapshot.hideIndicationColumn);
         ref.setInput('hideNotesColumn', snapshot.hideNotesColumn);
         ref.setInput('spaceId', snapshot.spaceId);
         ref.setInput('tenantName', snapshot.tenantName);

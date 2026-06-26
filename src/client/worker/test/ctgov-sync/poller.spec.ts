@@ -472,7 +472,7 @@ describe('runScheduledSync', () => {
     expect(recordCalls[0].body['p_errors_count']).toBeGreaterThan(0);
   });
 
-  it('404 from CT.gov fetchStudy: marks polled, errors_count reflects, status=partial', async () => {
+  it('404 from CT.gov fetchStudy: marks withdrawn (not an error), status=success', async () => {
     const trials = [
       {
         trial_id: 't1',
@@ -486,7 +486,7 @@ describe('runScheduledSync', () => {
     const harness = installFetch([
       rpcHandler({
         get_trials_for_polling: () => jsonResponse(trials),
-        bulk_update_last_polled: () => jsonResponse(1),
+        mark_trials_ctgov_withdrawn: () => jsonResponse(1),
         record_sync_run: () => jsonResponse('22222222-2222-2222-2222-222222222222'),
       }),
       ctgovSummaryHandler(() => jsonResponse({ studies: [summaryStudy('NCT01', '2026-04-15')] })),
@@ -496,17 +496,116 @@ describe('runScheduledSync', () => {
 
     const summary = await runScheduledSync(makeEnv());
 
+    // A 404 is expected attrition: no snapshot, no error, run stays green.
     expect(summary.snapshots_written).toBe(0);
-    expect(summary.errors_count).toBe(1);
-    expect(summary.status).toBe('partial');
+    expect(summary.errors_count).toBe(0);
+    expect(summary.status).toBe('success');
 
     const ingestCalls = harness.rpcCalls.filter((c) => c.fn === 'ingest_ctgov_snapshot');
     expect(ingestCalls).toHaveLength(0);
 
-    // The 404 trial is still bulk-polled so it does not retry tomorrow.
+    // The withdrawn trial is marked (stamps ctgov_withdrawn_at, emits a
+    // trial_withdrawn event, leaves the polling queue) -- not bulk-polled.
+    const markCalls = harness.rpcCalls.filter((c) => c.fn === 'mark_trials_ctgov_withdrawn');
+    expect(markCalls).toHaveLength(1);
+    expect(markCalls[0].body['p_secret']).toBe('test-secret');
+    expect(markCalls[0].body['p_trial_ids']).toEqual(['t1']);
+
+    // No polled trials -> bulk_update_last_polled not called.
+    const bulkCalls = harness.rpcCalls.filter((c) => c.fn === 'bulk_update_last_polled');
+    expect(bulkCalls).toHaveLength(0);
+  });
+
+  it('mixed run: one NCT 404s (withdrawn), one ingests -> status=success', async () => {
+    const trials = [
+      {
+        trial_id: 't1',
+        space_id: 's1',
+        nct_id: 'NCT01',
+        last_update_posted_date: '2026-03-01',
+        latest_ctgov_version: null,
+      },
+      {
+        trial_id: 't2',
+        space_id: 's2',
+        nct_id: 'NCT02',
+        last_update_posted_date: '2026-03-01',
+        latest_ctgov_version: null,
+      },
+    ];
+
+    const harness = installFetch([
+      rpcHandler({
+        get_trials_for_polling: () => jsonResponse(trials),
+        ingest_ctgov_snapshot: () =>
+          jsonResponse({
+            snapshot_id: '11111111-1111-1111-1111-111111111111',
+            inserted: true,
+            events_emitted: 1,
+            changes_recorded: 1,
+          }),
+        mark_trials_ctgov_withdrawn: () => jsonResponse(1),
+        bulk_update_last_polled: () => jsonResponse(1),
+        record_sync_run: () => jsonResponse('22222222-2222-2222-2222-222222222222'),
+      }),
+      ctgovSummaryHandler(() =>
+        jsonResponse({
+          studies: [summaryStudy('NCT01', '2026-04-15'), summaryStudy('NCT02', '2026-04-15')],
+        })
+      ),
+      // NCT01 ingests; NCT02 404s (withdrawn).
+      ctgovStudyHandler((nctId) =>
+        nctId === 'NCT02'
+          ? new Response('', { status: 404 })
+          : jsonResponse({
+              protocolSection: {
+                identificationModule: { nctId },
+                statusModule: { lastUpdatePostDateStruct: { date: '2026-04-15' } },
+              },
+            })
+      ),
+      ctgovHistoryHandler(),
+    ]);
+
+    const summary = await runScheduledSync(makeEnv());
+
+    expect(summary.status).toBe('success');
+    expect(summary.errors_count).toBe(0);
+    expect(summary.snapshots_written).toBe(1);
+
+    // The withdrawn trial is marked; the ingested trial is bulk-polled.
+    const markCalls = harness.rpcCalls.filter((c) => c.fn === 'mark_trials_ctgov_withdrawn');
+    expect(markCalls).toHaveLength(1);
+    expect(markCalls[0].body['p_trial_ids']).toEqual(['t2']);
+
     const bulkCalls = harness.rpcCalls.filter((c) => c.fn === 'bulk_update_last_polled');
     expect(bulkCalls).toHaveLength(1);
     expect(bulkCalls[0].body['p_trial_ids']).toEqual(['t1']);
+  });
+
+  it('fatal error (queue RPC throws): records a failed run, then rethrows', async () => {
+    // Regression for the silent multi-day gaps: when runScheduledSync threw
+    // before record_sync_run (e.g. get_trials_for_polling 500s), NO row was
+    // written -- the run vanished into an unread Worker log. Now a status=failed
+    // row is always recorded so the feed and the ctgov-sync-health watchdog see
+    // it. The error still propagates so the scheduled() handler logs it.
+    const harness = installFetch([
+      rpcHandler({
+        get_trials_for_polling: () => jsonResponse({ code: 'XX000', message: 'queue boom' }, 500),
+        record_sync_run: () => jsonResponse('22222222-2222-2222-2222-222222222222'),
+      }),
+    ]);
+
+    await expect(runScheduledSync(makeEnv())).rejects.toThrow();
+
+    const recordCalls = harness.rpcCalls.filter((c) => c.fn === 'record_sync_run');
+    expect(recordCalls).toHaveLength(1);
+    expect(recordCalls[0].body['p_status']).toBe('failed');
+    expect(recordCalls[0].body['p_errors_count']).toBe(1);
+    const errorSummary = recordCalls[0].body['p_error_summary'] as {
+      errors: Array<Record<string, unknown>>;
+    };
+    expect(errorSummary.errors[0]['kind']).toBe('fatal');
   });
 
   it('version falls back to latest_ctgov_version + 1 when /api/int/ is 404', async () => {

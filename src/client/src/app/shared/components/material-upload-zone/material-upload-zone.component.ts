@@ -355,8 +355,10 @@ export class MaterialUploadZoneComponent {
 
     const filenameWithoutExt = file.name.replace(/\.[^.]+$/, '');
 
-    // Pre-select the current entity in the picker, unless it is space-level
-    // (the picker can't render space links).
+    // Pre-select the current entity in the picker, unless it is space- or
+    // event-level. The picker is shared with primary-intelligence authoring and
+    // only renders the PI link types (trial/marker/company/asset); space and
+    // event anchors are force-added as links at upload time instead (below).
     const initialPickerLinks: {
       entity_type: 'trial' | 'marker' | 'company' | 'product';
       entity_id: string;
@@ -366,7 +368,7 @@ export class MaterialUploadZoneComponent {
     }[] = [];
     const eType = this.entityType();
     const eId = this.entityId();
-    if (eType !== 'space') {
+    if (eType !== 'space' && eType !== 'event') {
       initialPickerLinks.push({
         entity_type: eType,
         entity_id: eId,
@@ -421,17 +423,18 @@ export class MaterialUploadZoneComponent {
     const sid = this.spaceId();
     const file = pending.file;
 
-    // Compose links: picker links plus, when the current entity is
-    // space-level, an explicit space link (the picker doesn't show
-    // space as a target).
+    // Compose links: picker links plus, when the current entity is space- or
+    // event-level, an explicit anchor link (the picker doesn't render those
+    // types, so they are added here instead).
     const links: MaterialLink[] = this.pickerLinks().map((l, i) => ({
       entity_type: l.entity_type,
       entity_id: l.entity_id,
       display_order: i,
     }));
-    if (this.entityType() === 'space') {
+    const anchorType = this.entityType();
+    if (anchorType === 'space' || anchorType === 'event') {
       links.unshift({
-        entity_type: 'space',
+        entity_type: anchorType,
         entity_id: this.entityId(),
         display_order: 0,
       });
