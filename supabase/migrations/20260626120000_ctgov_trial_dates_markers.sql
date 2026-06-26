@@ -1314,6 +1314,268 @@ $function$;
 
 
 -- ----------------------------------------------------------------------------
+-- (k-3) Single date_moved emitter: suppress _classify_change's duplicate.
+--     The three ct.gov dates (start / primaryCompletion / completion) are now
+--     backed by the Trial Start / PCD / Trial End markers, and the marker audit
+--     (_log_marker_change -> _emit_events_from_marker_change) is the single,
+--     correctly-sourced (ctgov) emitter of their date_moved events (spec A3).
+--     Before this change ingest_ctgov_snapshot's field-diff path ALSO emitted a
+--     date_moved via _classify_change, so a ct.gov date slip produced TWO
+--     date_moved rows. Re-stated from live (20260625180000); the ONLY change is
+--     the three date fields now emit no event (the raw diff is still recorded in
+--     trial_field_changes by the caller -- only the duplicate event is dropped).
+--     All other field classifications are unchanged. Safety: the marker-side
+--     date_moved payload is a superset (adds marker_title / marker_type_name /
+--     marker_color and an always-computed days_diff) and is rendered by a
+--     first-class consumer branch (change-event-summary.ts, which_date =
+--     'event_date' + marker_title), so no events-feed card is blanked.
+-- ----------------------------------------------------------------------------
+create or replace function public._classify_change(p_field_path text, p_old jsonb, p_new jsonb, p_occurred_at timestamp with time zone DEFAULT now())
+ returns table(event_type text, payload jsonb, occurred_at timestamp with time zone)
+ language plpgsql
+ stable
+ set search_path to ''
+as $function$
+declare
+  v_old_date  date;
+  v_new_date  date;
+  v_days_diff int;
+  v_direction text;
+  v_which     text;
+  v_old_count numeric;
+  v_new_count numeric;
+  v_pct       numeric;
+  v_arm       jsonb;
+  v_outcome_kind text;
+  v_old_labels text[];
+  v_new_labels text[];
+  v_old_names  text[];
+  v_new_names  text[];
+  v_old_keys   text[];
+  v_new_keys   text[];
+  v_added      jsonb;
+  v_removed    jsonb;
+  v_modified   jsonb;
+begin
+  -- statusModule.overallStatus -> status_changed
+  if p_field_path = 'protocolSection.statusModule.overallStatus' then
+    event_type  := 'status_changed';
+    payload     := jsonb_build_object(
+      'from', case when p_old is null then null::text else p_old #>> '{}' end,
+      'to',   case when p_new is null then null::text else p_new #>> '{}' end
+    );
+    occurred_at := p_occurred_at;
+    return next;
+    return;
+  end if;
+
+  -- statusModule.{start|primaryCompletion|completion}DateStruct.date
+  -- These three dates are now marker-backed (Trial Start / PCD / Trial End) and
+  -- the marker audit is the single date_moved emitter (spec A3). Emit NOTHING
+  -- here to avoid a duplicate event; the caller still records the raw field diff
+  -- in trial_field_changes.
+  if p_field_path in (
+       'protocolSection.statusModule.startDateStruct.date',
+       'protocolSection.statusModule.primaryCompletionDateStruct.date',
+       'protocolSection.statusModule.completionDateStruct.date'
+  ) then
+    return;
+  end if;
+
+  -- designModule.phases -> phase_transitioned
+  if p_field_path = 'protocolSection.designModule.phases' then
+    event_type  := 'phase_transitioned';
+    payload     := jsonb_build_object(
+      'from', coalesce(p_old, '[]'::jsonb),
+      'to',   coalesce(p_new, '[]'::jsonb)
+    );
+    occurred_at := p_occurred_at;
+    return next;
+    return;
+  end if;
+
+  -- designModule.enrollmentInfo.count -> enrollment_target_changed
+  if p_field_path = 'protocolSection.designModule.enrollmentInfo.count' then
+    v_old_count := case when p_old is null then null else (p_old #>> '{}')::numeric end;
+    v_new_count := case when p_new is null then null else (p_new #>> '{}')::numeric end;
+    if v_old_count is not null and v_old_count <> 0 and v_new_count is not null then
+      v_pct := round(((v_new_count - v_old_count) / v_old_count) * 100, 2);
+    else
+      v_pct := null;
+    end if;
+    event_type  := 'enrollment_target_changed';
+    payload     := jsonb_build_object(
+      'from',           v_old_count,
+      'to',             v_new_count,
+      'percent_change', v_pct
+    );
+    occurred_at := p_occurred_at;
+    return next;
+    return;
+  end if;
+
+  -- armsInterventionsModule.armGroups -> arm_added / arm_removed
+  if p_field_path = 'protocolSection.armsInterventionsModule.armGroups' then
+    select coalesce(array_agg(elem ->> 'label'), array[]::text[])
+      into v_old_labels
+      from jsonb_array_elements(coalesce(p_old, '[]'::jsonb)) elem;
+    select coalesce(array_agg(elem ->> 'label'), array[]::text[])
+      into v_new_labels
+      from jsonb_array_elements(coalesce(p_new, '[]'::jsonb)) elem;
+
+    for v_arm in
+      select elem
+        from jsonb_array_elements(coalesce(p_new, '[]'::jsonb)) elem
+       where not ((elem ->> 'label') = any(v_old_labels))
+    loop
+      event_type  := 'arm_added';
+      payload     := jsonb_build_object(
+        'arm_label',   v_arm ->> 'label',
+        'arm_type',    v_arm ->> 'type',
+        'description', v_arm ->> 'description'
+      );
+      occurred_at := p_occurred_at;
+      return next;
+    end loop;
+
+    for v_arm in
+      select elem
+        from jsonb_array_elements(coalesce(p_old, '[]'::jsonb)) elem
+       where not ((elem ->> 'label') = any(v_new_labels))
+    loop
+      event_type  := 'arm_removed';
+      payload     := jsonb_build_object(
+        'arm_label', v_arm ->> 'label',
+        'arm_type',  v_arm ->> 'type'
+      );
+      occurred_at := p_occurred_at;
+      return next;
+    end loop;
+    return;
+  end if;
+
+  -- armsInterventionsModule.interventions -> intervention_changed
+  if p_field_path = 'protocolSection.armsInterventionsModule.interventions' then
+    select coalesce(array_agg(elem ->> 'name'), array[]::text[])
+      into v_old_names
+      from jsonb_array_elements(coalesce(p_old, '[]'::jsonb)) elem;
+    select coalesce(array_agg(elem ->> 'name'), array[]::text[])
+      into v_new_names
+      from jsonb_array_elements(coalesce(p_new, '[]'::jsonb)) elem;
+
+    select coalesce(jsonb_agg(jsonb_build_object('name', elem ->> 'name', 'type', elem ->> 'type')), '[]'::jsonb)
+      into v_added
+      from jsonb_array_elements(coalesce(p_new, '[]'::jsonb)) elem
+     where not ((elem ->> 'name') = any(v_old_names));
+
+    select coalesce(jsonb_agg(jsonb_build_object('name', elem ->> 'name', 'type', elem ->> 'type')), '[]'::jsonb)
+      into v_removed
+      from jsonb_array_elements(coalesce(p_old, '[]'::jsonb)) elem
+     where not ((elem ->> 'name') = any(v_new_names));
+
+    event_type  := 'intervention_changed';
+    payload     := jsonb_build_object('added', v_added, 'removed', v_removed);
+    occurred_at := p_occurred_at;
+    return next;
+    return;
+  end if;
+
+  -- outcomesModule.{primary|secondary}Outcomes -> outcome_measure_changed
+  if p_field_path in (
+       'protocolSection.outcomesModule.primaryOutcomes',
+       'protocolSection.outcomesModule.secondaryOutcomes'
+  ) then
+    v_outcome_kind := case p_field_path
+                        when 'protocolSection.outcomesModule.primaryOutcomes'   then 'primary'
+                        when 'protocolSection.outcomesModule.secondaryOutcomes' then 'secondary'
+                      end;
+
+    select coalesce(array_agg(elem ->> 'measure'), array[]::text[])
+      into v_old_keys
+      from jsonb_array_elements(coalesce(p_old, '[]'::jsonb)) elem;
+    select coalesce(array_agg(elem ->> 'measure'), array[]::text[])
+      into v_new_keys
+      from jsonb_array_elements(coalesce(p_new, '[]'::jsonb)) elem;
+
+    select coalesce(jsonb_agg(elem), '[]'::jsonb)
+      into v_added
+      from jsonb_array_elements(coalesce(p_new, '[]'::jsonb)) elem
+     where not ((elem ->> 'measure') = any(v_old_keys));
+
+    select coalesce(jsonb_agg(elem), '[]'::jsonb)
+      into v_removed
+      from jsonb_array_elements(coalesce(p_old, '[]'::jsonb)) elem
+     where not ((elem ->> 'measure') = any(v_new_keys));
+
+    select coalesce(jsonb_agg(jsonb_build_object('measure', n ->> 'measure', 'from', o, 'to', n)), '[]'::jsonb)
+      into v_modified
+      from jsonb_array_elements(coalesce(p_new, '[]'::jsonb)) n
+      join jsonb_array_elements(coalesce(p_old, '[]'::jsonb)) o
+        on (n ->> 'measure') is not null and (n ->> 'measure') = (o ->> 'measure')
+     where n is distinct from o;
+
+    event_type  := 'outcome_measure_changed';
+    payload     := jsonb_build_object(
+      'outcome_kind', v_outcome_kind,
+      'added',        v_added,
+      'removed',      v_removed,
+      'modified',     v_modified
+    );
+    occurred_at := p_occurred_at;
+    return next;
+    return;
+  end if;
+
+  -- sponsorCollaboratorsModule.leadSponsor.name -> sponsor_changed
+  if p_field_path = 'protocolSection.sponsorCollaboratorsModule.leadSponsor.name' then
+    event_type  := 'sponsor_changed';
+    payload     := jsonb_build_object(
+      'from', p_old #>> '{}',
+      'to',   p_new #>> '{}'
+    );
+    occurred_at := p_occurred_at;
+    return next;
+    return;
+  end if;
+
+  -- eligibilityModule.eligibilityCriteria -> eligibility_criteria_changed
+  if p_field_path = 'protocolSection.eligibilityModule.eligibilityCriteria' then
+    event_type  := 'eligibility_criteria_changed';
+    payload     := jsonb_build_object(
+      'old_length', coalesce(length(p_old #>> '{}'), 0),
+      'new_length', coalesce(length(p_new #>> '{}'), 0)
+    );
+    occurred_at := p_occurred_at;
+    return next;
+    return;
+  end if;
+
+  -- eligibilityModule.{sex|minimumAge|maximumAge} -> eligibility_changed
+  if p_field_path in (
+       'protocolSection.eligibilityModule.sex',
+       'protocolSection.eligibilityModule.minimumAge',
+       'protocolSection.eligibilityModule.maximumAge'
+  ) then
+    v_which := case p_field_path
+                 when 'protocolSection.eligibilityModule.sex'        then 'sex'
+                 when 'protocolSection.eligibilityModule.minimumAge' then 'minimum_age'
+                 when 'protocolSection.eligibilityModule.maximumAge' then 'maximum_age'
+               end;
+    event_type  := 'eligibility_changed';
+    payload     := jsonb_build_object(
+      'which_field', v_which,
+      'from',        p_old #>> '{}',
+      'to',          p_new #>> '{}'
+    );
+    occurred_at := p_occurred_at;
+    return next;
+    return;
+  end if;
+end;
+$function$;
+
+
+-- ----------------------------------------------------------------------------
 -- (l) DROP the four date columns LAST. Every reader/writer above has been
 --     rewritten to not reference them; markers are now the sole source of
 --     trial date truth.
@@ -1432,6 +1694,24 @@ begin
   if v_d <> '2026-11-15' or v_p <> 'month' or v_src <> 'company' then
     raise exception 'over-time FAIL v2 fields: got (%, %, %)', v_d, v_p, v_src;
   end if;
+
+  -- single-emitter: the v1->v2 start-date slip must emit EXACTLY ONE date_moved
+  -- (the marker audit), not two (it previously also fired via _classify_change),
+  -- and it must be sourced 'ctgov'. (v1 had no prior snapshot -> no field diff;
+  -- the new marker emitted marker_added, not date_moved.)
+  select count(*) into v_cnt
+    from public.trial_change_events
+   where trial_id = v_trial_a and event_type = 'date_moved';
+  if v_cnt <> 1 then
+    raise exception 'single-emitter FAIL: expected exactly 1 date_moved after a ct.gov date slip, got %', v_cnt;
+  end if;
+  select count(*) into v_cnt
+    from public.trial_change_events
+   where trial_id = v_trial_a and event_type = 'date_moved' and source <> 'ctgov';
+  if v_cnt <> 0 then
+    raise exception 'single-emitter FAIL: date_moved present with source <> ctgov (count %)', v_cnt;
+  end if;
+  raise notice 'ctgov markers smoke ok test 2b: ct.gov date slip emits exactly 1 date_moved, source ctgov';
 
   -- v3: exact actual -> SAME marker, 2026-11-03 / exact / actual.
   perform public.ingest_ctgov_snapshot(
