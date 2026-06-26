@@ -971,4 +971,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260626150000_ai_model_pricing_updated_by_set_null.sql`
 - `20260626160000_drop_ctgov_secret_health_rpc.sql`
 - `20260626170000_landscape_primary_intelligence_presence.sql`
+- `20260626180000_positioning_intelligence_includes_trials.sql`
 <!-- /AUTO-GEN:DRIFT -->

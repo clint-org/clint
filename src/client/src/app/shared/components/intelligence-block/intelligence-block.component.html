@@ -6,8 +6,9 @@
       <div class="flex flex-wrap items-center gap-3">
         <h2
           id="primary-intelligence-heading"
-          class="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500"
+          class="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500"
         >
+          <app-pi-mark [size]="12" />
           Primary intelligence
         </h2>
         @if (c.record.state === 'draft') {

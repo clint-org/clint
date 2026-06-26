@@ -42,8 +42,7 @@ import { PiMarkComponent } from '../pi-mark/pi-mark.component';
     }
 
     @if (countLabel()) {
-      <p class="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-brand-700">
-        <app-pi-mark [size]="10" />
+      <p class="mt-2 text-[11px] font-medium text-brand-700">
         {{ countLabel() }}
       </p>
     }
