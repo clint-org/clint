@@ -1,4 +1,4 @@
--- migration: 20260626120000_ctgov_restore_path
+-- migration: 20260626120050_ctgov_restore_path
 -- purpose: add the restore-on-resync path so a trial that returns to ct.gov can
 --   be un-withdrawn, and so the manual sync can reach an already-removed trial.
 --   Counterpart to 20260625200000_ctgov_withdrawn_trials (mark-withdrawn path).
