@@ -246,12 +246,15 @@ begin
      and (m.metadata->>'source' is null or m.metadata->>'source' <> 'ctgov');
 
   if array_length(v_unowned, 1) = 1 then
+    -- Adoption updates source + date/precision/projection (+ metadata) only.
+    -- Preserve any analyst-authored description and source_url; fall back to the
+    -- ct.gov defaults only when the adopted marker has none.
     update public.markers
        set event_date     = v_event_date,
            date_precision = v_precision,
            projection     = v_projection,
-           source_url     = coalesce(p_source_url, source_url),
-           description     = 'Auto-derived from clinicaltrials.gov',
+           source_url     = coalesce(source_url, p_source_url),
+           description     = coalesce(description, 'Auto-derived from clinicaltrials.gov'),
            metadata       = coalesce(metadata, '{}'::jsonb)
                             || jsonb_build_object(
                                  'source',          'ctgov',
@@ -1142,11 +1145,12 @@ create or replace function public._guard_ctgov_locked_markers()
  returns trigger
  language plpgsql
  security definer
- set search_path to 'public'
+ set search_path = ''
 as $function$
 begin
   -- system bypass: the seeder's steady-state updates and the cascade/orphan
-  -- cleanup deletes set clint.ctgov_seeding so they pass.
+  -- cleanup deletes set clint.ctgov_seeding so they pass. (No table refs in this
+  -- body, so the hardened empty search_path needs no qualification changes.)
   if current_setting('clint.ctgov_seeding', true) = 'on' then
     return case when tg_op = 'DELETE' then old else new end;
   end if;
@@ -1741,6 +1745,12 @@ begin
    where ma.trial_id = v_trial_b and m.marker_type_id = c_start_id;
   if v_cnt <> 1 then raise exception 'adopt FAIL setup: expected 1 un-owned Trial Start, got %', v_cnt; end if;
 
+  -- stamp an analyst-authored description so we can verify adoption preserves it.
+  update public.markers m
+     set description = 'Analyst note: enrollment kickoff'
+    from public.marker_assignments ma
+   where ma.marker_id = m.id and ma.trial_id = v_trial_b and m.marker_type_id = c_start_id;
+
   perform public.ingest_ctgov_snapshot(
     'local-dev-ctgov-secret', v_trial_b, v_space_id, 'NCT-CTM-B', 1, '2026-01-01'::date,
     '{"protocolSection":{"statusModule":{"startDateStruct":{"date":"2026-05-20","type":"ACTUAL"}}}}'::jsonb,
@@ -1757,7 +1767,15 @@ begin
    where ma.trial_id = v_trial_b and m.marker_type_id = c_start_id;
   if v_src <> 'ctgov' then raise exception 'adopt FAIL: expected source ctgov, got %', v_src; end if;
   if v_d <> '2026-05-20' then raise exception 'adopt FAIL: expected date refreshed to 2026-05-20, got %', v_d; end if;
-  raise notice 'ctgov markers smoke ok test 3a: adoption (un-owned -> ctgov, date refreshed, no duplicate)';
+
+  -- adoption must NOT clobber the analyst-authored description.
+  select m.description into v_p
+    from public.marker_assignments ma join public.markers m on m.id = ma.marker_id
+   where ma.trial_id = v_trial_b and m.marker_type_id = c_start_id;
+  if v_p is distinct from 'Analyst note: enrollment kickoff' then
+    raise exception 'adopt FAIL: analyst description not preserved across adoption, got %', v_p;
+  end if;
+  raise notice 'ctgov markers smoke ok test 3a: adoption (un-owned -> ctgov, date refreshed, analyst description preserved, no duplicate)';
 
   -- ===== test 3b: two un-owned -> do NOT adopt, INSERT a new ctgov-owned (trial C) =====
   perform public._create_trial_date_markers(v_trial_c, v_space_id, v_user_id, '2025-02-01'::date, null);
