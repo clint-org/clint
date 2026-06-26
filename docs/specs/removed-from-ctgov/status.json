@@ -1,0 +1,16 @@
+{
+  "specId": "spec-2026-removed-from-ctgov",
+  "status": "draft",
+  "branch": null,
+  "tasks": {
+    "migration-restore": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "migration-dashboard": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "worker-manual-reach": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "models": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "feed-mapping": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "trial-detail": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "dashboard-muted": { "status": "pending", "agent": null, "attempts": 0, "error": null },
+    "verify": { "status": "pending", "agent": null, "attempts": 0, "error": null }
+  },
+  "updatedAt": "2026-06-26T00:00:00Z"
+}
