@@ -1,8 +1,12 @@
 # Clint email signature + Stout intro email
 
 Brand assets and ready-to-send copy for the `support@clintapp.com` Gmail account.
-Built in the Clint brand: triple-nested-C mark (slate-300 -> slate-400 -> teal-600
-`#0d9488`), "Clint" in slate-900, a thin teal accent rule, web-safe Arial stack.
+Built in the Clint brand. The mark + wordmark use the canonical lockup from the
+app sidebar (`sidebar.component.ts` `.identity-wordmark`): the triple-nested-C mark
+(slate-300 -> slate-400 -> teal-600 `#0d9488`) next to **CLINT** in monospace,
+uppercase, tracked. The person's name/title and tagline sit below in the web-safe
+Arial stack, under a thin teal accent rule. Whenever the logo and trademark appear
+together, this mono-uppercase lockup is the standard -- match it, don't restyle it.
 
 ## Files
 
