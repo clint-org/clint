@@ -957,4 +957,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260624180000_rollup_imports_detail.sql`
 - `20260625100000_ai_call_request_capture.sql`
 - `20260625110000_ai_call_detail_created_entities.sql`
+- `20260625120000_material_links_support_events.sql`
 <!-- /AUTO-GEN:DRIFT -->

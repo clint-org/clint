@@ -75,8 +75,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -152,10 +152,10 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `list_audit_events` | - | audit_events |
 | `list_draft_intelligence_for_space` | - | primary_intelligence |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
-| `list_materials_for_entity` | - | assets, companies, marker_assignments, markers, material_links, materials, spaces, trials |
-| `list_materials_for_space` | - | assets, companies, marker_assignments, markers, material_links, materials, spaces, trials |
+| `list_materials_for_entity` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
+| `list_materials_for_space` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
 | `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links |
-| `list_recent_materials_for_space` | - | assets, companies, marker_assignments, markers, material_links, materials, spaces, trials |
+| `list_recent_materials_for_space` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
 | `list_space_members` | - | space_members |
 | `list_tenant_members` | - | agency_members, tenant_members, tenants |
 | `lookup_user_by_email` | - | agency_members |

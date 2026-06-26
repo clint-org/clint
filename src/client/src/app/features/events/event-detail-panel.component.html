@@ -169,6 +169,19 @@
       </app-detail-panel-section>
     }
 
+    @if (spaceId()) {
+      <section class="mt-3 border-t border-slate-100 pt-3">
+        <app-materials-section
+          heading="Materials"
+          [hideWhenEmpty]="true"
+          entityType="event"
+          [entityId]="d.id"
+          [spaceId]="spaceId()"
+          [tenantId]="tenantId()"
+        />
+      </section>
+    }
+
     <p class="mt-4 text-[10px] text-slate-400">Created {{ d.created_at | date: 'medium' }}</p>
 
     <!-- Detected event detail branch -->
