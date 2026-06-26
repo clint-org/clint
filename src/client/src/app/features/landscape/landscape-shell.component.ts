@@ -23,13 +23,20 @@ import { LandscapeService } from '../../core/services/landscape.service';
 import { LandscapeStateService } from './landscape-state.service';
 import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
 import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
+import { TrialDetailPanelComponent } from './trial-detail-panel.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-landscape-shell',
   standalone: true,
-  imports: [RouterOutlet, LandscapeFilterBarComponent, MarkerDetailPanelComponent, LoaderComponent],
+  imports: [
+    RouterOutlet,
+    LandscapeFilterBarComponent,
+    MarkerDetailPanelComponent,
+    TrialDetailPanelComponent,
+    LoaderComponent,
+  ],
   animations: [routeFadeAnimation],
   providers: [LandscapeStateService],
   template: `
@@ -71,6 +78,14 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
               (editMarkerClick)="onEditMarker($event)"
             />
           }
+        }
+
+        @if (state.selectedTrialId()) {
+          <app-trial-detail-panel
+            [detail]="state.selectedTrialDetail()"
+            [open]="!!state.selectedTrialId()"
+            (panelClose)="state.clearSelection()"
+          />
         }
       </div>
     </div>

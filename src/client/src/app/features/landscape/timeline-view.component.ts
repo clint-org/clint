@@ -265,15 +265,9 @@ export class TimelineViewComponent {
   }
 
   onTrialClick(trial: Trial): void {
-    this.router.navigate([
-      '/t',
-      this.tenantId(),
-      's',
-      this.spaceId(),
-      'manage',
-      'trials',
-      trial.id,
-    ]);
+    // In the landscape timeline, a trial-row click opens the trial's owned
+    // primary intelligence in the detail pane (rather than navigating away).
+    void this.state.selectTrial(trial.id);
   }
 
   onCompanyClick(companyId: string): void {
