@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs';
-import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
+import { DatePipe, LowerCasePipe, NgClass, NgOptimizedImage } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
@@ -92,6 +92,7 @@ interface InventoryTotals {
   standalone: true,
   imports: [
     NgClass,
+    NgOptimizedImage,
     DatePipe,
     LowerCasePipe,
     RouterLink,
@@ -168,6 +169,12 @@ export class EngagementLandingComponent implements OnInit {
     const name = this.brand.agency()?.name;
     return name ? `${name} lead` : 'agency lead';
   });
+
+  /** Agency name for attribution; falls back to the platform's default agency. */
+  readonly agencyName = computed(() => this.brand.agency()?.name ?? 'Stout');
+
+  /** Agency logo for the inline attribution lockups; null renders the name. */
+  readonly agencyLogoUrl = computed(() => this.brand.agency()?.logo_url ?? null);
 
   readonly catalystsRoute = computed(() => {
     const tid = this.tenantId();
