@@ -14,9 +14,11 @@ import {
   CompetitorRaceGroup,
   DetailPanelCompetitorRaceComponent,
 } from '../../shared/components/detail-panel-competitor-race.component';
+import { PiReference } from '../../core/models/primary-intelligence.model';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
+import { PiDetailSectionComponent } from '../../shared/components/pi-detail-section/pi-detail-section.component';
 
 const GROUPING_LABEL: Record<HeatmapGrouping, string> = {
   moa: 'MOA group',
@@ -47,6 +49,7 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
     DetailPanelEmptyStateComponent,
     DetailPanelSectionComponent,
     DetailPanelShellComponent,
+    PiDetailSectionComponent,
     Tooltip,
   ],
   template: `
@@ -103,6 +106,16 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
               [showPreclinical]="showPreclinical()"
               [tenantId]="tenantId()"
               [spaceId]="spaceId()"
+            />
+          </app-detail-panel-section>
+        }
+
+        @if (piReferences().length > 0) {
+          <app-detail-panel-section label="Primary intelligence" [piMark]="true">
+            <app-pi-detail-section
+              [references]="piReferences()"
+              [countLabel]="piCountLabel()"
+              (referenceClick)="onPiReferenceClick($event)"
             />
           </app-detail-panel-section>
         }
@@ -216,6 +229,32 @@ export class HeatmapDetailPanelComponent {
     }
     return [...byCompany.values()];
   });
+
+  /** PI-bearing assets in this group, mapped to the shared reference shape. */
+  protected readonly piReferences = computed<PiReference[]>(() =>
+    (this.bubble()?.products ?? [])
+      .filter((p) => p.has_intelligence)
+      .map((p) => ({
+        id: p.id,
+        entity_type: 'product' as const,
+        entity_id: p.id,
+        entity_name: p.name,
+        headline: p.name,
+      }))
+  );
+
+  /** "N of M assets have intelligence" summary for the PI section. */
+  protected readonly piCountLabel = computed<string | null>(() => {
+    const b = this.bubble();
+    if (!b) return null;
+    const total = b.products.length;
+    const n = b.intelligence_count ?? this.piReferences().length;
+    return n > 0 ? `${n} of ${total} assets have intelligence` : null;
+  });
+
+  protected onPiReferenceClick(ref: PiReference): void {
+    this.openAsset.emit(ref.entity_id);
+  }
 
   protected phaseColor(phase: RingPhase): string {
     return PHASE_COLOR[phase] ?? '#64748b';

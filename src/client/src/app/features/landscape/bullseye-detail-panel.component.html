@@ -52,7 +52,6 @@
           class="mt-0.5"
           [phase]="asset.highest_phase"
           [hasRecentActivity]="asset.has_recent_activity"
-          [hasIntelligence]="asset.intelligence_count > 0"
           [multiSpoke]="multiSpoke()"
           [size]="34"
         />
@@ -197,26 +196,15 @@
       }
 
       @if (asset.intelligence_count > 0) {
-        <app-detail-panel-section [label]="'Intelligence (' + asset.intelligence_count + ')'">
-          @if (intelligenceNotes().length > 0) {
-            <app-detail-panel-entity-list>
-              @for (note of intelligenceNotes(); track note.id) {
-                <app-detail-panel-entity-row (rowClick)="onIntelligenceClick(note)">
-                  <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span class="truncate text-[12px] font-medium text-slate-800">{{
-                      note.headline
-                    }}</span>
-                    <span class="flex items-center gap-1.5 text-[11px] text-slate-400">
-                      <span
-                        class="shrink-0 rounded-sm bg-cyan-50 px-1 py-px text-[10px] font-medium text-cyan-700"
-                        >{{ entityTypeLabel(note.entity_type) }}</span
-                      >
-                      <span class="truncate">{{ note.entity_name }}</span>
-                    </span>
-                  </span>
-                </app-detail-panel-entity-row>
-              }
-            </app-detail-panel-entity-list>
+        <app-detail-panel-section
+          [label]="'Intelligence (' + asset.intelligence_count + ')'"
+          [piMark]="true"
+        >
+          @if (intelligenceReferences().length > 0) {
+            <app-pi-detail-section
+              [references]="intelligenceReferences()"
+              (referenceClick)="onIntelligenceClick($event)"
+            />
           } @else {
             <div class="flex flex-col gap-1.5">
               <div class="h-3 w-4/5 animate-pulse rounded bg-slate-100"></div>

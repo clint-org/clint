@@ -13,11 +13,12 @@ import { LandscapeStateService } from './landscape-state.service';
 import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
 import { CompetitiveReadStripComponent } from './competitive-read/competitive-read-strip.component';
 import { SegmentedControlComponent } from '../../shared/components/segmented-control/segmented-control.component';
+import { PiMarkComponent } from '../../shared/components/pi-mark/pi-mark.component';
 
 @Component({
   selector: 'app-bullseye-controls-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SegmentedControlComponent, CompetitiveReadStripComponent],
+  imports: [SegmentedControlComponent, CompetitiveReadStripComponent, PiMarkComponent],
   template: `
     <aside class="bullseye-controls">
       <!-- Section: Group By -->
@@ -68,7 +69,7 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
           }
           <div class="legend-divider"></div>
           <div class="legend-item">
-            <span class="legend-indicator legend-intel"></span>
+            <app-pi-mark [size]="12" />
             <span>Intelligence attached</span>
           </div>
           <div class="legend-item">
@@ -187,11 +188,6 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
       height: 12px;
       border-radius: 50%;
       flex-shrink: 0;
-    }
-
-    .legend-intel {
-      border: 2px solid #2563eb;
-      background: transparent;
     }
 
     .legend-activity {

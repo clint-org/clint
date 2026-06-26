@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { LandscapeStateService } from './landscape-state.service';
@@ -7,6 +10,14 @@ import type { Trial } from '../../core/models/trial.model';
 import { EMPTY_LANDSCAPE_FILTERS, type LandscapeFilters } from '../../core/models/landscape.model';
 
 import { filterDashboardData } from './landscape-state.service';
+
+// LandscapeStateService creates a persistence effect() in a field initializer,
+// which needs the zoneless ChangeDetectionScheduler -- not available in this
+// plain-node runner. So, mirroring the rest of this spec, we assert the
+// marker-references wiring by source contract rather than instantiating. The
+// getMarkerReferences mapping itself is unit-tested in
+// primary-intelligence.service.spec.ts.
+const stateSrc = readFileSync(join(__dirname, 'landscape-state.service.ts'), 'utf8');
 
 function makeFixture(): Company[] {
   return [
@@ -130,6 +141,26 @@ describe('filterDashboardData indicationIds', () => {
     const filters: LandscapeFilters = { ...EMPTY_LANDSCAPE_FILTERS, indicationIds: ['ind-none'] };
     const result = filterDashboardData(makeIndicationFixture(), filters);
     expect(result).toEqual([]);
+  });
+});
+
+describe('LandscapeStateService marker references', () => {
+  it('exposes a selectedMarkerReferences signal', () => {
+    expect(stateSrc).toContain('selectedMarkerReferences = signal<PiReference[]>([])');
+  });
+
+  it('loads incoming references for the selected marker via getMarkerReferences', () => {
+    expect(stateSrc).toContain('.getMarkerReferences(spaceId, markerId)');
+    // Applied under the race guard so a stale fetch cannot clobber a newer selection.
+    expect(stateSrc).toContain(
+      'if (this.selectedMarkerId() === markerId) this.selectedMarkerReferences.set(refs)'
+    );
+  });
+
+  it('clears references when the selection is cleared', () => {
+    // clearSelection resets the references signal alongside marker + detail.
+    const clearBody = stateSrc.slice(stateSrc.indexOf('clearSelection(): void'));
+    expect(clearBody).toContain('this.selectedMarkerReferences.set([])');
   });
 });
 

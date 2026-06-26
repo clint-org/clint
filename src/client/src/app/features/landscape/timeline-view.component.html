@@ -41,6 +41,18 @@
       </div>
     } @else if (companies().length > 0) {
       <app-timeline-insight-strip [companies]="companies()" [columnsOnly]="columnsOnly()" />
+      @if (!hideTrialColumn()) {
+        <div class="flex justify-end px-3 py-1">
+          <button
+            type="button"
+            class="text-[10px] font-medium uppercase tracking-wider text-slate-500 hover:text-brand-700"
+            [attr.aria-pressed]="showIntelligenceHeadlines()"
+            (click)="toggleIntelligenceHeadlines()"
+          >
+            Intelligence headlines: {{ showIntelligenceHeadlines() ? 'On' : 'Off' }}
+          </button>
+        </div>
+      }
       <app-dashboard-grid
         [companies]="companies()"
         [zoomLevel]="state.zoomLevel()"
@@ -53,6 +65,7 @@
         [hideRoaColumn]="hideRoaColumn()"
         [hideIndicationColumn]="hideIndicationColumn()"
         [hideNotesColumn]="hideNotesColumn()"
+        [showIntelligenceHeadlines]="showIntelligenceHeadlines()"
         (phaseClick)="onPhaseClick($event)"
         (markerClick)="onMarkerClick($event)"
         (trialClick)="onTrialClick($event)"

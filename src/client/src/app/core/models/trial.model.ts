@@ -55,6 +55,12 @@ export interface Trial {
   most_recent_change_type?: string | null;
   most_recent_change_event_id?: string | null;
 
+  // Primary-intelligence presence (from get_dashboard_data). True when this
+  // trial owns published primary intelligence; intelligence_headline carries
+  // that PI headline for the timeline's inline headline treatment.
+  has_intelligence?: boolean;
+  intelligence_headline?: string | null;
+
   /**
    * Dashboard-only augmentation: every indication grouping this trial was
    * nested under in get_dashboard_data. A trial can span multiple of its

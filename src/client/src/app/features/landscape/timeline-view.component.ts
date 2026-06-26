@@ -87,6 +87,15 @@ export class TimelineViewComponent {
   protected readonly skeletonRows = [0, 1, 2, 3, 4, 5];
 
   /**
+   * Timeline-scoped density control (default on), persisted per user via
+   * localStorage keyed by space. When on, trial rows that own published primary
+   * intelligence render an inline PI headline; when off, only the compact
+   * bookmark mark shows, reclaiming vertical density.
+   */
+  readonly showIntelligenceHeadlines = signal<boolean>(true);
+  private readonly headlinePrefKey = computed(() => `clint:pi-headlines:${this.spaceId()}`);
+
+  /**
    * Header export menu: PNG and Excel capture the timeline as shown; PPTX
    * renders at the current on-screen zoom (no format dialog, no zoom picker).
    * Empty when there is nothing to export. Only the routed landscape timeline
@@ -117,6 +126,10 @@ export class TimelineViewComponent {
       if (snap.paramMap.has('spaceId')) this.spaceId.set(snap.paramMap.get('spaceId')!);
       snap = snap.parent;
     }
+
+    // Hydrate the persisted headline-density preference for this space.
+    const storedPref = this.readHeadlinePref();
+    if (storedPref !== null) this.showIntelligenceHeadlines.set(storedPref);
 
     effect(() => {
       // Skip auto-fit when caller provides both year inputs.
@@ -232,7 +245,28 @@ export class TimelineViewComponent {
     this.state.selectMarker(marker.id);
   }
 
+  toggleIntelligenceHeadlines(): void {
+    const next = !this.showIntelligenceHeadlines();
+    this.showIntelligenceHeadlines.set(next);
+    try {
+      localStorage.setItem(this.headlinePrefKey(), String(next));
+    } catch {
+      // Persistence is best-effort; the toggle still works for this session.
+    }
+  }
+
+  private readHeadlinePref(): boolean | null {
+    try {
+      const stored = localStorage.getItem(this.headlinePrefKey());
+      return stored === null ? null : stored === 'true';
+    } catch {
+      return null;
+    }
+  }
+
   onTrialClick(trial: Trial): void {
+    // Open the trial's manage page, which has a full Primary intelligence
+    // section. The timeline shows only the presence mark + headline.
     this.router.navigate([
       '/t',
       this.tenantId(),

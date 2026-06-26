@@ -16,6 +16,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
+import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
 import { IntelligenceHistoryPanelComponent } from '../../../shared/components/intelligence-history-panel/intelligence-history-panel.component';
@@ -63,6 +64,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     IntelligenceHistoryPanelComponent,
     WithdrawIntelligenceDialogComponent,
     PurgeIntelligenceDialogComponent,
+    PiMarkComponent,
     MaterialsSectionComponent,
     TimelineViewComponent,
     EntityMarkerDrawerComponent,

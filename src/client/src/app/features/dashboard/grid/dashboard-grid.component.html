@@ -260,7 +260,7 @@
             <!-- Trial column -->
             @if (!hideTrialColumn()) {
               <div
-                class="w-36 md:w-48 px-3 flex items-center text-sm truncate border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700 text-slate-700 transition-colors"
+                class="w-36 md:w-48 px-3 flex items-center text-sm border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700 text-slate-700 transition-colors"
                 [title]="
                   row.companyName +
                   ' / ' +
@@ -274,26 +274,43 @@
                 (keydown.enter)="onTrialClick(row.trial)"
                 (keydown.space)="onTrialClick(row.trial)"
               >
-                @if (row.trial.ctgov_withdrawn_at) {
-                  <i
-                    class="fa-solid fa-ban text-[9px] text-amber-700 mr-1 shrink-0"
-                    pTooltip="Removed from CT.gov registry"
-                    tooltipPosition="top"
-                    aria-label="Removed from CT.gov registry"
-                  ></i>
-                }
-                {{ row.trial.acronym ?? row.trial.name }}
-                <app-change-badge
-                  class="ml-1 inline-flex items-center"
-                  [count]="row.trial.recent_changes_count ?? 0"
-                  [type]="row.trial.most_recent_change_type ?? null"
-                  [eventId]="row.trial.most_recent_change_event_id ?? null"
-                />
-                @if (row.trial.identifier) {
-                  <span class="text-[10px] text-slate-400 font-mono ml-1">{{
-                    row.trial.identifier
-                  }}</span>
-                }
+                <div class="flex min-w-0 flex-col justify-center">
+                  <span class="flex min-w-0 items-center gap-1">
+                    @if (row.trial.ctgov_withdrawn_at) {
+                      <i
+                        class="fa-solid fa-ban text-[9px] text-amber-700 shrink-0"
+                        pTooltip="Removed from CT.gov registry"
+                        tooltipPosition="top"
+                        aria-label="Removed from CT.gov registry"
+                      ></i>
+                    }
+                    <span class="truncate">{{ row.trial.acronym ?? row.trial.name }}</span>
+                    @if (row.trial.has_intelligence) {
+                      <app-pi-mark [size]="11" class="shrink-0" />
+                    }
+                    <app-change-badge
+                      class="inline-flex items-center"
+                      [count]="row.trial.recent_changes_count ?? 0"
+                      [type]="row.trial.most_recent_change_type ?? null"
+                      [eventId]="row.trial.most_recent_change_event_id ?? null"
+                    />
+                    @if (row.trial.identifier) {
+                      <span class="text-[10px] text-slate-400 font-mono">{{
+                        row.trial.identifier
+                      }}</span>
+                    }
+                  </span>
+                  @if (
+                    showIntelligenceHeadlines() &&
+                    row.trial.has_intelligence &&
+                    row.trial.intelligence_headline
+                  ) {
+                    <span class="flex min-w-0 items-center gap-1 text-[10px] leading-tight text-brand-700">
+                      <app-pi-mark [size]="9" class="shrink-0" />
+                      <span class="truncate">{{ row.trial.intelligence_headline }}</span>
+                    </span>
+                  }
+                </div>
               </div>
             }
           </div>

@@ -13,6 +13,7 @@ import { renderMarkdownInline } from '../../utils/markdown-render';
 import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
 import { resolveAuthorName, resolveOtherContributorsLine } from '../../utils/intelligence-authors';
 import { BrandLogoComponent } from '../brand-logo.component';
+import { PiMarkComponent } from '../pi-mark/pi-mark.component';
 
 /**
  * Display-only presenter for a primary intelligence read. Shows the
@@ -23,7 +24,7 @@ import { BrandLogoComponent } from '../brand-logo.component';
 @Component({
   selector: 'app-intelligence-block',
   standalone: true,
-  imports: [ButtonModule, RouterLink, Tooltip, BrandLogoComponent],
+  imports: [ButtonModule, RouterLink, Tooltip, BrandLogoComponent, PiMarkComponent],
   templateUrl: './intelligence-block.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

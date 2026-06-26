@@ -129,4 +129,46 @@ describe('mapDashboardCompanies', () => {
     // Trial missing the key must produce null, not undefined.
     expect(trials.find((t: { id: string }) => t.id === 't2').ctgov_withdrawn_at).toBeNull();
   });
+
+  it('threads has_intelligence and intelligence_headline from the RPC onto the trial', () => {
+    const raw = [
+      {
+        id: 'co1',
+        name: 'Acme',
+        assets: [
+          {
+            id: 'as1',
+            name: 'DrugX',
+            indications: [
+              {
+                id: 'ind1',
+                name: 'Oncology',
+                trials: [
+                  {
+                    id: 't1',
+                    name: 'Trial A',
+                    has_intelligence: true,
+                    intelligence_headline: 'Lead extends edge',
+                  },
+                  { id: 't2', name: 'Trial B' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const companies = mapDashboardCompanies(raw);
+    const trials = companies[0].assets[0].trials;
+
+    const withPi = trials.find((t: { id: string }) => t.id === 't1');
+    expect(withPi.has_intelligence).toBe(true);
+    expect(withPi.intelligence_headline).toBe('Lead extends edge');
+
+    // Trial without PI defaults to false / null, never undefined.
+    const withoutPi = trials.find((t: { id: string }) => t.id === 't2');
+    expect(withoutPi.has_intelligence).toBe(false);
+    expect(withoutPi.intelligence_headline).toBeNull();
+  });
 });
