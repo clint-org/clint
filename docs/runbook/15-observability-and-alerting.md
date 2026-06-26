@@ -297,9 +297,9 @@ recorded so the alerting is proven, not assumed.
 | Fatal (throw before record) | Worker unit test | `status=failed`, `errors[0].kind=fatal`, then rethrows | `worker/test/ctgov-sync/poller.spec.ts:586` (11/11 pass) |
 | Missed / stale + watchdog | Dispatched `ctgov-sync-health` on `main` vs real prod (latest row 63h old) | `check` job failed: "latest CT.gov sync run is 63h old (> 26h)"; `notify-failure` opened issue | GitHub issue #100, label `ctgov-sync-failure` |
 | Dedup (no duplicate issue) | Second dispatch of the same watchdog | Commented on #100; still exactly one open issue | #100 comment trail |
-| Happy path (success) | dev manual "Sync from CT.gov" | `status=success`, `errors_count=0` | dev `ctgov_sync_runs` 2026-06-26 (NCT05929066) |
-| Withdrawn (404) | _pending: dev/prod sync on NCT04882961 -> `ctgov_withdrawn_at` + `trial_withdrawn` event, not an error_ | | |
-| Recovery + no auto-close | After prod fix, a fresh `success` run clears staleness; the watchdog passes but #100 stays open until closed by hand | confirms gap 5 (no close-on-recovery) | _closing #100 after the next clean prod run_ |
+| Happy path (success) | Manual "Sync from CT.gov" on prod after the fix | `status=success`, `errors_count=0` (4 trials, no errors) | prod `ctgov_sync_runs` 2026-06-26 14:48 |
+| Withdrawn (404) | Same prod run, NCT04882961 (404 on CT.gov) | `ctgov_withdrawn_at` set + one `trial_withdrawn` event; not an error; excluded from queue | prod `trials` + `trial_change_events` (NCT04882961, withdrawn=t, events=1) |
+| Recovery + no auto-close | Re-dispatched `ctgov-sync-health` after the fresh success row | `check` passed (green); issue #100 stayed open and was closed by hand | watchdog run 28245654307; #100 closed 2026-06-26 14:49 (confirms gap 5) |
 
 ### Worked incident (2026-06-26): observability caught a real failure
 
