@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { entityState, deriveTrialFlags, deriveAssetFlags, duplicateTrialIndexes, deriveCtgovFlag, deriveFuzzyFlag, readableSummary, blockingReason, trialMissingAsset, resolveTrialAssetIndex, resolveTrialAssetIndexes, resolveTrialPrimaryAssetIndex, orphanTrialIndexes, countFilterMatches } from './review-grid.logic';
+import {
+  entityState,
+  deriveTrialFlags,
+  deriveAssetFlags,
+  duplicateTrialIndexes,
+  deriveCtgovFlag,
+  deriveFuzzyFlag,
+  readableSummary,
+  blockingReason,
+  trialMissingAsset,
+  resolveTrialAssetIndex,
+  resolveTrialAssetIndexes,
+  resolveTrialPrimaryAssetIndex,
+  orphanTrialIndexes,
+  countFilterMatches,
+  markerLeafDisplay,
+  eventLeafDisplay,
+} from './review-grid.logic';
 
 describe('entityState', () => {
   it('is existing when match.kind is existing', () => {
@@ -35,23 +52,44 @@ describe('deriveTrialFlags', () => {
   });
   it('flags missing indication as attention', () => {
     const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0 });
-    expect(flags).toContainEqual({ id: 'no-indication', tier: 'attention', label: 'No indication' });
+    expect(flags).toContainEqual({
+      id: 'no-indication',
+      tier: 'attention',
+      label: 'No indication',
+    });
   });
   it('does not flag missing indication when indication is present', () => {
     const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indication: 'Obesity' });
     expect(flags.some((f) => f.id === 'no-indication')).toBe(false);
   });
   it('does not flag missing indication when indications[] has entries', () => {
-    const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indications: ['Obesity', 'Overweight'] });
+    const flags = deriveTrialFlags({
+      name: 'NCT1',
+      asset_ref: 0,
+      indications: ['Obesity', 'Overweight'],
+    });
     expect(flags.some((f) => f.id === 'no-indication')).toBe(false);
   });
   it('flags missing indication when indications[] is empty', () => {
     const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indications: [] });
-    expect(flags).toContainEqual({ id: 'no-indication', tier: 'attention', label: 'No indication' });
+    expect(flags).toContainEqual({
+      id: 'no-indication',
+      tier: 'attention',
+      label: 'No indication',
+    });
   });
   it('flags observational study_type as attention', () => {
-    const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indication: 'X', study_type: 'Observational' });
-    expect(flags).toContainEqual({ id: 'observational', tier: 'attention', label: 'Observational' });
+    const flags = deriveTrialFlags({
+      name: 'NCT1',
+      asset_ref: 0,
+      indication: 'X',
+      study_type: 'Observational',
+    });
+    expect(flags).toContainEqual({
+      id: 'observational',
+      tier: 'attention',
+      label: 'Observational',
+    });
   });
   it('flags missing phase or status as attention', () => {
     const flags = deriveTrialFlags({ name: 'NCT1', asset_ref: 0, indication: 'X', phase: '' });
@@ -72,9 +110,7 @@ describe('deriveAssetFlags', () => {
 
 describe('duplicateTrialIndexes', () => {
   it('returns indexes of trials sharing the same identifier', () => {
-    const trials = [
-      { identifier: 'NCT1' }, { identifier: 'NCT2' }, { identifier: 'NCT1' },
-    ];
+    const trials = [{ identifier: 'NCT1' }, { identifier: 'NCT2' }, { identifier: 'NCT1' }];
     expect(duplicateTrialIndexes(trials)).toEqual(new Set([0, 2]));
   });
   it('ignores blank identifiers', () => {
@@ -89,7 +125,11 @@ describe('duplicateTrialIndexes', () => {
 
 describe('deriveCtgovFlag', () => {
   it('flags when more than one ctgov candidate needs a pick', () => {
-    expect(deriveCtgovFlag(2)).toEqual({ id: 'ctgov-pick', tier: 'attention', label: 'CT.gov: pick match' });
+    expect(deriveCtgovFlag(2)).toEqual({
+      id: 'ctgov-pick',
+      tier: 'attention',
+      label: 'CT.gov: pick match',
+    });
   });
   it('returns null for one or zero candidates', () => {
     expect(deriveCtgovFlag(1)).toBeNull();
@@ -99,7 +139,11 @@ describe('deriveCtgovFlag', () => {
 
 describe('deriveFuzzyFlag', () => {
   it('flags when fuzzy alternates exist', () => {
-    expect(deriveFuzzyFlag(3)).toEqual({ id: 'fuzzy', tier: 'attention', label: 'Uncertain match' });
+    expect(deriveFuzzyFlag(3)).toEqual({
+      id: 'fuzzy',
+      tier: 'attention',
+      label: 'Uncertain match',
+    });
   });
   it('returns null when no alternates', () => {
     expect(deriveFuzzyFlag(0)).toBeNull();
@@ -108,16 +152,19 @@ describe('deriveFuzzyFlag', () => {
 
 describe('readableSummary', () => {
   it('formats selected counts in domain words, omitting zero buckets', () => {
-    expect(readableSummary({ companies: 3, assets: 6, trials: 6, markers: 0, events: 0 }))
-      .toBe('3 companies, 6 assets, 6 trials');
+    expect(readableSummary({ companies: 3, assets: 6, trials: 6, markers: 0, events: 0 })).toBe(
+      '3 companies, 6 assets, 6 trials'
+    );
   });
   it('singularises counts of one', () => {
-    expect(readableSummary({ companies: 1, assets: 1, trials: 0, markers: 0, events: 0 }))
-      .toBe('1 company, 1 asset');
+    expect(readableSummary({ companies: 1, assets: 1, trials: 0, markers: 0, events: 0 })).toBe(
+      '1 company, 1 asset'
+    );
   });
   it('returns "nothing selected" when all zero', () => {
-    expect(readableSummary({ companies: 0, assets: 0, trials: 0, markers: 0, events: 0 }))
-      .toBe('nothing selected');
+    expect(readableSummary({ companies: 0, assets: 0, trials: 0, markers: 0, events: 0 })).toBe(
+      'nothing selected'
+    );
   });
 });
 
@@ -245,32 +292,43 @@ describe('countFilterMatches', () => {
 
   it('counts every row in the tree for all', () => {
     const nodes = [
-      { data: { flags: [], state: 'existing' }, children: [
-        { data: { flags: [], state: 'existing' }, children: [
-          { data: { flags: [], state: 'new' } },
-        ] },
-      ] },
+      {
+        data: { flags: [], state: 'existing' },
+        children: [
+          {
+            data: { flags: [], state: 'existing' },
+            children: [{ data: { flags: [], state: 'new' } }],
+          },
+        ],
+      },
     ];
     expect(countFilterMatches(nodes).all).toBe(3);
   });
 
   it('counts flagged rows at any depth', () => {
     const nodes = [
-      { data: { flags: [flag], state: 'existing' }, children: [
-        { data: { flags: [], state: 'existing' }, children: [
-          { data: { flags: [flag], state: 'new' } },
-        ] },
-      ] },
+      {
+        data: { flags: [flag], state: 'existing' },
+        children: [
+          {
+            data: { flags: [], state: 'existing' },
+            children: [{ data: { flags: [flag], state: 'new' } }],
+          },
+        ],
+      },
     ];
     expect(countFilterMatches(nodes).flagged).toBe(2);
   });
 
   it('counts new rows at any depth', () => {
     const nodes = [
-      { data: { flags: [], state: 'new' }, children: [
-        { data: { flags: [], state: 'existing' } },
-        { data: { flags: [], state: 'new' } },
-      ] },
+      {
+        data: { flags: [], state: 'new' },
+        children: [
+          { data: { flags: [], state: 'existing' } },
+          { data: { flags: [], state: 'new' } },
+        ],
+      },
     ];
     expect(countFilterMatches(nodes).new).toBe(2);
   });
@@ -282,5 +340,63 @@ describe('countFilterMatches', () => {
   it('handles nodes with no children array', () => {
     const nodes = [{ data: { flags: [flag], state: 'new' } }];
     expect(countFilterMatches(nodes)).toEqual({ all: 1, flagged: 1, new: 1 });
+  });
+
+  it('counts marker and event leaves nested under a trial (the import-count fix)', () => {
+    // company > asset > trial, with a marker and an event leaf under the trial.
+    // These leaves carry no flags, so they add to `all` and `new` but never
+    // inflate `flagged` -- which is exactly why "All" must equal the confirm
+    // total once linked markers/events are surfaced as rows.
+    const nodes = [
+      {
+        data: { flags: [], state: 'existing' },
+        children: [
+          {
+            data: { flags: [], state: 'new' },
+            children: [
+              {
+                data: { flags: [], state: 'new' },
+                children: [
+                  { data: { flags: [], state: 'new' } }, // marker leaf
+                  { data: { flags: [], state: 'new' } }, // event leaf
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    expect(countFilterMatches(nodes)).toEqual({ all: 5, flagged: 0, new: 4 });
+  });
+});
+
+describe('markerLeafDisplay', () => {
+  it('reads marker_type as the category chip and event_date as the date', () => {
+    expect(markerLeafDisplay({ marker_type: 'Topline Data', event_date: '2024-05-01' })).toEqual({
+      category: 'Topline Data',
+      date: '2024-05-01',
+    });
+  });
+  it('returns null for missing or blank fields', () => {
+    expect(markerLeafDisplay({})).toEqual({ category: null, date: null });
+    expect(markerLeafDisplay({ marker_type: '  ', event_date: '' })).toEqual({
+      category: null,
+      date: null,
+    });
+  });
+});
+
+describe('eventLeafDisplay', () => {
+  it('reads category as the chip and event_date as the date', () => {
+    expect(eventLeafDisplay({ category: 'Regulatory', event_date: '2025-01-15' })).toEqual({
+      category: 'Regulatory',
+      date: '2025-01-15',
+    });
+  });
+  it('returns null for missing or blank fields', () => {
+    expect(eventLeafDisplay({ category: null, event_date: undefined })).toEqual({
+      category: null,
+      date: null,
+    });
   });
 });
