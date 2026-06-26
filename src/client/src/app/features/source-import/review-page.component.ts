@@ -303,11 +303,13 @@ const LEAF_KINDS = new Set<GridRow['kind']>(['marker', 'event']);
                            horizontal room in the deeply-indented cell. -->
                       <div class="flex items-start gap-2">
                         <p-treeTableToggler [rowNode]="rowNode" />
+                        <!-- Canonical concept icons (shared/constants/nav-icons.ts):
+                             markers render as shape glyphs app-wide (fa-shapes),
+                             events use fa-calendar-day. -->
                         <i
-                          class="mt-1 text-[10px] text-slate-400"
-                          [class.fa-solid]="true"
-                          [class.fa-location-dot]="row.kind === 'marker'"
-                          [class.fa-bolt]="row.kind === 'event'"
+                          class="fa-solid mt-1 text-[10px] text-slate-400"
+                          [class.fa-shapes]="row.kind === 'marker'"
+                          [class.fa-calendar-day]="row.kind === 'event'"
                           aria-hidden="true"
                         ></i>
                         <div class="min-w-0">
