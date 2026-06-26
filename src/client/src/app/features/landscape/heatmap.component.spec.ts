@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, it, expect } from 'vitest';
 
-import type { HeatmapBubble, RingPhase } from '../../core/models/landscape.model';
+import type { HeatmapBubble, HeatmapAsset, RingPhase } from '../../core/models/landscape.model';
 import { cellTint, heatmapStep, formatFreshness } from './heatmap-cell';
 
 function makeBubble(
@@ -210,5 +213,56 @@ describe('HeatmapComponent row computation', () => {
     const multiple = makeBubble('Many', { P1: 1 }, { competitor_count: 5 });
     expect(single.competitor_count === 1 ? 'company' : 'companies').toBe('company');
     expect(multiple.competitor_count === 1 ? 'company' : 'companies').toBe('companies');
+  });
+});
+
+/**
+ * Cell-level primary-intelligence flag. A cell (a group at one phase) is
+ * flagged when ANY asset at that phase owns published PI. The unit runner has
+ * no Angular compiler, so we mirror the component's predicate against a bubble
+ * fixture and pin the template/computed wiring by source contract.
+ */
+function asset(id: string, phase: RingPhase, hasIntelligence: boolean): HeatmapAsset {
+  return {
+    id,
+    name: id,
+    generic_name: null,
+    company_id: 'c',
+    company_name: 'Co',
+    company_logo_url: null,
+    highest_phase: phase,
+    highest_phase_rank: 0,
+    trial_count: 1,
+    has_intelligence: hasIntelligence,
+  };
+}
+
+// Mirrors the predicate in HeatmapComponent's cell builder.
+function cellHasIntelligence(bubble: HeatmapBubble, phase: RingPhase): boolean {
+  return bubble.products.some((p) => p.highest_phase === phase && p.has_intelligence);
+}
+
+const heatmapSrc = readFileSync(join(__dirname, 'heatmap.component.ts'), 'utf8');
+
+describe('heatmap cell primary-intelligence flag', () => {
+  it('flags a cell when any asset at that phase has PI', () => {
+    const bubble = makeBubble('Obesity', { P3: 2 }, {
+      products: [asset('a1', 'P3', false), asset('a2', 'P3', true)],
+    });
+    expect(cellHasIntelligence(bubble, 'P3')).toBe(true);
+  });
+
+  it('does not flag a phase where no PI-bearing asset sits', () => {
+    const bubble = makeBubble('Obesity', { P2: 1, P3: 1 }, {
+      products: [asset('a1', 'P3', true), asset('a2', 'P2', false)],
+    });
+    expect(cellHasIntelligence(bubble, 'P2')).toBe(false);
+    expect(cellHasIntelligence(bubble, 'P3')).toBe(true);
+  });
+
+  it('renders the shared bookmark mark in the corner of flagged cells', () => {
+    expect(heatmapSrc).toContain('hasIntelligence: bubble.products.some(');
+    expect(heatmapSrc).toContain('@if (cell.hasIntelligence)');
+    expect(heatmapSrc).toContain('<app-pi-mark [size]="9"');
   });
 });
