@@ -68,16 +68,19 @@ Aaditya
 
 ## Regenerating the logo PNG
 
-The mark is rendered from the same geometry as `src/client/public/favicon.svg`.
+The mark uses the geometry and colors from `clint-mark.ts` (the in-app source of
+truth), with stroke widths from `clintMarkStrokes(44)` -- the `size <= 48` tier
+(`2.5 / 3.5 / 5`), matching how the app renders the mark at the signature's 44px
+display size (deliberately *not* the favicon, which uses the heavier 32px tier).
 To regenerate (from `src/client/`, `sharp` is already a dependency):
 
 ```js
 // gen-mark.mjs -- run with: node gen-mark.mjs
 import sharp from 'sharp';
 const svg = `<svg width="240" height="240" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 await sharp(Buffer.from(svg)).resize(240, 240).png({ compressionLevel: 9 }).toFile('public/email/clint-mark.png');
 ```
