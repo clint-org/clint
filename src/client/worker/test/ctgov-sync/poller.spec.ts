@@ -198,6 +198,10 @@ describe('runScheduledSync', () => {
     expect(queueCalls).toHaveLength(1);
     expect(queueCalls[0].body['p_secret']).toBe('test-secret');
     expect(queueCalls[0].body['p_limit']).toBe(1000);
+    // The scheduled path must NOT opt into withdrawn trials: the daily poll
+    // deliberately excludes dead NCTs so they stop 404-ing every run. Only the
+    // manual button passes p_include_withdrawn: true.
+    expect(queueCalls[0].body['p_include_withdrawn']).toBeFalsy();
   });
 
   it('happy path with one change: ingests once, status=success', async () => {
@@ -774,5 +778,102 @@ describe('runManualBackfill', () => {
     expect(recordCalls).toHaveLength(1);
     expect(recordCalls[0].body['p_status']).toBe('failed');
     expect(recordCalls[0].body['p_errors_count']).toBe(1);
+  });
+
+  it('opts into withdrawn trials: queries get_trials_for_polling with p_include_withdrawn=true', async () => {
+    // A trial removed from CT.gov has ctgov_withdrawn_at set, which excludes it
+    // from the default polling queue. The manual button must still reach it so a
+    // returning trial can be restored, so runManualBackfill passes
+    // p_include_withdrawn: true. The scheduled path must NOT (see its own test).
+    const trials = [
+      {
+        trial_id: 't1',
+        space_id: 's1',
+        nct_id: 'NCT01',
+        last_update_posted_date: '2026-04-15',
+        latest_ctgov_version: null,
+      },
+    ];
+
+    const harness = installFetch([
+      rpcHandler({
+        get_trials_for_polling: () => jsonResponse(trials),
+        ingest_ctgov_snapshot: () =>
+          jsonResponse({
+            snapshot_id: '11111111-1111-1111-1111-111111111111',
+            inserted: true,
+            events_emitted: 1,
+            changes_recorded: 1,
+          }),
+        bulk_update_last_polled: () => jsonResponse(1),
+        record_sync_run: () => jsonResponse('22222222-2222-2222-2222-222222222222'),
+      }),
+      ctgovStudyHandler((nctId) =>
+        jsonResponse({
+          protocolSection: {
+            identificationModule: { nctId },
+            statusModule: { lastUpdatePostDateStruct: { date: '2026-04-15' } },
+          },
+        })
+      ),
+      ctgovHistoryHandler(),
+    ]);
+
+    const summary = await runManualBackfill(makeEnv(), ['NCT01']);
+
+    // 200 from CT.gov: the returning trial routes to ingest and is restored.
+    expect(summary.status).toBe('success');
+    expect(summary.snapshots_written).toBe(1);
+
+    const queueCalls = harness.rpcCalls.filter((c) => c.fn === 'get_trials_for_polling');
+    expect(queueCalls).toHaveLength(1);
+    expect(queueCalls[0].body['p_include_withdrawn']).toBe(true);
+    expect(queueCalls[0].body['p_secret']).toBe('test-secret');
+
+    const ingestCalls = harness.rpcCalls.filter((c) => c.fn === 'ingest_ctgov_snapshot');
+    expect(ingestCalls).toHaveLength(1);
+    expect(ingestCalls[0].body['p_nct_id']).toBe('NCT01');
+  });
+
+  it('still 404 (trial stays gone): routes to mark_trials_ctgov_withdrawn, no ingest', async () => {
+    // A withdrawn trial surfaced by p_include_withdrawn that is still missing
+    // from CT.gov (404) must not ingest; it routes to markWithdrawn, which is
+    // idempotent (no second trial_withdrawn event), so the trial stays removed.
+    const trials = [
+      {
+        trial_id: 't1',
+        space_id: 's1',
+        nct_id: 'NCT01',
+        last_update_posted_date: '2026-04-15',
+        latest_ctgov_version: null,
+      },
+    ];
+
+    const harness = installFetch([
+      rpcHandler({
+        get_trials_for_polling: () => jsonResponse(trials),
+        mark_trials_ctgov_withdrawn: () => jsonResponse(1),
+        record_sync_run: () => jsonResponse('22222222-2222-2222-2222-222222222222'),
+      }),
+      ctgovStudyHandler(() => new Response('', { status: 404 })),
+      ctgovHistoryHandler(),
+    ]);
+
+    const summary = await runManualBackfill(makeEnv(), ['NCT01']);
+
+    // 404 is expected attrition: no snapshot, no error, run stays green.
+    expect(summary.status).toBe('success');
+    expect(summary.snapshots_written).toBe(0);
+    expect(summary.errors_count).toBe(0);
+
+    const queueCalls = harness.rpcCalls.filter((c) => c.fn === 'get_trials_for_polling');
+    expect(queueCalls[0].body['p_include_withdrawn']).toBe(true);
+
+    const ingestCalls = harness.rpcCalls.filter((c) => c.fn === 'ingest_ctgov_snapshot');
+    expect(ingestCalls).toHaveLength(0);
+
+    const markCalls = harness.rpcCalls.filter((c) => c.fn === 'mark_trials_ctgov_withdrawn');
+    expect(markCalls).toHaveLength(1);
+    expect(markCalls[0].body['p_trial_ids']).toEqual(['t1']);
   });
 });
