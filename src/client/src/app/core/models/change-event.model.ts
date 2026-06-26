@@ -13,6 +13,7 @@ export type ChangeEventType =
   | 'eligibility_criteria_changed'
   | 'eligibility_changed'
   | 'trial_withdrawn'
+  | 'trial_restored'
   | 'marker_added'
   | 'projection_finalized'
   | 'marker_reclassified'

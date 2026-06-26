@@ -47,6 +47,8 @@ export interface Trial {
   ctgov_last_synced_at?: string | null;
   latest_ctgov_version?: number | null;
   last_polled_at?: string | null;
+  // Timestamp (ISO string) when CT.gov last flagged this trial as removed/withdrawn; null while active.
+  ctgov_withdrawn_at?: string | null;
 
   // Change-feed badge fields (from get_dashboard_data)
   recent_changes_count?: number;
