@@ -20,13 +20,10 @@ export interface Trial {
   // created by an AI import. Null for manually created entities.
   source_doc_id: string | null;
 
-  // Phase override (analyst-owned)
+  // Phase override (analyst-owned). Dates are derived from Trial Start / Trial
+  // End / PCD markers via deriveTrialPhaseSpan (core/models/trial-phase-span.ts).
   phase_type: string | null;
-  phase_start_date: string | null;
-  phase_end_date: string | null;
   phase_type_source?: 'ctgov' | 'analyst' | null;
-  phase_start_date_source?: 'ctgov' | 'analyst' | null;
-  phase_end_date_source?: 'ctgov' | 'analyst' | null;
 
   conditions?: Condition[];
   assets?: {
