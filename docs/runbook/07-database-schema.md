@@ -960,4 +960,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260625120000_material_links_support_events.sql`
 - `20260625130000_get_source_document_rpc.sql`
 - `20260625160000_detail_rpcs_source_doc_provenance.sql`
+- `20260625170000_fix_get_catalyst_detail_icon_and_upcoming_glyph.sql`
 <!-- /AUTO-GEN:DRIFT -->
