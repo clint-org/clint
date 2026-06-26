@@ -282,3 +282,64 @@ describe('status_changed enum humanization (P2.6)', () => {
     ).toContain('Recruiting');
   });
 });
+
+describe('trial_withdrawn and trial_restored summaries', () => {
+  it('summaryFor trial_withdrawn returns the registry-removal text', () => {
+    expect(
+      summaryFor(baseEvent({ event_type: 'trial_withdrawn', payload: { nct_id: 'NCT1', reason: 'withdrawn' } })),
+    ).toBe('Removed from the CT.gov registry');
+  });
+
+  it('summaryFor trial_withdrawn never contains "undefined"', () => {
+    expect(
+      summaryFor(baseEvent({ event_type: 'trial_withdrawn', payload: {} })),
+    ).not.toContain('undefined');
+  });
+
+  it('summaryFor trial_restored with date includes both the base text and the date', () => {
+    const result = summaryFor(
+      baseEvent({
+        event_type: 'trial_restored',
+        payload: { nct_id: 'NCT1', last_update_posted_date: '2026-06-20' },
+      }),
+    );
+    expect(result).toContain('Restored to CT.gov');
+    expect(result).toContain('2026-06-20');
+  });
+
+  it('summaryFor trial_restored with empty payload returns the base text without "undefined"', () => {
+    const result = summaryFor(
+      baseEvent({ event_type: 'trial_restored', payload: {} }),
+    );
+    expect(result).toBe('Restored to CT.gov');
+    expect(result).not.toContain('undefined');
+  });
+
+  it('summarySegmentsFor trial_withdrawn returns the registry-removal text', () => {
+    const result = summarySegmentsFor(
+      baseEvent({ event_type: 'trial_withdrawn', payload: {} }),
+    );
+    expect(joinText(result.segments)).toBe('Removed from the CT.gov registry');
+  });
+
+  it('summarySegmentsFor trial_restored with date includes the date', () => {
+    const result = summarySegmentsFor(
+      baseEvent({
+        event_type: 'trial_restored',
+        payload: { last_update_posted_date: '2026-06-20' },
+      }),
+    );
+    const text = joinText(result.segments);
+    expect(text).toContain('Restored to CT.gov');
+    expect(text).toContain('2026-06-20');
+  });
+
+  it('summarySegmentsFor trial_restored with empty payload returns base text without "undefined"', () => {
+    const result = summarySegmentsFor(
+      baseEvent({ event_type: 'trial_restored', payload: {} }),
+    );
+    const text = joinText(result.segments);
+    expect(text).toBe('Restored to CT.gov');
+    expect(text).not.toContain('undefined');
+  });
+});
