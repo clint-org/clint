@@ -111,6 +111,8 @@ export function mapDashboardCompanies(data: any[]): any[] {
               : null,
           })),
           ctgov_withdrawn_at: t.ctgov_withdrawn_at ?? null,
+          has_intelligence: t.has_intelligence ?? false,
+          intelligence_headline: t.intelligence_headline ?? null,
           trial_notes: t.trial_notes ?? [],
         })),
       };
