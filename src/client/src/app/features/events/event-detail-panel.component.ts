@@ -21,6 +21,7 @@ import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-ic
 import { AnnotationService, Annotation } from '../../core/services/annotation.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { MarkerDetailContentComponent } from '../../shared/components/marker-detail-content.component';
+import { MaterialsSectionComponent } from '../../shared/components/materials-section/materials-section.component';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelEntityLinkDirective } from '../../shared/components/detail-panel-entity-link.directive';
 import { DetailPanelEntityListComponent } from '../../shared/components/detail-panel-entity-list.component';
@@ -84,6 +85,7 @@ const CATEGORY_COLOR: Record<string, string> = {
     DetailPanelShellComponent,
     ExternalLinkComponent,
     MarkerDetailContentComponent,
+    MaterialsSectionComponent,
     MarkerIconComponent,
     RowActionsComponent,
     LoaderComponent,
