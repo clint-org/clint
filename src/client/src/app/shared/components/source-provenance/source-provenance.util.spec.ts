@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { SourceProvenance } from './source-provenance.model';
 import {
   formatProvenanceDate,
+  formatSourceBody,
   provenanceTitle,
   sourceBodyLabel,
   sourceKindLabel,
@@ -57,6 +58,30 @@ describe('sourceKindLabel', () => {
 
   it('labels an NCT batch import', () => {
     expect(sourceKindLabel('nct')).toBe('NCT batch');
+  });
+});
+
+describe('formatSourceBody', () => {
+  it('pretty-prints an NCT JSON body with indentation', () => {
+    const compact = '[{"nct_id":"NCT01","phase":"P3"}]';
+    const out = formatSourceBody(compact, 'nct');
+    expect(out).toContain('\n');
+    expect(out).toContain('  "nct_id": "NCT01"');
+  });
+
+  it('returns an NCT body unchanged when it is not valid JSON', () => {
+    const broken = '{not json';
+    expect(formatSourceBody(broken, 'nct')).toBe(broken);
+  });
+
+  it('leaves a text paste untouched even when it looks like JSON', () => {
+    const pasted = '{"looks":"like json"}';
+    expect(formatSourceBody(pasted, 'text')).toBe(pasted);
+  });
+
+  it('leaves a fetched URL page untouched', () => {
+    const page = 'Pfizer reports topline results...';
+    expect(formatSourceBody(page, 'url')).toBe(page);
   });
 });
 

@@ -49,6 +49,21 @@ export function sourceBodyLabel(kind: SourceProvenance['source_kind']): string {
   }
 }
 
+/**
+ * Display form of the raw source body. NCT imports store the CT.gov study
+ * record as compact JSON; pretty-print it so a curator can read it. Falls back
+ * to the raw string if it does not parse. Non-NCT bodies (pasted text, fetched
+ * pages) are left exactly as ingested.
+ */
+export function formatSourceBody(text: string, kind: SourceProvenance['source_kind']): string {
+  if (kind !== 'nct') return text;
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2);
+  } catch {
+    return text;
+  }
+}
+
 /** Short, locale-independent UTC date for the inline line (e.g. "Jun 3, 2026"). */
 export function formatProvenanceDate(iso: string): string {
   const d = new Date(iso);

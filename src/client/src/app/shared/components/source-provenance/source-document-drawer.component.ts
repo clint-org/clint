@@ -5,6 +5,7 @@ import { DrawerModule } from 'primeng/drawer';
 import { SourceProvenance } from './source-provenance.model';
 import {
   formatProvenanceDate,
+  formatSourceBody,
   provenanceTitle,
   sourceBodyLabel,
   sourceKindLabel,
@@ -79,12 +80,12 @@ import {
                 severity="secondary"
                 [text]="true"
                 size="small"
-                (onClick)="copy(d.source_text)"
+                (onClick)="copy(bodyText())"
               />
             </div>
             <pre
               class="max-h-[60vh] overflow-auto rounded-sm border border-slate-200 bg-slate-50 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-slate-700"
-              >{{ d.source_text }}</pre
+              >{{ bodyText() }}</pre
             >
           </div>
         </div>
@@ -106,6 +107,10 @@ export class SourceDocumentDrawerComponent {
   protected readonly bodyLabel = computed(() => {
     const d = this.doc();
     return d ? sourceBodyLabel(d.source_kind) : '';
+  });
+  protected readonly bodyText = computed(() => {
+    const d = this.doc();
+    return d ? formatSourceBody(d.source_text, d.source_kind) : '';
   });
   protected readonly importedDate = computed(() => {
     const d = this.doc();
