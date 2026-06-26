@@ -28,6 +28,7 @@ import { PngExportService } from '../dashboard/export/png-export.service';
 import { LegendComponent } from '../dashboard/legend/legend.component';
 import { LandscapeStateService } from './landscape-state.service';
 import { TimelineInsightStripComponent } from './timeline-insight-strip.component';
+import { deriveTrialPhaseSpan } from '../../core/models/trial-phase-span';
 
 @Component({
   selector: 'app-timeline-view',
@@ -131,12 +132,13 @@ export class TimelineViewComponent {
       for (const company of companies) {
         for (const product of company.assets ?? []) {
           for (const trial of product.trials ?? []) {
-            if (trial.phase_start_date) {
-              const sy = new Date(trial.phase_start_date).getFullYear();
+            const trialSpan = deriveTrialPhaseSpan(trial.markers ?? []);
+            if (trialSpan.start) {
+              const sy = new Date(trialSpan.start).getFullYear();
               if (sy < minYear) minYear = sy;
             }
-            if (trial.phase_end_date) {
-              const ey = new Date(trial.phase_end_date).getFullYear();
+            if (trialSpan.end) {
+              const ey = new Date(trialSpan.end).getFullYear();
               if (ey > maxYear) maxYear = ey;
             }
             for (const marker of trial.markers ?? []) {

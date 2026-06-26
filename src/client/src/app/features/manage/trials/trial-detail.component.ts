@@ -42,6 +42,9 @@ import {
   CTGOV_DETAIL_DEFAULT_PATHS,
   CTGOV_FIELD_CATALOGUE,
 } from '../../../core/models/ctgov-field.model';
+import { deriveTrialPhaseSpan } from '../../../core/models/trial-phase-span';
+import { selectTrialStartMarker, selectTrialEndMarker, isCtgovOwnedMarker } from '../../../core/models/trial-date-marker';
+import { markerStartCaption } from '../../../core/models/marker-date-precision';
 
 import { MarkerFormComponent } from './marker-form.component';
 import { NoteFormComponent } from './note-form.component';
@@ -279,6 +282,37 @@ export class TrialDetailComponent implements OnDestroy {
   protected readonly hasIntelligence = computed(() => {
     const i = this.intelligence();
     return !!(i?.published || i?.draft);
+  });
+
+  protected readonly phaseSpan = computed(() => deriveTrialPhaseSpan(this.trial()?.markers ?? []));
+
+  protected readonly phaseStartMarker = computed(() =>
+    selectTrialStartMarker(this.trial()?.markers ?? [])
+  );
+  protected readonly phaseEndMarker = computed(() =>
+    selectTrialEndMarker(this.trial()?.markers ?? [])
+  );
+
+  protected readonly phaseStartSource = computed<'ctgov' | 'analyst' | null>(() => {
+    const m = this.phaseStartMarker();
+    if (!m) return null;
+    return isCtgovOwnedMarker(m) ? 'ctgov' : 'analyst';
+  });
+  protected readonly phaseEndSource = computed<'ctgov' | 'analyst' | null>(() => {
+    const m = this.phaseEndMarker();
+    if (!m) return null;
+    return isCtgovOwnedMarker(m) ? 'ctgov' : 'analyst';
+  });
+
+  protected readonly phaseStartLabel = computed(() => {
+    const span = this.phaseSpan();
+    if (!span.start) return null;
+    return markerStartCaption(span.start, span.startPrecision);
+  });
+  protected readonly phaseEndLabel = computed(() => {
+    const span = this.phaseSpan();
+    if (!span.end) return null;
+    return markerStartCaption(span.end, span.endPrecision);
   });
 
   protected readonly spaceIdSig = computed(() => this.trial()?.space_id ?? '');

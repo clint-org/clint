@@ -532,10 +532,10 @@
                 <dd
                   class="flex min-w-0 flex-wrap items-baseline justify-end gap-1 text-right font-mono text-[13px] tabular-nums text-slate-900"
                 >
-                  <span>{{ (t.phase_start_date | date: 'mediumDate') || '--' }}</span>
-                  @if (t.phase_start_date_source) {
+                  <span>{{ phaseStartLabel() || '--' }}</span>
+                  @if (phaseStartSource()) {
                     <span class="text-[9px] uppercase tracking-wider text-slate-500">
-                      {{ t.phase_start_date_source }}
+                      {{ phaseStartSource() }}
                     </span>
                   }
                 </dd>
@@ -549,16 +549,16 @@
                 <dd
                   class="flex min-w-0 flex-wrap items-baseline justify-end gap-1 text-right font-mono text-[13px] tabular-nums text-slate-900"
                 >
-                  <span>{{ (t.phase_end_date | date: 'mediumDate') || '--' }}</span>
-                  @if (t.phase_end_date_source) {
+                  <span>{{ phaseEndLabel() || '--' }}</span>
+                  @if (phaseEndSource()) {
                     <span class="text-[9px] uppercase tracking-wider text-slate-500">
-                      {{ t.phase_end_date_source }}
+                      {{ phaseEndSource() }}
                     </span>
                   }
                 </dd>
               </div>
             </dl>
-            @if (!(t.phase_type || t.phase_start_date || t.phase_end_date) && spaceRole.canEdit()) {
+            @if (!(t.phase_type || phaseSpan().start || phaseSpan().end) && spaceRole.canEdit()) {
               <p class="border-t border-slate-100 px-3 py-2.5 text-xs text-slate-500">
                 No phase set.
                 <a

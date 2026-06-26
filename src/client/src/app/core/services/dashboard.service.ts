@@ -96,8 +96,6 @@ export function mapDashboardCompanies(data: any[]): any[] {
           ...t,
           identifier: t.identifier ?? null,
           phase_type: t.phase_data?.phase_type ?? null,
-          phase_start_date: t.phase_data?.phase_start_date ?? null,
-          phase_end_date: t.phase_data?.phase_end_date ?? null,
           markers: (t.markers ?? []).map((m: any) => ({
             ...m,
             marker_types: m.marker_type

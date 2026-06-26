@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Company } from '../models/company.model';
 import { buildXlsxWorkbook } from './xlsx-export.util';
+import { TRIAL_START_MARKER_TYPE_ID, TRIAL_END_MARKER_TYPE_ID } from '../models/trial-phase-span';
 
 const fixtureCompanies = [
   {
@@ -24,9 +25,21 @@ const fixtureCompanies = [
             trial_notes: [],
             _indications: [{ id: 'i1', indication_id: 'i1', indication_name: 'Obesity' }],
             phase_type: 'P3',
-            phase_start_date: '2020-01-01',
-            phase_end_date: '2022-06-30',
             markers: [
+              {
+                id: 'ms1',
+                marker_type_id: TRIAL_START_MARKER_TYPE_ID,
+                event_date: '2020-01-01',
+                date_precision: 'exact',
+                end_date: null,
+              },
+              {
+                id: 'me1',
+                marker_type_id: TRIAL_END_MARKER_TYPE_ID,
+                event_date: '2022-06-30',
+                date_precision: 'exact',
+                end_date: null,
+              },
               {
                 id: 'm1',
                 event_date: '2021-06-15',
@@ -129,7 +142,9 @@ describe('buildXlsxWorkbook', () => {
                 ...fixtureCompanies[0].assets![0].trials![0],
                 markers: [
                   {
-                    ...fixtureCompanies[0].assets![0].trials![0].markers![0],
+                    // markers![2] is the data readout marker (index 0 and 1 are
+                    // Trial Start and Trial End system markers).
+                    ...fixtureCompanies[0].assets![0].trials![0].markers![2],
                     title: longTitle,
                   },
                 ],

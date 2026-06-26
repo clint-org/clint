@@ -8,6 +8,7 @@ import {
   type DatePrecision,
 } from '../models/marker-date-precision';
 import type { ZoomLevel } from '../models/dashboard.model';
+import { deriveTrialPhaseSpan } from '../models/trial-phase-span';
 
 export interface ColumnVisibility {
   showMoa: boolean;
@@ -111,19 +112,22 @@ export interface TrialExportRow {
 }
 
 export function buildTrialExportRows(companies: Company[]): TrialExportRow[] {
-  return flattenTrials(companies).map((r) => ({
-    company: r.companyName,
-    asset: r.assetName,
-    moa: r.moa,
-    roa: r.roa,
-    indication: r.indications,
-    trial: r.trialName,
-    nctId: r.nctId ?? '',
-    phase: r.trial.phase_type ? phaseShortLabel(r.trial.phase_type) : '',
-    phaseStart: r.trial.phase_start_date ?? null,
-    phaseEnd: r.trial.phase_end_date ?? null,
-    notes: r.trial.notes ?? '',
-  }));
+  return flattenTrials(companies).map((r) => {
+    const span = deriveTrialPhaseSpan(r.trial.markers ?? []);
+    return {
+      company: r.companyName,
+      asset: r.assetName,
+      moa: r.moa,
+      roa: r.roa,
+      indication: r.indications,
+      trial: r.trialName,
+      nctId: r.nctId ?? '',
+      phase: r.trial.phase_type ? phaseShortLabel(r.trial.phase_type) : '',
+      phaseStart: span.start,
+      phaseEnd: span.end,
+      notes: r.trial.notes ?? '',
+    };
+  });
 }
 
 const COLUMN_WIDTHS: Record<ColumnKey, number> = {

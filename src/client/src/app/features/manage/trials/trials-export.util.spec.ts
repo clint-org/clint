@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Trial } from '../../../core/models/trial.model';
 import { buildTrialExportColumns, type TrialExportRow } from './trials-export.util';
 import { buildExportSheet } from '../../../shared/export/grid-sheet.util';
+import { TRIAL_START_MARKER_TYPE_ID, TRIAL_END_MARKER_TYPE_ID } from '../../../core/models/trial-phase-span';
 
 function fixture(overrides: Partial<Trial> = {}): TrialExportRow {
   return {
@@ -16,8 +17,10 @@ function fixture(overrides: Partial<Trial> = {}): TrialExportRow {
       status: 'Active',
       notes: 'Pivotal HFpEF readout expected H2.',
       phase_type: 'P3',
-      phase_start_date: '2022-01-01',
-      phase_end_date: '2026-12-31',
+      markers: [
+        { id: 'ms1', marker_type_id: TRIAL_START_MARKER_TYPE_ID, event_date: '2022-01-01', date_precision: 'exact', end_date: null },
+        { id: 'me1', marker_type_id: TRIAL_END_MARKER_TYPE_ID, event_date: '2026-12-31', date_precision: 'exact', end_date: null },
+      ],
       recruitment_status: 'RECRUITING',
       study_type: 'INTERVENTIONAL',
       display_order: 0,
@@ -81,8 +84,7 @@ describe('buildTrialExportColumns', () => {
           identifier: null,
           status: null,
           phase_type: null,
-          phase_start_date: null,
-          phase_end_date: null,
+          markers: [],
           recruitment_status: null,
           study_type: null,
           notes: null,
