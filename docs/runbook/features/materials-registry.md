@@ -7,7 +7,7 @@ spec: docs/specs/materials-registry/spec.md
 
 The institutional memory layer. Every PPTX, PDF, and DOCX produced for an engagement is registered against the entities it talks about so files surface from any related entity detail page and a single cross-cutting browse view.
 
-**Data model.** `materials` table keyed on `space_id`, with `material_type in ('briefing', 'priority_notice', 'ad_hoc')`, the storage path, the original filename, mime type, size, and the uploader. `material_links` is a polymorphic many-to-many between materials and entities (`trial | marker | company | product | space`); a unique constraint on `(material_id, entity_type, entity_id)` blocks duplicate links.
+**Data model.** `materials` table keyed on `space_id`, with `material_type in ('briefing', 'priority_notice', 'ad_hoc')`, the storage path, the original filename, mime type, size, and the uploader. `material_links` is a polymorphic many-to-many between materials and entities (`trial | marker | company | product | space | event`); a unique constraint on `(material_id, entity_type, entity_id)` blocks duplicate links. Like the other polymorphic targets, `event` links carry no FK; an `AFTER DELETE` trigger on `public.events` sweeps the link rows when an event is deleted (migration `20260625120000`).
 
 **Storage.** Files live in the private Cloudflare R2 bucket `clint-materials`. Key scheme: `{space_id}/{material_id}/{file_name}`. Bytes never traverse the Worker on the hot path: the browser PUTs directly to a 5-minute presigned URL minted by the Worker, and downloads come from a 60-second presigned GET URL. The bucket has no public read; every download is gated. The pre-cutover Supabase Storage `materials` bucket and its bucket-level RLS policies are dropped by the cutover migration.
 
@@ -46,6 +46,8 @@ Each list-surface component owns its own delete handler: confirmation via `confi
 
 **Marker detail panel integration.** `MarkerDetailContentComponent` accepts an optional `[spaceId]` input. When provided, it renders a small Materials section anchored to the marker. `LandscapeShellComponent` threads `state.spaceIdSig()` through `MarkerDetailPanelComponent`. The events page reuses `MarkerDetailContentComponent` without setting `spaceId`, so it stays unchanged.
 
+**Event detail panel integration.** The analyst-event branch of `EventDetailPanelComponent` renders an `app-materials-section` anchored to the event (`entityType="event"`, `[entityId]="d.id"`) when a `spaceId` is present. Events are not selectable in the linked-entities chip picker (which is shared with primary-intelligence authoring and only renders the PI link types); the event anchor is force-added at upload time, the same way space-level anchors are. So an event-anchored material can also carry optional cross-links to trials/markers/companies/assets, but you reach the event anchor by uploading from the event panel, not by picking "event" in the dialog.
+
 **Upload flow recap (register-first, R2).**
 1. Drop or browse selects a file.
 2. Dialog opens; user picks type, title, and linked entities.
@@ -62,7 +64,7 @@ If a step after `register_material` (steps 4-7) throws, the upload flow's catch 
 
 ```yaml
 - id: materials-data-model
-  summary: materials table keyed on space_id with material_type (briefing, priority_notice, ad_hoc) and polymorphic material_links to five entity kinds.
+  summary: materials table keyed on space_id with material_type (briefing, priority_notice, ad_hoc) and polymorphic material_links to six entity kinds (trial, marker, company, asset, space, event).
   routes: []
   rpcs:
     - validate_material_links_payload
