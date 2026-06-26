@@ -125,9 +125,18 @@ declare
   v_events     int;
   v_in_queue   int;
 begin
-  -- resolve the local worker secret the same way _verify_ctgov_worker_secret does.
-  -- The smoke uses the known local dev secret used by the other ctgov smokes.
-  v_secret := 'local-dev-ctgov-secret';
+  -- Resolve the configured worker secret from the vault, the same source
+  -- _verify_ctgov_worker_secret reads. Hardcoding the local-dev value here made
+  -- the smoke fail (42501) on any environment whose secret had been rotated away
+  -- from it (dev/prod), since the gate compares against the live vault entry --
+  -- not a fixed string -- and that failure rolls back the whole migration,
+  -- blocking every deploy. Reading it here keeps the smoke environment-agnostic.
+  select decrypted_secret into v_secret
+    from vault.decrypted_secrets
+   where name = 'ctgov_worker_secret';
+  if v_secret is null then
+    raise exception 'withdrawn smoke: ctgov_worker_secret is not configured in the vault';
+  end if;
 
   insert into auth.users (id, email) values (v_user_id, 'withdrawn-smoke@invalid.local');
   insert into public.agencies (id, name, slug, subdomain, app_display_name, contact_email)
