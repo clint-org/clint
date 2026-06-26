@@ -258,7 +258,7 @@ end;
 $function$;
 
 comment on function public.get_dashboard_data(uuid, uuid[], uuid[], uuid[], integer, integer, text[], text[], text[], uuid[], uuid[]) is
-  'Returns hierarchical dashboard data (companies > assets > indications > trials) with optional filtering. Trial payload emits acronym alongside name (client uses acronym ?? name). Trial payload emits most_recent_change_event_id for feed deep-linking and ctgov_withdrawn_at for the muted-withdrawn treatment. Trial payload also emits has_intelligence (true when the trial owns published primary intelligence) and intelligence_headline (that PI headline, else null) so the timeline renders the PI bookmark + inline headline from grid data; see 20260626150000.';
+  'Returns hierarchical dashboard data (companies > assets > indications > trials) with optional filtering. Trial payload emits acronym alongside name (client uses acronym ?? name). Trial payload emits most_recent_change_event_id for feed deep-linking and ctgov_withdrawn_at for the muted-withdrawn treatment. Trial payload also emits has_intelligence (true when the trial owns published primary intelligence) and intelligence_headline (that PI headline, else null) so the timeline renders the PI bookmark + inline headline from grid data; see 20260626170000.';
 
 -- =============================================================================
 
@@ -474,7 +474,7 @@ end;
 $$;
 
 comment on function public.get_positioning_data(uuid, text, text, uuid[], uuid[], uuid[], uuid[], uuid[], text[], text[], text[]) is
-  'Heatmap/positioning bubbles grouped by moa | indication | moa+indication | company | roa. Each product carries has_intelligence (true when the asset owns published primary intelligence, entity_type=product); each bubble carries intelligence_count (assets in the group that own PI) so the heatmap renders the PI bookmark flag and the "N of M assets have intelligence" detail line; see 20260626150000.';
+  'Heatmap/positioning bubbles grouped by moa | indication | moa+indication | company | roa. Each product carries has_intelligence (true when the asset owns published primary intelligence, entity_type=product); each bubble carries intelligence_count (assets in the group that own PI) so the heatmap renders the PI bookmark flag and the "N of M assets have intelligence" detail line; see 20260626170000.';
 
 -- =============================================================================
 -- smoke test: a published trial PI surfaces as has_intelligence + headline on
