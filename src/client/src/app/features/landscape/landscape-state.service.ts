@@ -333,16 +333,17 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
             trials = trials.filter((t) => filters.trialIds.includes(t.id));
           }
 
-          // Indication filter: trials carry their indication grouping in
-          // `_indication` (attached by DashboardService). Match on the
-          // indication entity id, which is `_indication.indication_id` -- not
-          // the asset_indication join-row id on `_indication.id`. Trials with
-          // no `_indication` are excluded when an indication filter is active.
+          // Indication filter: trials carry their indication groupings in
+          // `_indications` (attached by DashboardService). A trial matches when
+          // ANY of its indications is selected. Match on the indication entity
+          // id (`_indications[].indication_id`) -- not the asset_indication
+          // join-row id. Trials with no `_indications` are excluded when an
+          // indication filter is active.
           if (filters.indicationIds.length > 0) {
-            trials = trials.filter(
-              (t) =>
-                t._indication?.indication_id &&
-                filters.indicationIds.includes(t._indication.indication_id)
+            trials = trials.filter((t) =>
+              (t._indications ?? []).some((ind) =>
+                filters.indicationIds.includes(ind.indication_id)
+              )
             );
           }
 
