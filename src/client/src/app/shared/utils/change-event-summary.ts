@@ -157,7 +157,13 @@ export function summaryFor(e: ChangeEvent): string {
       return `${label}: ${p['from']} → ${p['to']}`;
     }
     case 'trial_withdrawn':
-      return `Trial withdrawn from CT.gov (last seen ${p['last_seen_post_date']})`;
+      return 'Removed from the CT.gov registry';
+    case 'trial_restored': {
+      const date = p['last_update_posted_date'];
+      return date
+        ? `Restored to CT.gov (registry updated ${date})`
+        : 'Restored to CT.gov';
+    }
     case 'marker_added': {
       const base = `Marker added${e.marker_title ? `: ${e.marker_title}` : ''}`;
       return appendMarkerContext(base, e, p);
@@ -460,13 +466,15 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
     case 'trial_withdrawn':
       return {
         color,
-        segments: [
-          {
-            kind: 'plain',
-            text: `Trial withdrawn from CT.gov (last seen ${p['last_seen_post_date']})`,
-          },
-        ],
+        segments: [{ kind: 'plain', text: 'Removed from the CT.gov registry' }],
       };
+    case 'trial_restored': {
+      const date = p['last_update_posted_date'];
+      const text = date
+        ? `Restored to CT.gov (registry updated ${date})`
+        : 'Restored to CT.gov';
+      return { color, segments: [{ kind: 'plain', text }] };
+    }
     case 'marker_added': {
       const segments: SummarySegment[] = e.marker_title
         ? [

@@ -94,4 +94,39 @@ describe('mapDashboardCompanies', () => {
     expect(companies[0].assets[0].trials).toHaveLength(1);
     expect(companies[0].assets[0].trials[0].id).toBe('t9');
   });
+
+  it('carries ctgov_withdrawn_at from the RPC row onto the mapped trial', () => {
+    const raw = [
+      {
+        id: 'co1',
+        name: 'Acme',
+        assets: [
+          {
+            id: 'as1',
+            name: 'DrugX',
+            indications: [
+              {
+                id: 'ind1',
+                name: 'Oncology',
+                trials: [
+                  { id: 't1', name: 'Trial A', ctgov_withdrawn_at: '2026-06-01T00:00:00Z' },
+                  { id: 't2', name: 'Trial B' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const companies = mapDashboardCompanies(raw);
+    const trials = companies[0].assets[0].trials;
+
+    // Trial with a withdrawal timestamp must carry it through.
+    expect(trials.find((t: { id: string }) => t.id === 't1').ctgov_withdrawn_at).toBe(
+      '2026-06-01T00:00:00Z'
+    );
+    // Trial missing the key must produce null, not undefined.
+    expect(trials.find((t: { id: string }) => t.id === 't2').ctgov_withdrawn_at).toBeNull();
+  });
 });
