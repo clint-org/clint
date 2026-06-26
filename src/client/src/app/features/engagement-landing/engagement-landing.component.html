@@ -73,23 +73,6 @@
                 Import
               </button>
             }
-            <div
-              class="flex items-center gap-1.5 border-l border-slate-200 pl-4 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400"
-              aria-label="Intelligence provider"
-            >
-              <span>Intelligence by</span>
-              @if (agencyLogoUrl(); as logo) {
-                <img
-                  [ngSrc]="logo"
-                  [alt]="agencyName()"
-                  width="140"
-                  height="28"
-                  class="h-[14px] w-auto max-w-[96px] rounded-[3px] bg-slate-50 object-contain"
-                />
-              } @else {
-                <span class="font-semibold text-slate-600">{{ agencyName() }}</span>
-              }
-            </div>
           </div>
         </div>
       </div>

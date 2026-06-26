@@ -16,6 +16,7 @@ import { Menu } from 'primeng/menu';
 import { Tooltip } from 'primeng/tooltip';
 import { TopbarAction } from '../services/topbar-state.service';
 import { PaletteHotkeyService } from '../services/palette-hotkey.service';
+import { BrandContextService } from '../services/brand-context.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import {
@@ -344,6 +345,24 @@ export interface TopbarTab {
         }
         <ng-content select="[topbar-actions]" />
       </div>
+
+      <!-- Persistent agency attribution colophon -->
+      @if (agencyBrand(); as ag) {
+        <div class="topbar-credit" aria-label="Intelligence provider">
+          <span class="topbar-credit__label">Intelligence by</span>
+          @if (ag.logo_url) {
+            <img
+              [ngSrc]="ag.logo_url"
+              [alt]="ag.name"
+              width="140"
+              height="28"
+              class="topbar-credit__logo"
+            />
+          } @else {
+            <span class="topbar-credit__name">{{ ag.name }}</span>
+          }
+        </div>
+      }
     </div>
   `,
   styles: [
@@ -715,6 +734,48 @@ export interface TopbarTab {
         margin-left: 6px;
       }
 
+      /* ---- Agency colophon ---- */
+
+      .topbar-credit {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-left: 16px;
+        padding-left: 16px;
+        border-left: 1px solid #e2e8f0;
+      }
+
+      .topbar-credit__label {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        white-space: nowrap;
+      }
+
+      .topbar-credit__logo {
+        height: 15px;
+        max-width: 104px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      .topbar-credit__name {
+        font-size: 11px;
+        font-weight: 600;
+        color: #475569;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 767px) {
+        .topbar-credit {
+          display: none;
+        }
+      }
+
       :host ::ng-deep .topbar-actions .p-button {
         font-size: 11px;
         padding: 4px 10px;
@@ -836,6 +897,10 @@ export class ContextualTopbarComponent {
 
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly paletteHotkey = inject(PaletteHotkeyService);
+  private readonly brand = inject(BrandContextService);
+
+  /** Agency attribution shown as a persistent colophon on the right of the bar. */
+  protected readonly agencyBrand = this.brand.agency;
 
   readonly paletteShortcut = computed(() => {
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
