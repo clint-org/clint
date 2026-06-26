@@ -135,6 +135,18 @@ export interface AssetIntelligenceNote {
   updated_at: string;
 }
 
+/** One normalized row in a PI reference list (owner of a citing PI entry). */
+export interface PiReference {
+  /** PI row id. */
+  id: string;
+  entity_type: IntelligenceEntityType | IntelligenceLinkEntityType;
+  /** Owner entity id (trial/asset/company the PI is about) for navigation. */
+  entity_id: string;
+  /** Resolved owner name when the surface has it; otherwise null. */
+  entity_name: string | null;
+  headline: string;
+}
+
 export const ENTITY_TYPE_LABEL: Record<
   IntelligenceEntityType | IntelligenceLinkEntityType,
   string

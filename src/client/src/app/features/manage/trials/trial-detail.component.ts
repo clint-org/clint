@@ -67,6 +67,7 @@ import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker
 import { ChangeEventRowComponent } from '../../../shared/components/change-event-row/change-event-row.component';
 import { TrialEditDialogComponent } from './trial-edit-dialog.component';
 import { fetchIndicationsSafe } from './trial-indications';
+import { ctgovRemovedChip } from './ctgov-removed-chip';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
@@ -119,6 +120,8 @@ export class TrialDetailComponent implements OnDestroy {
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';
   }
+
+  protected readonly ctgovRemovedChip = ctgovRemovedChip;
 
   protected readonly showSecondaryName = shouldShowTrialSecondaryName;
 

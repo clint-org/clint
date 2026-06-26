@@ -107,6 +107,16 @@
             @if (t.status) {
               <app-status-tag [label]="t.status" />
             }
+            @if (ctgovRemovedChip(t.ctgov_withdrawn_at); as removed) {
+              <span
+                class="inline-flex items-center gap-1 rounded-sm bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-amber-800"
+                [pTooltip]="removed.tooltip"
+                tooltipPosition="top"
+              >
+                <i class="fa-solid fa-ban text-[9px]" aria-hidden="true"></i>
+                {{ removed.text }} &middot; {{ t.ctgov_withdrawn_at | date: 'mediumDate' }}
+              </span>
+            }
           </span>
         </div>
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -604,7 +614,17 @@
                 }
               </div>
 
-              @if (t.identifier && nctValidity() === 'not_found') {
+              @if (t.ctgov_withdrawn_at; as withdrawnAt) {
+                <p-message severity="warn" [closable]="false" styleClass="mb-3">
+                  <span class="text-xs">
+                    Removed from the CT.gov registry on
+                    <span class="font-medium">{{ withdrawnAt | date: 'mediumDate' }}</span>.
+                    Re-syncing will restore it if the record has returned.
+                  </span>
+                </p-message>
+              }
+
+              @if (t.identifier && nctValidity() === 'not_found' && !t.ctgov_withdrawn_at) {
                 <p-message severity="error" [closable]="false" styleClass="mb-3">
                   <span class="text-xs">
                     <span class="font-mono">{{ t.identifier }}</span> was not found at CT.gov. Edit

@@ -28,8 +28,11 @@ import {
   placeOptionalCaptions,
   visibleLabelMarkerIds,
 } from './marker-label-layout';
+import { TooltipModule } from 'primeng/tooltip';
+
 import { ChangeBadgeComponent } from '../../../shared/components/change-badge/change-badge.component';
 import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
+import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.component';
 import { GridHeaderComponent } from './grid-header.component';
 import { MarkerComponent } from './marker.component';
 import { PhaseBarComponent } from './phase-bar.component';
@@ -60,7 +63,9 @@ export interface FlattenedTrial {
     GridHeaderComponent,
     MarkerComponent,
     PhaseBarComponent,
+    PiMarkComponent,
     RowNotesComponent,
+    TooltipModule,
   ],
   templateUrl: './dashboard-grid.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -85,6 +90,14 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly hideRoaColumn = input<boolean>(false);
   readonly hideIndicationColumn = input<boolean>(false);
   readonly hideNotesColumn = input<boolean>(false);
+
+  /**
+   * Timeline-scoped density control (default on). When on, a trial that owns
+   * published primary intelligence renders its PI headline as an inline second
+   * line under the trial name; when off, the row collapses to just the bookmark
+   * mark beside the name, reclaiming vertical density for the dense view.
+   */
+  readonly showIntelligenceHeadlines = input<boolean>(true);
 
   readonly phaseClick = output<Trial>();
   readonly markerClick = output<Marker>();

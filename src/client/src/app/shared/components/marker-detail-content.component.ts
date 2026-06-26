@@ -43,6 +43,8 @@ import { DetailPanelStatusBandComponent } from './detail-panel-status-band.compo
 import { ExternalLinkComponent } from './external-link.component';
 import { DetailPanelPillComponent, PillTone } from './detail-panel-pill.component';
 import { DetailPanelSectionComponent } from './detail-panel-section.component';
+import { PiDetailSectionComponent } from './pi-detail-section/pi-detail-section.component';
+import { PiReference } from '../../core/models/primary-intelligence.model';
 import { MarkerIconComponent } from './svg-icons/marker-icon.component';
 import { MaterialsSectionComponent } from './materials-section/materials-section.component';
 
@@ -78,6 +80,7 @@ interface CtgovProvenanceBlock {
     DetailPanelHistoryComponent,
     DetailPanelPillComponent,
     DetailPanelSectionComponent,
+    PiDetailSectionComponent,
     DetailPanelStatusBandComponent,
     ExternalLinkComponent,
     MarkerIconComponent,
@@ -293,6 +296,16 @@ interface CtgovProvenanceBlock {
         </div>
       }
 
+      @if (references().length > 0) {
+        <app-detail-panel-section label="Referenced in intelligence" [piMark]="true">
+          <app-pi-detail-section
+            [references]="references()"
+            [countLabel]="referenceCountLabel()"
+            (referenceClick)="onReferenceClick($event)"
+          />
+        </app-detail-panel-section>
+      }
+
       @if (d.upcoming_markers.length > 0) {
         <app-detail-panel-section label="Upcoming for this trial">
           <app-detail-panel-entity-list>
@@ -406,9 +419,27 @@ export class MarkerDetailContentComponent {
    * `key_catalysts_panel` or `timeline_detail` based on the active view.
    */
   readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
+  /**
+   * Incoming primary-intelligence references for this marker: published PI
+   * entries (owned by a trial/asset/company) that cite this catalyst. Markers
+   * never own PI, so this pane only ever shows references, never an owned block.
+   */
+  readonly references = input<PiReference[]>([]);
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
   readonly trialClick = output<string>();
+  /** Open an incoming PI reference's owning entity. */
+  readonly openIntelligence = output<{ entityType: string; entityId: string }>();
+
+  protected readonly referenceCountLabel = computed<string | null>(() => {
+    const n = this.references().length;
+    if (n === 0) return null;
+    return `Referenced in ${n} intelligence ${n === 1 ? 'entry' : 'entries'}`;
+  });
+
+  protected onReferenceClick(ref: PiReference): void {
+    this.openIntelligence.emit({ entityType: ref.entity_type, entityId: ref.entity_id });
+  }
 
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';

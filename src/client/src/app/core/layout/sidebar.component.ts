@@ -245,7 +245,7 @@ export type { SidebarSectionId } from './sidebar-nav';
       /* Logo row */
       .sidebar__logo {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 8px;
         padding: 12px;
         border-bottom: 1px solid #1e293b;
@@ -345,7 +345,6 @@ export type { SidebarSectionId } from './sidebar-nav';
         color: #475569;
         font-size: 11px;
         padding: 0;
-        margin-top: 4px;
         transition:
           color 150ms ease,
           transform 150ms ease;

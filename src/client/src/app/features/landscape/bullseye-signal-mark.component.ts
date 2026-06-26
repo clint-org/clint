@@ -13,11 +13,13 @@ interface SignalRing {
 /**
  * The bullseye chart mark, rendered as a standalone glyph: a phase-colored core
  * wrapped by the same concentric signal rings the chart plots on each dot --
- * orange for recent activity, blue for attached intelligence, dashed slate for
- * an asset that appears on multiple spokes. Rings step outward from the core in
- * that fixed order, so the chart dot, hover tooltip, and detail pane all read
- * identically. Phase / signal-ring colors are fixed data colors and are never
- * whitelabeled.
+ * orange for recent activity, dashed slate for an asset that appears on
+ * multiple spokes. Rings step outward from the core in that fixed order, so the
+ * chart dot, hover tooltip, and detail pane all read identically. Primary
+ * intelligence is no longer a ring here: it is carried by the brand bookmark
+ * badge on the chart node (see bullseye-chart) so it never collides with the
+ * blue approval marker. Phase / signal-ring colors are fixed data colors and
+ * are never whitelabeled.
  *
  * Single source of truth for the mark geometry: both the hover tooltip and the
  * asset detail pane render this component rather than reimplementing the rings.
@@ -53,7 +55,6 @@ interface SignalRing {
 export class BullseyeSignalMarkComponent {
   readonly phase = input.required<RingPhase>();
   readonly hasRecentActivity = input<boolean>(false);
-  readonly hasIntelligence = input<boolean>(false);
   readonly multiSpoke = input<boolean>(false);
   /** Overall mark size in px. Geometry scales relative to the 30px reference. */
   readonly size = input<number>(30);
@@ -70,13 +71,10 @@ export class BullseyeSignalMarkComponent {
     const step = 3.45 * scale;
     const rings: SignalRing[] = [];
     let r = core + step;
-    // Intelligence is the static inner halo; recent activity sits OUTSIDE it
-    // (on the chart it is an outward-expanding pulse), then the dashed
-    // multi-spoke ring is outermost. Keep this order in sync with the chart dot.
-    if (this.hasIntelligence()) {
-      rings.push({ kind: 'intel', r, stroke: '#2563eb', width: 2.1 * scale, dash: null });
-      r += step;
-    }
+    // Recent activity is the inner ring (on the chart it is an outward-expanding
+    // pulse), then the dashed multi-spoke ring is outermost. Keep this order in
+    // sync with the chart dot. Primary intelligence is a brand bookmark badge on
+    // the node, not a ring.
     if (this.hasRecentActivity()) {
       rings.push({ kind: 'activity', r, stroke: '#f97316', width: 2.1 * scale, dash: null });
       r += step;

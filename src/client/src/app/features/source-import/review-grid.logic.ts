@@ -1,5 +1,6 @@
 // Pure review-decision logic for the import-review grouped grid.
 // No Angular imports: unit-tested via vitest (npm run test:units).
+import type { MarkerShape, FillStyle, InnerMark } from '../../core/models/marker.model';
 
 export type EntityState = 'new' | 'existing';
 export type FlagTier = 'blocking' | 'attention' | 'info';
@@ -157,13 +158,76 @@ export function deriveCtgovFlag(candidateCount: number): ReviewFlag | null {
 }
 
 export function deriveFuzzyFlag(alternateCount: number): ReviewFlag | null {
-  return alternateCount > 0
-    ? { id: 'fuzzy', tier: 'attention', label: 'Uncertain match' }
-    : null;
+  return alternateCount > 0 ? { id: 'fuzzy', tier: 'attention', label: 'Uncertain match' } : null;
+}
+
+// Display fields for a marker or event leaf row in the review grid. Markers and
+// events have no place in the trial-shaped columns (phase, MOA/ROA, indication),
+// so their identity is carried in the entity cell: a category chip and a date.
+export interface LeafDisplay {
+  category: string | null;
+  date: string | null;
+}
+
+function cleanText(v: unknown): string | null {
+  const s = typeof v === 'string' ? v.trim() : '';
+  return s.length > 0 ? s : null;
+}
+
+// A marker's category chip is its marker_type name (resolved to a color by the
+// commit RPC); its date is event_date. Both are optional in a proposal.
+export function markerLeafDisplay(marker: Entity): LeafDisplay {
+  return { category: cleanText(marker['marker_type']), date: cleanText(marker['event_date']) };
+}
+
+// The visual fields the review grid needs to render a marker's real glyph
+// (app-marker-icon), a structural subset of MarkerType.
+export interface MarkerTypeLite {
+  name: string;
+  shape: MarkerShape;
+  color: string;
+  fill_style: FillStyle;
+  inner_mark: InnerMark;
+  is_system: boolean;
+  display_order: number;
+}
+
+// Space-scoped types win over the system defaults of the same name (commit
+// orders `space_id nulls last`, i.e. is_system last).
+function preferSpaceScoped(matches: MarkerTypeLite[]): MarkerTypeLite {
+  return [...matches].sort((a, b) => Number(a.is_system) - Number(b.is_system))[0];
+}
+
+// Resolve a proposal marker's `marker_type` name to the marker type whose glyph
+// it will actually receive on commit, mirroring commit_source_import: exact name
+// match, then case-insensitive, then the lowest-ordered system default. Returns
+// null only when no types are loaded yet (the caller falls back to an icon).
+export function pickMarkerType(name: string | null, types: MarkerTypeLite[]): MarkerTypeLite | null {
+  if (types.length === 0) return null;
+  if (name) {
+    const exact = types.filter((t) => t.name === name);
+    if (exact.length > 0) return preferSpaceScoped(exact);
+    const lower = name.toLowerCase();
+    const ci = types.filter((t) => t.name.toLowerCase() === lower);
+    if (ci.length > 0) return preferSpaceScoped(ci);
+  }
+  const systemDefaults = types
+    .filter((t) => t.is_system)
+    .sort((a, b) => a.display_order - b.display_order);
+  return systemDefaults[0] ?? types[0];
+}
+
+// An event's category chip is its category name; its date is event_date.
+export function eventLeafDisplay(event: Entity): LeafDisplay {
+  return { category: cleanText(event['category']), date: cleanText(event['event_date']) };
 }
 
 export interface SelectionCounts {
-  companies: number; assets: number; trials: number; markers: number; events: number;
+  companies: number;
+  assets: number;
+  trials: number;
+  markers: number;
+  events: number;
 }
 
 const LABELS: Record<keyof SelectionCounts, [string, string]> = {

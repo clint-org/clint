@@ -39,6 +39,8 @@ export class PhaseBarComponent {
   /** Precision of the phase end date from deriveTrialPhaseSpan. */
   readonly endPrecision = input<DatePrecision | null>(null);
 
+  readonly withdrawn = input(false);
+
   readonly phaseClick = output<void>();
 
   // Present-day frontier, used as the right edge of an open-ended (no end date)

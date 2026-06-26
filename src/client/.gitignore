@@ -11,3 +11,8 @@ e2e/persona/reports/
 
 # deck screenshot capture: real-session browser profile (never commit)
 .shots-profile-run/
+
+# deck screenshot capture: intermediate frames for the source-import composite
+# (only the composed source-import.png is committed)
+public/internal/img/source-import-processing.png
+public/internal/img/source-import-results.png

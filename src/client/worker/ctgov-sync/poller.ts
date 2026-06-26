@@ -8,11 +8,15 @@
  *     sync_run row.
  *   - runManualBackfill: admin entry. Skips the watermark check and
  *     unconditionally re-ingests every requested NCT. Reuses
- *     get_trials_for_polling and filters client-side to the requested
- *     NCTs; an operator that asks for an NCT not in the queue (no trial
- *     row) gets a row-count of zero recorded as a no-op rather than an
- *     error. This shared-codepath choice is documented here so the next
- *     reviewer doesn't reach for a separate "lookup by NCT" RPC.
+ *     get_trials_for_polling with p_include_withdrawn: true so a trial
+ *     that was removed from CT.gov and later restored can be reached by
+ *     the manual sync button. Filters client-side to the requested NCTs;
+ *     an operator that asks for an NCT not in the queue (no trial row)
+ *     gets an error with kind=unknown_nct. The scheduled path
+ *     (runScheduledSync) deliberately omits p_include_withdrawn so the
+ *     daily poll keeps dead NCTs out of the queue. This shared-codepath
+ *     choice is documented here so the next reviewer doesn't reach for a
+ *     separate "lookup by NCT" RPC.
  *
  * Error model:
  *   - CT.gov 5xx during summaries batch -> entire chunk fails. Trials
@@ -488,11 +492,15 @@ export async function runManualBackfill(
   const batchSize = parseIntEnv(env.CTGOV_BATCH_SIZE, 100);
   const client = createCtgovClient({ baseUrl: env.CTGOV_BASE_URL });
 
-  // Reuse get_trials_for_polling and filter client-side. See file header
-  // for why this is the v1 design choice.
+  // Reuse get_trials_for_polling with p_include_withdrawn: true so a trial
+  // that was removed from CT.gov (ctgov_withdrawn_at set) is still included in
+  // the queue. This lets a manual sync reach a returning trial and restore it.
+  // The scheduled path (runScheduledSyncInner) deliberately omits this flag.
+  // Filter client-side to the requested NCTs. See file header for design notes.
   const queue = await callRpc<PollingTrialRow[]>(cfgFrom(env), null, 'get_trials_for_polling', {
     p_secret: env.CTGOV_WORKER_SECRET,
     p_limit: batchSize * parallel,
+    p_include_withdrawn: true,
   });
 
   const requested = new Set(nctIds);

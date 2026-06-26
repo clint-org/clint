@@ -44,11 +44,19 @@ export interface Trial {
   ctgov_last_synced_at?: string | null;
   latest_ctgov_version?: number | null;
   last_polled_at?: string | null;
+  // Timestamp (ISO string) when CT.gov last flagged this trial as removed/withdrawn; null while active.
+  ctgov_withdrawn_at?: string | null;
 
   // Change-feed badge fields (from get_dashboard_data)
   recent_changes_count?: number;
   most_recent_change_type?: string | null;
   most_recent_change_event_id?: string | null;
+
+  // Primary-intelligence presence (from get_dashboard_data). True when this
+  // trial owns published primary intelligence; intelligence_headline carries
+  // that PI headline for the timeline's inline headline treatment.
+  has_intelligence?: boolean;
+  intelligence_headline?: string | null;
 
   /**
    * Dashboard-only augmentation: every indication grouping this trial was

@@ -111,25 +111,12 @@
         />
       }
 
-      <!-- Intelligence halo ring (brand accent, static) -->
-      @if (dot.product.intelligence_count > 0) {
-        <circle
-          [attr.cx]="dot.x"
-          [attr.cy]="dot.y"
-          r="12"
-          fill="none"
-          stroke="#2563eb"
-          stroke-width="2"
-          class="halo-ring"
-        />
-      }
-
       <!-- Duplicate (multi-spoke) dashed ring -->
       @if (isDuplicate(dot.product.id)) {
         <circle
           [attr.cx]="dot.x"
           [attr.cy]="dot.y"
-          [attr.r]="dot.product.intelligence_count > 0 ? 17 : 12"
+          r="12"
           fill="none"
           stroke="#94a3b8"
           stroke-dasharray="3 2"
@@ -165,6 +152,29 @@
         (blur)="isAssetMatched(dot.product.id) && onDotMouseLeave()"
         (keydown)="isAssetMatched(dot.product.id) && onDotKeydown($event, dot.product.id)"
       />
+
+      <!-- Primary-intelligence presence: brand bookmark badge at the node
+           corner (replaces the old blue halo, resolving the blue-approval
+           clash). Static; the white outline keeps it legible on any brand hue.
+           pointer-events:none so it never intercepts the dot's interactions. -->
+      @if (dot.product.intelligence_count > 0) {
+        <g
+          role="img"
+          aria-label="Has primary intelligence"
+          class="pi-badge"
+          [attr.transform]="
+            'translate(' + (dot.x + 4) + ',' + (dot.y - 13) + ') scale(' + bookmarkScale + ')'
+          "
+        >
+          <path
+            [attr.d]="bookmarkPath"
+            fill="var(--brand-600)"
+            stroke="#ffffff"
+            stroke-width="2"
+            stroke-linejoin="round"
+          />
+        </g>
+      }
     </g>
   }
 

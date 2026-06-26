@@ -66,8 +66,8 @@ import { CLINT_MARK_POINTS, CLINT_MARK_VIEWBOX } from '../../shared/components/c
             Every competitor, trial, and catalyst in one living view.
           </h1>
           <p class="mt-5 max-w-[42ch] text-[17px] leading-relaxed text-slate-600">
-            Clint assembles the whole competitive landscape, and keeps it current, for the teams who
-            make the investment, licensing, and partnership calls.
+            Clint assembles the whole competitive landscape and keeps it live, so the teams who act
+            on it always work from the current picture.
           </p>
 
           <div

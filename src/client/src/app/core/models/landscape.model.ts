@@ -442,6 +442,8 @@ export interface HeatmapAsset {
   highest_phase: RingPhase;
   highest_phase_rank: number;
   trial_count: number;
+  /** True when this asset owns published primary intelligence (entity_type=product). */
+  has_intelligence?: boolean;
 }
 
 export interface HeatmapBubble {
@@ -451,6 +453,8 @@ export interface HeatmapBubble {
   highest_phase: RingPhase;
   highest_phase_rank: number;
   unit_count: number;
+  /** Count of assets in this group that own published primary intelligence. */
+  intelligence_count?: number;
   phase_counts: Partial<Record<RingPhase, number>>;
   products: HeatmapAsset[];
 }

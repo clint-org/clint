@@ -15,8 +15,10 @@ import {
   spanOverlapsRange,
   timePeriodToRange,
 } from '../../core/models/landscape.model';
+import { PiReference } from '../../core/models/primary-intelligence.model';
 import { CatalystService } from '../../core/services/catalyst.service';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceSettingsService } from '../../core/services/space-settings.service';
 import { groupCatalystsByTimePeriod, flattenGroupedCatalysts } from '../catalysts/group-catalysts';
 import { deriveTrialPhaseSpan, type TrialPhaseSpan } from '../../core/models/trial-phase-span';
@@ -53,6 +55,7 @@ const STORAGE_PREFIX = 'landscape-state:';
 export class LandscapeStateService {
   private readonly dashboardService = inject(DashboardService);
   private readonly catalyst = inject(CatalystService);
+  private readonly intelligence = inject(PrimaryIntelligenceService);
   private readonly spaceSettings = inject(SpaceSettingsService);
   private storageKey = '';
   private spaceId = '';
@@ -97,6 +100,8 @@ export class LandscapeStateService {
   readonly selectedMarkerId = signal<string | null>(null);
   readonly selectedDetail = signal<CatalystDetail | null>(null);
   readonly detailLoading = signal(false);
+  /** Incoming PI references for the selected marker (entries that cite it). */
+  readonly selectedMarkerReferences = signal<PiReference[]>([]);
 
   // ─── Filtered views (computed) ───────────────────────────────────────
 
@@ -233,7 +238,23 @@ export class LandscapeStateService {
   private async fetchAndSet(markerId: string): Promise<void> {
     this.selectedMarkerId.set(markerId);
     this.selectedDetail.set(null);
+    this.selectedMarkerReferences.set([]);
     this.detailLoading.set(true);
+
+    // Incoming PI references load in parallel and never block the catalyst
+    // detail; they are a non-critical augmentation of the pane.
+    const spaceId = this.spaceIdSig();
+    if (spaceId) {
+      void this.intelligence
+        .getMarkerReferences(spaceId, markerId)
+        .then((refs) => {
+          if (this.selectedMarkerId() === markerId) this.selectedMarkerReferences.set(refs);
+        })
+        .catch(() => {
+          /* references are non-critical */
+        });
+    }
+
     try {
       const detail = await this.catalyst.getCatalystDetail(markerId);
       if (this.selectedMarkerId() === markerId) {
@@ -250,6 +271,7 @@ export class LandscapeStateService {
   clearSelection(): void {
     this.selectedMarkerId.set(null);
     this.selectedDetail.set(null);
+    this.selectedMarkerReferences.set([]);
   }
 
   // ─── Private ─────────────────────────────────────────────────────────

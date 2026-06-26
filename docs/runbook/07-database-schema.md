@@ -964,5 +964,13 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260625180000_classify_change_safe_partial_dates.sql`
 - `20260625190000_restore_phase_materialization_with_acronym.sql`
 - `20260625200000_ctgov_withdrawn_trials.sql`
-- `20260626120000_ctgov_trial_dates_markers.sql`
+- `20260626120000_seed_demo_redefine2_trial_events_and_reference.sql`
+- `20260626120050_ctgov_restore_path.sql`
+- `20260626120100_dashboard_data_ctgov_withdrawn.sql`
+- `20260626140000_ctgov_secret_health_rpc.sql`
+- `20260626150000_ai_model_pricing_updated_by_set_null.sql`
+- `20260626160000_drop_ctgov_secret_health_rpc.sql`
+- `20260626170000_landscape_primary_intelligence_presence.sql`
+- `20260626180000_positioning_intelligence_includes_trials.sql`
+- `20260626190000_ctgov_trial_dates_markers.sql`
 <!-- /AUTO-GEN:DRIFT -->

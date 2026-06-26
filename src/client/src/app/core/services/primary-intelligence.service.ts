@@ -9,6 +9,8 @@ import {
   IntelligenceFeedResult,
   IntelligenceFeedRow,
   IntelligenceHistoryPayload,
+  IntelligenceLinkEntityType,
+  PiReference,
   UpsertIntelligenceInput,
 } from '../models/primary-intelligence.model';
 
@@ -117,7 +119,7 @@ export class PrimaryIntelligenceService {
     authorId?: string | null;
     since?: string | null;
     query?: string | null;
-    referencingEntityType?: IntelligenceEntityType | null;
+    referencingEntityType?: IntelligenceEntityType | IntelligenceLinkEntityType | null;
     referencingEntityId?: string | null;
     limit?: number;
     offset?: number;
@@ -162,6 +164,29 @@ export class PrimaryIntelligenceService {
         },
       }
     );
+  }
+
+  /**
+   * Incoming PI references for a marker: the published trial/asset/company
+   * intelligence entries that cite this catalyst via primary_intelligence_links.
+   * Markers do not own PI, so this is always a reference list, never an owned
+   * block. Returns a normalized PiReference[] for the shared PiDetailSection.
+   */
+  async getMarkerReferences(spaceId: string, markerId: string): Promise<PiReference[]> {
+    const result = await this.list({
+      spaceId,
+      entityTypes: ['trial', 'company', 'product'],
+      referencingEntityType: 'marker',
+      referencingEntityId: markerId,
+      limit: 50,
+    });
+    return result.rows.map((r) => ({
+      id: r.id,
+      entity_type: r.entity_type,
+      entity_id: r.entity_id,
+      entity_name: null,
+      headline: r.headline,
+    }));
   }
 
   async loadHistory(
