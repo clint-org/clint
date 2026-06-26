@@ -297,7 +297,7 @@ interface CtgovProvenanceBlock {
       }
 
       @if (references().length > 0) {
-        <app-detail-panel-section label="Referenced in intelligence">
+        <app-detail-panel-section label="Referenced in intelligence" [piMark]="true">
           <app-pi-detail-section
             [references]="references()"
             [countLabel]="referenceCountLabel()"

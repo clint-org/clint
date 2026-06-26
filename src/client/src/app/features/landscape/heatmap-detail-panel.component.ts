@@ -111,7 +111,7 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
         }
 
         @if (piReferences().length > 0) {
-          <app-detail-panel-section label="Primary intelligence">
+          <app-detail-panel-section label="Primary intelligence" [piMark]="true">
             <app-pi-detail-section
               [references]="piReferences()"
               [countLabel]="piCountLabel()"

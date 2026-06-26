@@ -19,6 +19,8 @@ const chartTs = readFileSync(join(__dirname, 'bullseye-chart.component.ts'), 'ut
 const signalTs = readFileSync(join(__dirname, 'bullseye-signal-mark.component.ts'), 'utf8');
 const detailHtml = readFileSync(join(__dirname, 'bullseye-detail-panel.component.html'), 'utf8');
 const detailTs = readFileSync(join(__dirname, 'bullseye-detail-panel.component.ts'), 'utf8');
+const controlsTs = readFileSync(join(__dirname, 'bullseye-controls-panel.component.ts'), 'utf8');
+const tooltipTs = readFileSync(join(__dirname, 'bullseye-tooltip.component.ts'), 'utf8');
 
 describe('bullseye node PI badge', () => {
   it('renders the brand bookmark badge for nodes with intelligence', () => {
@@ -56,5 +58,25 @@ describe('bullseye detail panel intelligence section', () => {
     expect(detailHtml).toContain('[references]="intelligenceReferences()"');
     expect(detailTs).toContain('intelligenceReferences = computed<PiReference[]>');
     expect(detailTs).toContain('PiDetailSectionComponent');
+  });
+
+  it('marks the intelligence section header with the bookmark', () => {
+    expect(detailHtml).toContain('[piMark]="true"');
+  });
+});
+
+describe('bullseye legend + tooltip use the bookmark, not a blue circle', () => {
+  it('legend shows the bookmark glyph for "Intelligence attached"', () => {
+    expect(controlsTs).toContain('<app-pi-mark');
+    expect(controlsTs).toContain('Intelligence attached');
+    // The old blue hollow-circle swatch is gone.
+    expect(controlsTs).not.toContain('legend-intel');
+    expect(controlsTs).not.toContain('#2563eb');
+  });
+
+  it('tooltip intelligence chip uses the bookmark + brand tint', () => {
+    expect(tooltipTs).toContain('<app-pi-mark');
+    expect(tooltipTs).not.toContain('#2563eb');
+    expect(tooltipTs).not.toContain('border-blue-200');
   });
 });
