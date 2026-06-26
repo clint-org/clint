@@ -7,7 +7,10 @@
         {{ heading() }}
       </p>
     }
-    <!-- Filter chip row -->
+    <!-- Filter chip row. Gated on total materials, not the filtered count, so
+         it stays visible when a type filter yields nothing (letting the user
+         switch back to All) but disappears entirely when the section is empty. -->
+    @if (materials().length > 0) {
     <div
       class="flex flex-wrap items-center gap-1 border-b border-slate-100 px-4 py-2"
       role="group"
@@ -34,6 +37,7 @@
         {{ visibleMaterials().length === 1 ? 'material' : 'materials' }}
       </span>
     </div>
+    }
 
     <!-- Body: list -->
     <div class="materials-section__list" aria-live="polite">
