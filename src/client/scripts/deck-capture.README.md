@@ -53,11 +53,38 @@ text it pastes, which anchor it scrolls to) or its `settle()` delay. Selectors
 can drift when components are refactored (e.g. the import page moved to a tabbed
 `app-nct-input`); update them in place.
 
+## Shots that depend on seed data
+
+Three shots rely on data that the demo seed must provide, so they only look right
+against a space seeded by the current `seed_demo_data()` (migration
+`20260626120000` and later):
+
+- **events** selects a threaded event (the seeded "Pfizer oral GLP-1 retreat"
+  thread) so the detail pane renders its Thread section.
+- **trial-detail** pins **REDEFINE-2** (`NCT05394519`), which the seed gives
+  trial-scoped events, a referenced-in published read, activity, and markers, so
+  every section is populated.
+- **intelligence** pins **ATTRibute-CM** (`NCT03860935`): published intelligence
+  + CT.gov-synced.
+
+The seed does **not** set CT.gov fields (the live CT.gov sync job does). After a
+fresh reseed, run with `SYNC=1` so the script clicks the trial-detail "Sync"
+button on those two trials before capturing, or wait for the nightly CT.gov job.
+
+The **source-import** shot pastes a real article into the "From text" tab, runs
+extraction (logs an ai_call but commits no entities), and composes the processing
+stepper and the resolved review screen side by side into `source-import.png`
+(intermediate `source-import-processing.png` / `source-import-results.png` are
+also written).
+
 ## Other options
 
 - `HIDE=0` keep the env banner + AI-incident banner visible (hidden by default)
 - `HEADLESS=1` run headless (only works once a login profile exists)
-- `TRIAL_ID=<uuid>` skip auto-resolving the trial used for the intelligence/markers shots
+- `SYNC=1` click CT.gov "Sync" on the intelligence/trial-detail trials first
+  (needed right after a fresh space reseed; see above)
+- `INTEL_TRIAL_ID=<uuid>` / `DETAIL_TRIAL_ID=<uuid>` pin the intelligence /
+  trial-detail trials instead of resolving them by NCT
 
 ## Verify and commit
 
