@@ -40,9 +40,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(here, '../public/internal/img');
 const PROFILE = resolve(here, '../.shots-profile-run');
 
-// Default: prod Pfizer/Stout demo engagement "Obesity Competitive Landscape".
+// Default: prod Pfizer/Stout demo engagement "Obesity Competitive Landscape"
+// (the seed-demo refreshed space provisioned 2026-06-26 for the deck refresh).
 const DEFAULT_DECK_URL =
-  'https://pfizer.clintapp.com/t/a87a88ae-1b76-4c6b-85e0-1b53c926d0f2/s/66fb48de-b2fc-476b-ae37-31216b1c872c';
+  'https://pfizer.clintapp.com/t/a87a88ae-1b76-4c6b-85e0-1b53c926d0f2/s/780b5021-a432-42ea-9c68-d63d9cac4e5e';
 const DECK_URL = process.env['DECK_URL'] || DEFAULT_DECK_URL;
 const m = DECK_URL.match(/^(https?:\/\/[^/]+)\/t\/([0-9a-f-]{36})\/s\/([0-9a-f-]{36})/);
 if (!m) {
@@ -182,19 +183,30 @@ if (want('timeline')) {
   try {
     await page.goto(`${BASE}/timeline`, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await settle(page, 2600);
-    // Align the 2023 year column just past the frozen label columns.
-    await page.evaluate(() => {
-      const sc = document.querySelector('.overflow-x-auto');
-      if (!sc) return;
-      const cells = [...sc.querySelectorAll('.grid-header-cell')];
-      const year2023 = cells.find((c) => /\b2023\b/.test(c.textContent || ''));
-      if (!year2023) return;
-      const FROZEN_INSET = 560; // px to land 2023 just right of the label columns
-      const scLeft = sc.getBoundingClientRect().left;
-      const cLeft = year2023.getBoundingClientRect().left;
-      sc.scrollLeft += cLeft - scLeft - FROZEN_INSET;
-    });
-    await page.waitForTimeout(900);
+    // Find the 2023 year header cell document-wide, then scroll ITS scrollable
+    // ancestor so 2023 lands just past the frozen label columns. (Deriving the
+    // container from the cell is more robust than guessing which .overflow-x-auto
+    // wrapper holds the header.)
+    const scrollOnce = (INSET) => {
+      const cells = [...document.querySelectorAll('.grid-header-cell')];
+      const y = cells.find((c) => /\b2023\b/.test(c.textContent || ''));
+      if (!y) return { err: 'no 2023 cell', total: cells.length };
+      let sc = y.parentElement;
+      while (
+        sc &&
+        !(sc.scrollWidth > sc.clientWidth + 20 && /(auto|scroll)/.test(getComputedStyle(sc).overflowX))
+      ) {
+        sc = sc.parentElement;
+      }
+      if (!sc) return { err: 'no scrollable ancestor' };
+      sc.scrollLeft += y.getBoundingClientRect().left - sc.getBoundingClientRect().left - INSET;
+      return { ok: true, scrollLeft: Math.round(sc.scrollLeft) };
+    };
+    log('timeline scroll:', JSON.stringify(await page.evaluate(scrollOnce, 560)));
+    await page.waitForTimeout(500);
+    // Re-assert in case the grid's initial-scroll effect reset it.
+    await page.evaluate(scrollOnce, 560).catch(() => {});
+    await page.waitForTimeout(700);
     // Hover a representative marker to pop its tooltip card.
     const markers = page.locator('app-marker div[role="button"]');
     const n = await markers.count();
@@ -253,9 +265,14 @@ if (want('catalysts')) {
 //    chains the danuglipron discontinuation -> R&D pivot events).
 if (want('events')) {
   try {
-    await page.goto(`${BASE}/events`, { waitUntil: 'domcontentloaded' });
-    await settle(page, 2000);
-    const threadRow = page.locator('tbody tr', { hasText: /danuglipron/i }).first();
+    // Filter to source_type=event so the manual events (incl. the seeded
+    // thread) sit on the first page instead of being buried under 2026 markers.
+    await page.goto(`${BASE}/events?source=event`, { waitUntil: 'domcontentloaded' });
+    await settle(page, 2400);
+    // A threaded row carries a "Part of a thread" badge; click its row.
+    const threadRow = page
+      .locator('tbody tr', { has: page.locator('[aria-label="Part of a thread"]') })
+      .first();
     if (await threadRow.count()) {
       await threadRow.click().catch(() => {});
     } else {
@@ -263,7 +280,11 @@ if (want('events')) {
       await page.locator('tbody tr').first().click().catch(() => {});
     }
     // Wait for the detail pane's Thread section to render.
-    await page.getByText(/^Thread\b/i).first().waitFor({ timeout: 4000 }).catch(() => {});
+    await page
+      .getByText(/^Thread\b/i)
+      .first()
+      .waitFor({ timeout: 5000 })
+      .catch(() => log('  (Thread section not detected in detail pane)'));
     await page.waitForTimeout(1000);
     await shot(page, 'events.png');
   } catch (e) {
