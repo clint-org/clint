@@ -733,12 +733,34 @@
         padding: 32px;
         animation: lightbox-fade 120ms ease-out;
       }
-      .lightbox-backdrop img {
+      .lightbox-backdrop figure {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
         max-width: 100%;
         max-height: 100%;
+        margin: 0;
+      }
+      .lightbox-backdrop img {
+        min-height: 0;
+        flex: 0 1 auto;
+        max-width: 100%;
         object-fit: contain;
         border-radius: 10px;
         box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6);
+      }
+      /* The alt text, surfaced for sighted viewers in the expanded state. It is
+         the detailed description of the screenshot, not the marketing caption. */
+      .lightbox-backdrop figcaption {
+        flex: none;
+        max-width: 720px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--slate-300);
+        text-align: center;
+        cursor: default;
       }
       @keyframes lightbox-fade {
         from {
@@ -1865,9 +1887,9 @@
                 <div class="rm-stage">
                   <div class="rm-marker"><span class="rm-node"></span></div>
                   <span class="pill">On the roadmap</span>
-                  <h3>Use Clint from inside your AI assistant</h3>
+                  <h3>Use Clint from inside your AI agents</h3>
                   <p>
-                    Ask your AI assistant about the competitive picture and get an answer drawn from
+                    Ask your AI agents about the competitive picture and get an answer drawn from
                     Clint, with the sources attached. Analysts who already work this way get Clint's
                     data without leaving the tools they use.
                   </p>
@@ -1950,14 +1972,17 @@
                 </div>
               </div>
               <div class="shift-row climax">
-                <div class="shift-dim">Across engagements</div>
-                <div class="shift-before">Each one starts from zero.</div>
+                <div class="shift-dim">Over the engagement</div>
+                <div class="shift-before">
+                  Each deliverable starts from zero. Last quarter's deck gets reopened and rebuilt by
+                  hand.
+                </div>
                 <div class="shift-after">
-                  <strong>Analysis, its full history, and filed deliverables accumulate.</strong>
-                  The watchlist and annotations from Q1 carry into Q2; a year in, the account holds
-                  dozens of annotated catalysts, four quarters of analysis with its full edit
-                  history, and the client's own watchlist. Walking away means leaving all of it
-                  behind.
+                  <strong>Each deliverable builds on the one before.</strong> The watchlist,
+                  annotations, and filed deliverables from Q1 carry into Q2; a year in, the account
+                  holds dozens of annotated catalysts and four quarters of work with its full edit
+                  history, none of it rebuilt. The longer the engagement runs, the harder it is to
+                  walk away from.
                 </div>
               </div>
             </div>
@@ -2061,7 +2086,7 @@
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Bullseye</div>
-                  <h4>Competitors by phase, with a one-line competitive summary</h4>
+                  <h4>Every competitor, placed by development phase</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -2072,12 +2097,12 @@
                 >
                   <img
                     src="img/heatmap.png"
-                    alt="Heatmap by MOA: mechanisms as rows, development phases as columns, cells heat-colored by asset count, with a left controls panel for group-by, count toggle, competitive summary, and shade legend"
+                    alt="Heatmap of the field: mechanisms of action as rows, development phases as columns, each cell shaded darker the more assets fall in it, with side controls to change the grouping, toggle counts, and a shade legend"
                   />
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Heatmap</div>
-                  <h4>Asset counts by phase</h4>
+                  <h4>Where the field clusters, by mechanism and phase</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -2136,12 +2161,12 @@
                 >
                   <img
                     src="img/intelligence.png"
-                    alt="Stout's analysis on a trial detail page: a rich text editor with simple formatting controls, the note's author and the entities it is linked to, and a history panel below showing how the analysis changed from one version to the next"
+                    alt="Stout's primary intelligence on a trial detail page: a rich text editor with simple formatting controls, the note's author and the entities it is linked to, and a history panel below showing how it changed from one version to the next"
                   />
                 </button>
                 <figcaption class="caption">
-                  <div class="caption-label">Stout's analysis</div>
-                  <h4>Written in place, with its full history</h4>
+                  <div class="caption-label">Primary intelligence</div>
+                  <h4>Written by Stout in place, with its full history</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -2157,7 +2182,7 @@
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Files</div>
-                  <h4>Deliverables, filed against what they cover</h4>
+                  <h4>Deliverables, easy to find by the entities they cover</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -2173,7 +2198,7 @@
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Command palette</div>
-                  <h4>Cmd+K finder across the space</h4>
+                  <h4>Cmd+K to jump to any company, trial, or catalyst in a keystroke</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -2189,7 +2214,7 @@
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Trial detail</div>
-                  <h4>Intelligence, markers, materials on every trial</h4>
+                  <h4>Intelligence, markers, and materials, on a trial kept in sync with ClinicalTrials.gov</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -2275,10 +2300,12 @@
             <div class="grid-3">
               <div class="card">
                 <div class="card-label">Your data</div>
-                <h3>Separated and access-controlled</h3>
+                <h3>Walled off by client and by space</h3>
                 <p>
-                  Each client's information is kept separate, and access is tightly controlled. One
-                  space can never see another's.
+                  Every client's data sits behind its own wall; no client can ever reach another's.
+                  Within a client, each engagement is a separate space with the same wall around it:
+                  access is granted one space at a time by explicit membership, so one engagement
+                  never sees another's data, watchlist, or deliverables, even inside the same client.
                 </p>
               </div>
               <div class="card">
@@ -2461,10 +2488,18 @@
         if (!img) return;
         const back = document.createElement('div');
         back.className = 'lightbox-backdrop';
+        const fig = document.createElement('figure');
         const big = document.createElement('img');
         big.src = img.src;
         big.alt = img.alt;
-        back.appendChild(big);
+        fig.appendChild(big);
+        // Surface the alt description as a visible caption in the expanded view.
+        if (img.alt) {
+          const cap = document.createElement('figcaption');
+          cap.textContent = img.alt;
+          fig.appendChild(cap);
+        }
+        back.appendChild(fig);
         back.addEventListener('click', () => back.remove());
         document.body.appendChild(back);
       }
