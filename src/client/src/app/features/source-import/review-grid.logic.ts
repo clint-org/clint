@@ -157,13 +157,39 @@ export function deriveCtgovFlag(candidateCount: number): ReviewFlag | null {
 }
 
 export function deriveFuzzyFlag(alternateCount: number): ReviewFlag | null {
-  return alternateCount > 0
-    ? { id: 'fuzzy', tier: 'attention', label: 'Uncertain match' }
-    : null;
+  return alternateCount > 0 ? { id: 'fuzzy', tier: 'attention', label: 'Uncertain match' } : null;
+}
+
+// Display fields for a marker or event leaf row in the review grid. Markers and
+// events have no place in the trial-shaped columns (phase, MOA/ROA, indication),
+// so their identity is carried in the entity cell: a category chip and a date.
+export interface LeafDisplay {
+  category: string | null;
+  date: string | null;
+}
+
+function cleanText(v: unknown): string | null {
+  const s = typeof v === 'string' ? v.trim() : '';
+  return s.length > 0 ? s : null;
+}
+
+// A marker's category chip is its marker_type name (resolved to a color by the
+// commit RPC); its date is event_date. Both are optional in a proposal.
+export function markerLeafDisplay(marker: Entity): LeafDisplay {
+  return { category: cleanText(marker['marker_type']), date: cleanText(marker['event_date']) };
+}
+
+// An event's category chip is its category name; its date is event_date.
+export function eventLeafDisplay(event: Entity): LeafDisplay {
+  return { category: cleanText(event['category']), date: cleanText(event['event_date']) };
 }
 
 export interface SelectionCounts {
-  companies: number; assets: number; trials: number; markers: number; events: number;
+  companies: number;
+  assets: number;
+  trials: number;
+  markers: number;
+  events: number;
 }
 
 const LABELS: Record<keyof SelectionCounts, [string, string]> = {
