@@ -182,15 +182,14 @@ await go('', 'engagement-landing.png');
 if (want('timeline')) {
   try {
     await page.goto(`${BASE}/timeline`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    // Compact trial rows: turn the per-space "intelligence headlines" pref OFF
-    // so PI rows collapse to a single line. The PI bookmark flag still renders
-    // on every trial that owns intelligence; dropping the headline line packs
-    // more rows -- and thus more markers + flags -- into the captured frame.
-    // Set before the grid hydrates its pref, then reload so it takes effect.
+    // Keep the per-space "intelligence headlines" pref ON so PI trial rows show
+    // the inline published headline next to the PI bookmark flag (the deck wants
+    // the intelligence story visible, not just the compact flag). Set before the
+    // grid hydrates its pref, then reload so it takes effect.
     await page
       .evaluate((sid) => {
         try {
-          localStorage.setItem(`clint:pi-headlines:${sid}`, 'false');
+          localStorage.setItem(`clint:pi-headlines:${sid}`, 'true');
         } catch {}
       }, SID)
       .catch(() => {});
@@ -250,8 +249,10 @@ if (want('heatmap')) {
       await piRow.click().catch(() => {});
       await page.waitForTimeout(1200);
     }
-    await page.mouse.move(20, 8);
-    await page.waitForTimeout(500);
+    // Park the cursor away from the left rail so the nav sidebar stays collapsed
+    // (it hover-expands to 220px and crowds the matrix); top bar, no tooltip.
+    await page.mouse.move(900, 8);
+    await page.waitForTimeout(700);
     await shot(page, 'heatmap.png');
   } catch (e) {
     log('FAILED heatmap.png -', e.message);
