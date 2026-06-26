@@ -330,7 +330,7 @@
               }
 
               <!-- Phase bar (SVG overlay) -->
-              @if (row.trial.phase_type && row.trial.phase_start_date) {
+              @if (row.trial.phase_type && row.phaseSpan.start) {
                 <svg
                   class="absolute top-0 left-0"
                   [attr.width]="totalWidth()"
@@ -340,8 +340,10 @@
                   <g
                     app-phase-bar
                     [phaseType]="row.trial.phase_type"
-                    [startDate]="row.trial.phase_start_date"
-                    [endDate]="row.trial.phase_end_date"
+                    [startDate]="row.phaseSpan.start"
+                    [endDate]="row.phaseSpan.end"
+                    [startPrecision]="row.phaseSpan.startPrecision"
+                    [endPrecision]="row.phaseSpan.endPrecision"
                     [startYear]="startYear()"
                     [endYear]="endYear()"
                     [totalWidth]="totalWidth()"
