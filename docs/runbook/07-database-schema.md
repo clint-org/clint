@@ -968,4 +968,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260626120050_ctgov_restore_path.sql`
 - `20260626120100_dashboard_data_ctgov_withdrawn.sql`
 - `20260626140000_ctgov_secret_health_rpc.sql`
+- `20260626150000_landscape_primary_intelligence_presence.sql`
 <!-- /AUTO-GEN:DRIFT -->
