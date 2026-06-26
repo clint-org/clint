@@ -182,6 +182,19 @@ await go('', 'engagement-landing.png');
 if (want('timeline')) {
   try {
     await page.goto(`${BASE}/timeline`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    // Compact trial rows: turn the per-space "intelligence headlines" pref OFF
+    // so PI rows collapse to a single line. The PI bookmark flag still renders
+    // on every trial that owns intelligence; dropping the headline line packs
+    // more rows -- and thus more markers + flags -- into the captured frame.
+    // Set before the grid hydrates its pref, then reload so it takes effect.
+    await page
+      .evaluate((sid) => {
+        try {
+          localStorage.setItem(`clint:pi-headlines:${sid}`, 'false');
+        } catch {}
+      }, SID)
+      .catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await settle(page, 2600);
     // Find the 2023 year header cell document-wide, then scroll ITS scrollable
     // ancestor so 2023 lands just past the frozen label columns. (Deriving the
@@ -223,22 +236,47 @@ if (want('timeline')) {
   }
 }
 
-await go('/heatmap/by-moa', 'heatmap.png', 2400);
+// Heatmap -- group by MOA, then open a group that owns published primary
+// intelligence so the detail panel renders the "N of M assets have
+// intelligence" PI section next to the in-cell PI bookmark flags.
+if (want('heatmap')) {
+  try {
+    await page.goto(`${BASE}/heatmap/by-moa`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await settle(page, 2400);
+    const piRow = page
+      .locator('table.matrix tbody tr', { hasText: 'GLP-1 receptor agonist' })
+      .first();
+    if (await piRow.count()) {
+      await piRow.click().catch(() => {});
+      await page.waitForTimeout(1200);
+    }
+    await page.mouse.move(20, 8);
+    await page.waitForTimeout(500);
+    await shot(page, 'heatmap.png');
+  } catch (e) {
+    log('FAILED heatmap.png -', e.message);
+  }
+}
 await go('/events?source=detected', 'activity.png');
 
-// 4) Bullseye -- select a live dot to open the asset panel.
+// 4) Bullseye -- select an asset that owns published primary intelligence
+// (CagriSema) so the asset panel shows its Intelligence section while the chart
+// keeps its PI bookmark flags + activity rings. Fall back to a mid live dot.
 if (want('bullseye')) {
   try {
     await page.goto(`${BASE}/bullseye`, { waitUntil: 'domcontentloaded' });
     await settle(page, 2600);
-    const dots = page.locator('circle.bullseye-dot:not(.bullseye-dot-faded)');
-    const n = await dots.count();
-    if (n) {
-      await dots.nth(Math.min(n - 1, Math.floor(n / 2))).click({ force: true });
-      await page.waitForTimeout(1200);
-      await page.mouse.move(900, 8);
-      await page.waitForTimeout(600);
+    const piDot = page.locator('circle.bullseye-dot[aria-label^="CagriSema"]').first();
+    if (await piDot.count()) {
+      await piDot.click({ force: true });
+    } else {
+      const dots = page.locator('circle.bullseye-dot:not(.bullseye-dot-faded)');
+      const n = await dots.count();
+      if (n) await dots.nth(Math.min(n - 1, Math.floor(n / 2))).click({ force: true });
     }
+    await page.waitForTimeout(1200);
+    await page.mouse.move(900, 8);
+    await page.waitForTimeout(600);
     await shot(page, 'bullseye.png');
   } catch (e) {
     log('FAILED bullseye.png -', e.message);
