@@ -11,7 +11,14 @@ export function formatEventDateSuffix(item: FeedItem): string {
   if (item.source_type === 'detected') return '';
   if (!item.event_date || !item.feed_ts) return '';
   const eventDay = item.event_date.slice(0, 10);
-  const loggedDay = item.feed_ts.slice(0, 10);
+  // feed_ts is a tz-aware timestamp; the LOGGED column renders it in the local
+  // timezone (Angular `date` pipe). Compare against that same local calendar
+  // day, not a raw UTC slice -- otherwise a late-evening log whose UTC day has
+  // already rolled over wrongly matches a next-day event_date and the suffix is
+  // suppressed.
+  const logged = new Date(item.feed_ts);
+  if (Number.isNaN(logged.getTime())) return '';
+  const loggedDay = `${logged.getFullYear()}-${String(logged.getMonth() + 1).padStart(2, '0')}-${String(logged.getDate()).padStart(2, '0')}`;
   if (eventDay === loggedDay) return '';
   const parsed = new Date(`${item.event_date}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return '';

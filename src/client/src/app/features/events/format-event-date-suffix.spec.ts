@@ -1,3 +1,9 @@
+// Pin the timezone so the local-day comparison is deterministic regardless of
+// the machine/CI runner. ET is west of UTC, so a late-evening local timestamp
+// lands on the next UTC calendar day -- the exact boundary this suffix must
+// handle (see the "logged late evening" test below).
+process.env.TZ = 'America/New_York';
+
 import { describe, expect, it } from 'vitest';
 import { formatEventDateSuffix } from './format-event-date-suffix';
 import { FeedItem } from '../../core/models/event.model';
@@ -92,5 +98,18 @@ describe('formatEventDateSuffix', () => {
       feed_ts: '2026-05-28T09:00:00Z',
     });
     expect(formatEventDateSuffix(item)).toBe(' · Mar 10, 2026');
+  });
+
+  it('compares against the LOCAL logged day, not the raw UTC day', () => {
+    // Logged at 9:54 PM ET on Jun 25 -> 01:54 UTC on Jun 26. The LOGGED column
+    // shows "Jun 25" (date pipe, local TZ), so the event_date of Jun 26 is a
+    // genuinely different day and the suffix must render. A naive UTC slice of
+    // feed_ts would read "2026-06-26" and wrongly suppress it.
+    const item = makeItem({
+      source_type: 'marker',
+      event_date: '2026-06-26',
+      feed_ts: '2026-06-26T01:54:00Z',
+    });
+    expect(formatEventDateSuffix(item)).toBe(' · Jun 26, 2026');
   });
 });

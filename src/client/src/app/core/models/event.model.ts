@@ -108,6 +108,9 @@ export interface FeedItem {
 /** Full event detail returned by get_event_detail RPC. */
 export interface EventDetail {
   id: string;
+  // Import provenance: the source_documents row this event landed from when
+  // created by an AI import. Null for manually created events.
+  source_doc_id: string | null;
   space_id: string;
   title: string;
   event_date: string;

@@ -117,6 +117,12 @@
             <span class="text-[13px] text-slate-500">{{ t.name }}</span>
           }
         </div>
+        <div class="mt-1.5">
+          <app-source-provenance-line
+            [sourceDocId]="t.source_doc_id"
+            [canView]="spaceRole.canEdit()"
+          />
+        </div>
       </header>
 
       <!-- Section nav strip (anchor links). Per primary-intelligence spec. -->
