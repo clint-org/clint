@@ -97,6 +97,12 @@
       </app-detail-panel-section>
     }
 
+    @if (d.source_doc_id) {
+      <div class="px-1 pt-1">
+        <app-source-provenance-line [sourceDocId]="d.source_doc_id" [canView]="canEdit()" />
+      </div>
+    }
+
     @if (d.tags.length > 0) {
       <app-detail-panel-section label="Tags">
         <div class="flex flex-wrap gap-1.5">
@@ -169,6 +175,19 @@
       </app-detail-panel-section>
     }
 
+    @if (spaceId()) {
+      <section class="mt-3 border-t border-slate-100 pt-3">
+        <app-materials-section
+          heading="Materials"
+          [hideWhenEmpty]="true"
+          entityType="event"
+          [entityId]="d.id"
+          [spaceId]="spaceId()"
+          [tenantId]="tenantId()"
+        />
+      </section>
+    }
+
     <p class="mt-4 text-[10px] text-slate-400">Created {{ d.created_at | date: 'medium' }}</p>
 
     <!-- Detected event detail branch -->
@@ -203,9 +222,6 @@
     <!-- Signal row: date + priority -->
     <div class="mt-2 flex items-center gap-2 text-[12px] text-slate-500">
       <span class="font-mono tabular-nums">{{ item.event_date | date: 'MMM d, y' }}</span>
-      @if (item.priority === 'high') {
-        <app-detail-panel-pill tone="red">High signal</app-detail-panel-pill>
-      }
     </div>
 
     <!-- Diff hero: WAS -> NOW for a detected date shift -->
@@ -345,8 +361,8 @@
       </div>
     </app-detail-panel-section>
 
-    <!-- Analyst note block -->
-    <div class="mt-4 rounded border border-brand-200 bg-brand-50/40 p-3">
+    <!-- Analyst note block hidden until we leverage notes elsewhere (table + RPCs + AnnotationService retained) -->
+    <!-- <div class="mt-4 rounded border border-brand-200 bg-brand-50/40 p-3">
       <div class="mb-1.5 flex items-center gap-1.5">
         <i class="fa-solid fa-message text-[9px] text-brand-600" aria-hidden="true"></i>
         <p class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-brand-700">
@@ -416,7 +432,7 @@
       } @else {
         <p class="text-[12px] italic text-slate-400">No analyst note yet.</p>
       }
-    </div>
+    </div> -->
 
     <!-- Marker detail branch -->
   } @else if (catalystDetail()) {

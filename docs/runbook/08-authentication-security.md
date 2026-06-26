@@ -276,6 +276,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `agency_members` | yes | 4 |
 | `ai_calls` | yes | 2 |
 | `ai_config` | yes | 3 |
+| `ai_model_pricing` | yes | 4 |
 | `asset_indications` | yes | 4 |
 | `asset_mechanisms_of_action` | yes | 3 |
 | `asset_routes_of_administration` | yes | 3 |

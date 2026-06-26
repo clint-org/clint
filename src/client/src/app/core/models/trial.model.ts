@@ -16,6 +16,10 @@ export interface Trial {
   updated_at: string;
   updated_by: string | null;
 
+  // Import provenance: the source_documents row this entity landed from when
+  // created by an AI import. Null for manually created entities.
+  source_doc_id: string | null;
+
   // Phase override (analyst-owned)
   phase_type: string | null;
   phase_start_date: string | null;
@@ -50,13 +54,17 @@ export interface Trial {
   most_recent_change_event_id?: string | null;
 
   /**
-   * Dashboard-only augmentation: the indication grouping this trial was nested
-   * under in get_dashboard_data. Attached by DashboardService (absent
-   * everywhere else). `indication_id` is the indication entity id that the
-   * Indication filter (filters.indicationIds) matches against; `id` mirrors it
-   * (the RPC does not surface the asset_indication join-row id).
+   * Dashboard-only augmentation: every indication grouping this trial was
+   * nested under in get_dashboard_data. A trial can span multiple of its
+   * asset's indications (e.g. a trial whose conditions map to both Obesity and
+   * Overweight); the RPC nests it once per indication, and DashboardService
+   * dedupes those into a single row carrying all of them here. Attached by
+   * DashboardService (absent everywhere else). `indication_id` is the
+   * indication entity id that the Indication filter (filters.indicationIds)
+   * matches against; `id` mirrors it (the RPC does not surface the
+   * asset_indication join-row id).
    */
-  _indication?: { id: string; indication_id: string; indication_name: string } | null;
+  _indications?: { id: string; indication_id: string; indication_name: string }[];
 }
 
 export interface TrialNote {

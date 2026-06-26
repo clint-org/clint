@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
@@ -29,6 +29,7 @@ import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawe
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
+import { SourceProvenanceLineComponent } from '../../../shared/components/source-provenance/source-provenance-line.component';
 import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 
 import { CompanyService } from '../../../core/services/company.service';
@@ -36,7 +37,11 @@ import { PrimaryIntelligenceService } from '../../../core/services/primary-intel
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { Company } from '../../../core/models/company.model';
-import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
+import {
+  IntelligenceDetailBundle,
+  ReferencedInRow,
+} from '../../../core/models/primary-intelligence.model';
+import { buildEntityRouterLink } from '../../../shared/utils/intelligence-router-link';
 import { CompanyFormComponent } from './company-form.component';
 import { buildFilterQueryParams } from '../../../shared/grids';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
@@ -45,6 +50,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
 @Component({
   selector: 'app-company-detail',
   imports: [
+    RouterLink,
     BrandLogoComponent,
     ConfirmDialogModule,
     Dialog,
@@ -62,6 +68,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
     LoaderComponent,
+    SourceProvenanceLineComponent,
   ],
   providers: [ConfirmationService, MessageService, LandscapeStateService],
   templateUrl: './company-detail.component.html',
@@ -107,6 +114,18 @@ export class CompanyDetailComponent implements OnDestroy {
 
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
+
+  /** Router link to the anchor entity whose intelligence references this company. */
+  protected referencedRouterLink(ref: ReferencedInRow): unknown[] {
+    return (
+      buildEntityRouterLink(
+        this.tenantIdSig(),
+        this.spaceIdSig(),
+        ref.entity_type,
+        ref.entity_id
+      ) ?? []
+    );
+  }
 
   // Populate the shared topbar overflow kebab (Edit details + Delete) so the
   // company can be managed from its own detail page, matching the grid row.
@@ -247,7 +266,7 @@ export class CompanyDetailComponent implements OnDestroy {
       await Promise.all([this.loadIntelligence(), this.loadCompany()]);
       this.messageService.add({
         severity: 'success',
-        summary: 'Analysis withdrawn.',
+        summary: 'Intelligence withdrawn.',
         life: 3000,
       });
     } catch (err) {
@@ -276,7 +295,7 @@ export class CompanyDetailComponent implements OnDestroy {
       await Promise.all([this.loadIntelligence(), this.loadCompany()]);
       this.messageService.add({
         severity: 'success',
-        summary: 'Analysis purged.',
+        summary: 'Intelligence purged.',
         life: 3000,
       });
     } catch (err) {
@@ -309,7 +328,11 @@ export class CompanyDetailComponent implements OnDestroy {
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
     await this.loadIntelligence();
-    this.messageService.add({ severity: 'success', summary: 'Analysis published.', life: 3000 });
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Intelligence published.',
+      life: 3000,
+    });
   }
 
   protected onIntelligenceDelete(): void {
@@ -317,7 +340,7 @@ export class CompanyDetailComponent implements OnDestroy {
     const id = i?.published?.record.id ?? i?.draft?.record.id;
     if (!id) return;
     this.confirmation.confirm({
-      header: 'Delete primary intelligence?',
+      header: 'Delete this intelligence?',
       message: 'This cannot be undone.',
       acceptLabel: 'Delete',
       acceptButtonStyleClass: 'p-button-danger',
@@ -328,7 +351,7 @@ export class CompanyDetailComponent implements OnDestroy {
           this.messageService.add({
             severity: 'success',
             summary: 'Deleted',
-            detail: 'Primary intelligence removed.',
+            detail: 'Intelligence removed.',
           });
           await this.loadIntelligence();
         } catch (err) {

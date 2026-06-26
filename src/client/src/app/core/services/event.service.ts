@@ -192,6 +192,24 @@ export class EventService {
     this.cache.invalidateTags([`event:${eventId}:detail`]);
   }
 
+  /**
+   * Next 1-based ordering position for a thread: the highest existing
+   * `thread_order` plus one (1 for an empty thread). Used when an event joins a
+   * thread so it sorts last. `thread_order` is a small `int` ordinal, not a
+   * timestamp -- never assign `Date.now()`, which overflows the column.
+   */
+  async nextThreadOrder(threadId: string): Promise<number> {
+    const { data } = await this.supabase.client
+      .from('events')
+      .select('thread_order')
+      .eq('thread_id', threadId)
+      .order('thread_order', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .throwOnError();
+    const rows = (data as { thread_order: number | null }[] | null) ?? [];
+    return (rows[0]?.thread_order ?? 0) + 1;
+  }
+
   async delete(id: string): Promise<void> {
     const { data: row } = await this.supabase.client
       .from('events')

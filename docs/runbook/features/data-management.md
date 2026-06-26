@@ -74,7 +74,7 @@ A full CRUD interface for managing all data within a space:
   role: editor
   status: active
 - id: manage-markers
-  summary: Edit event markers (event_date, end_date, tooltip_text, is_projected) attached to trials. Edited inline on the trial detail page; "View detail" links on catalyst rows deep-link via ?marker=<id> which opens the inline editor. Markers no longer have their own detail page. Trial-assignment changes go through update_marker_assignments, an atomic RPC that keeps the AFTER DELETE orphan-cleanup trigger from dropping a single-assignment marker mid-edit.
+  summary: Edit event markers (event_date, end_date, tooltip_text, is_projected) attached to trials. On the trial detail page, clicking a marker title opens the read-only detail drawer (Field, Date type, Last synced, source link) shared with the timeline; its Edit action (editors only) and "View detail" links on catalyst rows both deep-link via ?marker=<id>, which opens the inline editor reactively (also closes the drawer). The row kebab still offers a direct Edit. Markers no longer have their own detail page. Trial-assignment changes go through update_marker_assignments, an atomic RPC that keeps the AFTER DELETE orphan-cleanup trigger from dropping a single-assignment marker mid-edit.
   routes:
     - /t/:tenantId/s/:spaceId/manage/trials/:id
   rpcs:

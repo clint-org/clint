@@ -157,12 +157,18 @@ export async function handleSourceExtract(
     p_model: 'claude-sonnet-4-6',
     p_feature: 'source_extract',
     p_input_hash: textHash,
+    // Reproducibility capture: mode + raw input, enough to re-run this import.
+    p_request: {
+      kind: body.source_kind,
+      input: sourceUrl ? { url: sourceUrl, text: sourceText } : { text: sourceText },
+    },
   });
 
   const preflight = await callRpc<{
     allowed: boolean;
     reason: string | null;
-    remaining_today_cents: number;
+    model: string;
+    remaining_today_tokens: number;
     remaining_rate_min: number;
   }>(cfg, null, 'ai_call_preflight', {
     p_secret: env.EXTRACT_SOURCE_WORKER_SECRET,
@@ -175,15 +181,15 @@ export async function handleSourceExtract(
       cfg,
       env,
       aiCallId,
-      preflight.reason === 'daily_cost_cap' ? 'cost_capped' : 'rate_limited',
+      preflight.reason === 'daily_token_cap' ? 'cost_capped' : 'rate_limited',
       Date.now() - start,
       null,
       null,
       preflight.reason
     );
     const msg =
-      preflight.reason === 'daily_cost_cap'
-        ? 'Daily AI quota reached. Resets at midnight UTC.'
+      preflight.reason === 'daily_token_cap'
+        ? 'Daily AI usage limit reached. It resets on a rolling 24-hour basis.'
         : preflight.reason === 'ai_disabled'
           ? 'AI features are not enabled for this organization.'
           : 'Too many imports in a short window. Try again shortly.';
@@ -195,6 +201,9 @@ export async function handleSourceExtract(
   });
 
   const prompt = buildPrompt(sourceText, inventory);
+  // Captured into ai_calls.output at close for exact replay/analysis.
+  const promptText = `${prompt.system}\n\n${prompt.user}`;
+  const aiParams = { model: preflight.model, max_tokens: 8192 };
   const totalTokens = estimateTokens(prompt.system + prompt.user);
   if (totalTokens > 190_000) {
     await closeAiCall(
@@ -205,7 +214,8 @@ export async function handleSourceExtract(
       Date.now() - start,
       null,
       null,
-      'source_too_large_for_context'
+      'source_too_large_for_context',
+      { prompt: promptText, params: aiParams }
     );
     return jsonErrorWithCode(
       422,
@@ -225,7 +235,8 @@ export async function handleSourceExtract(
 
     const response = await client.messages.create(
       {
-        model: 'claude-sonnet-4-6',
+        // Use the tenant's configured model (resolved server-side in preflight).
+        model: preflight.model,
         max_tokens: 8192,
         system: prompt.system,
         messages: [{ role: 'user', content: prompt.user }],
@@ -248,7 +259,8 @@ export async function handleSourceExtract(
         Date.now() - start,
         promptTokens,
         completionTokens,
-        'no_text_block'
+        'no_text_block',
+        { prompt: promptText, params: aiParams }
       );
       return jsonErrorWithCode(
         500,
@@ -272,7 +284,8 @@ export async function handleSourceExtract(
       Date.now() - start,
       promptTokens,
       completionTokens,
-      String(e)
+      String(e),
+      { prompt: promptText, params: aiParams }
     );
     return jsonErrorWithCode(500, outcome, msg, cors);
   }
@@ -288,7 +301,7 @@ export async function handleSourceExtract(
       promptTokens,
       completionTokens,
       validation.reason,
-      { raw_output: rawOutput.substring(0, 5000) }
+      { prompt: promptText, params: aiParams, raw: rawOutput }
     );
     return jsonErrorWithCode(
       500,
@@ -318,7 +331,7 @@ export async function handleSourceExtract(
       promptTokens,
       completionTokens,
       null,
-      { proposals, dropped },
+      { proposals, dropped, prompt: promptText, params: aiParams, raw: rawOutput },
       warnings
     );
     return json(
@@ -383,8 +396,8 @@ export async function handleSourceExtract(
     }
   });
 
-  const costCents = (promptTokens * 3 + completionTokens * 15) / 1_000_000;
-
+  // Cost is computed server-side in ai_call_close (tokens x the model's catalog
+  // price), so the worker just reports the authoritative token counts.
   await closeAiCall(
     cfg,
     env,
@@ -394,9 +407,8 @@ export async function handleSourceExtract(
     promptTokens,
     completionTokens,
     null,
-    { proposals, dropped },
-    warnings,
-    costCents
+    { proposals, dropped, prompt: promptText, params: aiParams, raw: rawOutput },
+    warnings
   );
 
   const response: ExtractResponse = {
@@ -431,8 +443,7 @@ async function closeAiCall(
   completionTokens: number | null,
   errorMessage: string | null,
   output?: unknown,
-  warnings?: string[],
-  costCents?: number
+  warnings?: string[]
 ): Promise<void> {
   try {
     await callRpc(cfg, null, 'ai_call_close', {
@@ -441,7 +452,6 @@ async function closeAiCall(
       p_outcome: outcome,
       p_prompt_tokens: promptTokens,
       p_completion_tokens: completionTokens,
-      p_cost_cents: costCents ?? null,
       p_duration_ms: durationMs,
       p_output: output ?? null,
       p_warnings: warnings ?? null,

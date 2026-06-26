@@ -22,6 +22,7 @@ const fixtureCompanies = [
             identifier: 'NCT00000001',
             notes: 'Pivotal readout expected H2.',
             trial_notes: [],
+            _indications: [{ id: 'i1', indication_id: 'i1', indication_name: 'Obesity' }],
             phase_type: 'P3',
             phase_start_date: '2020-01-01',
             phase_end_date: '2022-06-30',
@@ -68,12 +69,15 @@ describe('buildXlsxWorkbook', () => {
     const sheet = wb.getWorksheet('Trials')!;
     expect(sheet.getCell('A1').value).toBe('Company');
     expect(sheet.getCell('A2').value).toBe('Acme Pharma');
-    expect(sheet.getCell('E2').value).toBe('ACME-1');
-    expect(sheet.getCell('G2').value).toBe('PH 3');
-    const start = sheet.getCell('H2').value;
+    // Columns: A Company, B Asset, C MOA, D ROA, E Indication, F Trial, G NCT,
+    // H Phase, I Phase Start, J Phase End, K Notes.
+    expect(sheet.getCell('E2').value).toBe('Obesity');
+    expect(sheet.getCell('F2').value).toBe('ACME-1');
+    expect(sheet.getCell('H2').value).toBe('PH 3');
+    const start = sheet.getCell('I2').value;
     expect(start).toBeInstanceOf(Date);
     expect((start as Date).getUTCFullYear()).toBe(2020);
-    expect(sheet.getCell('J2').value).toBe('Pivotal readout expected H2.');
+    expect(sheet.getCell('K2').value).toBe('Pivotal readout expected H2.');
   });
 
   it('writes marker rows with honest date labels and a readable NLE status', () => {

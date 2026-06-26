@@ -16,13 +16,13 @@ import { LandscapeStateService } from './landscape-state.service';
     <div
       class="flex items-start gap-5 bg-white border-b border-slate-200 px-4 py-2 flex-shrink-0"
       role="region"
-      aria-label="Timeline summary"
+      aria-label="Timeline at a glance"
     >
       @if (!columnsOnly()) {
         <div class="flex flex-col gap-1 flex-1 min-w-0">
           <span
             class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
-            >SUMMARY</span
+            >AT A GLANCE</span
           >
           @if (read().text) {
             <app-competitive-read-strip
@@ -74,7 +74,7 @@ import { LandscapeStateService } from './landscape-state.service';
                 [class.text-slate-800]="stats().catalystCount90d === 0"
                 >{{ stats().catalystCount90d }}</span
               >
-              <span class="text-[11px] text-slate-500">cat/90d</span>
+              <span class="text-[11px] text-slate-500">catalysts (90d)</span>
             </div>
           </div>
         </div>
@@ -115,6 +115,18 @@ import { LandscapeStateService } from './landscape-state.service';
             class="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer select-none"
           >
             <p-checkbox
+              [ngModel]="state.showIndicationColumn()"
+              (ngModelChange)="state.showIndicationColumn.set($event)"
+              [binary]="true"
+              inputId="strip-col-indication"
+              size="small"
+            />
+            <label for="strip-col-indication" class="cursor-pointer">Indication</label>
+          </div>
+          <div
+            class="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer select-none"
+          >
+            <p-checkbox
               [ngModel]="state.showNotesColumn()"
               (ngModelChange)="state.showNotesColumn.set($event)"
               [binary]="true"
@@ -139,7 +151,7 @@ export class TimelineInsightStripComponent {
       view: 'timeline',
       groupBy: 'company',
       stats: fromCompanies(this.companies()),
-    }),
+    })
   );
   protected readonly stats = computed(() => computeTimelineStats(this.companies()));
 }

@@ -20,6 +20,7 @@ import { errorMessage } from '../../../core/utils/error-message';
 import { MaterialService } from '../../../core/services/material.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { confirmDelete } from '../../utils/confirm-delete';
+import { materialsSectionHidden } from './materials-section-visibility';
 import { MaterialRowComponent } from '../material-row/material-row.component';
 import { MaterialUploadZoneComponent } from '../material-upload-zone/material-upload-zone.component';
 import { LoaderComponent } from '../loader/loader.component';
@@ -95,13 +96,23 @@ export class MaterialsSectionComponent implements OnInit {
   /**
    * Whether the whole section collapses to nothing. When a host opts in via
    * hideWhenEmpty (e.g. a transient detail pane that is not an upload surface),
-   * the section disappears once the fetch settles with no materials, for every
-   * role. While loading or on error we still render so the user is never left
-   * with a silent gap. Hosts that are the contextual upload surface (entity
-   * detail pages) simply do not set hideWhenEmpty, so they keep the zone.
+   * the section disappears once the fetch settles with no materials AND the
+   * viewer cannot upload. An editor who can upload keeps the (empty) section so
+   * they can register the first material; the drop zone is their only entry
+   * point on that surface. While loading or on error we still render so the
+   * user is never left with a silent gap. Hosts that are the contextual upload
+   * surface (entity detail pages) simply do not set hideWhenEmpty, so they keep
+   * the zone regardless. The rule lives in materialsSectionHidden() so it can be
+   * unit-tested without a DOM.
    */
-  protected readonly hidden = computed(
-    () => this.hideWhenEmpty() && !this.loading() && !this.error() && this.materials().length === 0
+  protected readonly hidden = computed(() =>
+    materialsSectionHidden({
+      hideWhenEmpty: this.hideWhenEmpty(),
+      loading: this.loading(),
+      error: this.error() !== null,
+      isEmpty: this.materials().length === 0,
+      canUpload: this.canUpload(),
+    })
   );
 
   // Reload whenever the anchor entity changes. Guards against the

@@ -3,6 +3,18 @@
     <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
   }
 
+  <app-section-header label="Events" [detail]="serverTotal() ? serverTotal() + ' logged' : ''">
+    @if (spaceRole.canEdit()) {
+      <p-button
+        actions
+        label="Log event"
+        icon="fa-solid fa-plus"
+        size="small"
+        (onClick)="openCreateModal()"
+      />
+    }
+  </app-section-header>
+
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search events...">
     <app-export-button gridToolbarEnd [actions]="exportActions" />
   </app-grid-toolbar>
@@ -144,11 +156,6 @@
           <tr
             class="cursor-pointer transition-colors hover:bg-slate-50"
             [class.selected-row]="selectedItem()?.id === item.id"
-            [style.border-left]="
-              item.source_type === 'detected' && item.priority === 'high'
-                ? '3px solid rgb(217 119 6)'
-                : ''
-            "
             (click)="onRowClick(item)"
             (keydown.enter)="onRowClick(item)"
             tabindex="0"
@@ -182,62 +189,64 @@
             </td>
             <td class="min-w-[18rem]">
               <div class="flex min-w-0 flex-col gap-1">
-              <div class="flex min-w-0 items-center gap-1.5">
-                @if (item.source_type === 'detected' && item.change_event_type) {
-                  <span class="truncate text-sm text-slate-900">
-                    @for (seg of getDetectedSummary(item).segments; track $index) {
-                      @switch (seg.kind) {
-                        @case ('plain') {
-                          <span>{{ seg.text }}</span>
-                        }
-                        @case ('old') {
-                          <span class="text-slate-400 line-through">{{ seg.text }}</span>
-                        }
-                        @case ('new') {
-                          <span class="font-semibold">{{ seg.text }}</span>
-                        }
-                        @case ('arrow') {
-                          <span class="mx-0.5 text-slate-400">&rarr;</span>
-                        }
-                        @case ('muted') {
-                          <span class="text-slate-500">{{ seg.text }}</span>
+                <div class="flex min-w-0 items-center gap-1.5">
+                  @if (item.source_type === 'detected' && item.change_event_type) {
+                    <span class="truncate text-sm text-slate-900">
+                      @for (seg of getDetectedSummary(item).segments; track $index) {
+                        @switch (seg.kind) {
+                          @case ('plain') {
+                            <span>{{ seg.text }}</span>
+                          }
+                          @case ('old') {
+                            <span class="text-slate-400 line-through">{{ seg.text }}</span>
+                          }
+                          @case ('new') {
+                            <span class="font-semibold">{{ seg.text }}</span>
+                          }
+                          @case ('arrow') {
+                            <span class="mx-0.5 text-slate-400">&rarr;</span>
+                          }
+                          @case ('muted') {
+                            <span class="text-slate-500">{{ seg.text }}</span>
+                          }
                         }
                       }
-                    }
-                  </span>
-                } @else {
-                  <span
-                    class="truncate text-sm font-medium text-slate-900"
-                    [innerHTML]="item.title | highlight: grid.debouncedGlobalSearch()"
-                  ></span>
-                  @if (formatEventDateSuffix(item)) {
-                    <span class="text-sm text-slate-400 shrink-0 ml-1">{{ formatEventDateSuffix(item) }}</span>
-                  }
-                }
-                @if (item.has_thread) {
-                  <i
-                    class="fa-solid fa-link shrink-0 text-[9px] text-slate-300"
-                    pTooltip="Part of a thread"
-                    tooltipPosition="top"
-                    aria-label="Part of a thread"
-                  ></i>
-                }
-              </div>
-              @if (item.tags.length) {
-                <div class="flex flex-wrap items-center gap-1">
-                  @for (tag of item.tags.slice(0, 3); track tag) {
+                    </span>
+                  } @else {
                     <span
-                      class="inline-block border border-slate-200 bg-slate-50 px-1.5 py-px font-mono text-[9px] font-semibold tracking-wide text-slate-500"
-                      >#{{ tag }}</span
-                    >
+                      class="truncate text-sm font-medium text-slate-900"
+                      [innerHTML]="item.title | highlight: grid.debouncedGlobalSearch()"
+                    ></span>
+                    @if (formatEventDateSuffix(item)) {
+                      <span class="text-sm text-slate-400 shrink-0 ml-1">{{
+                        formatEventDateSuffix(item)
+                      }}</span>
+                    }
                   }
-                  @if (item.tags.length > 3) {
-                    <span class="font-mono text-[9px] text-slate-400"
-                      >+{{ item.tags.length - 3 }}</span
-                    >
+                  @if (item.has_thread) {
+                    <i
+                      class="fa-solid fa-link shrink-0 text-[9px] text-slate-300"
+                      pTooltip="Part of a thread"
+                      tooltipPosition="top"
+                      aria-label="Part of a thread"
+                    ></i>
                   }
                 </div>
-              }
+                @if (item.tags.length) {
+                  <div class="flex flex-wrap items-center gap-1">
+                    @for (tag of item.tags.slice(0, 3); track tag) {
+                      <span
+                        class="inline-block border border-slate-200 bg-slate-50 px-1.5 py-px font-mono text-[9px] font-semibold tracking-wide text-slate-500"
+                        >#{{ tag }}</span
+                      >
+                    }
+                    @if (item.tags.length > 3) {
+                      <span class="font-mono text-[9px] text-slate-400"
+                        >+{{ item.tags.length - 3 }}</span
+                      >
+                    }
+                  </div>
+                }
               </div>
             </td>
             <td class="col-secondary text-xs text-slate-700">
@@ -277,14 +286,15 @@
                 @if (ec.parents.length) {
                   <span class="text-slate-400">{{ ec.parents.join(' / ') }}</span>
                 }
-                @if (item.has_annotation) {
+                <!-- Analyst note indicator hidden until we leverage notes elsewhere (table + RPCs retained) -->
+                <!-- @if (item.has_annotation) {
                   <i
                     class="fa-solid fa-message text-[8px] text-brand-500"
                     pTooltip="Analyst note attached"
                     tooltipPosition="top"
                     aria-label="Analyst note attached"
                   ></i>
-                }
+                } -->
               </span>
             </td>
             <td class="col-status whitespace-nowrap text-right">
@@ -308,8 +318,6 @@
                       ></i>
                       {{ shift.text }}
                     </span>
-                  } @else if (item.priority === 'high') {
-                    <app-detail-panel-pill tone="red">High</app-detail-panel-pill>
                   }
                 }
                 @default {
@@ -344,8 +352,8 @@
               @if (grid.isFiltered()) {
                 No events match your filters.
               } @else {
-                No events yet. Events capture competitive intelligence -- leadership changes,
-                strategic moves, regulatory shifts -- at any level of your landscape.
+                No events yet. Events capture competitive intelligence (leadership changes,
+                strategic moves, regulatory shifts) at any level of your landscape.
               }
             </td>
           </tr>
@@ -387,7 +395,7 @@
 </app-manage-page-shell>
 
 <p-dialog
-  [header]="editingEventId() ? 'Edit event' : 'New event'"
+  [header]="editingEventId() ? 'Edit event' : 'Log event'"
   [(visible)]="modalOpen"
   [modal]="true"
   styleClass="!w-[42rem]"

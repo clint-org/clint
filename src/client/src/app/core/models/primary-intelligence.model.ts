@@ -1,9 +1,9 @@
 /**
- * Primary intelligence -- Stout's authored read on an entity in the
+ * Primary intelligence -- Stout's authored intelligence on an entity in the
  * engagement (trial, company, product, or the space itself). Markers
  * are no longer first-class owners of primary intelligence; the
  * marker's own description carries the catalyst-level write-up, and
- * trial/asset PI carries the competitive read. Markers remain valid
+ * trial/asset PI carries the competitive intelligence. Markers remain valid
  * link targets so a trial PI can still cite a specific catalyst.
  *
  * Mirrors the Postgres tables `primary_intelligence` and

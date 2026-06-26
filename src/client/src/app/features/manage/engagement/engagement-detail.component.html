@@ -5,20 +5,14 @@
   @if (loading()) {
     <div class="flex justify-center px-4 py-8"><app-loader [size]="28" /></div>
   } @else {
-    <header class="mb-4 border border-slate-200 bg-white px-5 py-3.5">
-      <h1 class="font-mono text-[13px] font-bold uppercase tracking-[0.1em] text-slate-900">
-        Engagement
-      </h1>
-      <p class="mt-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400">
-        Primary intelligence for the whole space
-      </p>
-    </header>
+    <app-section-header label="Engagement" detail="Primary intelligence for the whole space" />
 
     @if (hasIntelligence()) {
       <app-intelligence-block
         [published]="intelligence()?.published ?? null"
         [draft]="intelligence()?.draft ?? null"
-        [agencyView]="spaceRole.isAgencyMember()"
+        [agencyView]="spaceRole.canAuthorIntelligence()"
+        [canPurge]="spaceRole.canPurgeIntelligence()"
         [tenantId]="tenantIdSig()"
         [spaceId]="spaceIdSig()"
         (edit)="onIntelligenceEdit()"
@@ -36,14 +30,14 @@
       />
     } @else {
       <app-intelligence-empty
-        [canEdit]="spaceRole.isAgencyMember()"
+        [canEdit]="spaceRole.canAuthorIntelligence()"
         entityLabel="space"
         (add)="onIntelligenceEdit()"
       />
     }
     <app-intelligence-history-panel
       [payload]="historyHost.payload()"
-      [currentUserCanEdit]="spaceRole.isAgencyMember()"
+      [currentUserCanEdit]="spaceRole.canAuthorIntelligence()"
       (withdraw)="withdrawDialogOpen.set(true)"
       (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
       (purgeAnchor)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"

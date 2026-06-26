@@ -33,6 +33,9 @@ export interface Asset {
   created_at: string;
   updated_at: string;
   updated_by: string | null;
+  // Import provenance: the source_documents row this entity landed from when
+  // created by an AI import. Null for manually created entities.
+  source_doc_id: string | null;
   trials?: Trial[];
   indications?: AssetIndication[];
   mechanisms_of_action?: { id: string; name: string }[];

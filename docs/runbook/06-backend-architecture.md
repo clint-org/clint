@@ -43,14 +43,14 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes, marker_types |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
-| `_materialize_trial_from_snapshot` | trials | - |
+| `_materialize_trial_from_snapshot` | trial_change_events, trials | - |
 | `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_assets, trial_conditions, trials |
 | `_seed_ctgov_markers` | marker_assignments, markers | trials |
 | `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
 | `_seed_demo_asset_indications` | asset_indications | - |
 | `_seed_demo_assets` | assets | - |
 | `_seed_demo_companies` | companies | - |
-| `_seed_demo_events` | events | assets |
+| `_seed_demo_events` | event_threads, events | assets |
 | `_seed_demo_indications` | condition_indication_map, conditions, indications | - |
 | `_seed_demo_markers` | marker_assignments, markers | events, materials |
 | `_seed_demo_materials` | material_links, materials | - |
@@ -67,9 +67,10 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `add_agency_member` | agency_invites, agency_members | agencies |
 | `add_tenant_owner` | tenant_invites, tenant_members | agencies, tenants |
 | `ai_call_close` | ai_calls | - |
-| `ai_call_open` | ai_calls | - |
+| `ai_call_open` | ai_calls | ai_config |
 | `ai_call_preflight` | - | ai_calls, ai_config |
-| `ai_import_status` | - | ai_calls, ai_config |
+| `ai_estimate_cost_cents` | - | ai_model_pricing |
+| `ai_resolve_model` | - | ai_model_pricing |
 | `archive_space` | spaces | tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
@@ -88,8 +89,9 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `create_trial` | asset_indications, condition_indication_map, conditions, indications, trial_conditions, trials | - |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
 | `delete_change_event_annotation` | change_event_annotations | trial_change_events |
-| `delete_material` | materials | - |
+| `delete_material` | materials | space_members, spaces, tenants |
 | `delete_primary_intelligence` | primary_intelligence | - |
+| `discard_pending_material` | materials | - |
 | `download_material` | - | materials |
 | `enforce_agency_member_guards` | - | agency_members |
 | `enforce_custom_domain_unique_across_tables` | - | agencies, tenants |
@@ -100,7 +102,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `export_audit_events_csv` | - | audit_events |
 | `finalize_material` | materials | - |
 | `get_activity_feed` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
-| `get_ai_usage_rollup` | - | ai_calls, ai_config, assets, companies, indications, source_documents, spaces, tenants, trials |
+| `get_ai_call_detail` | - | ai_calls, assets, companies, events, markers, source_documents, trials |
+| `get_ai_usage_rollup` | - | ai_calls, ai_config, assets, companies, events, indications, markers, source_documents, spaces, tenants, trials |
 | `get_asset_detail_with_intelligence` | - | assets |
 | `get_brand_by_host` | - | agencies, tenants |
 | `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_assets, trial_change_events, trials |
@@ -125,10 +128,12 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_marker_history` | - | marker_changes |
 | `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, routes_of_administration, trial_assets, trials |
 | `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_links, trials |
+| `get_source_document` | - | ai_calls, source_documents |
 | `get_space_inventory_snapshot` | - | assets, companies, event_categories, indications, marker_types, mechanisms_of_action, routes_of_administration, trials |
 | `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
 | `get_space_tags` | - | events |
 | `get_tenant_access_settings` | - | tenants |
+| `get_tenant_ai_status` | - | ai_calls, ai_config |
 | `get_trial_activity` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
 | `get_trial_detail_with_intelligence` | - | trials |
 | `get_trial_indications` | - | condition_indication_map, indications, trial_conditions, trials |
@@ -148,21 +153,24 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `list_audit_events` | - | audit_events |
 | `list_draft_intelligence_for_space` | - | primary_intelligence |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
-| `list_materials_for_entity` | - | assets, companies, markers, material_links, materials, spaces, trials |
-| `list_materials_for_space` | - | assets, companies, markers, material_links, materials, spaces, trials |
+| `list_materials_for_entity` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
+| `list_materials_for_space` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
 | `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links |
-| `list_recent_materials_for_space` | - | assets, companies, markers, material_links, materials, spaces, trials |
+| `list_recent_materials_for_space` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
 | `list_space_members` | - | space_members |
 | `list_tenant_members` | - | agency_members, tenant_members, tenants |
 | `lookup_user_by_email` | - | agency_members |
 | `mark_r2_delete_failed` | r2_pending_deletes | - |
 | `mark_r2_delete_succeeded` | r2_pending_deletes | - |
+| `mark_trials_ctgov_withdrawn` | trial_change_events, trials | - |
 | `palette_empty_state` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `palette_set_pinned` | palette_pinned | - |
 | `palette_touch_recent` | palette_recents | - |
 | `palette_unpin` | palette_pinned | - |
 | `permanently_delete_space` | markers, spaces | assets, companies, events, marker_types, materials, primary_intelligence, tenants, trials |
 | `platform_admin_set_ai_enabled` | ai_config | - |
+| `platform_admin_update_ai_config` | ai_config | ai_model_pricing |
+| `platform_admin_upsert_ai_model_pricing` | ai_model_pricing | - |
 | `prepare_material_upload` | - | materials |
 | `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_assets, trial_notes, trials |
 | `preview_company_delete` | - | assets, companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
@@ -680,7 +688,8 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `ai_call_close`
 - `ai_call_open`
 - `ai_call_preflight`
-- `ai_import_status`
+- `ai_estimate_cost_cents`
+- `ai_resolve_model`
 - `archive_space`
 - `assign_primary_intelligence_version`
 - `auto_join_demo_tenant_local`
@@ -696,8 +705,10 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `create_trial`
 - `delete_change_event_annotation`
 - `delete_material`
+- `discard_pending_material`
 - `export_audit_events_csv`
 - `finalize_material`
+- `get_ai_call_detail`
 - `get_ai_usage_rollup`
 - `get_asset_detail_with_intelligence`
 - `get_bullseye_assets`
@@ -718,10 +729,12 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_landscape_index_by_roa`
 - `get_marker_detail_with_intelligence`
 - `get_positioning_data`
+- `get_source_document`
 - `get_space_intelligence`
 - `get_space_inventory_snapshot`
 - `get_space_landing_stats`
 - `get_space_tags`
+- `get_tenant_ai_status`
 - `get_trial_detail_with_intelligence`
 - `get_trial_indications`
 - `guard_primary_intelligence_state`
@@ -737,6 +750,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `list_recent_materials_for_space`
 - `mark_r2_delete_failed`
 - `mark_r2_delete_succeeded`
+- `mark_trials_ctgov_withdrawn`
 - `member_guard_mark_cascade_end`
 - `member_guard_mark_cascade_start`
 - `palette_empty_state`
@@ -745,6 +759,8 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `palette_unpin`
 - `permanently_delete_space`
 - `platform_admin_set_ai_enabled`
+- `platform_admin_update_ai_config`
+- `platform_admin_upsert_ai_model_pricing`
 - `preview_asset_delete`
 - `preview_company_delete`
 - `preview_trial_delete`

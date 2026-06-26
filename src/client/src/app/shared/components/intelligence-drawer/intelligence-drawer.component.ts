@@ -79,7 +79,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
               [ngModel]="headline()"
               (ngModelChange)="headline.set($event); markDirty()"
               (blur)="autoSave()"
-              placeholder="One-line analysis"
+              placeholder="One-line headline"
               class="!w-full"
             />
           </div>

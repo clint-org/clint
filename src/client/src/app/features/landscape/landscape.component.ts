@@ -36,7 +36,6 @@ import { BullseyeDetailPanelComponent } from './bullseye-detail-panel.component'
 import { BullseyeTooltipComponent } from './bullseye-tooltip.component';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
-import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
 import { type ExportAction } from '../../shared/export/export-button.component';
 import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
@@ -56,7 +55,6 @@ import { BrandContextService } from '../../core/services/brand-context.service';
     BullseyeTooltipComponent,
     RouterLink,
     ButtonModule,
-    MarkWatermarkComponent,
     MessageModule,
     SkeletonComponent,
     Tooltip,

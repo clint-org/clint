@@ -23,6 +23,7 @@ import {
 } from '../../../core/models/primary-intelligence.model';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import { SectionHeaderComponent } from '../section-header/section-header.component';
 import { IntelligenceFeedComponent } from '../intelligence-feed/intelligence-feed.component';
 import { IntelligenceDrawerComponent } from '../intelligence-drawer/intelligence-drawer.component';
 import {
@@ -71,6 +72,7 @@ const DRAFTS_LIMIT = 200;
     DatePickerModule,
     PaginatorModule,
     SelectButtonModule,
+    SectionHeaderComponent,
     IntelligenceFeedComponent,
     IntelligenceComposeDialogComponent,
     IntelligenceDrawerComponent,
@@ -78,20 +80,17 @@ const DRAFTS_LIMIT = 200;
   ],
   template: `
     <div class="page-shell">
-      <header class="mb-4 flex items-baseline justify-between gap-2 border-b border-slate-200 pb-2">
-        <div>
-          <h1 class="text-lg font-semibold text-slate-900">{{ headingTitle() }}</h1>
-          <p class="text-xs text-slate-500">{{ headingSubtitle() }}</p>
-        </div>
-        @if (spaceRole.isAgencyMember() && spaceId()) {
+      <app-section-header [label]="headingTitle()" [detail]="headingSubtitle()">
+        @if (spaceRole.canAuthorIntelligence() && spaceId()) {
           <p-button
+            actions
             label="Publish intelligence"
             icon="fa-solid fa-pen-nib"
             size="small"
             (onClick)="composeDialogOpen.set(true)"
           />
         }
-      </header>
+      </app-section-header>
 
       <div
         class="flex flex-wrap items-center gap-2 border border-slate-200 bg-slate-50/50 px-4 py-2"
@@ -175,7 +174,7 @@ const DRAFTS_LIMIT = 200;
 
       <div class="border border-t-0 border-slate-200 bg-white" aria-live="polite">
         @if (loading()) {
-          <ul aria-busy="true" aria-label="Loading analyses">
+          <ul aria-busy="true" aria-label="Loading intelligence">
             @for (i of skeletonRows; track i) {
               <li class="flex border-b border-slate-100 last:border-b-0" aria-hidden="true">
                 <span class="w-[3px] shrink-0 bg-slate-200"></span>
@@ -275,7 +274,7 @@ export class IntelligenceBrowseComponent implements OnInit {
   protected readonly offset = signal<number>(0);
   protected readonly loading = signal<boolean>(false);
 
-  // Compose flow: agency members pick an anchor entity, then author the read
+  // Compose flow: agency members pick an anchor entity, then author the intelligence
   // in the shared IntelligenceDrawerComponent. The feed itself is not
   // entity-scoped, so the anchor must be chosen before the drawer opens.
   protected readonly composeDialogOpen = signal<boolean>(false);
@@ -285,7 +284,7 @@ export class IntelligenceBrowseComponent implements OnInit {
   protected readonly totalLabel = computed(() => {
     const t = this.total();
     if (this.status() === 'drafts') return t === 1 ? '1 draft' : `${t} drafts`;
-    return t === 1 ? '1 analysis' : `${t} analyses`;
+    return t === 1 ? '1 entry' : `${t} entries`;
   });
 
   protected readonly headingTitle = computed(() =>
@@ -294,13 +293,13 @@ export class IntelligenceBrowseComponent implements OnInit {
 
   protected readonly headingSubtitle = computed(() =>
     this.status() === 'drafts'
-      ? 'In-progress analyses visible to your agency.'
-      : 'All published analyses in this space, recency-ordered.'
+      ? 'In-progress intelligence visible to your agency.'
+      : 'All published intelligence in this space, recency-ordered.'
   );
 
   protected readonly emptyMessage = computed(() => {
     if (this.status() === 'drafts') return 'No drafts match the current filters.';
-    return 'No published analyses match the current filters.';
+    return 'No published intelligence matches the current filters.';
   });
 
   protected readonly hasAnyActive = computed(() => {
@@ -379,7 +378,11 @@ export class IntelligenceBrowseComponent implements OnInit {
 
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
-    this.messageService.add({ severity: 'success', summary: 'Analysis published.', life: 3000 });
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Intelligence published.',
+      life: 3000,
+    });
     await this.load();
   }
 

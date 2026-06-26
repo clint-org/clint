@@ -12,10 +12,11 @@ import type { ZoomLevel } from '../models/dashboard.model';
 export interface ColumnVisibility {
   showMoa: boolean;
   showRoa: boolean;
+  showIndication: boolean;
   showNotes: boolean;
 }
 
-export type ColumnKey = 'company' | 'asset' | 'moa' | 'roa' | 'trial' | 'notes';
+export type ColumnKey = 'company' | 'asset' | 'moa' | 'roa' | 'indication' | 'trial' | 'notes';
 
 export interface ColumnDef {
   key: ColumnKey;
@@ -36,6 +37,7 @@ export interface ExportOptions {
   endYear: number;
   showMoaColumn: boolean;
   showRoaColumn: boolean;
+  showIndicationColumn: boolean;
   showNotesColumn: boolean;
   /** Workspace tenant for the export footer's "Prepared for" segment. */
   tenant?: { name: string; logoUrl: string | null } | null;
@@ -51,6 +53,7 @@ export interface FlatRow {
   nctId: string | null;
   moa: string;
   roa: string;
+  indications: string;
   hasNotes: boolean;
   trial: Trial;
   isFirstInCompany: boolean;
@@ -68,6 +71,9 @@ export function flattenTrials(companies: Company[]): FlatRow[] {
         .map((r) => r.abbreviation ?? r.name)
         .join(', ');
       for (const trial of asset.trials ?? []) {
+        // Indication is per-trial (a trial can span several of its asset's
+        // indications), unlike MOA/ROA which are asset-level.
+        const indications = (trial._indications ?? []).map((i) => i.indication_name).join(', ');
         rows.push({
           companyName: company.name,
           companyId: company.id,
@@ -76,6 +82,7 @@ export function flattenTrials(companies: Company[]): FlatRow[] {
           nctId: trial.identifier ?? null,
           moa,
           roa,
+          indications,
           hasNotes: !!(trial.notes || (trial.trial_notes?.length ?? 0) > 0),
           trial,
           isFirstInCompany,
@@ -94,6 +101,7 @@ export interface TrialExportRow {
   asset: string;
   moa: string;
   roa: string;
+  indication: string;
   trial: string;
   nctId: string;
   phase: string;
@@ -108,6 +116,7 @@ export function buildTrialExportRows(companies: Company[]): TrialExportRow[] {
     asset: r.assetName,
     moa: r.moa,
     roa: r.roa,
+    indication: r.indications,
     trial: r.trialName,
     nctId: r.nctId ?? '',
     phase: r.trial.phase_type ? phaseShortLabel(r.trial.phase_type) : '',
@@ -122,6 +131,7 @@ const COLUMN_WIDTHS: Record<ColumnKey, number> = {
   asset: 0.85,
   moa: 0.8,
   roa: 0.45,
+  indication: 0.9,
   trial: 1.05,
   notes: 0.35,
 };
@@ -130,6 +140,7 @@ export function computeLeftColumns(v: ColumnVisibility): ColumnLayout {
   const keys: ColumnKey[] = ['company', 'asset'];
   if (v.showMoa) keys.push('moa');
   if (v.showRoa) keys.push('roa');
+  if (v.showIndication) keys.push('indication');
   keys.push('trial');
   if (v.showNotes) keys.push('notes');
 

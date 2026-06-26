@@ -28,6 +28,7 @@ import {
   EventPriority,
   EntityLevel,
   EventThread,
+  EventsPageFilters,
 } from '../../core/models/event.model';
 import { Company } from '../../core/models/company.model';
 import { Asset } from '../../core/models/asset.model';
@@ -44,6 +45,13 @@ import { isEventFormComplete } from './event-form-validity';
 interface SourceRow {
   url: string;
   label: string;
+}
+
+/** Minimal event shape for the related-events picker + chip list. */
+interface LinkedEventLite {
+  id: string;
+  title: string;
+  event_date: string;
 }
 
 type EntityOption =
@@ -285,6 +293,55 @@ type EntityOption =
         }
       </app-form-field>
 
+      <!-- Related events -->
+      <app-form-field label="Related events" fieldId="event-related" spacing="">
+        <p-auto-complete
+          inputId="event-related"
+          [ngModel]="relatedQuery()"
+          (ngModelChange)="relatedQuery.set($event)"
+          name="relatedEventSearch"
+          [suggestions]="eventSuggestions()"
+          (completeMethod)="searchEvents($event.query)"
+          (onSelect)="onRelatedSelect($event)"
+          optionLabel="title"
+          [forceSelection]="true"
+          placeholder="Search events to link..."
+          styleClass="w-full"
+          appendTo="body"
+        >
+          <ng-template let-opt pTemplate="item">
+            <div class="flex items-center gap-2 py-0.5">
+              <span class="font-mono text-[11px] tabular-nums text-slate-500">{{
+                opt.event_date
+              }}</span>
+              <span class="text-sm text-slate-800">{{ opt.title }}</span>
+            </div>
+          </ng-template>
+        </p-auto-complete>
+        @if (linkedEvents().length) {
+          <ul class="mt-2 space-y-1" aria-label="Linked events">
+            @for (le of linkedEvents(); track le.id) {
+              <li
+                class="flex items-center gap-2 rounded-sm border border-slate-200 bg-slate-50/50 px-2 py-1"
+              >
+                <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                  le.event_date
+                }}</span>
+                <span class="min-w-0 flex-1 truncate text-sm text-slate-800">{{ le.title }}</span>
+                <button
+                  type="button"
+                  class="shrink-0 text-slate-400 hover:text-red-500"
+                  (click)="removeLinkedEvent(le.id)"
+                  [attr.aria-label]="'Remove linked event ' + le.title"
+                >
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </app-form-field>
+
       <!-- Actions -->
       <app-form-actions
         [submitLabel]="eventId() ? 'Update' : 'Create'"
@@ -345,7 +402,18 @@ export class EventFormComponent implements OnInit {
   readonly sources = signal<SourceRow[]>([]);
   readonly threadId = signal<string | null>(null);
   readonly newThreadTitle = signal('');
-  readonly linkedEventIds = signal<string[]>([]);
+  // Related events the user has attached. The save path needs only the ids
+  // (linkedEventIds), but we keep the full objects so the chip list can show
+  // titles/dates without a refetch.
+  readonly linkedEvents = signal<LinkedEventLite[]>([]);
+  readonly linkedEventIds = computed(() => this.linkedEvents().map((e) => e.id));
+  readonly eventSuggestions = signal<LinkedEventLite[]>([]);
+  readonly relatedQuery = signal<LinkedEventLite | null>(null);
+
+  // Original thread membership of the event being edited, so an unchanged
+  // thread keeps its existing position instead of being re-ordered to the end.
+  private readonly originalThreadId = signal<string | null>(null);
+  private readonly originalThreadOrder = signal<number | null>(null);
 
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
@@ -423,6 +491,54 @@ export class EventFormComponent implements OnInit {
     );
   }
 
+  /** Typeahead for the related-events picker. Searches real events in this
+   *  space by title, excluding the event being edited and any already linked. */
+  async searchEvents(query: string): Promise<void> {
+    const filters: EventsPageFilters = {
+      dateFrom: null,
+      dateTo: null,
+      entityLevel: null,
+      entityId: null,
+      categoryIds: [],
+      tags: [],
+      priority: null,
+      sourceType: 'event',
+      search: query?.trim() ? query.trim() : null,
+      sortField: 'event_date',
+      sortDir: 'desc',
+    };
+    try {
+      const { items } = await this.eventService.getEventsPageData(
+        this.getSpaceId(),
+        filters,
+        10,
+        0
+      );
+      const currentId = this.eventId();
+      const linked = new Set(this.linkedEvents().map((e) => e.id));
+      this.eventSuggestions.set(
+        items
+          .filter((it) => it.source_type === 'event' && it.id !== currentId && !linked.has(it.id))
+          .map((it) => ({ id: it.id, title: it.title, event_date: it.event_date }))
+      );
+    } catch {
+      this.eventSuggestions.set([]);
+    }
+  }
+
+  onRelatedSelect(event: { value: LinkedEventLite }): void {
+    const picked = event.value;
+    if (picked && !this.linkedEvents().some((e) => e.id === picked.id)) {
+      this.linkedEvents.update((list) => [...list, picked]);
+    }
+    // Clear the search box so it is ready for the next add.
+    this.relatedQuery.set(null);
+  }
+
+  removeLinkedEvent(id: string): void {
+    this.linkedEvents.update((list) => list.filter((e) => e.id !== id));
+  }
+
   async onSubmit(): Promise<void> {
     if (!this.canSubmit()) return;
 
@@ -444,10 +560,16 @@ export class EventFormComponent implements OnInit {
       }
     }
 
-    // Compute thread_order if joining a thread
+    // Compute thread_order. `thread_order` is a small int ordinal: keep the
+    // existing position when the thread membership is unchanged, otherwise take
+    // the next position at the end of the (possibly new) thread.
     let threadOrder: number | null = null;
     if (resolvedThreadId) {
-      threadOrder = Date.now();
+      if (resolvedThreadId === this.originalThreadId() && this.originalThreadOrder() !== null) {
+        threadOrder = this.originalThreadOrder();
+      } else {
+        threadOrder = await this.eventService.nextThreadOrder(resolvedThreadId);
+      }
     }
 
     const eventDate = this.formatDate(this.eventDateValue()!);
@@ -499,7 +621,11 @@ export class EventFormComponent implements OnInit {
     this.sources.set([]);
     this.threadId.set(null);
     this.newThreadTitle.set('');
-    this.linkedEventIds.set([]);
+    this.originalThreadId.set(null);
+    this.originalThreadOrder.set(null);
+    this.linkedEvents.set([]);
+    this.eventSuggestions.set([]);
+    this.relatedQuery.set(null);
     this.entityOptions.set([]);
     this.error.set(null);
   }
@@ -533,6 +659,8 @@ export class EventFormComponent implements OnInit {
       this.description.set(detail.description ?? '');
       this.tags.set(detail.tags);
       this.threadId.set(detail.thread_id);
+      this.originalThreadId.set(detail.thread_id);
+      this.originalThreadOrder.set(detail.thread_order);
 
       // Determine entity level
       if (detail.entity_level === 'company' && detail.entity_id) {
@@ -559,7 +687,13 @@ export class EventFormComponent implements OnInit {
 
       // Sources + linked events
       this.sources.set(detail.sources.map((s) => ({ url: s.url, label: s.label ?? '' })));
-      this.linkedEventIds.set(detail.linked_events.map((le) => le.id));
+      this.linkedEvents.set(
+        detail.linked_events.map((le) => ({
+          id: le.id,
+          title: le.title,
+          event_date: le.event_date,
+        }))
+      );
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Could not load event.');
     }

@@ -20,9 +20,8 @@
     } @else {
       @if (chartData(); as cd) {
         @if (cd.spokes.length === 0) {
-          <div class="relative flex items-center justify-center h-full">
-            <app-mark-watermark />
-            <div class="relative flex flex-col items-center gap-3 text-center max-w-md">
+          <div class="flex items-center justify-center h-full">
+            <div class="flex flex-col items-center gap-3 text-center max-w-md">
               <p-message severity="info" [closable]="false">
                 No assets match the current filters. Adjust scope or add assets and trials to see
                 them here.

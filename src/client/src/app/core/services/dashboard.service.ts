@@ -60,23 +60,34 @@ export class DashboardService {
 /**
  * Maps the raw get_dashboard_data RPC payload into the client DashboardData
  * company > asset > trial shape. Trials nested under an indication get an
- * `_indication` augmentation so the client-side indication filter can match
- * on the indication entity id. Exported as a pure function so the mapping can
- * be unit-tested without mocking Supabase (mirrors filterDashboardData).
+ * `_indications` augmentation so the client-side indication filter can match
+ * on the indication entity id. A trial can span several of its asset's
+ * indications (the RPC nests it once per indication); we dedupe by trial id
+ * into a single row that carries all of them, so the timeline -- which has no
+ * indication column -- shows one row per trial rather than one per indication.
+ * Exported as a pure function so the mapping can be unit-tested without mocking
+ * Supabase (mirrors filterDashboardData).
  */
 export function mapDashboardCompanies(data: any[]): any[] {
   return (data ?? []).map((c: any) => ({
     ...c,
     assets: (c.assets ?? []).map((p: any) => {
-      const indicationTrials = (p.indications ?? []).flatMap((ind: any) =>
-        (ind.trials ?? []).map((t: any) => ({
-          ...t,
-          // The RPC emits the indication entity id as `id` and its name as
-          // `name`. The indication filter matches on `_indication.indication_id`,
-          // so surface the entity id under that key (and the name) here.
-          _indication: { id: ind.id, indication_id: ind.id, indication_name: ind.name },
-        }))
-      );
+      const byTrialId = new Map<string, any>();
+      for (const ind of p.indications ?? []) {
+        // The RPC emits the indication entity id as `id` and its name as
+        // `name`. The indication filter matches on `_indications[].indication_id`,
+        // so surface the entity id under that key (and the name) here.
+        const indicationRef = { id: ind.id, indication_id: ind.id, indication_name: ind.name };
+        for (const t of ind.trials ?? []) {
+          const existing = byTrialId.get(t.id);
+          if (existing) {
+            existing._indications.push(indicationRef);
+          } else {
+            byTrialId.set(t.id, { ...t, _indications: [indicationRef] });
+          }
+        }
+      }
+      const indicationTrials = [...byTrialId.values()];
       const allTrials = indicationTrials.length > 0 ? indicationTrials : (p.trials ?? []);
       return {
         ...p,

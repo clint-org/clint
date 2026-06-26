@@ -439,6 +439,28 @@
         font-size: 12.5px;
         color: var(--slate-400);
       }
+      /* === Motion ==========================================================
+         Sections rise into place as they scroll in. Transform-only (opacity
+         stays at 1), so every figure, bar, and tier is shown at its real value
+         even before — or without — the motion. Nothing can render blank. */
+      .reveal {
+        transform: translateY(16px);
+        transition: transform 0.6s cubic-bezier(0.21, 0.7, 0.25, 1);
+      }
+      .reveal.in {
+        transform: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .reveal {
+          transform: none !important;
+          transition: none !important;
+        }
+      }
+      @media print {
+        .reveal {
+          transform: none !important;
+        }
+      }
       @media (max-width: 640px) {
         .pad {
           padding: 32px 24px 36px;
@@ -500,21 +522,21 @@
         </div>
 
         <h1>Pricing</h1>
-        <div class="headline">
+        <div class="headline reveal">
           <span class="num">$25,000</span>
           <span class="unit">per space, per year</span>
         </div>
-        <p class="subhead">
+        <p class="subhead reveal">
           The more spaces you run, the <strong>less each one costs</strong>.
         </p>
 
-        <p class="lede">
+        <p class="lede reveal">
           Priced per space, with volume pricing, and meant to be flexible. The goal right now is to
           get Clint in front of your team on a live engagement and shape it around how you work. It
           starts with a 90-day pilot.
         </p>
 
-        <div class="block">
+        <div class="block reveal">
           <div class="section-label">How it works</div>
           <ul class="points">
             <li>
@@ -527,13 +549,12 @@
               people. No per-seat charge.
             </li>
             <li>
-              <strong>Costs less as you grow.</strong> The rate per space drops as you take on
-              more.
+              <strong>Costs less as you grow.</strong> The rate per space drops as you take on more.
             </li>
           </ul>
         </div>
 
-        <div class="block">
+        <div class="block reveal tiers-block">
           <div class="section-label">Volume pricing</div>
           <table class="tiers">
             <thead>
@@ -560,7 +581,7 @@
         </div>
 
         <!-- ============ WHAT THE PRICE BUYS ============ -->
-        <div class="block">
+        <div class="block reveal">
           <div class="section-label">What the price buys</div>
 
           <p class="value-intro">
@@ -569,14 +590,16 @@
           </p>
 
           <!-- capacity: same hours, redeployed -->
-          <div class="vblock">
+          <div class="vblock" data-anim="bars">
             <div class="vhead">
               <h4>More time on the work that matters</h4>
               <span class="illus">Illustrative</span>
             </div>
             <div class="legend">
               <span class="item"><span class="sw assembly"></span>Assembly and upkeep</span>
-              <span class="item"><span class="sw value"></span>Judgment, pitches, and client time</span>
+              <span class="item"
+                ><span class="sw value"></span>Judgment, pitches, and client time</span
+              >
             </div>
             <div class="row">
               <span class="rlabel">Today</span>
@@ -588,9 +611,30 @@
             <div class="row">
               <span class="rlabel brand">
                 <svg class="mini" viewBox="0 0 140 140" fill="none" aria-hidden="true">
-                  <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-                  <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-                  <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                  <polyline
+                    points="112,24 24,24 24,116 112,116"
+                    stroke="#cbd5e1"
+                    stroke-width="4"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <polyline
+                    points="96,40 40,40 40,100 96,100"
+                    stroke="#94a3b8"
+                    stroke-width="5.5"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <polyline
+                    points="80,56 56,56 56,84 80,84"
+                    stroke="#0d9488"
+                    stroke-width="7.5"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
                 On Clint
               </span>
@@ -607,7 +651,7 @@
           </div>
 
           <!-- stickiness: present every week, and it accumulates -->
-          <div class="vblock">
+          <div class="vblock" data-anim="cadence">
             <div class="vhead">
               <h4>Stout in the client's workflow every week</h4>
               <span class="illus">Illustrative</span>
@@ -619,14 +663,38 @@
             <div class="cad-row">
               <span class="cad-label brand">
                 <svg class="mini" viewBox="0 0 140 140" fill="none" aria-hidden="true">
-                  <polyline points="112,24 24,24 24,116 112,116" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-                  <polyline points="96,40 40,40 40,100 96,100" stroke="#94a3b8" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-                  <polyline points="80,56 56,56 56,84 80,84" stroke="#0d9488" stroke-width="7.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                  <polyline
+                    points="112,24 24,24 24,116 112,116"
+                    stroke="#cbd5e1"
+                    stroke-width="4"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <polyline
+                    points="96,40 40,40 40,100 96,100"
+                    stroke="#94a3b8"
+                    stroke-width="5.5"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <polyline
+                    points="80,56 56,56 56,84 80,84"
+                    stroke="#0d9488"
+                    stroke-width="7.5"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
                 With Clint
               </span>
               <div class="cad-track steady">
-                <span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span><span class="tick"></span>
+                <span class="tick"></span><span class="tick"></span><span class="tick"></span
+                ><span class="tick"></span><span class="tick"></span><span class="tick"></span
+                ><span class="tick"></span><span class="tick"></span><span class="tick"></span
+                ><span class="tick"></span><span class="tick"></span><span class="tick"></span>
               </div>
             </div>
             <div class="cad-axis"><span>Quarter start</span><span>Readout</span></div>
@@ -643,9 +711,9 @@
           <div class="vblock">
             <div class="vhead"><h4>A sharper way to show up</h4></div>
             <p class="vsub">
-              A live view under Stout's brand is a different thing to put in front of a client than a
-              quarterly deck, in the pitch and through the engagement. It helps win the work and hold
-              your pricing.
+              A live view under Stout's brand is a different thing to put in front of a client than
+              a quarterly deck, in the pitch and through the engagement. It helps win the work and
+              hold your pricing.
             </p>
           </div>
 
@@ -658,5 +726,33 @@
       </div>
     </div>
 
+    <script>
+      (function () {
+        var els = [].slice.call(document.querySelectorAll('.reveal'));
+        if (
+          !('IntersectionObserver' in window) ||
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ) {
+          els.forEach(function (el) {
+            el.classList.add('in');
+          });
+          return;
+        }
+        var io = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (en) {
+              if (en.isIntersecting) {
+                en.target.classList.add('in');
+                io.unobserve(en.target);
+              }
+            });
+          },
+          { threshold: 0, rootMargin: '0px 0px -8% 0px' }
+        );
+        els.forEach(function (el) {
+          io.observe(el);
+        });
+      })();
+    </script>
   </body>
 </html>

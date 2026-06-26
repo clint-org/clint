@@ -23,10 +23,11 @@ describe('marketing landing mark', () => {
     expect(src).not.toContain('points="112,24 24,24 24,116 112,116"');
   });
 
-  it('shows the product (static timeline render) beside the workspace finder', () => {
-    // UI-19: the landing leads with the instrument, not a centered animated
-    // logo in dead space. It renders the static timeline preview component.
-    expect(src).toContain('app-marketing-timeline-preview');
-    expect(src).toContain('MarketingTimelinePreviewComponent');
+  it('leads with a centered workspace finder (login-only landing)', () => {
+    // The unauthenticated landing is a centered sign-in surface: positioning
+    // copy plus the workspace finder, with no product render beside it. It must
+    // not reintroduce the old two-column timeline-preview layout.
+    expect(src).toContain('Find your workspace');
+    expect(src).not.toContain('MarketingTimelinePreviewComponent');
   });
 });

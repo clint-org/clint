@@ -6,7 +6,7 @@
 
 export type MaterialType = 'briefing' | 'conference_report' | 'priority_notice' | 'ad_hoc';
 
-export type MaterialEntityType = 'trial' | 'marker' | 'company' | 'product' | 'space';
+export type MaterialEntityType = 'trial' | 'marker' | 'company' | 'product' | 'space' | 'event';
 
 export interface MaterialLink {
   entity_type: MaterialEntityType;
@@ -19,6 +19,14 @@ export interface MaterialLink {
    * Null when the linked entity has been deleted.
    */
   entity_name?: string | null;
+  /**
+   * Parent trial id for a marker link, resolved server-side by the list RPCs
+   * (the marker's first trial assignment). Lets the UI deep-link a marker chip
+   * to the trial timeline, since markers have no standalone page. Null/absent
+   * for non-marker links and for a marker with no trial assignment. Read-only
+   * output: the register/update inputs do not send it.
+   */
+  trial_id?: string | null;
 }
 
 export interface Material {
@@ -81,6 +89,7 @@ export const MATERIAL_ENTITY_LABEL: Record<MaterialEntityType, string> = {
   company: 'Company',
   product: 'Asset',
   space: 'Space',
+  event: 'Event',
 };
 
 /**

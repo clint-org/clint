@@ -13,6 +13,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
+import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
@@ -34,6 +35,7 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
     ConfirmDialogModule,
     ToastModule,
     ManagePageShellComponent,
+    SectionHeaderComponent,
     IntelligenceBlockComponent,
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,
@@ -124,7 +126,7 @@ export class EngagementDetailComponent implements OnInit {
       await this.loadIntelligence();
       this.messageService.add({
         severity: 'success',
-        summary: 'Analysis withdrawn.',
+        summary: 'Intelligence withdrawn.',
         life: 3000,
       });
     } catch (err) {
@@ -153,7 +155,7 @@ export class EngagementDetailComponent implements OnInit {
       await this.loadIntelligence();
       this.messageService.add({
         severity: 'success',
-        summary: 'Analysis purged.',
+        summary: 'Intelligence purged.',
         life: 3000,
       });
     } catch (err) {
@@ -178,7 +180,11 @@ export class EngagementDetailComponent implements OnInit {
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
     await this.loadIntelligence();
-    this.messageService.add({ severity: 'success', summary: 'Analysis published.', life: 3000 });
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Intelligence published.',
+      life: 3000,
+    });
   }
 
   protected async onIntelligenceDelete(): Promise<void> {
@@ -188,8 +194,8 @@ export class EngagementDetailComponent implements OnInit {
     // Unnamed-item path: the engagement intelligence is a single read,
     // require the literal word 'delete' to gate the destructive action.
     const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete primary intelligence',
-      message: 'Delete the primary intelligence analysis for this space?',
+      header: 'Delete this intelligence',
+      message: 'Delete the intelligence for this space?',
       requireTypedConfirmation: true,
       typedConfirmationValue: 'delete',
     });
@@ -199,7 +205,7 @@ export class EngagementDetailComponent implements OnInit {
       this.messageService.add({
         severity: 'success',
         summary: 'Deleted',
-        detail: 'Primary intelligence removed.',
+        detail: 'Intelligence removed.',
       });
       await this.loadIntelligence();
     } catch (err) {

@@ -1,0 +1,119 @@
+name: CT.gov sync health
+# The daily CT.gov sync runs inside the prod Cloudflare Worker on a "0 7 * * *"
+# cron and records one row per run in public.ctgov_sync_runs. Nothing watched
+# that table: a run could fail, land at status=partial, or not fire at all (the
+# Worker scheduled() handler only log()s a thrown sync -- no row is written), and
+# no one was told. This is an external dead-man's-switch: because it runs on
+# GitHub's infra, not the Worker, it also catches the case where the Worker cron
+# silently stops firing. It opens / updates a deduped GitHub issue on failure,
+# matching the pattern in uptime-check.yml. Runs ~2h after the 07:00 UTC sync.
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check latest CT.gov sync run health
+        env:
+          DB_URL: ${{ secrets.SUPABASE_PROD_DB_POOLER_URL }}
+          # A healthy daily run is at most this old. The sync fires at 07:00 UTC
+          # and this check at 09:00 UTC, so a fresh run is ~2h old. 26h means a
+          # single missed day is caught at the next 09:00 check (the prior run
+          # would be ~26h old).
+          STALE_HOURS: "26"
+        run: |
+          set -uo pipefail
+          if [ -z "${DB_URL}" ]; then
+            echo "::error::SUPABASE_PROD_DB_POOLER_URL secret is not set"
+            exit 1
+          fi
+
+          # One line: age_hours|status|errors_count|started_at. Empty fields when
+          # the table has no rows.
+          row=$(psql "${DB_URL}" -At -F'|' -v ON_ERROR_STOP=1 -c "
+            select
+              coalesce((extract(epoch from now() - max(started_at)) / 3600)::int::text, ''),
+              coalesce((select status from public.ctgov_sync_runs order by started_at desc limit 1), ''),
+              coalesce((select errors_count from public.ctgov_sync_runs order by started_at desc limit 1)::text, ''),
+              coalesce(max(started_at)::text, '')
+            from public.ctgov_sync_runs;
+          ") || { echo "::error::could not query public.ctgov_sync_runs on prod"; exit 1; }
+
+          age_hours="${row%%|*}"
+          rest="${row#*|}"
+          status="${rest%%|*}"
+          rest="${rest#*|}"
+          errors="${rest%%|*}"
+          started="${rest#*|}"
+
+          echo "latest run: started=${started:-<none>} age=${age_hours:-?}h status=${status:-<none>} errors=${errors:-?}"
+
+          fail=0
+          if [ -z "${status}" ] || [ -z "${age_hours}" ]; then
+            echo "::error::no CT.gov sync runs recorded in ctgov_sync_runs"
+            fail=1
+          else
+            if [ "${age_hours}" -gt "${STALE_HOURS}" ]; then
+              echo "::error::latest CT.gov sync run is ${age_hours}h old (> ${STALE_HOURS}h) -- a daily run was missed"
+              fail=1
+            fi
+            if [ "${status}" != "success" ]; then
+              echo "::error::latest CT.gov sync run status is '${status}' (errors=${errors}), expected 'success'"
+              fail=1
+            fi
+          fi
+          exit $fail
+
+  notify-failure:
+    needs: [check]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const label = 'ctgov-sync-failure';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              'The daily CT.gov sync health check failed.',
+              '',
+              `Run: ${runUrl}`,
+              '',
+              'One of: the latest run in public.ctgov_sync_runs is stale (a daily',
+              'sync was missed -- the prod Worker cron did not fire or threw before',
+              'recording a row), the latest run is status=failed/partial, or no runs',
+              'are recorded at all. See the run log for which.',
+              '',
+              'Triage: docs/runbook (CT.gov sync) and the Worker logs for the',
+              "`clint` Worker around 07:00 UTC.",
+            ].join('\n');
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'CT.gov sync health check failed',
+                body,
+                labels: [label],
+              });
+            }
