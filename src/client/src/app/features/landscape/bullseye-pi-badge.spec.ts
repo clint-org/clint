@@ -17,6 +17,8 @@ import { BOOKMARK_PATH } from '../../shared/components/pi-mark/pi-mark.component
 const chartHtml = readFileSync(join(__dirname, 'bullseye-chart.component.html'), 'utf8');
 const chartTs = readFileSync(join(__dirname, 'bullseye-chart.component.ts'), 'utf8');
 const signalTs = readFileSync(join(__dirname, 'bullseye-signal-mark.component.ts'), 'utf8');
+const detailHtml = readFileSync(join(__dirname, 'bullseye-detail-panel.component.html'), 'utf8');
+const detailTs = readFileSync(join(__dirname, 'bullseye-detail-panel.component.ts'), 'utf8');
 
 describe('bullseye node PI badge', () => {
   it('renders the brand bookmark badge for nodes with intelligence', () => {
@@ -45,5 +47,14 @@ describe('bullseye signal-mark glyph', () => {
   it('keeps the orange activity ring as a data color', () => {
     expect(signalTs).toContain('#f97316');
     expect(signalTs).toContain('hasRecentActivity');
+  });
+});
+
+describe('bullseye detail panel intelligence section', () => {
+  it('renders the shared PiDetailSection from mapped asset notes', () => {
+    expect(detailHtml).toContain('<app-pi-detail-section');
+    expect(detailHtml).toContain('[references]="intelligenceReferences()"');
+    expect(detailTs).toContain('intelligenceReferences = computed<PiReference[]>');
+    expect(detailTs).toContain('PiDetailSectionComponent');
   });
 });
