@@ -16,6 +16,10 @@ export interface Trial {
   updated_at: string;
   updated_by: string | null;
 
+  // Import provenance: the source_documents row this entity landed from when
+  // created by an AI import. Null for manually created entities.
+  source_doc_id: string | null;
+
   // Phase override (analyst-owned)
   phase_type: string | null;
   phase_start_date: string | null;

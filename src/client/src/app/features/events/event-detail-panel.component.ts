@@ -30,6 +30,7 @@ import { DetailPanelPillComponent } from '../../shared/components/detail-panel-p
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 import { ExternalLinkComponent } from '../../shared/components/external-link.component';
+import { SourceProvenanceLineComponent } from '../../shared/components/source-provenance/source-provenance-line.component';
 import { BrandLogoComponent } from '../../shared/components/brand-logo.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
@@ -88,6 +89,7 @@ const CATEGORY_COLOR: Record<string, string> = {
     MarkerIconComponent,
     RowActionsComponent,
     LoaderComponent,
+    SourceProvenanceLineComponent,
   ],
   templateUrl: './event-detail-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

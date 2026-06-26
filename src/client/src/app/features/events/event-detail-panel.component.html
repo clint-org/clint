@@ -97,6 +97,12 @@
       </app-detail-panel-section>
     }
 
+    @if (d.source_doc_id) {
+      <div class="px-1 pt-1">
+        <app-source-provenance-line [sourceDocId]="d.source_doc_id" [canView]="canEdit()" />
+      </div>
+    }
+
     @if (d.tags.length > 0) {
       <app-detail-panel-section label="Tags">
         <div class="flex flex-wrap gap-1.5">
