@@ -120,6 +120,7 @@ export class PptxExportService {
     const layout = computeLeftColumns({
       showMoa: options.showMoaColumn,
       showRoa: options.showRoaColumn,
+      showIndication: options.showIndicationColumn,
       showNotes: options.showNotesColumn,
     });
     const logoByCompany = await this.loadCompanyLogos(companies);
@@ -388,6 +389,7 @@ export class PptxExportService {
       asset: 'Asset',
       moa: 'MOA',
       roa: 'ROA',
+      indication: 'Indication',
       trial: 'Trial',
       notes: 'Notes',
     };
@@ -552,6 +554,22 @@ export class PptxExportService {
           fontFace: 'Arial',
           color: '64748b',
           valign: 'middle',
+        });
+      }
+
+      // Indication is per-trial (not asset-grouped), so render on every row.
+      const indicationCol = col('indication');
+      if (indicationCol && row.indications) {
+        slide.addText(row.indications, {
+          x: indicationCol.x + 0.05,
+          y,
+          w: indicationCol.width - 0.05,
+          h: rowH,
+          fontSize: Math.max(4, fontSize - 1),
+          fontFace: 'Arial',
+          color: '64748b',
+          valign: 'middle',
+          shrinkText: true,
         });
       }
 

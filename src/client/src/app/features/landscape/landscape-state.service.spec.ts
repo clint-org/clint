@@ -56,9 +56,10 @@ describe('filterDashboardData', () => {
 });
 
 /**
- * Trials carry their indication grouping in `_indication` (attached by
+ * Trials carry their indication groupings in `_indications` (attached by
  * DashboardService). The filter holds indication entity ids, which live on
- * `_indication.indication_id` -- NOT the asset_indication join-row id.
+ * `_indications[].indication_id` -- NOT the asset_indication join-row id. A
+ * trial spanning several indications appears as ONE row carrying all of them.
  */
 function makeIndicationFixture(): Company[] {
   return [
@@ -78,16 +79,22 @@ function makeIndicationFixture(): Company[] {
               name: 'Trial1',
               asset_id: 'p1',
               markers: [],
-              _indication: { id: 'ai1', indication_id: 'ind-onc', indication_name: 'Oncology' },
+              // Spans two indications -- a single row that either Oncology or Derm matches.
+              _indications: [
+                { id: 'ind-onc', indication_id: 'ind-onc', indication_name: 'Oncology' },
+                { id: 'ind-derm', indication_id: 'ind-derm', indication_name: 'Derm' },
+              ],
             } as Trial,
             {
               id: 't2',
               name: 'Trial2',
               asset_id: 'p1',
               markers: [],
-              _indication: { id: 'ai2', indication_id: 'ind-derm', indication_name: 'Derm' },
+              _indications: [
+                { id: 'ind-derm', indication_id: 'ind-derm', indication_name: 'Derm' },
+              ],
             } as Trial,
-            // No _indication (asset had no indication grouping) -- excluded by any indication filter.
+            // No _indications (asset had no indication grouping) -- excluded by any indication filter.
             { id: 't3', name: 'Trial3', asset_id: 'p1', markers: [] } as Trial,
           ],
         } as Asset,
@@ -97,20 +104,20 @@ function makeIndicationFixture(): Company[] {
 }
 
 describe('filterDashboardData indicationIds', () => {
-  it('keeps only trials whose _indication.indication_id is selected', () => {
+  it('keeps trials with a matching indication, once, even when they span several', () => {
     const filters: LandscapeFilters = { ...EMPTY_LANDSCAPE_FILTERS, indicationIds: ['ind-onc'] };
     const result = filterDashboardData(makeIndicationFixture(), filters);
     expect(result[0].assets![0].trials!.map((t) => t.id)).toEqual(['t1']);
   });
 
   it('matches the indication entity id, not the asset_indication join-row id', () => {
-    // 'ai1' is the join-row id; selecting it must NOT match (regression guard).
+    // 'ai1' is a join-row id; selecting it must NOT match (regression guard).
     const filters: LandscapeFilters = { ...EMPTY_LANDSCAPE_FILTERS, indicationIds: ['ai1'] };
     const result = filterDashboardData(makeIndicationFixture(), filters);
     expect(result).toEqual([]);
   });
 
-  it('drops trials without an _indication when an indication filter is set', () => {
+  it('drops trials without any _indications when an indication filter is set', () => {
     const filters: LandscapeFilters = {
       ...EMPTY_LANDSCAPE_FILTERS,
       indicationIds: ['ind-onc', 'ind-derm'],

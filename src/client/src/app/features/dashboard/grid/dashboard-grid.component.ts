@@ -43,6 +43,7 @@ export interface FlattenedTrial {
   assetLogoUrl: string | null;
   assetMoas: { id: string; name: string }[];
   assetRoas: { id: string; name: string; abbreviation: string | null }[];
+  trialIndications: { id: string; name: string }[];
   trial: Trial;
   isFirstInCompany: boolean;
   isFirstInAsset: boolean;
@@ -80,6 +81,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly hideTrialColumn = input<boolean>(false);
   readonly hideMoaColumn = input<boolean>(false);
   readonly hideRoaColumn = input<boolean>(false);
+  readonly hideIndicationColumn = input<boolean>(false);
   readonly hideNotesColumn = input<boolean>(false);
 
   readonly phaseClick = output<Trial>();
@@ -91,6 +93,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly isScrolled = signal(false);
   readonly showMoaColumn = computed(() => this.landscapeState?.showMoaColumn() ?? true);
   readonly showRoaColumn = computed(() => this.landscapeState?.showRoaColumn() ?? true);
+  readonly showIndicationColumn = computed(() => this.landscapeState?.showIndicationColumn() ?? false);
   readonly showNotesColumn = computed(() => this.landscapeState?.showNotesColumn() ?? true);
 
   constructor() {
@@ -181,6 +184,10 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
             assetLogoUrl: asset.logo_url ?? null,
             assetMoas: asset.mechanisms_of_action ?? [],
             assetRoas: asset.routes_of_administration ?? [],
+            trialIndications: (trial._indications ?? []).map((i) => ({
+              id: i.indication_id,
+              name: i.indication_name,
+            })),
             trial,
             isFirstInCompany,
             isFirstInAsset,
@@ -352,6 +359,10 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
 
   roaTooltipText(roas: { id: string; name: string; abbreviation: string | null }[]): string {
     return roas.map((r) => r.name).join(' \u00B7 ');
+  }
+
+  indicationTooltipText(indications: { id: string; name: string }[]): string {
+    return indications.map((i) => i.name).join(' \u00B7 ');
   }
 
   protected isMarkerInWindow(marker: Marker): boolean {
