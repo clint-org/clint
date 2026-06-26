@@ -182,6 +182,18 @@ await go('', 'engagement-landing.png');
 if (want('timeline')) {
   try {
     await page.goto(`${BASE}/timeline`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    // Keep the per-space "intelligence headlines" pref ON so PI trial rows show
+    // the inline published headline next to the PI bookmark flag (the deck wants
+    // the intelligence story visible, not just the compact flag). Set before the
+    // grid hydrates its pref, then reload so it takes effect.
+    await page
+      .evaluate((sid) => {
+        try {
+          localStorage.setItem(`clint:pi-headlines:${sid}`, 'true');
+        } catch {}
+      }, SID)
+      .catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await settle(page, 2600);
     // Find the 2023 year header cell document-wide, then scroll ITS scrollable
     // ancestor so 2023 lands just past the frozen label columns. (Deriving the
@@ -207,11 +219,19 @@ if (want('timeline')) {
     // Re-assert in case the grid's initial-scroll effect reset it.
     await page.evaluate(scrollOnce, 560).catch(() => {});
     await page.waitForTimeout(700);
-    // Hover a representative marker to pop its tooltip card.
-    const markers = page.locator('app-marker div[role="button"]');
-    const n = await markers.count();
-    if (n) {
-      const target = markers.nth(Math.min(n - 1, Math.floor(n * 0.45)));
+    // Hover a content-rich data marker (description + readout) so the tooltip
+    // card shows the competitive read, not a bare CT.gov milestone. The marker's
+    // aria-label is its title; target the REDEFINE-1 topline readout (CagriSema,
+    // 2024-12, in frame), falling back to a mid marker if it isn't found.
+    let target = page
+      .locator('app-marker div[role="button"][aria-label^="REDEFINE-1 topline"]')
+      .first();
+    if (!(await target.count())) {
+      const markers = page.locator('app-marker div[role="button"]');
+      const n = await markers.count();
+      target = n ? markers.nth(Math.min(n - 1, Math.floor(n * 0.45))) : null;
+    }
+    if (target) {
       await target.scrollIntoViewIfNeeded().catch(() => {});
       await target.hover({ force: true }).catch(() => {});
       await page.waitForSelector('app-marker-tooltip', { timeout: 4000 }).catch(() => {});
@@ -223,22 +243,49 @@ if (want('timeline')) {
   }
 }
 
-await go('/heatmap/by-moa', 'heatmap.png', 2400);
+// Heatmap -- group by MOA, then open a group that owns published primary
+// intelligence so the detail panel renders the "N of M assets have
+// intelligence" PI section next to the in-cell PI bookmark flags.
+if (want('heatmap')) {
+  try {
+    await page.goto(`${BASE}/heatmap/by-moa`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await settle(page, 2400);
+    const piRow = page
+      .locator('table.matrix tbody tr', { hasText: 'GLP-1 receptor agonist' })
+      .first();
+    if (await piRow.count()) {
+      await piRow.click().catch(() => {});
+      await page.waitForTimeout(1200);
+    }
+    // Park the cursor away from the left rail so the nav sidebar stays collapsed
+    // (it hover-expands to 220px and crowds the matrix); top bar, no tooltip.
+    await page.mouse.move(900, 8);
+    await page.waitForTimeout(700);
+    await shot(page, 'heatmap.png');
+  } catch (e) {
+    log('FAILED heatmap.png -', e.message);
+  }
+}
 await go('/events?source=detected', 'activity.png');
 
-// 4) Bullseye -- select a live dot to open the asset panel.
+// 4) Bullseye -- select an asset that owns published primary intelligence
+// (CagriSema) so the asset panel shows its Intelligence section while the chart
+// keeps its PI bookmark flags + activity rings. Fall back to a mid live dot.
 if (want('bullseye')) {
   try {
     await page.goto(`${BASE}/bullseye`, { waitUntil: 'domcontentloaded' });
     await settle(page, 2600);
-    const dots = page.locator('circle.bullseye-dot:not(.bullseye-dot-faded)');
-    const n = await dots.count();
-    if (n) {
-      await dots.nth(Math.min(n - 1, Math.floor(n / 2))).click({ force: true });
-      await page.waitForTimeout(1200);
-      await page.mouse.move(900, 8);
-      await page.waitForTimeout(600);
+    const piDot = page.locator('circle.bullseye-dot[aria-label^="CagriSema"]').first();
+    if (await piDot.count()) {
+      await piDot.click({ force: true });
+    } else {
+      const dots = page.locator('circle.bullseye-dot:not(.bullseye-dot-faded)');
+      const n = await dots.count();
+      if (n) await dots.nth(Math.min(n - 1, Math.floor(n / 2))).click({ force: true });
     }
+    await page.waitForTimeout(1200);
+    await page.mouse.move(900, 8);
+    await page.waitForTimeout(600);
     await shot(page, 'bullseye.png');
   } catch (e) {
     log('FAILED bullseye.png -', e.message);
