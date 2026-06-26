@@ -224,10 +224,8 @@ equal the vault secret `ctgov_worker_secret`. Drift surfaces through the normal
 `ctgov-sync-failure` alert: when the secrets disagree, every ingest raises `42501`
 and the run lands `failed` (`error_summary` full of `42501` / `unauthorized`), so
 the sync-health watcher opens an issue on the next check. **Triage signal: a run
-whose errors are all `42501` is a secret mismatch, not a CT.gov-side problem.** A
-manual probe is also available: hit `GET /api/ctgov/secret-health` in a browser
-(it round-trips the Worker's secret through the `ctgov_secret_health` RPC and
-returns `{ok:true|false}`). To confirm the vault side by hand:
+whose errors are all `42501` is a secret mismatch, not a CT.gov-side problem.** To
+confirm the vault side by hand:
 
 ```bash
 infisical run --projectId 7c227e8b-b355-46cb-8912-701104e2415b --env prod \
@@ -272,15 +270,13 @@ flowchart TD
    check above.
 2. **Secret drift (covered by the sync alert).** A `CTGOV_WORKER_SECRET` vs
    `ctgov_worker_secret` mismatch fails every ingest with `42501`, so the run lands
-   `failed` and `ctgov-sync-failure` already fires. A dedicated watcher was
-   prototyped (the `ctgov_secret_health` RPC + `GET /api/ctgov/secret-health` route,
-   both still available for a manual browser check) but a scheduled GitHub Actions
-   probe could not reach the route: Cloudflare's managed challenge returns a 403 to
-   server-side callers on all `/api/*` paths, so the probe would have false-alarmed.
-   It was dropped as redundant. Open item if a *named* drift alert is ever wanted: a
-   Cloudflare WAF skip rule for that one path (plus a token header), or a Worker-side
-   heartbeat written to the DB that a watcher reads. For now the triage rule above
-   (all-`42501` run = secret mismatch) closes the loop.
+   `failed` and `ctgov-sync-failure` already fires. A dedicated named watcher was
+   prototyped but dropped: a scheduled GitHub Actions probe could not reach a worker
+   route because Cloudflare's managed challenge returns a 403 to server-side callers
+   on all `/api/*` paths. The triage rule above (all-`42501` run = secret mismatch)
+   closes the loop. Open item if a *named* drift alert is ever wanted: a Cloudflare
+   WAF skip rule for one probe path (plus a token header), or a Worker-side heartbeat
+   written to the DB that a watcher reads.
 3. **No in-app status surface.** `get_latest_sync_run()` is unwired and
    `error_summary` has no UI. Recommendation: a small platform-admin "Sync status"
    panel (last run, status, error count, top errors) so health is visible without a
