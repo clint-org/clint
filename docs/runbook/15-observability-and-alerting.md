@@ -35,7 +35,6 @@ flowchart LR
   end
   subgraph GHA[GitHub Actions watchers - run on GitHub infra]
     H1[ctgov-sync-health]
-    H7[ctgov-secret-health]
     H2[uptime-check]
     H3[backup-db]
     H4[backup-verify]
@@ -44,13 +43,12 @@ flowchart LR
   end
   W --> DB
   DB -- reads latest run --> H1
-  W -- secret probe via<br/>/api/ctgov/secret-health --> H7
   EDGE --> H2
   DB -- dumps --> H3
   BK --> H4
   INF --> H5
   IAC --> H6
-  H1 & H7 & H2 & H3 & H4 & H5 & H6 -- on failure --> ISS[GitHub Issue<br/>deduped by label]
+  H1 & H2 & H3 & H4 & H5 & H6 -- on failure --> ISS[GitHub Issue<br/>deduped by label]
   ISS -. you watch the Issues tab .-> HUMAN[On-call human]
 ```
 
@@ -62,7 +60,6 @@ alerts land as GitHub Issues; the **label** is how you find and dedupe them.
 | Workflow | Schedule (UTC) | Watches | Fails when | Issue label | Where to look first |
 |---|---|---|---|---|---|
 | `ctgov-sync-health.yml` | `0 9 * * *` | Latest `public.ctgov_sync_runs` row on prod | No rows, or latest is `>26h` old, or status is not `success` | `ctgov-sync-failure` | `ctgov_sync_runs.error_summary`, then Worker logs around 07:00 |
-| `ctgov-secret-health.yml` | `0 8 * * *` | `CTGOV_WORKER_SECRET` vs vault `ctgov_worker_secret` on each host (probes `GET /api/ctgov/secret-health`) | A host returns `ok:false` (drift / 42501) or the probe is unreachable | `ctgov-secret-drift` | Re-set the Worker secret to match the vault, then re-dispatch |
 | `uptime-check.yml` | `0 */6 * * *` | `clintapp.com`, `dev.clintapp.com` reachability + TLS expiry | HTTP 000/5xx, or cert expires in `<21d` | `uptime-failure` | Cloudflare Worker status, DNS, cert |
 | `backup-db.yml` | `0 9 * * *` | Daily prod + dev Postgres dump to R2 + B2 | Any dump/encrypt/upload step fails | `backup-failure` | The failed run log; [13](13-backup-and-restore.md) |
 | `backup-verify.yml` | `0 10 * * 1` | Freshness + integrity of newest R2 + B2 bundles | Backup missing, stale, or fails decrypt/row-count | `backup-verify-failure` | The failed run log; [13](13-backup-and-restore.md) |
@@ -223,11 +220,14 @@ Every CT.gov RPC calls `_verify_ctgov_worker_secret(p_secret)` as its first
 statement; on mismatch it raises `42501` (unauthorized), which fails **every**
 ingest and drives the whole run to `failed`. The Worker's runtime secret
 `CTGOV_WORKER_SECRET` (set via `wrangler secret put`, not in `wrangler.jsonc`) must
-equal the vault secret `ctgov_worker_secret`. The `ctgov-secret-health.yml` watcher
-now detects this drift directly (it probes `GET /api/ctgov/secret-health`, which
-round-trips the Worker's secret through the `ctgov_secret_health` RPC) and opens a
-`ctgov-secret-drift` issue, so you should hear about drift before a sync mass-fails.
-To confirm the vault side by hand:
+equal the vault secret `ctgov_worker_secret`. Drift surfaces through the normal
+`ctgov-sync-failure` alert: when the secrets disagree, every ingest raises `42501`
+and the run lands `failed` (`error_summary` full of `42501` / `unauthorized`), so
+the sync-health watcher opens an issue on the next check. **Triage signal: a run
+whose errors are all `42501` is a secret mismatch, not a CT.gov-side problem.** A
+manual probe is also available: hit `GET /api/ctgov/secret-health` in a browser
+(it round-trips the Worker's secret through the `ctgov_secret_health` RPC and
+returns `{ok:true|false}`). To confirm the vault side by hand:
 
 ```bash
 infisical run --projectId 7c227e8b-b355-46cb-8912-701104e2415b --env prod \
@@ -270,13 +270,17 @@ flowchart TD
    observability/watcher change as needing a prompt `develop -> main` promotion, and
    keep a short list of "watchers that must be on main" with the `git cat-file`
    check above.
-2. **Secret drift (addressed).** A `CTGOV_WORKER_SECRET` vs `ctgov_worker_secret`
-   mismatch fails every ingest. Now detected by `ctgov-secret-health.yml`, which
-   probes `GET /api/ctgov/secret-health` on each host (the Worker round-trips its
-   secret through the `ctgov_secret_health` RPC) and opens a `ctgov-secret-drift`
-   issue, separate from the staleness check so the cause is named. Caveat: like any
-   watcher it only runs on schedule once on `main` (gap 1), and it needs the route
-   deployed on each host first.
+2. **Secret drift (covered by the sync alert).** A `CTGOV_WORKER_SECRET` vs
+   `ctgov_worker_secret` mismatch fails every ingest with `42501`, so the run lands
+   `failed` and `ctgov-sync-failure` already fires. A dedicated watcher was
+   prototyped (the `ctgov_secret_health` RPC + `GET /api/ctgov/secret-health` route,
+   both still available for a manual browser check) but a scheduled GitHub Actions
+   probe could not reach the route: Cloudflare's managed challenge returns a 403 to
+   server-side callers on all `/api/*` paths, so the probe would have false-alarmed.
+   It was dropped as redundant. Open item if a *named* drift alert is ever wanted: a
+   Cloudflare WAF skip rule for that one path (plus a token header), or a Worker-side
+   heartbeat written to the DB that a watcher reads. For now the triage rule above
+   (all-`42501` run = secret mismatch) closes the loop.
 3. **No in-app status surface.** `get_latest_sync_run()` is unwired and
    `error_summary` has no UI. Recommendation: a small platform-admin "Sync status"
    panel (last run, status, error count, top errors) so health is visible without a

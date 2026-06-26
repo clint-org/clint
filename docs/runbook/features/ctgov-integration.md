@@ -41,7 +41,7 @@ Helper methods in the sync service handle phase mapping, masking conversion, spo
   role: editor
   status: active
 - id: ctgov-worker-cron
-  summary: Daily Cloudflare Worker pulls fresh CT.gov payloads in batches, calling ingest per changed trial. A secret-gated health probe (ctgov_secret_health, GET /api/ctgov/secret-health) lets the ctgov-secret-health watchdog detect drift between the Worker secret and the vault secret.
+  summary: Daily Cloudflare Worker pulls fresh CT.gov payloads in batches, calling ingest per changed trial. A secret-gated probe (ctgov_secret_health, GET /api/ctgov/secret-health) is available for a manual check of Worker-secret-vs-vault drift.
   routes: []
   rpcs:
     - bulk_update_last_polled
