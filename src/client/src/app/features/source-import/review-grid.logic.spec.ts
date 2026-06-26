@@ -16,6 +16,8 @@ import {
   countFilterMatches,
   markerLeafDisplay,
   eventLeafDisplay,
+  pickMarkerType,
+  type MarkerTypeLite,
 } from './review-grid.logic';
 
 describe('entityState', () => {
@@ -383,6 +385,50 @@ describe('markerLeafDisplay', () => {
       category: null,
       date: null,
     });
+  });
+});
+
+describe('pickMarkerType (mirrors commit_source_import resolution)', () => {
+  const mt = (over: Partial<MarkerTypeLite>): MarkerTypeLite => ({
+    name: 'X',
+    shape: 'circle',
+    color: '#000',
+    fill_style: 'filled',
+    inner_mark: 'none',
+    is_system: true,
+    display_order: 0,
+    ...over,
+  });
+
+  it('returns null when no types are loaded', () => {
+    expect(pickMarkerType('Topline Data', [])).toBeNull();
+  });
+  it('matches an exact name', () => {
+    const types = [mt({ name: 'Topline Data', color: '#0a0' }), mt({ name: 'Safety', color: '#a00' })];
+    expect(pickMarkerType('Topline Data', types)?.color).toBe('#0a0');
+  });
+  it('falls back to a case-insensitive match', () => {
+    const types = [mt({ name: 'Topline Data', color: '#0a0' })];
+    expect(pickMarkerType('topline data', types)?.color).toBe('#0a0');
+  });
+  it('prefers a space-scoped type over a system type of the same name', () => {
+    const types = [
+      mt({ name: 'Readout', is_system: true, color: '#sys' }),
+      mt({ name: 'Readout', is_system: false, color: '#space' }),
+    ];
+    expect(pickMarkerType('Readout', types)?.color).toBe('#space');
+  });
+  it('falls back to the lowest-ordered system default when the name does not match', () => {
+    const types = [
+      mt({ name: 'B', is_system: true, display_order: 2, color: '#b' }),
+      mt({ name: 'A', is_system: true, display_order: 1, color: '#a' }),
+      mt({ name: 'Space', is_system: false, display_order: 0, color: '#space' }),
+    ];
+    expect(pickMarkerType('Nonexistent', types)?.color).toBe('#a');
+  });
+  it('uses the default chain when the name is null/blank', () => {
+    const types = [mt({ name: 'A', is_system: true, display_order: 0, color: '#a' })];
+    expect(pickMarkerType(null, types)?.color).toBe('#a');
   });
 });
 
