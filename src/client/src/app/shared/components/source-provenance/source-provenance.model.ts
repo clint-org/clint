@@ -7,7 +7,7 @@ export interface SourceProvenance {
   source_doc_id: string;
   space_id: string;
   source_title: string | null;
-  source_kind: 'url' | 'text';
+  source_kind: 'url' | 'text' | 'nct';
   source_url: string | null;
   source_text: string;
   fetched_at: string;

@@ -23,7 +23,45 @@ export function provenanceTitle(doc: SourceProvenance | null): string {
 
 /** Human label for the source kind, used as a small badge. */
 export function sourceKindLabel(kind: SourceProvenance['source_kind']): string {
-  return kind === 'url' ? 'Web page' : 'Pasted text';
+  switch (kind) {
+    case 'url':
+      return 'Web page';
+    case 'nct':
+      return 'NCT batch';
+    default:
+      return 'Pasted text';
+  }
+}
+
+/**
+ * Heading for the raw-source block. Kind-aware because the stored body is not
+ * always text the analyst authored: an NCT import stores the CT.gov study
+ * record (the model's input), and a URL import stores the fetched page.
+ */
+export function sourceBodyLabel(kind: SourceProvenance['source_kind']): string {
+  switch (kind) {
+    case 'url':
+      return 'Fetched page';
+    case 'nct':
+      return 'Retrieved study data';
+    default:
+      return 'Original text';
+  }
+}
+
+/**
+ * Display form of the raw source body. NCT imports store the CT.gov study
+ * record as compact JSON; pretty-print it so a curator can read it. Falls back
+ * to the raw string if it does not parse. Non-NCT bodies (pasted text, fetched
+ * pages) are left exactly as ingested.
+ */
+export function formatSourceBody(text: string, kind: SourceProvenance['source_kind']): string {
+  if (kind !== 'nct') return text;
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2);
+  } catch {
+    return text;
+  }
 }
 
 /** Short, locale-independent UTC date for the inline line (e.g. "Jun 3, 2026"). */

@@ -3,7 +3,13 @@ import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
 
 import { SourceProvenance } from './source-provenance.model';
-import { formatProvenanceDate, provenanceTitle, sourceKindLabel } from './source-provenance.util';
+import {
+  formatProvenanceDate,
+  formatSourceBody,
+  provenanceTitle,
+  sourceBodyLabel,
+  sourceKindLabel,
+} from './source-provenance.util';
 
 /**
  * Read-only drawer showing the original ingested source an AI import landed
@@ -59,12 +65,6 @@ import { formatProvenanceDate, provenanceTitle, sourceKindLabel } from './source
             <dd class="text-slate-700">{{ d.imported_by_email ?? 'Unknown' }}</dd>
             <dt class="font-semibold uppercase tracking-wider text-slate-400">Imported</dt>
             <dd class="text-slate-700">{{ importedDate() }}</dd>
-            <dt class="font-semibold uppercase tracking-wider text-slate-400">Fetch</dt>
-            <dd class="text-slate-700">{{ d.fetch_outcome }}</dd>
-            @if (d.ai_model) {
-              <dt class="font-semibold uppercase tracking-wider text-slate-400">Model</dt>
-              <dd class="font-mono text-slate-700">{{ d.ai_model }}</dd>
-            }
           </dl>
 
           <div>
@@ -72,7 +72,7 @@ import { formatProvenanceDate, provenanceTitle, sourceKindLabel } from './source
               <span
                 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
               >
-                Original text
+                {{ bodyLabel() }}
               </span>
               <p-button
                 label="Copy"
@@ -80,12 +80,12 @@ import { formatProvenanceDate, provenanceTitle, sourceKindLabel } from './source
                 severity="secondary"
                 [text]="true"
                 size="small"
-                (onClick)="copy(d.source_text)"
+                (onClick)="copy(bodyText())"
               />
             </div>
             <pre
               class="max-h-[60vh] overflow-auto rounded-sm border border-slate-200 bg-slate-50 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-slate-700"
-              >{{ d.source_text }}</pre
+              >{{ bodyText() }}</pre
             >
           </div>
         </div>
@@ -103,6 +103,14 @@ export class SourceDocumentDrawerComponent {
   protected readonly kindLabel = computed(() => {
     const d = this.doc();
     return d ? sourceKindLabel(d.source_kind) : '';
+  });
+  protected readonly bodyLabel = computed(() => {
+    const d = this.doc();
+    return d ? sourceBodyLabel(d.source_kind) : '';
+  });
+  protected readonly bodyText = computed(() => {
+    const d = this.doc();
+    return d ? formatSourceBody(d.source_text, d.source_kind) : '';
   });
   protected readonly importedDate = computed(() => {
     const d = this.doc();
