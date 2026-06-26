@@ -7,38 +7,40 @@ import {
   input,
   signal,
 } from '@angular/core';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { SourceDocumentDrawerComponent } from './source-document-drawer.component';
 import { SourceProvenance } from './source-provenance.model';
 import { SourceProvenanceService } from './source-provenance.service';
-import { formatProvenanceDate, provenanceTitle } from './source-provenance.util';
+import { provenanceTooltip } from './source-provenance.util';
 
 /**
  * Quiet inline affordance for tracing how an AI-imported entity landed.
  *
  * Renders only when the entity carries a source_doc_id AND the viewer may see
- * provenance (owners/editors). Reads "IMPORTED FROM <title> · <date>" and, on
- * click, opens a read-only drawer with the original ingested source. Manual
- * entities (no source_doc_id) and viewers render nothing -- it stays quiet.
+ * provenance (owners/editors). Shows a compact uppercase "IMPORTED" chip;
+ * hovering reveals "Imported from <title> · <date>" and clicking opens a
+ * read-only drawer with the original ingested source. Manual entities (no
+ * source_doc_id) and viewers render nothing -- it stays quiet.
  */
 @Component({
   selector: 'app-source-provenance-line',
-  imports: [SourceDocumentDrawerComponent],
+  imports: [SourceDocumentDrawerComponent, TooltipModule],
   template: `
     @if (doc(); as d) {
       <button
         type="button"
-        class="group inline-flex max-w-full items-center gap-1.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400 transition-colors hover:text-slate-600"
+        class="group inline-flex items-center gap-1.5 rounded-sm border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-700"
+        [pTooltip]="tooltip()"
+        tooltipPosition="top"
         (click)="drawerOpen.set(true)"
-        [attr.aria-label]="'View import source: ' + title()"
+        [attr.aria-label]="tooltip()"
       >
-        <span class="text-slate-400 group-hover:text-slate-500">Imported from</span>
-        <span class="truncate normal-case text-slate-500 group-hover:text-slate-700">
-          {{ title() }}
-        </span>
-        <span class="text-slate-300">·</span>
-        <span class="tabular-nums text-slate-400">{{ dateLabel() }}</span>
-        <i class="fa-solid fa-arrow-right text-[8px] text-slate-300 group-hover:text-slate-500"></i>
+        <i
+          class="fa-solid fa-file-import text-[9px] text-slate-400 group-hover:text-slate-600"
+          aria-hidden="true"
+        ></i>
+        Imported
       </button>
 
       <app-source-document-drawer
@@ -61,11 +63,7 @@ export class SourceProvenanceLineComponent {
   protected readonly doc = signal<SourceProvenance | null>(null);
   protected readonly drawerOpen = signal<boolean>(false);
 
-  protected readonly title = computed(() => provenanceTitle(this.doc()));
-  protected readonly dateLabel = computed(() => {
-    const d = this.doc();
-    return d ? formatProvenanceDate(d.created_at) : '';
-  });
+  protected readonly tooltip = computed(() => provenanceTooltip(this.doc()));
 
   private readonly loadEffect = effect(() => {
     const id = this.sourceDocId();
