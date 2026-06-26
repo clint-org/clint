@@ -23,8 +23,8 @@ import { CTGOV_BULLSEYE_DEFAULT_PATHS } from '../../core/models/ctgov-field.mode
 import { LandscapeStateService } from './landscape-state.service';
 import {
   AssetIntelligenceNote,
-  ENTITY_TYPE_LABEL,
   IntelligenceEntityType,
+  PiReference,
 } from '../../core/models/primary-intelligence.model';
 import { DEVELOPMENT_STATUS_LABELS, phaseShortLabel } from '../../core/models/phase-colors';
 import { resolveScopeFromRoute } from '../../core/utils/route-scope';
@@ -43,6 +43,7 @@ import { DetailPanelSectionComponent } from '../../shared/components/detail-pane
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { BullseyeSignalMarkComponent } from './bullseye-signal-mark.component';
+import { PiDetailSectionComponent } from '../../shared/components/pi-detail-section/pi-detail-section.component';
 
 interface RingHistogramEntry {
   phase: RingPhase;
@@ -65,6 +66,7 @@ interface RingHistogramEntry {
     DetailPanelShellComponent,
     MarkerIconComponent,
     BullseyeSignalMarkComponent,
+    PiDetailSectionComponent,
   ],
   templateUrl: './bullseye-detail-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -147,6 +149,17 @@ export class BullseyeDetailPanelComponent {
   private readonly perSpacePaths = signal<string[] | null>(null);
   private readonly snapshotByTrial = signal<Map<string, unknown>>(new Map());
   readonly intelligenceNotes = signal<AssetIntelligenceNote[]>([]);
+
+  /** Asset PI notes mapped to the shared PiDetailSection reference shape. */
+  protected readonly intelligenceReferences = computed<PiReference[]>(() =>
+    this.intelligenceNotes().map((n) => ({
+      id: n.id,
+      entity_type: n.entity_type,
+      entity_id: n.entity_id,
+      entity_name: n.entity_name,
+      headline: n.headline,
+    }))
+  );
   private lastVisibilitySpaceId: string | null = null;
   private resolvedSpaceId: string | null = null;
 
@@ -303,12 +316,11 @@ export class BullseyeDetailPanelComponent {
     this.openMarker.emit(markerId);
   }
 
-  protected onIntelligenceClick(note: AssetIntelligenceNote): void {
-    this.openIntelligence.emit({ entityType: note.entity_type, entityId: note.entity_id });
-  }
-
-  protected entityTypeLabel(entityType: IntelligenceEntityType): string {
-    return ENTITY_TYPE_LABEL[entityType];
+  protected onIntelligenceClick(ref: PiReference): void {
+    this.openIntelligence.emit({
+      entityType: ref.entity_type as IntelligenceEntityType,
+      entityId: ref.entity_id,
+    });
   }
 
   protected onCompanyClick(): void {

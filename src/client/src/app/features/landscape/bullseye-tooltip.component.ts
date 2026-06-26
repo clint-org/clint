@@ -62,14 +62,14 @@ interface LadderCell {
             </div>
           </div>
           <!-- Live chart mark: phase-colored core ringed by the same signal
-               rings the bullseye plots (orange = recent activity, blue =
-               intelligence, dashed slate = multiple spokes). Shared geometry
-               with the chart dot and detail pane. -->
+               rings the bullseye plots (orange = recent activity, dashed slate
+               = multiple spokes). Primary intelligence shows as the brand
+               bookmark badge on the node. Shared geometry with the chart dot
+               and detail pane. -->
           <app-bullseye-signal-mark
             class="mt-0.5"
             [phase]="p.highest_phase"
             [hasRecentActivity]="p.has_recent_activity"
-            [hasIntelligence]="p.intelligence_count > 0"
             [multiSpoke]="spokeCount() > 1"
             [size]="30"
           />

@@ -23,13 +23,20 @@ import { LandscapeService } from '../../core/services/landscape.service';
 import { LandscapeStateService } from './landscape-state.service';
 import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
 import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
+import { TrialDetailPanelComponent } from './trial-detail-panel.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-landscape-shell',
   standalone: true,
-  imports: [RouterOutlet, LandscapeFilterBarComponent, MarkerDetailPanelComponent, LoaderComponent],
+  imports: [
+    RouterOutlet,
+    LandscapeFilterBarComponent,
+    MarkerDetailPanelComponent,
+    TrialDetailPanelComponent,
+    LoaderComponent,
+  ],
   animations: [routeFadeAnimation],
   providers: [LandscapeStateService],
   template: `
@@ -62,13 +69,23 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
               [surfaceKey]="viewMode() === 'catalysts' ? 'key_catalysts_panel' : 'timeline_detail'"
               [showEditAction]="true"
               [open]="!!state.selectedMarkerId()"
+              [references]="state.selectedMarkerReferences()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"
               (eventClick)="onEventClick($event)"
               (trialClick)="onTrialClick($event)"
+              (openIntelligence)="onOpenIntelligence($event)"
               (editMarkerClick)="onEditMarker($event)"
             />
           }
+        }
+
+        @if (state.selectedTrialId()) {
+          <app-trial-detail-panel
+            [detail]="state.selectedTrialDetail()"
+            [open]="!!state.selectedTrialId()"
+            (panelClose)="state.clearSelection()"
+          />
         }
       </div>
     </div>
@@ -173,6 +190,20 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   onTrialClick(trialId: string): void {
     this.router.navigate([...this.spaceBase(), 'manage', 'trials', trialId]);
+  }
+
+  /**
+   * A primary-intelligence reference in the marker pane was activated: navigate
+   * to the owning entity's manage page (where its full PI is read/edited).
+   */
+  onOpenIntelligence(target: { entityType: string; entityId: string }): void {
+    const segment =
+      target.entityType === 'company'
+        ? 'companies'
+        : target.entityType === 'product'
+          ? 'assets'
+          : 'trials';
+    this.router.navigate([...this.spaceBase(), 'manage', segment, target.entityId]);
   }
 
   /**
