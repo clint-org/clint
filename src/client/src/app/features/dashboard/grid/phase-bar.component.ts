@@ -5,8 +5,13 @@ import {
   PHASE_FALLBACK_COLOR,
   phaseShortLabel,
 } from '../../../core/models/phase-colors';
+import {
+  DatePrecision,
+  markerStartCaption,
+} from '../../../core/models/marker-date-precision';
 import { TimelineService } from '../../../core/services/timeline.service';
 import { phaseFadeStops } from './phase-bar-fade';
+import { EndpointTreatment, endpointTreatment } from './phase-bar-endpoint';
 
 let phaseBarUid = 0;
 
@@ -29,6 +34,10 @@ export class PhaseBarComponent {
   readonly startYear = input.required<number>();
   readonly endYear = input.required<number>();
   readonly totalWidth = input.required<number>();
+  /** Precision of the phase start date from deriveTrialPhaseSpan. */
+  readonly startPrecision = input<DatePrecision | null>(null);
+  /** Precision of the phase end date from deriveTrialPhaseSpan. */
+  readonly endPrecision = input<DatePrecision | null>(null);
 
   readonly phaseClick = output<void>();
 
@@ -58,7 +67,7 @@ export class PhaseBarComponent {
   /** No end date (ongoing) or the phase ends after the visible window. */
   protected readonly openRight = computed(() => !this.endDate() || this.rawEndX() > this.totalWidth());
 
-  private readonly endX = computed(() =>
+  protected readonly endX = computed(() =>
     Math.min(this.totalWidth(), Math.max(this.barX() + 24, this.rawEndX()))
   );
 
@@ -98,6 +107,35 @@ export class PhaseBarComponent {
   });
 
   protected readonly labelAnchor = computed(() => (this.showLabelInside() ? 'middle' : 'start'));
+
+  /** How the left bar edge renders: feather (clipped), cap (approximate), or hard (exact). */
+  protected readonly startTreatment = computed<EndpointTreatment>(() =>
+    endpointTreatment(this.openLeft(), this.startPrecision())
+  );
+
+  /** How the right bar edge renders: feather (ongoing/clipped), cap (approximate), or hard (exact). */
+  protected readonly endTreatment = computed<EndpointTreatment>(() =>
+    endpointTreatment(this.openRight(), this.endPrecision())
+  );
+
+  /**
+   * Caption for an approximate start cap: "~Nov '26", "~2026", etc.
+   * Reuses markerStartCaption so the bar endpoint and the co-located Trial
+   * Start marker show the same period string.
+   */
+  protected readonly startCapCaption = computed(() =>
+    markerStartCaption(this.startDate(), this.startPrecision())
+  );
+
+  /**
+   * Caption for an approximate end cap. Null when no end date is present
+   * (open-ended bars render feather, not cap, so this path is defensive).
+   */
+  protected readonly endCapCaption = computed(() => {
+    const end = this.endDate();
+    if (!end) return null;
+    return markerStartCaption(end, this.endPrecision());
+  });
 
   protected barHeight = BAR_HEIGHT;
   protected cornerRadius = CORNER_RADIUS;
