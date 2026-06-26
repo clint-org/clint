@@ -5,6 +5,7 @@ import {
   formatProvenanceDate,
   formatSourceBody,
   provenanceTitle,
+  provenanceTooltip,
   sourceBodyLabel,
   sourceKindLabel,
 } from './source-provenance.util';
@@ -44,6 +45,24 @@ describe('provenanceTitle', () => {
 
   it('returns "Untitled source" for a null doc', () => {
     expect(provenanceTitle(null)).toBe('Untitled source');
+  });
+});
+
+describe('provenanceTooltip', () => {
+  it('reads "Imported from <title> · <date>"', () => {
+    const tip = provenanceTooltip(
+      makeDoc({ source_title: 'NCT batch import (1 trials)', created_at: '2026-06-26T12:00:00Z' })
+    );
+    expect(tip).toBe('Imported from NCT batch import (1 trials) · Jun 26, 2026');
+  });
+
+  it('falls back to "Untitled source" when the title is missing', () => {
+    const tip = provenanceTooltip(makeDoc({ source_title: null, created_at: '2026-06-03T10:00:00Z' }));
+    expect(tip).toBe('Imported from Untitled source · Jun 3, 2026');
+  });
+
+  it('returns an empty string for a null doc', () => {
+    expect(provenanceTooltip(null)).toBe('');
   });
 });
 

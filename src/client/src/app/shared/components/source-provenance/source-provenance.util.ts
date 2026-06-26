@@ -21,6 +21,15 @@ export function provenanceTitle(doc: SourceProvenance | null): string {
   return title ? title : 'Untitled source';
 }
 
+/**
+ * Hover tooltip for the inline IMPORTED chip: "Imported from <title> · <date>".
+ * Carries the source title and import date that the compact chip omits.
+ */
+export function provenanceTooltip(doc: SourceProvenance | null): string {
+  if (!doc) return '';
+  return `Imported from ${provenanceTitle(doc)} · ${formatProvenanceDate(doc.created_at)}`;
+}
+
 /** Human label for the source kind, used as a small badge. */
 export function sourceKindLabel(kind: SourceProvenance['source_kind']): string {
   switch (kind) {
