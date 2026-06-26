@@ -703,6 +703,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `create_event`
 - `create_marker`
 - `create_trial`
+- `ctgov_secret_health`
 - `delete_change_event_annotation`
 - `delete_material`
 - `discard_pending_material`
