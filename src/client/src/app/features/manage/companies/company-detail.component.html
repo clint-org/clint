@@ -31,6 +31,12 @@
           {{ c.name }}
         </h1>
       </div>
+      <div class="mt-1.5">
+        <app-source-provenance-line
+          [sourceDocId]="c.source_doc_id"
+          [canView]="spaceRole.canEdit()"
+        />
+      </div>
     </header>
 
     <!-- Timeline (full width above the two-column record + rail). -->

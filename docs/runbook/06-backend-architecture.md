@@ -75,8 +75,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -128,6 +128,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_marker_history` | - | marker_changes |
 | `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, routes_of_administration, trial_assets, trials |
 | `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_links, trials |
+| `get_source_document` | - | ai_calls, source_documents |
 | `get_space_inventory_snapshot` | - | assets, companies, event_categories, indications, marker_types, mechanisms_of_action, routes_of_administration, trials |
 | `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
 | `get_space_tags` | - | events |
@@ -727,6 +728,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_landscape_index_by_roa`
 - `get_marker_detail_with_intelligence`
 - `get_positioning_data`
+- `get_source_document`
 - `get_space_intelligence`
 - `get_space_inventory_snapshot`
 - `get_space_landing_stats`

@@ -21,7 +21,9 @@ import {
 } from '../../core/models/ctgov-field.model';
 import { ChangeEventService } from '../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
+import { SpaceRoleService } from '../../core/services/space-role.service';
 import { TrialService } from '../../core/services/trial.service';
+import { SourceProvenanceLineComponent } from './source-provenance/source-provenance-line.component';
 import {
   MARKER_FIELD_LABELS,
   PROJECTION_LABEL,
@@ -80,6 +82,7 @@ interface CtgovProvenanceBlock {
     ExternalLinkComponent,
     MarkerIconComponent,
     MaterialsSectionComponent,
+    SourceProvenanceLineComponent,
   ],
   template: `
     @if (detail(); as d) {
@@ -281,6 +284,15 @@ interface CtgovProvenanceBlock {
         </app-detail-panel-section>
       }
 
+      @if (d.catalyst.source_doc_id) {
+        <div class="px-1 pt-1">
+          <app-source-provenance-line
+            [sourceDocId]="d.catalyst.source_doc_id"
+            [canView]="canViewProvenance()"
+          />
+        </div>
+      }
+
       @if (d.upcoming_markers.length > 0) {
         <app-detail-panel-section label="Upcoming for this trial">
           <app-detail-panel-entity-list>
@@ -362,7 +374,11 @@ export class MarkerDetailContentComponent {
   private changeEventService = inject(ChangeEventService);
   private trialService = inject(TrialService);
   private fieldVisibility = inject(SpaceFieldVisibilityService);
+  private spaceRole = inject(SpaceRoleService);
   private route = inject(ActivatedRoute);
+
+  /** Import provenance is for curators: owners and editors only. */
+  protected readonly canViewProvenance = computed(() => this.spaceRole.canEdit());
 
   /**
    * Tenant id read from the route ancestry. Used to build the "View detail"

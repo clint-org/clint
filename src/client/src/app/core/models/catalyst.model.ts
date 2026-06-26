@@ -61,6 +61,11 @@ export interface CatalystDetail {
     projection: string;
     company_logo_url: string | null;
     /**
+     * Import provenance: the source_documents row this marker landed from when
+     * created by an AI import. Null for manually created markers.
+     */
+    source_doc_id: string | null;
+    /**
      * Markers metadata jsonb passthrough; see CtgovMarkerMetadata for the
      * auto-derived shape. Other shapes possible for manual markers.
      */

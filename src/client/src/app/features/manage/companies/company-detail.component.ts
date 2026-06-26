@@ -29,6 +29,7 @@ import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawe
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
+import { SourceProvenanceLineComponent } from '../../../shared/components/source-provenance/source-provenance-line.component';
 import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 
 import { CompanyService } from '../../../core/services/company.service';
@@ -67,6 +68,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
     LoaderComponent,
+    SourceProvenanceLineComponent,
   ],
   providers: [ConfirmationService, MessageService, LandscapeStateService],
   templateUrl: './company-detail.component.html',
