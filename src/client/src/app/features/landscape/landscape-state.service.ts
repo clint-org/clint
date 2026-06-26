@@ -29,6 +29,7 @@ interface PersistedLandscapeState {
   countUnit: CountUnit;
   showMoaColumn: boolean;
   showRoaColumn: boolean;
+  showIndicationColumn: boolean;
   showNotesColumn: boolean;
 }
 
@@ -85,6 +86,10 @@ export class LandscapeStateService {
   // ─── Column visibility (timeline grid) ──────────────────────────────
   readonly showMoaColumn = signal(true);
   readonly showRoaColumn = signal(true);
+  // Off by default: most trials map to a single indication, so the column
+  // only earns its width when a user wants the indication cut. Toggled via
+  // the COLUMNS control in the insight strip.
+  readonly showIndicationColumn = signal(false);
   readonly showNotesColumn = signal(true);
 
   // ─── Shared detail panel ─────────────────────────────────────────────
@@ -138,6 +143,7 @@ export class LandscapeStateService {
       countUnit: this.countUnit(),
       showMoaColumn: this.showMoaColumn(),
       showRoaColumn: this.showRoaColumn(),
+      showIndicationColumn: this.showIndicationColumn(),
       showNotesColumn: this.showNotesColumn(),
     };
     if (!this.storageKey || this.disablePersistence) return;
@@ -161,6 +167,7 @@ export class LandscapeStateService {
       columnDefaults?: {
         showMoaColumn?: boolean;
         showRoaColumn?: boolean;
+        showIndicationColumn?: boolean;
         showNotesColumn?: boolean;
       };
     }
@@ -179,6 +186,8 @@ export class LandscapeStateService {
         this.showMoaColumn.set(opts.columnDefaults.showMoaColumn);
       if (opts.columnDefaults.showRoaColumn !== undefined)
         this.showRoaColumn.set(opts.columnDefaults.showRoaColumn);
+      if (opts.columnDefaults.showIndicationColumn !== undefined)
+        this.showIndicationColumn.set(opts.columnDefaults.showIndicationColumn);
       if (opts.columnDefaults.showNotesColumn !== undefined)
         this.showNotesColumn.set(opts.columnDefaults.showNotesColumn);
     }
@@ -285,6 +294,8 @@ export class LandscapeStateService {
       if (saved.countUnit) this.countUnit.set(saved.countUnit);
       if (typeof saved.showMoaColumn === 'boolean') this.showMoaColumn.set(saved.showMoaColumn);
       if (typeof saved.showRoaColumn === 'boolean') this.showRoaColumn.set(saved.showRoaColumn);
+      if (typeof saved.showIndicationColumn === 'boolean')
+        this.showIndicationColumn.set(saved.showIndicationColumn);
       if (typeof saved.showNotesColumn === 'boolean')
         this.showNotesColumn.set(saved.showNotesColumn);
     } catch {

@@ -50,6 +50,13 @@
               ROA
             </div>
           }
+          @if (showIndicationColumn() && !hideIndicationColumn()) {
+            <div
+              class="w-32 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
+            >
+              Indication
+            </div>
+          }
           @if (!hideTrialColumn()) {
             <div
               class="w-36 md:w-48 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
@@ -83,6 +90,11 @@
             }
             @if (showRoaColumn() && !hideRoaColumn()) {
               <div class="w-24 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
+                &nbsp;
+              </div>
+            }
+            @if (showIndicationColumn() && !hideIndicationColumn()) {
+              <div class="w-32 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
                 &nbsp;
               </div>
             }
@@ -214,6 +226,31 @@
                   } @else {
                     <span class="text-slate-400 text-[10px]">&mdash;</span>
                   }
+                }
+              </div>
+            }
+            <!-- Indication column (per-trial: a trial can span several of its asset's indications) -->
+            @if (showIndicationColumn() && !hideIndicationColumn()) {
+              <div
+                class="w-32 px-2 flex items-center border-l border-slate-200 overflow-hidden"
+                [title]="indicationTooltipText(row.trialIndications)"
+              >
+                @if (row.trialIndications.length > 0) {
+                  <div class="flex flex-col gap-0.5 min-w-0">
+                    @for (ind of row.trialIndications.slice(0, 2); track ind.id) {
+                      <span
+                        class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate"
+                        >{{ ind.name }}</span
+                      >
+                    }
+                    @if (row.trialIndications.length > 2) {
+                      <span class="text-[10px] text-slate-500"
+                        >+{{ row.trialIndications.length - 2 }}</span
+                      >
+                    }
+                  </div>
+                } @else {
+                  <span class="text-slate-400 text-[10px]">&mdash;</span>
                 }
               </div>
             }

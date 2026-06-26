@@ -32,6 +32,7 @@ import { LegendComponent } from '../legend/legend.component';
       [hideTrialColumn]="hideTrialColumn()"
       [hideMoaColumn]="hideMoaColumn()"
       [hideRoaColumn]="hideRoaColumn()"
+      [hideIndicationColumn]="hideIndicationColumn()"
       [hideNotesColumn]="hideNotesColumn()"
     />
     <app-legend [spaceId]="spaceId()" />
@@ -54,6 +55,7 @@ export class ExportSnapshotHostComponent {
   readonly hideTrialColumn = input(false);
   readonly hideMoaColumn = input(false);
   readonly hideRoaColumn = input(false);
+  readonly hideIndicationColumn = input(false);
   readonly hideNotesColumn = input(false);
   readonly spaceId = input.required<string>();
   readonly tenantName = input('');
