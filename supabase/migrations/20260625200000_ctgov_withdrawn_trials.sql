@@ -125,9 +125,17 @@ declare
   v_events     int;
   v_in_queue   int;
 begin
-  -- resolve the local worker secret the same way _verify_ctgov_worker_secret does.
-  -- The smoke uses the known local dev secret used by the other ctgov smokes.
-  v_secret := 'local-dev-ctgov-secret';
+  -- Resolve the env's actual worker secret from the vault, so this smoke works on
+  -- local/CI (seeded 'local-dev-ctgov-secret') AND on dev/prod (operator-set random
+  -- secret via vault.create_secret). Hardcoding the local secret 42501s on any env
+  -- whose vault secret was rotated. Skip the smoke entirely if no secret exists.
+  select decrypted_secret into v_secret
+    from vault.decrypted_secrets
+   where name = 'ctgov_worker_secret';
+  if v_secret is null then
+    raise notice 'ctgov_withdrawn_trials smoke: no ctgov_worker_secret in vault, skipping';
+    return;
+  end if;
 
   insert into auth.users (id, email) values (v_user_id, 'withdrawn-smoke@invalid.local');
   insert into public.agencies (id, name, slug, subdomain, app_display_name, contact_email)
