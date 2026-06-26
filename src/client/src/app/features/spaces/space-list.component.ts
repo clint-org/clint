@@ -25,6 +25,7 @@ import { TenantService } from '../../core/services/tenant.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
+import { foldCreatedSpace } from './space-list.create';
 
 @Component({
   selector: 'app-space-list',
@@ -296,6 +297,16 @@ export class SpaceListComponent implements OnInit, OnDestroy {
         name,
         this.newSpaceDesc().trim() || undefined
       );
+      // The creator is the space owner (create_space inserts the owner
+      // membership atomically). Fold the new space into the cached snapshots
+      // so canOpen() doesn't read a stale accessible set and falsely block the
+      // space the user just created.
+      const next = foldCreatedSpace(
+        { spaces: this.spaces(), accessibleIds: this.accessibleIds() },
+        space
+      );
+      this.spaces.set(next.spaces);
+      this.accessibleIds.set(next.accessibleIds);
       this.createDialogOpen.set(false);
       this.newSpaceName.set('');
       this.newSpaceDesc.set('');
