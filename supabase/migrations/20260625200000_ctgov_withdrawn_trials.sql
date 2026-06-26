@@ -29,6 +29,13 @@ comment on column public.trials.ctgov_withdrawn_at is
   'When ct.gov first returned 404 for this trial''s NCT during a poll (i.e. the study was removed/withdrawn from the registry). Null for live trials. ct.gov-owned. Set by mark_trials_ctgov_withdrawn; excludes the trial from get_trials_for_polling so it is no longer re-fetched daily.';
 
 -- 2. exclude withdrawn trials from the polling queue
+-- Postgres rejects return-type changes via create-or-replace. Prod's live copy
+-- had drifted back to the pre-latest_ctgov_version 4-column shape (exactly the
+-- case the original 20260502120600 guarded against), so a bare create-or-replace
+-- 42P13'd there even though it was a no-op on dev. Drop first (mirroring
+-- 20260502120600); the drop clears the function's grants, restored just below.
+drop function if exists public.get_trials_for_polling(text, integer);
+
 create or replace function public.get_trials_for_polling(p_secret text, p_limit integer default 1000)
 returns table(trial_id uuid, space_id uuid, nct_id text, last_update_posted_date date, latest_ctgov_version integer)
 language plpgsql
@@ -52,6 +59,11 @@ begin
      limit p_limit;
 end;
 $function$;
+
+-- Restore the grants the drop cleared, matching the source-of-truth set on dev
+-- (anon for the worker, authenticated/service_role for parity).
+revoke execute on function public.get_trials_for_polling(text, integer) from public;
+grant  execute on function public.get_trials_for_polling(text, integer) to anon, authenticated, service_role;
 
 -- 3. worker RPC: mark trials withdrawn (idempotent, emits one-time event)
 create or replace function public.mark_trials_ctgov_withdrawn(

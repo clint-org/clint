@@ -38,6 +38,7 @@ The dashboard replaces static PowerPoint-based tracking workflows with a live, c
 | [Deployment](12-deployment.md) | Cloudflare Workers config, environment variables, schema deployment |
 | [Backup & Restore](13-backup-and-restore.md) | Off-site encrypted DB backups: retention, restore procedure, drill |
 | [Disaster Recovery](14-disaster-recovery.md) | Failure-domain register, recovery procedures per domain, concentration risks, action register |
+| [Observability & Alerting](15-observability-and-alerting.md) | Alert source matrix, where failures surface and notify, CT.gov sync remediation playbook, known gaps |
 | [Backup Policy](policy-db-backup.md) | Client-facing database backup policy statement |
 
 ---
