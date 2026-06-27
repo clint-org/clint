@@ -14,7 +14,6 @@ import { RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
-import type { ChangeEvent } from '../../core/models/change-event.model';
 import { EventDetail, FeedItem } from '../../core/models/event.model';
 import type { InnerMark, MarkerShape } from '../../core/models/marker.model';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
@@ -34,7 +33,12 @@ import { SourceProvenanceLineComponent } from '../../shared/components/source-pr
 import { BrandLogoComponent } from '../../shared/components/brand-logo.component';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
-import { summarySegmentsFor, type RichSummary } from '../../shared/utils/change-event-summary';
+import {
+  feedItemToChangeEvent,
+  flattenSummarySegments,
+  summarySegmentsFor,
+  type RichSummary,
+} from '../../shared/utils/change-event-summary';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { buildEntityActionMenu } from '../../shared/entity-actions/entity-action-menu';
 
@@ -209,29 +213,7 @@ export class EventDetailPanelComponent {
     if (!fi || fi.source_type !== 'detected' || !fi.change_event_type || !fi.change_payload) {
       return null;
     }
-    // Build a minimal ChangeEvent to feed summarySegmentsFor
-    const syntheticEvent: ChangeEvent = {
-      id: fi.id,
-      trial_id: fi.entity_id ?? '',
-      space_id: '',
-      event_type: fi.change_event_type,
-      source: fi.change_source ?? 'ctgov',
-      payload: fi.change_payload,
-      occurred_at: fi.event_date,
-      observed_at: fi.observed_at ?? fi.event_date,
-      marker_id: null,
-      trial_name: fi.entity_name,
-      trial_identifier: null,
-      asset_name: null,
-      company_name: fi.company_name,
-      company_logo_url: fi.company_logo_url,
-      marker_title: null,
-      marker_color: null,
-      marker_type_name: null,
-      from_marker_type_name: null,
-      to_marker_type_name: null,
-    };
-    return summarySegmentsFor(syntheticEvent);
+    return summarySegmentsFor(feedItemToChangeEvent(fi, this.spaceId()));
   });
 
   readonly highPriorityCount = computed(
@@ -285,7 +267,12 @@ export class EventDetailPanelComponent {
       .slice(0, 3)
       .map((i) => ({
         id: i.id,
-        title: i.title,
+        // Detected rows carry a generic event-type title ("Marker Added");
+        // compose the same rich summary the table shows so the row is useful.
+        title:
+          i.source_type === 'detected' && i.change_event_type
+            ? flattenSummarySegments(summarySegmentsFor(feedItemToChangeEvent(i)).segments)
+            : i.title,
         event_date: i.event_date,
         sourceType: i.source_type,
         isProjected: i.is_projected,

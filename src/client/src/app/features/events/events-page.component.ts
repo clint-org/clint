@@ -21,7 +21,6 @@ import { TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
-import { ChangeEvent } from '../../core/models/change-event.model';
 import { EventCategory, EventDetail, FeedItem } from '../../core/models/event.model';
 import { FillStyle, MarkerCategory } from '../../core/models/marker.model';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
@@ -37,7 +36,12 @@ import { GridToolbarComponent } from '../../shared/components/grid-toolbar.compo
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 import { createGridState } from '../../shared/grids';
-import { summarySegmentsFor, type RichSummary } from '../../shared/utils/change-event-summary';
+import {
+  feedItemToChangeEvent,
+  flattenSummarySegments,
+  summarySegmentsFor,
+  type RichSummary,
+} from '../../shared/utils/change-event-summary';
 import { EventDetailPanelComponent } from './event-detail-panel.component';
 import { EventFormComponent } from './event-form.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
@@ -343,29 +347,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   }
 
   protected getDetectedSummary(item: FeedItem): RichSummary {
-    const p = (item.change_payload ?? {}) as Record<string, unknown>;
-    const stub: ChangeEvent = {
-      id: item.id,
-      trial_id: item.entity_id ?? '',
-      space_id: this.spaceId(),
-      event_type: item.change_event_type!,
-      source: item.change_source ?? 'ctgov',
-      payload: item.change_payload ?? {},
-      occurred_at: item.event_date,
-      observed_at: item.feed_ts ?? item.observed_at ?? item.event_date,
-      marker_id: null,
-      trial_name: item.entity_name,
-      trial_identifier: null,
-      asset_name: null,
-      company_name: item.company_name,
-      company_logo_url: item.company_logo_url,
-      marker_title: (p['marker_title'] as string | undefined) ?? null,
-      marker_color: (p['marker_color'] as string | undefined) ?? null,
-      marker_type_name: (p['marker_type_name'] as string | undefined) ?? null,
-      from_marker_type_name: (p['from_marker_type_name'] as string | undefined) ?? null,
-      to_marker_type_name: (p['to_marker_type_name'] as string | undefined) ?? null,
-    };
-    return summarySegmentsFor(stub);
+    return summarySegmentsFor(feedItemToChangeEvent(item, this.spaceId()));
   }
 
   protected formatEventDateSuffix(item: FeedItem): string {
@@ -381,9 +363,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
    */
   getTitleDisplay(item: FeedItem): string {
     if (item.source_type === 'detected' && item.change_event_type) {
-      return this.getDetectedSummary(item)
-        .segments.map((seg) => (seg.kind === 'arrow' ? '→' : seg.text))
-        .join('');
+      return flattenSummarySegments(this.getDetectedSummary(item).segments);
     }
     return item.title ?? '';
   }
