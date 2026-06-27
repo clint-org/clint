@@ -41,6 +41,7 @@ import {
   markerLeafDisplay,
   eventLeafDisplay,
   pickMarkerType,
+  defaultSelections,
   type MarkerTypeLite,
   type ReviewFlag,
 } from './review-grid.logic';
@@ -1352,14 +1353,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const proposal = this.proposal();
     const p = proposal?.proposals;
     if (!p) return;
-    const sel: Record<string, boolean> = {};
-    for (const type of ENTITY_ORDER) {
-      const items = p[type] ?? [];
-      for (let i = 0; i < items.length; i++) {
-        sel[`${type}_${i}`] = true;
-      }
-    }
-    this.selections.set(sel);
+    this.selections.set(defaultSelections(p as unknown as Record<string, unknown>));
 
     if (proposal) {
       const nctDefaults: Record<number, string> = {};
