@@ -22,6 +22,11 @@ const newEntityMatch = z.object({
   name: z.string(),
 });
 
+// Marker/event matches carry no name field -- the title is already on the object.
+const newSimpleMatch = z.object({
+  kind: z.literal('new'),
+});
+
 // ---------------------------------------------------------------------------
 // Entity schemas
 // ---------------------------------------------------------------------------
@@ -73,6 +78,9 @@ const TrialSchema = z.object({
 });
 
 const MarkerSchema = z.object({
+  match: z
+    .discriminatedUnion('kind', [existingMatch, newSimpleMatch])
+    .default({ kind: 'new' }),
   marker_type: z.string(),
   title: z.string(),
   event_date: dateString.nullable().optional().default(null),
@@ -84,6 +92,9 @@ const MarkerSchema = z.object({
 });
 
 const EventSchema = z.object({
+  match: z
+    .discriminatedUnion('kind', [existingMatch, newSimpleMatch])
+    .default({ kind: 'new' }),
   category: z.string(),
   title: z.string(),
   event_date: dateString.nullable().optional().default(null),
