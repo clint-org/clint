@@ -72,8 +72,10 @@
         <td colspan="4">
           @if (grid.isFiltered()) {
             No companies match your filters.
-          } @else {
+          } @else if (spaceRole.canEdit()) {
             No companies yet. Add one to get started.
+          } @else {
+            No companies yet.
           }
         </td>
       </tr>

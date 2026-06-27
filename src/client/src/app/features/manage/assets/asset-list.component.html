@@ -155,8 +155,10 @@
         <td colspan="8">
           @if (grid.isFiltered()) {
             No assets match your filters.
-          } @else {
+          } @else if (spaceRole.canEdit()) {
             No assets yet. Add one to get started.
+          } @else {
+            No assets yet.
           }
         </td>
       </tr>

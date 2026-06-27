@@ -220,11 +220,11 @@ export class CommandPaletteComponent implements OnInit {
     const base = `/t/${this.tenantId}/s/${this.spaceId}`;
     switch (item.kind) {
       case 'trial':
-        return `${base}/manage/trials/${item.id}`;
+        return `${base}/profiles/trials/${item.id}`;
       case 'company':
-        return `${base}/manage/companies/${item.id}`;
+        return `${base}/profiles/companies/${item.id}`;
       case 'asset':
-        return `${base}/manage/assets/${item.id}`;
+        return `${base}/profiles/assets/${item.id}`;
       case 'event':
         return `${base}/events?eventId=${item.id}`;
       case 'catalyst':

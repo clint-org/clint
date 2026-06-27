@@ -450,7 +450,7 @@ test.describe('Export surfaces audit', () => {
   });
 
   test('trials Excel includes phase, dates, recruitment, and notes', async () => {
-    await page.goto(surfaceUrl('manage/trials'), { waitUntil: 'domcontentloaded' });
+    await page.goto(surfaceUrl('profiles/trials'), { waitUntil: 'domcontentloaded' });
     await page.getByText(NCT_DELIVER).first().waitFor({ timeout: 30000 });
     await page.screenshot({ path: auditPath('trials-live.png'), fullPage: true });
 
@@ -474,7 +474,7 @@ test.describe('Export surfaces audit', () => {
   });
 
   test('companies Excel includes asset count', async () => {
-    await page.goto(surfaceUrl('manage/companies'), { waitUntil: 'domcontentloaded' });
+    await page.goto(surfaceUrl('profiles/companies'), { waitUntil: 'domcontentloaded' });
     await page.getByText('AstraZeneca').first().waitFor({ timeout: 30000 });
     await page.screenshot({ path: auditPath('companies-live.png'), fullPage: true });
 
@@ -495,7 +495,7 @@ test.describe('Export surfaces audit', () => {
   });
 
   test('assets Excel uses domain headers and carries MOA, ROA, generic', async () => {
-    await page.goto(surfaceUrl('manage/assets'), { waitUntil: 'domcontentloaded' });
+    await page.goto(surfaceUrl('profiles/assets'), { waitUntil: 'domcontentloaded' });
     await page.getByText('Farxiga').first().waitFor({ timeout: 30000 });
     await page.screenshot({ path: auditPath('assets-live.png'), fullPage: true });
 

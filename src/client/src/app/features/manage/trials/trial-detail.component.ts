@@ -182,7 +182,7 @@ export class TrialDetailComponent implements OnDestroy {
           this.tenantIdSig(),
           's',
           this.spaceIdSig(),
-          'manage',
+          'profiles',
           'trials',
         ]),
       errorFallback: 'Could not delete trial. Check your connection and try again.',

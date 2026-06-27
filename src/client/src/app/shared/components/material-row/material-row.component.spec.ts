@@ -19,19 +19,19 @@ describe('routeForLink', () => {
   it('routes a trial link to the trial detail page', () => {
     const route = routeForLink(link({ entity_type: 'trial', entity_id: 't-9' }), TENANT, SPACE);
     expect(route).toEqual({
-      commands: ['/t', TENANT, 's', SPACE, 'manage', 'trials', 't-9'],
+      commands: ['/t', TENANT, 's', SPACE, 'profiles', 'trials', 't-9'],
     });
   });
 
   it('routes a company link to the company detail page', () => {
     const route = routeForLink(link({ entity_type: 'company', entity_id: 'c-9' }), TENANT, SPACE);
-    expect(route?.commands).toEqual(['/t', TENANT, 's', SPACE, 'manage', 'companies', 'c-9']);
+    expect(route?.commands).toEqual(['/t', TENANT, 's', SPACE, 'profiles', 'companies', 'c-9']);
     expect(route?.queryParams).toBeUndefined();
   });
 
   it('routes a product link to the asset detail page', () => {
     const route = routeForLink(link({ entity_type: 'product', entity_id: 'a-9' }), TENANT, SPACE);
-    expect(route?.commands).toEqual(['/t', TENANT, 's', SPACE, 'manage', 'assets', 'a-9']);
+    expect(route?.commands).toEqual(['/t', TENANT, 's', SPACE, 'profiles', 'assets', 'a-9']);
   });
 
   it('routes a space link to the engagement root', () => {
@@ -46,7 +46,7 @@ describe('routeForLink', () => {
       SPACE
     );
     expect(route).toEqual({
-      commands: ['/t', TENANT, 's', SPACE, 'manage', 'trials', 't-7'],
+      commands: ['/t', TENANT, 's', SPACE, 'profiles', 'trials', 't-7'],
       queryParams: { markerId: 'mk-9' },
     });
   });

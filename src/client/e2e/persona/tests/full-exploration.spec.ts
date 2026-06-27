@@ -82,25 +82,25 @@ test.describe('Full App Exploration', () => {
   });
 
   test('07 - obesity: companies list', async ({ cdpPage: page }) => {
-    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/manage/companies`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/profiles/companies`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
     await page.screenshot({ path: `${REPORT_DIR}/07-obesity-companies.png`, fullPage: true });
   });
 
   test('08 - obesity: assets list', async ({ cdpPage: page }) => {
-    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/manage/assets`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/profiles/assets`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
     await page.screenshot({ path: `${REPORT_DIR}/08-obesity-assets.png`, fullPage: true });
   });
 
   test('09 - obesity: trials list', async ({ cdpPage: page }) => {
-    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/manage/trials`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/profiles/trials`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
     await page.screenshot({ path: `${REPORT_DIR}/09-obesity-trials.png`, fullPage: true });
   });
 
   test('10 - obesity: engagement detail', async ({ cdpPage: page }) => {
-    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/manage/engagement`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/profiles/engagement`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
     await page.screenshot({ path: `${REPORT_DIR}/10-obesity-engagement.png`, fullPage: true });
   });
@@ -180,19 +180,19 @@ test.describe('Full App Exploration', () => {
   });
 
   test('23 - nodata: companies list', async ({ cdpPage: page }) => {
-    await page.goto(`${BASE}/t/${TENANT_ID}/s/${noDataSpaceId}/manage/companies`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/t/${TENANT_ID}/s/${noDataSpaceId}/profiles/companies`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
     await page.screenshot({ path: `${REPORT_DIR}/23-nodata-companies.png`, fullPage: true });
   });
 
   test('24 - nodata: assets list', async ({ cdpPage: page }) => {
-    await page.goto(`${BASE}/t/${TENANT_ID}/s/${noDataSpaceId}/manage/assets`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/t/${TENANT_ID}/s/${noDataSpaceId}/profiles/assets`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
     await page.screenshot({ path: `${REPORT_DIR}/24-nodata-assets.png`, fullPage: true });
   });
 
   test('25 - nodata: trials list', async ({ cdpPage: page }) => {
-    await page.goto(`${BASE}/t/${TENANT_ID}/s/${noDataSpaceId}/manage/trials`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/t/${TENANT_ID}/s/${noDataSpaceId}/profiles/trials`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
     await page.screenshot({ path: `${REPORT_DIR}/25-nodata-trials.png`, fullPage: true });
   });
@@ -212,7 +212,7 @@ test.describe('Full App Exploration', () => {
   // ── Phase 4: Interaction tests (on Obesity Test) ─────────────────────
 
   test('28 - obesity: click into first company detail', async ({ cdpPage: page }) => {
-    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/manage/companies`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/profiles/companies`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     // Click first row in the table
@@ -227,7 +227,7 @@ test.describe('Full App Exploration', () => {
   });
 
   test('29 - obesity: click into first asset detail', async ({ cdpPage: page }) => {
-    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/manage/assets`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/profiles/assets`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     const firstRow = page.locator('table tbody tr, p-table tbody tr, .p-datatable-tbody tr').first();
@@ -241,7 +241,7 @@ test.describe('Full App Exploration', () => {
   });
 
   test('30 - obesity: click into first trial detail', async ({ cdpPage: page }) => {
-    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/manage/trials`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/t/${TENANT_ID}/s/${obesitySpaceId}/profiles/trials`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 
     const firstRow = page.locator('table tbody tr, p-table tbody tr, .p-datatable-tbody tr').first();

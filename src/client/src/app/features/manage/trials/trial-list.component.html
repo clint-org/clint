@@ -155,8 +155,10 @@
         <td [attr.colspan]="emptyColspan()">
           @if (grid.isFiltered()) {
             No trials match your filters.
-          } @else {
+          } @else if (spaceRole.canEdit()) {
             No trials tracked yet. Add one to get started.
+          } @else {
+            No trials tracked yet.
           }
         </td>
       </tr>

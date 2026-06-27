@@ -174,7 +174,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   }
 
   onTrialClick(trialId: string): void {
-    this.router.navigate([...this.spaceBase(), 'manage', 'trials', trialId]);
+    this.router.navigate([...this.spaceBase(), 'profiles', 'trials', trialId]);
   }
 
   /**
@@ -188,7 +188,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
         : target.entityType === 'product'
           ? 'assets'
           : 'trials';
-    this.router.navigate([...this.spaceBase(), 'manage', segment, target.entityId]);
+    this.router.navigate([...this.spaceBase(), 'profiles', segment, target.entityId]);
   }
 
   /**
@@ -199,7 +199,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
    * and editors ever emit this.
    */
   onEditMarker(target: { trialId: string; markerId: string }): void {
-    this.router.navigate([...this.spaceBase(), 'manage', 'trials', target.trialId], {
+    this.router.navigate([...this.spaceBase(), 'profiles', 'trials', target.trialId], {
       queryParams: { marker: target.markerId },
     });
   }
