@@ -50,6 +50,7 @@ import { MarkerTypeService } from '../../core/services/marker-type.service';
 import type { MarkerType } from '../../core/models/marker.model';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
 import { ReviewEditDialogComponent } from './review-edit-dialog.component';
+import { commitSummary, type CommitCreated } from './commit-summary.logic';
 
 type EditableEntityType = 'companies' | 'assets' | 'trials';
 
@@ -1313,9 +1314,10 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     ]);
 
     const title = this.proposal()?.source_title ?? 'source';
+    const created = (data as { created?: CommitCreated } | null)?.created ?? null;
     this.messages.add({
       severity: 'success',
-      summary: `Committed ${this.selectedCount()} items from ${title}. View in timeline.`,
+      summary: commitSummary(created, title),
       life: 5000,
     });
 

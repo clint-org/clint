@@ -1037,4 +1037,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260627160000_commit_source_import_skip_existing.sql`
 - `20260627161000_dashboard_data_intelligence_presence_anchors.sql`
 - `20260627170000_inventory_snapshot_marker_event_instances.sql`
+- `20260627180000_fix_get_dashboard_data_unspecified_clobber.sql`
+- `20260627190000_rpc_source_duplicate_check.sql`
 <!-- /AUTO-GEN:DRIFT -->
