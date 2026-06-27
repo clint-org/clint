@@ -2,79 +2,64 @@
  * Tests for TaxonomiesHelpComponent.
  *
  * The unit runner is a plain node environment (vitest.units.config.ts) with no
- * Angular compiler. We test the async data-loading and sorting logic by
- * mirroring the ngOnInit transform directly, and verify the template wiring by
- * source contract (readFileSync). This follows the same pattern used by
- * heatmap-detail-panel.component.spec.ts and other component specs in this
- * codebase.
+ * Angular compiler. We test the shared row-mapping contract by importing the
+ * real exported `toVocabRows` function from the component module, and verify
+ * the template wiring by source contract (readFileSync). This follows the same
+ * pattern used by heatmap-detail-panel.component.spec.ts and other component
+ * specs in this codebase.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import type { Indication } from '../../core/models/indication.model';
-import type { MechanismOfAction } from '../../core/models/mechanism-of-action.model';
-import type { RouteOfAdministration } from '../../core/models/route-of-administration.model';
+import { toVocabRows } from './taxonomies-help.utils';
 
 const src = readFileSync(join(__dirname, 'taxonomies-help.component.ts'), 'utf8');
 
-// Mirrors the sort + map applied in ngOnInit so we can test the
-// data-transformation contract without mounting the component.
-function order<T extends { display_order: number }>(rows: T[]): T[] {
-  return [...rows].sort((a, b) => a.display_order - b.display_order);
-}
+describe('toVocabRows (shared mapping contract)', () => {
+  it('maps service data to name and detail fields', () => {
+    const inds = toVocabRows(
+      [{ name: 'NSCLC', abbreviation: 'NSCLC', display_order: 1 }],
+      (r) => r.abbreviation ?? null,
+    );
+    const moas = toVocabRows(
+      [{ name: 'EGFR inhibitor', description: 'x', display_order: 1 }],
+      (r) => r.description ?? null,
+    );
+    const roas = toVocabRows(
+      [{ name: 'Oral', abbreviation: 'PO', display_order: 1 }],
+      (r) => r.abbreviation ?? null,
+    );
 
-function toVocabRows(
-  inds: Pick<Indication, 'name' | 'abbreviation' | 'display_order'>[],
-  moas: Pick<MechanismOfAction, 'name' | 'description' | 'display_order'>[],
-  roas: Pick<RouteOfAdministration, 'name' | 'abbreviation' | 'display_order'>[],
-) {
-  return {
-    indications: order(inds).map((r) => ({ name: r.name, detail: r.abbreviation ?? null })),
-    moa: order(moas).map((r) => ({ name: r.name, detail: r.description ?? null })),
-    roa: order(roas).map((r) => ({ name: r.name, detail: r.abbreviation ?? null })),
-  };
-}
-
-describe('TaxonomiesHelpComponent ngOnInit logic', () => {
-  it('live-renders the three vocab tables after init', async () => {
-    const indService = {
-      list: vi.fn().mockResolvedValue([{ name: 'NSCLC', abbreviation: 'NSCLC', display_order: 1 }]),
-    };
-    const moaService = {
-      list: vi.fn().mockResolvedValue([{ name: 'EGFR inhibitor', description: 'x', display_order: 1 }]),
-    };
-    const roaService = {
-      list: vi.fn().mockResolvedValue([{ name: 'Oral', abbreviation: 'PO', display_order: 1 }]),
-    };
-
-    const [inds, moas, roas] = await Promise.all([
-      indService.list('s1'),
-      moaService.list('s1'),
-      roaService.list('s1'),
-    ]);
-    const { indications, moa, roa } = toVocabRows(inds, moas, roas);
-
-    expect(indications[0].name).toBe('NSCLC');
-    expect(moa[0].name).toBe('EGFR inhibitor');
-    expect(roa[0].name).toBe('Oral');
+    expect(inds[0].name).toBe('NSCLC');
+    expect(moas[0].name).toBe('EGFR inhibitor');
+    expect(roas[0].name).toBe('Oral');
   });
 
   it('sorts rows by display_order ascending', () => {
-    const inds = [
-      { name: 'AML', abbreviation: 'AML', display_order: 2 },
-      { name: 'NSCLC', abbreviation: 'NSCLC', display_order: 1 },
-    ];
-    const { indications } = toVocabRows(inds, [], []);
-    expect(indications.map((r) => r.name)).toEqual(['NSCLC', 'AML']);
+    const rows = toVocabRows(
+      [
+        { name: 'AML', display_order: 2 },
+        { name: 'NSCLC', display_order: 1 },
+      ],
+      () => null,
+    );
+    expect(rows.map((r) => r.name)).toEqual(['NSCLC', 'AML']);
   });
 
   it('uses description for MoA detail and abbreviation for Indication and RoA', () => {
-    const { indications, moa, roa } = toVocabRows(
+    const indications = toVocabRows(
       [{ name: 'IND', abbreviation: 'I', display_order: 1 }],
+      (r) => r.abbreviation ?? null,
+    );
+    const moa = toVocabRows(
       [{ name: 'MOA', description: 'MOA desc', display_order: 1 }],
+      (r) => r.description ?? null,
+    );
+    const roa = toVocabRows(
       [{ name: 'ROA', abbreviation: 'IV', display_order: 1 }],
+      (r) => r.abbreviation ?? null,
     );
     expect(indications[0].detail).toBe('I');
     expect(moa[0].detail).toBe('MOA desc');
@@ -82,10 +67,17 @@ describe('TaxonomiesHelpComponent ngOnInit logic', () => {
   });
 
   it('coerces null abbreviation and description to null detail', () => {
-    const { indications, moa, roa } = toVocabRows(
+    const indications = toVocabRows(
       [{ name: 'IND', abbreviation: null, display_order: 1 }],
+      (r) => r.abbreviation ?? null,
+    );
+    const moa = toVocabRows(
       [{ name: 'MOA', description: null, display_order: 1 }],
+      (r) => r.description ?? null,
+    );
+    const roa = toVocabRows(
       [{ name: 'ROA', abbreviation: null, display_order: 1 }],
+      (r) => r.abbreviation ?? null,
     );
     expect(indications[0].detail).toBeNull();
     expect(moa[0].detail).toBeNull();

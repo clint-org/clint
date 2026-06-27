@@ -15,6 +15,7 @@ const inlineSurfaces = [
   'features/spaces/space-list.component.ts',
   'features/materials-browse/materials-browse-page.component.ts',
   'features/help/markers-help.component.ts',
+  'features/help/taxonomies-help.component.ts',
   'shared/components/detail-panel-history.component.ts',
   'shared/components/intelligence-drawer/intelligence-drawer.component.ts',
   'core/layout/command-palette/palette-result-list.component.ts',

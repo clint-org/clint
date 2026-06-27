@@ -7,11 +7,7 @@ import { RouteOfAdministrationService } from '../../core/services/route-of-admin
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
-
-interface VocabRow {
-  name: string;
-  detail: string | null;
-}
+import { toVocabRows, type VocabRow } from './taxonomies-help.utils';
 
 @Component({
   selector: 'app-taxonomies-help',
@@ -140,23 +136,15 @@ export class TaxonomiesHelpComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     const spaceId = this.route.snapshot.paramMap.get('spaceId') ?? '';
-    const order = (a: { display_order: number }, b: { display_order: number }) =>
-      a.display_order - b.display_order;
     try {
       const [inds, moas, roas] = await Promise.all([
         this.indicationService.list(spaceId),
         this.moaService.list(spaceId),
         this.roaService.list(spaceId),
       ]);
-      this.indicationRows.set(
-        [...inds].sort(order).map((r) => ({ name: r.name, detail: r.abbreviation ?? null }))
-      );
-      this.moaRows.set(
-        [...moas].sort(order).map((r) => ({ name: r.name, detail: r.description ?? null }))
-      );
-      this.roaRows.set(
-        [...roas].sort(order).map((r) => ({ name: r.name, detail: r.abbreviation ?? null }))
-      );
+      this.indicationRows.set(toVocabRows(inds, (r) => r.abbreviation ?? null));
+      this.moaRows.set(toVocabRows(moas, (r) => r.description ?? null));
+      this.roaRows.set(toVocabRows(roas, (r) => r.abbreviation ?? null));
     } catch {
       this.indicationRows.set([]);
       this.moaRows.set([]);
