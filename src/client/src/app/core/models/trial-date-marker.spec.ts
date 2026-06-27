@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   TRIAL_END_TITLE,
   TRIAL_START_TITLE,
+  approxDateLabel,
   isCtgovOwnedMarker,
   planTrialDateMarker,
   projectionForDate,
@@ -227,5 +228,24 @@ describe('ctgovLocked computed pattern', () => {
     // no metadata
     markerSig.set({ metadata: null });
     expect(ctgovLocked()).toBe(false);
+  });
+});
+
+describe('approxDateLabel', () => {
+  it('returns null for an exact-precision marker (the field stays an editable date)', () => {
+    expect(approxDateLabel({ event_date: '2026-08-15', date_precision: 'exact' })).toBeNull();
+  });
+
+  it('returns the ~period caption for approximate precisions', () => {
+    expect(approxDateLabel({ event_date: '2026-08-15', date_precision: 'quarter' })).toBe("~Q3 '26");
+    expect(approxDateLabel({ event_date: '2026-11-15', date_precision: 'month' })).toBe("~Nov '26");
+    expect(approxDateLabel({ event_date: '2026-07-01', date_precision: 'year' })).toBe('~2026');
+    expect(approxDateLabel({ event_date: '2026-04-15', date_precision: 'half' })).toBe("~H1 '26");
+  });
+
+  it('returns null for null/absent marker or null event_date', () => {
+    expect(approxDateLabel(null)).toBeNull();
+    expect(approxDateLabel(undefined)).toBeNull();
+    expect(approxDateLabel({ event_date: null, date_precision: 'quarter' })).toBeNull();
   });
 });
