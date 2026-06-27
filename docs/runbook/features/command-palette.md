@@ -9,16 +9,16 @@ A power-user finder/navigator/command runner. Mounted once in `AppShellComponent
 
 **Open:** `Cmd+K` (or `Ctrl+K`); `/` also opens when focus is not in a text input.
 
-**Empty state** (no query): Pinned (top 10), Recents (top 8), Commands (filtered by `when()` predicates). Recents are bumped on entity navigation by both a Router-event listener (matches `/manage/(trials|products|companies)/:id`) and an explicit `recents.touch()` call after the palette activates an entity row.
+**Empty state** (no query): Pinned (top 10), Recents (top 8), Commands (filtered by `when()` predicates). Recents are bumped on entity navigation by both a Router-event listener (matches `/profiles/(trials|products|companies)/:id`) and an explicit `recents.touch()` call after the palette activates an entity row.
 
 **Search:** debounced 80ms, minimum 2 chars. Backed by `search_palette` RPC which unions across companies, products, trials, markers (catalyst kind), and events using `pg_trgm` similarity + prefix-match boost + trial-identifier exact-match boost. When no prefix token is used, matching navigation commands are merged into the result list (typing `bullseye` finds the "Go to Bullseye" command without needing the `>` prefix).
 
 **Prefix tokens:** `>` commands, `@` companies, `#` trials, `!` catalysts. Backspacing the lone token returns to all-kinds.
 
 **Activation targets:**
-- trial -> `/manage/trials/:id` (detail page)
-- company -> `/manage/companies?selected=<id>` (list filtered to that company)
-- product -> `/manage/products?selected=<id>` (list filtered to that product)
+- trial -> `/profiles/trials/:id` (detail page)
+- company -> `/profiles/companies?selected=<id>` (list filtered to that company)
+- product -> `/profiles/products?selected=<id>` (list filtered to that product)
 - catalyst -> `/catalysts?markerId=<id>` (detail panel opens on load)
 - event -> `/events?eventId=<id>` (detail panel opens on load)
 - command -> client-side `run()` handler (router navigate, sign-out, etc.)
@@ -82,9 +82,9 @@ A power-user finder/navigator/command runner. Mounted once in `AppShellComponent
 - id: palette-activation-targets
   summary: Selecting a result routes to the entity detail page or opens the detail panel via query param.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
-    - /t/:tenantId/s/:spaceId/manage/companies/:id
-    - /t/:tenantId/s/:spaceId/manage/assets/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/companies/:id
+    - /t/:tenantId/s/:spaceId/profiles/assets/:id
     - /t/:tenantId/s/:spaceId/catalysts
     - /t/:tenantId/s/:spaceId/events
   rpcs: []

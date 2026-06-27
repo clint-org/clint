@@ -232,6 +232,8 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /import   importGuard | ImportPageComponent
     /import/:aiCallId/review   sourceImportGuard | ReviewPageComponent
     /help/markers   MarkersHelpComponent
+    /help/taxonomies   TaxonomiesHelpComponent
+    /help/phases   PhasesHelpComponent
     (empty)   LandscapeShellComponent
       /timeline   TimelineViewComponent
       /bullseye
@@ -271,24 +273,20 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /landscape/by-roa   -> bullseye
     /landscape/by-roa/:entityId   -> bullseye
     /landscape/:therapeuticAreaId   -> bullseye
-    /manage/companies   editGuard | CompanyListComponent
-    /manage/assets   editGuard | AssetListComponent
-    /manage/trials   editGuard | TrialListComponent
-    /manage/trials/:id   TrialDetailComponent
-    /manage/companies/:id   CompanyDetailComponent
-    /manage/assets/:id   AssetDetailComponent
-    /manage/engagement   EngagementDetailComponent
-    /settings/marker-types   MarkerTypeListComponent
+    /profiles/companies   CompanyListComponent
+    /profiles/assets   AssetListComponent
+    /profiles/trials   TrialListComponent
+    /profiles/trials/:id   TrialDetailComponent
+    /profiles/companies/:id   CompanyDetailComponent
+    /profiles/assets/:id   AssetDetailComponent
+    /profiles/engagement   EngagementDetailComponent
+    /settings/marker-types   editGuard | MarkerTypeListComponent
     /settings/marker-categories   MarkerCategoryListComponent
-    /settings/taxonomies   TaxonomiesPageComponent
+    /settings/taxonomies   editGuard | TaxonomiesPageComponent
     /settings/general   spaceOwnerGuard | SpaceGeneralComponent
     /settings/members   spaceOwnerGuard | SpaceMembersComponent
     /settings/fields   spaceOwnerGuard | SpaceFieldVisibilitySettingsComponent
     /settings/audit-log   auditSpaceGuard | SpaceAuditLogComponent
-    /manage/marker-types   -> settings/marker-types
-    /manage/therapeutic-areas   -> settings/taxonomies
-    /manage/mechanisms-of-action   -> settings/taxonomies
-    /manage/routes-of-administration   -> settings/taxonomies
     /events   EventsPageComponent
     /seed-demo   SeedDemoComponent
 (empty)   marketingLandingGuard | MarketingLandingComponent | exact
@@ -444,7 +442,7 @@ The root dashboard component uses Angular signals extensively:
 
 Click events on phase bars and trials navigate to trial detail pages. Marker clicks call `LandscapeStateService.selectMarker()`, which opens the shared detail panel rendered by the landscape shell. The detail panel (`MarkerDetailPanelComponent` with `mode='drawer'`, 340px, absolute-positioned right) fetches full detail via `get_catalyst_detail` RPC. Body composition is detailed in the "Detail Panel Pattern" section below; the header uses the shared `<app-marker-icon>` (single source of truth for shape + color + projection-derived fill + inner mark + NLE overlay) projected into the shell's `headerLeading` slot — identical rendering to the timeline grid markers, the catalyst category cell, and the bullseye Recent Markers list. The panel dismisses via X button or Escape; there is no backdrop. Clicking another marker inside the panel swaps its content in place. The panel persists between timeline <-> catalysts (same marker data, different layout) and across same-mode dimension switches; entering bullseye or positioning clears the selection (no marker referent in those views) -- the clear is wired in `LandscapeShellComponent`'s router-events subscription. The shell also consumes `?markerId=` on /timeline so cross-pane jumps (e.g. bullseye Recent Markers row → timeline) auto-open the drawer on arrival.
 
-Cross-view jump CTAs let analysts pivot lenses on the same selection without losing context: bullseye's "Open in timeline" footer button calls `LandscapeComponent.onOpenInTimeline()`, which navigates to `/t/{tenantId}/s/{spaceId}/timeline` with `assetIds` + `indicationIds` query params (NOT the space root, which would render the landscape index). Positioning's "Open in bullseye" maps the active grouping to the closest bullseye dimension; the asset-row click in the same pane navigates to `/timeline?assetIds=` so the analyst lands on that asset trial timeline rather than re-entering the bullseye view. Marker pane (catalysts) provides "Open trial" and a clickable Trial section that routes to `/manage/trials/:id`. Event pane provides "Open thread", and its Related events / Thread events / Category histogram rows now stay in-pane (loading detail by id directly rather than searching the limited feed window). Bullseye Recent Markers rows route through `?markerId=` to open the timeline drawer.
+Cross-view jump CTAs let analysts pivot lenses on the same selection without losing context: bullseye's "Open in timeline" footer button calls `LandscapeComponent.onOpenInTimeline()`, which navigates to `/t/{tenantId}/s/{spaceId}/timeline` with `assetIds` + `indicationIds` query params (NOT the space root, which would render the landscape index). Positioning's "Open in bullseye" maps the active grouping to the closest bullseye dimension; the asset-row click in the same pane navigates to `/timeline?assetIds=` so the analyst lands on that asset trial timeline rather than re-entering the bullseye view. Marker pane (catalysts) provides "Open trial" and a clickable Trial section that routes to `/profiles/trials/:id`. Event pane provides "Open thread", and its Related events / Thread events / Category histogram rows now stay in-pane (loading detail by id directly rather than searching the limited feed window). Bullseye Recent Markers rows route through `?markerId=` to open the timeline drawer.
 
 ### AppShellComponent (Layout)
 

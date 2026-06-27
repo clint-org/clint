@@ -61,7 +61,7 @@ Helper methods in the sync service handle phase mapping, masking conversion, spo
 - id: ctgov-manual-trial-sync
   summary: Single-trial sync trigger for ad-hoc refresh of a single NCT.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
   rpcs:
     - trigger_single_trial_sync
   tables:

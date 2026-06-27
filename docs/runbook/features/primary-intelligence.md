@@ -20,7 +20,7 @@ Stout's primary analytical work product, attached to entities in an engagement. 
 - `delete_primary_intelligence(id)` — agency-only; cascades to links.
 
 **Frontend surfaces.**
-- `app-intelligence-block` renders the intelligence on entity detail pages. Bylines render two ways: agency-internal shows contributor initials and publisher (`Contributors: JM, RS — updated 2026-04-21 by JM`); client-facing shows just the agency byline (`Published by {agency}, updated 2026-04-21`). Agency name resolves through `BrandContextService` (`brand.agency.name` for tenant-branded hosts, falls back to `app_display_name`). Linked entities render with names resolved server-side (the payload's per-link `entity_name`, joined in `build_intelligence_payload` from `trials.name`, `markers.title`, `companies.name`, `products.name`) and route via `routerLink`: trial → `manage/trials/:id`, product → `manage/assets/:id`, company → `manage/companies/:id`. Marker chips render as non-clickable text -- markers no longer have a detail route; they live inline on the trial detail page. Routes need `tenantId` + `spaceId` inputs; without them the chip falls back to a non-clickable span.
+- `app-intelligence-block` renders the intelligence on entity detail pages. Bylines render two ways: agency-internal shows contributor initials and publisher (`Contributors: JM, RS — updated 2026-04-21 by JM`); client-facing shows just the agency byline (`Published by {agency}, updated 2026-04-21`). Agency name resolves through `BrandContextService` (`brand.agency.name` for tenant-branded hosts, falls back to `app_display_name`). Linked entities render with names resolved server-side (the payload's per-link `entity_name`, joined in `build_intelligence_payload` from `trials.name`, `markers.title`, `companies.name`, `products.name`) and route via `routerLink`: trial → `profiles/trials/:id`, product → `profiles/assets/:id`, company → `profiles/companies/:id`. Marker chips render as non-clickable text -- markers no longer have a detail route; they live inline on the trial detail page. Routes need `tenantId` + `spaceId` inputs; without them the chip falls back to a non-clickable span.
 - `app-intelligence-empty` is the agency-only "+ Add primary intelligence" placeholder.
 - `app-intelligence-drawer` is the single authoring surface (PrimeNG `p-drawer`). Loads the existing draft if any; falls back to seeding from published. Auto-saves on blur and on linked-entity edits, with a 1.5s debounce while typing in the editors. Optional publish note attaches to the published row via `publish_note`.
 - `app-prose-mirror-editor` wraps a ProseMirror EditorView in a thin Angular component, plus a small inline toolbar (Bold, Italic, Bullet list, Numbered list) that highlights its active state from the current selection. The editor schema, key bindings, markdown input rules (`- ` / `* ` / `+ ` -> bullet list, `1. ` -> ordered list), markdown serialisation, and the toolbar command builders live in `ProseMirrorService`; components consume `createEditor` / `destroyEditor` plus the `toggle*` / `is*Active` helpers. The read path in `shared/utils/markdown-render.ts` strips CommonMark backslash-escapes from punctuation so legacy rows authored before the input rules existed (stored as `\- foo`) render as bullets without a destructive data migration. It also treats blank lines between same-type list markers as part of one list, so the loose lists emitted by `defaultMarkdownSerializer` render as a single `<ul>`/`<ol>` rather than a chain of one-item lists.
@@ -80,9 +80,9 @@ Stout's primary analytical work product, attached to entities in an engagement. 
 - id: primary-intelligence-entity-bundle
   summary: Per-entity single-round-trip bundles (published, draft, referenced_in) for trial, company, product, and space detail pages. Marker-level PI is no longer surfaced; the marker description carries the catalyst-level write-up and trial/asset PI carries the competitive read.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
-    - /t/:tenantId/s/:spaceId/manage/companies/:id
-    - /t/:tenantId/s/:spaceId/manage/assets/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/companies/:id
+    - /t/:tenantId/s/:spaceId/profiles/assets/:id
   rpcs:
     - get_trial_detail_with_intelligence
     - get_company_detail_with_intelligence
@@ -100,9 +100,9 @@ Stout's primary analytical work product, attached to entities in an engagement. 
 - id: primary-intelligence-block
   summary: Entity-detail-page block rendering the published intelligence with byline that switches between agency-internal and client-facing modes.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
-    - /t/:tenantId/s/:spaceId/manage/companies/:id
-    - /t/:tenantId/s/:spaceId/manage/assets/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/companies/:id
+    - /t/:tenantId/s/:spaceId/profiles/assets/:id
   rpcs:
     - get_trial_detail_with_intelligence
   tables:
@@ -128,9 +128,9 @@ Stout's primary analytical work product, attached to entities in an engagement. 
 - id: primary-intelligence-history
   summary: Linear event timeline (draft_started, published, archived, withdrawn) with block-aware word-level diff between adjacent published versions, plus added/removed/changed linked-entity buckets.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
-    - /t/:tenantId/s/:spaceId/manage/companies/:id
-    - /t/:tenantId/s/:spaceId/manage/assets/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/companies/:id
+    - /t/:tenantId/s/:spaceId/profiles/assets/:id
   rpcs:
     - get_primary_intelligence_history
   tables:
