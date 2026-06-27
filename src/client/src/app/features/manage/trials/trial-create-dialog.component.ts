@@ -166,6 +166,8 @@ export class TrialCreateDialogComponent {
     );
   });
 
+  protected readonly showNoIndicationNote = computed(() => this.indicationIds().length === 0);
+
   constructor() {
     // Load product + therapeutic-area options whenever spaceId changes.
     effect(() => {

@@ -108,6 +108,8 @@ export class TrialEditDialogComponent {
     return this.name().trim().length > 0 && assetsValid && idValid;
   });
 
+  protected readonly showNoIndicationNote = computed(() => this.indicationIds().length === 0);
+
   constructor() {
     // Seed form from the input trial when the dialog opens. Re-seeds on every
     // open so any in-flight edits from a previous open are discarded.

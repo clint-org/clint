@@ -186,6 +186,13 @@
       </app-form-field>
     </div>
 
+    @if (showNoIndicationNote()) {
+      <p class="mb-3 text-[11px] leading-snug text-amber-700">
+        No indication set. This trial will appear under <span class="italic">Unspecified</span>
+        until you classify it.
+      </p>
+    }
+
     <app-form-actions
       submitLabel="Create"
       [loading]="saving()"
