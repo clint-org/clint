@@ -1,0 +1,171 @@
+<ol
+  cdkDropList
+  [cdkDropListData]="orderedBriefs()"
+  [cdkDropListDisabled]="!canManage()"
+  (cdkDropListDropped)="onDrop($event)"
+  class="divide-y divide-slate-100 border-t border-slate-100"
+  aria-label="Additional intelligence entries"
+>
+  @for (brief of orderedBriefs(); track brief.anchor_id) {
+    <li cdkDrag [cdkDragDisabled]="!canManage()" data-testid="brief-row" class="bg-white">
+      <!-- collapsed header row -->
+      <div class="flex items-center gap-2 px-4 py-3">
+        @if (canManage()) {
+          <button
+            cdkDragHandle
+            type="button"
+            class="shrink-0 cursor-grab touch-none text-slate-300 hover:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+            pTooltip="Drag to reorder entry"
+            tooltipPosition="top"
+            aria-label="Drag to reorder this entry"
+          >
+            <i class="fa-solid fa-grip-vertical text-xs" aria-hidden="true"></i>
+          </button>
+        }
+
+        <!-- expand / collapse toggle -->
+        <button
+          type="button"
+          class="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+          [attr.aria-expanded]="isExpanded(brief.anchor_id)"
+          [attr.aria-controls]="'brief-body-' + brief.anchor_id"
+          (click)="toggleExpand(brief.anchor_id)"
+        >
+          <i
+            class="fa-solid fa-chevron-right shrink-0 text-[10px] text-slate-400 transition-transform duration-150"
+            [class.rotate-90]="isExpanded(brief.anchor_id)"
+            aria-hidden="true"
+          ></i>
+          <span class="truncate text-sm font-semibold leading-snug text-slate-800">{{
+            headlineFor(brief)
+          }}</span>
+        </button>
+
+        <!-- meta: byline, date, version chip -->
+        <div class="flex shrink-0 items-center gap-2 text-xs text-slate-400">
+          <span class="hidden font-medium text-slate-600 sm:inline">{{ bylineFor(brief) }}</span>
+          <span class="tabular-nums">{{ updatedFor(brief) }}</span>
+          @if (brief.version_count > 1) {
+            <span
+              class="rounded-sm border border-slate-200 bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-slate-500"
+            >v{{ brief.version_count }}</span>
+          }
+        </div>
+
+        <!-- manage affordances (agency only) -->
+        @if (canManage()) {
+          <div class="flex shrink-0 items-center gap-0.5">
+            <p-button
+              icon="fa-solid fa-thumbtack"
+              [text]="true"
+              severity="secondary"
+              size="small"
+              pTooltip="Pin as lead entry"
+              tooltipPosition="top"
+              ariaLabel="Pin as lead entry"
+              (onClick)="onPinClick(brief.anchor_id)"
+            />
+            <p-button
+              icon="fa-solid fa-pen"
+              [text]="true"
+              severity="secondary"
+              size="small"
+              pTooltip="Edit entry"
+              tooltipPosition="top"
+              ariaLabel="Edit entry"
+              (onClick)="onOpenClick(brief.anchor_id)"
+            />
+          </div>
+        }
+      </div>
+
+      <!-- expanded body -->
+      @if (isExpanded(brief.anchor_id)) {
+        @let summaryHtml = summaryHtmlFor(brief);
+        @let implHtml = implicationsHtmlFor(brief);
+        @let groups = linkedGroupsFor(brief);
+        <div
+          [id]="'brief-body-' + brief.anchor_id"
+          class="border-t border-slate-100 px-5 pb-5 pt-4"
+          role="region"
+          [attr.aria-label]="'Details: ' + headlineFor(brief)"
+        >
+          @if (summaryHtml) {
+            <div class="mb-4">
+              <h4
+                class="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400"
+              >
+                Summary
+              </h4>
+              <div
+                class="prose-render text-sm leading-relaxed text-slate-800"
+                [innerHTML]="summaryHtml"
+              ></div>
+            </div>
+          }
+          @if (implHtml) {
+            <div class="mb-4">
+              <h4
+                class="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400"
+              >
+                Implications
+              </h4>
+              <div class="border-l-[3px] border-brand-600 bg-brand-50 px-4 py-3">
+                <div
+                  class="prose-render text-sm leading-relaxed text-slate-800"
+                  [innerHTML]="implHtml"
+                ></div>
+              </div>
+            </div>
+          }
+          @if (groups.length) {
+            <div>
+              <h4
+                class="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400"
+              >
+                Linked entities
+              </h4>
+              <div class="flex flex-col gap-2">
+                @for (g of groups; track g.relationship) {
+                  <div>
+                    <p
+                      class="mb-1 font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400"
+                    >
+                      {{ g.relationship }}
+                    </p>
+                    <div class="flex flex-wrap gap-1.5">
+                      @for (link of g.items; track link.entity_id) {
+                        @let route = linkRouteFor(link);
+                        @if (route) {
+                          <a
+                            [routerLink]="route.commands"
+                            [queryParams]="route.queryParams ?? null"
+                            class="inline-flex max-w-full items-center gap-1.5 rounded-sm border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+                          >
+                            <span
+                              class="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400"
+                            >{{ link.entity_type }}</span>
+                            <span class="truncate font-medium">{{ linkLabelFor(link) }}</span>
+                          </a>
+                        } @else {
+                          <span
+                            class="inline-flex max-w-full items-center gap-1.5 rounded-sm border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                          >
+                            <span
+                              class="font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400"
+                            >{{ link.entity_type }}</span>
+                            <span class="truncate font-medium">{{ linkLabelFor(link) }}</span>
+                          </span>
+                        }
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </li>
+  }
+</ol>
