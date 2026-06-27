@@ -455,6 +455,9 @@ export interface HeatmapBubble {
   unit_count: number;
   /** Count of assets in this group that own published primary intelligence. */
   intelligence_count?: number;
+  // company-anchored intelligence presence; set by get_positioning_data only when
+  // grouped by company. Distinct from intelligence_count (assets-with-intelligence).
+  has_intelligence?: boolean;
   phase_counts: Partial<Record<RingPhase, number>>;
   products: HeatmapAsset[];
 }
