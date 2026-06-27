@@ -435,6 +435,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings/marker-categories',
+            canActivate: [editGuard],
             loadComponent: () =>
               import('./features/manage/marker-categories/marker-category-list.component').then(
                 (m) => m.MarkerCategoryListComponent
