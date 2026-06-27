@@ -11,24 +11,32 @@
 } @else {
   <ul class="divide-y divide-slate-100">
     @for (row of rows(); track row.id) {
-      <li class="px-4 py-3">
-        <div class="flex items-baseline gap-3">
-          <span
-            class="font-mono text-[10px] font-semibold uppercase tracking-widest text-slate-500 whitespace-nowrap"
-          >
-            {{ row.event_date | date: 'yyyy-MM-dd' }}
-          </span>
-          <span class="font-mono text-[10px] font-semibold uppercase tracking-widest text-brand-700">
-            {{ row.category_name }}
-          </span>
-        </div>
-        <div class="mt-1 text-sm text-slate-800 leading-snug">{{ row.title }}</div>
-        @if (row.entity_name && row.entity_level !== entityLevel()) {
-          <div class="mt-0.5 text-xs text-slate-500">
-            <span class="uppercase tracking-wider">{{ row.entity_level | entityNoun }}</span>
-            {{ ' . ' }}{{ row.entity_name }}
+      <li>
+        <a
+          [routerLink]="seeAllLink()"
+          [queryParams]="rowParams(row.id)"
+          class="block px-4 py-3 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-brand-500"
+        >
+          <div class="flex items-baseline gap-3">
+            <span
+              class="font-mono text-[10px] font-semibold uppercase tracking-widest text-slate-500 whitespace-nowrap"
+            >
+              {{ row.event_date | date: 'yyyy-MM-dd' }}
+            </span>
+            <span
+              class="font-mono text-[10px] font-semibold uppercase tracking-widest text-brand-700"
+            >
+              {{ row.category_name }}
+            </span>
           </div>
-        }
+          <div class="mt-1 text-sm text-slate-800 leading-snug">{{ row.title }}</div>
+          @if (row.entity_name && row.entity_level !== entityLevel()) {
+            <div class="mt-0.5 text-xs text-slate-500">
+              <span class="uppercase tracking-wider">{{ row.entity_level | entityNoun }}</span>
+              {{ ' . ' }}{{ row.entity_name }}
+            </div>
+          }
+        </a>
       </li>
     }
   </ul>

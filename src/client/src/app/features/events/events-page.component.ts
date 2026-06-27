@@ -57,6 +57,21 @@ import { GridExcelExportService } from '../../shared/export/grid-excel-export.se
 import { ExportNamingService } from '../../shared/export/export-naming.service';
 import { buildEventsExportColumns } from './events-export.util';
 
+/**
+ * The synthetic category names the detected (CT.gov) leg of get_events_page_data
+ * assigns to trial_change_events rows, which have no category_id. Mirrors the
+ * leg-3 `category_name` CASE in the events RPC migration; kept in sync there so
+ * a click on a detected histogram bucket renders a real category-filter chip.
+ */
+const DETECTED_CATEGORY_NAMES = [
+  'Trial status',
+  'Timeline',
+  'Phase',
+  'Protocol design',
+  'Catalyst lifecycle',
+  'Other',
+] as const;
+
 @Component({
   selector: 'app-events-page',
   imports: [
@@ -122,17 +137,22 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   readonly selectedCatalystDetail = signal<CatalystDetail | null>(null);
   readonly detailLoading = signal(false);
 
-  // All categories combined for the category filter
+  // Category filter options, keyed by display NAME (not id). The overview
+  // histogram groups by category_name and detected-change categories have no
+  // id, so the feed filters by name -- options carry the name as both label and
+  // value so the column dropdown and the histogram-driven chips agree and the
+  // chip resolves a clean label. Names are deduped because an event category
+  // and a marker category can share one (e.g. "Regulatory"), and the synthetic
+  // detected categories are appended so a click on one of those buckets renders
+  // a real chip label rather than the raw "<value>" fallback.
   readonly allCategoryOptions = computed(() => {
-    const eCats = this.eventCategories().map((c) => ({
-      label: c.name,
-      value: c.id,
-    }));
-    const mCats = this.markerCategories().map((c) => ({
-      label: c.name,
-      value: c.id,
-    }));
-    return [...eCats, ...mCats];
+    const names = new Set<string>();
+    for (const c of this.eventCategories()) names.add(c.name);
+    for (const c of this.markerCategories()) names.add(c.name);
+    for (const n of DETECTED_CATEGORY_NAMES) names.add(n);
+    return [...names]
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({ label: name, value: name }));
   });
 
   // Grid state -- must be initialized in field initializer (injection context)
@@ -521,14 +541,18 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Filter the feed table by category from the empty-state histogram.
-   * Uses the grid's text filter on `category_name` so the filter chip
-   * row + p-table column filter stay in sync with the user's intent.
+   * Filter the feed table by category from the overview histogram. Sets a
+   * `select` filter on `category_name` valued by the category NAME, matching
+   * the column's declared filter kind so the chip row, the p-table column
+   * filter, and the server query (which filters by `p_category_names`) all
+   * stay in sync. A text filter here was the bug: it left the server query
+   * empty (no narrowing) and, once round-tripped through the URL, was re-read
+   * as a select whose name was passed to the uuid `p_category_ids`.
    */
   onCategoryFilter(name: string): void {
     this.grid.filters.update((f) => ({
       ...f,
-      category_name: { kind: 'text', contains: name },
+      category_name: { kind: 'select', values: [name] },
     }));
   }
 

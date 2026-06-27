@@ -149,7 +149,10 @@ export interface EventsPageFilters {
   dateTo: string | null;
   entityLevel: EntityLevel | null;
   entityId: string | null;
-  categoryIds: string[];
+  // Category display names (event, marker, and synthetic detected categories
+  // share a name space). The histogram groups by name and detected categories
+  // have no id, so the feed filters by name, not by category id.
+  categoryNames: string[];
   tags: string[];
   priority: EventPriority | null;
   sourceType: 'event' | 'marker' | 'detected' | null;

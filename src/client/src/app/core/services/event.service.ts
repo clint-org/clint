@@ -31,7 +31,7 @@ export class EventService {
               p_date_to: filters.dateTo,
               p_entity_level: filters.entityLevel,
               p_entity_id: filters.entityId,
-              p_category_ids: filters.categoryIds.length > 0 ? filters.categoryIds : null,
+              p_category_names: filters.categoryNames.length > 0 ? filters.categoryNames : null,
               p_tags: filters.tags.length > 0 ? filters.tags : null,
               p_priority: filters.priority,
               p_source_type: filters.sourceType,

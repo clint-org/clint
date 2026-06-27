@@ -13,6 +13,7 @@ import { RouterLink } from '@angular/router';
 
 import { EntityNounPipe } from '../../pipes/entity-noun.pipe';
 import { LoaderComponent } from '../loader/loader.component';
+import { entityEventRowParams } from './entity-event-link';
 import { EntityEventRow, EntityEventsPanelService } from './entity-events-panel.service';
 
 @Component({
@@ -50,6 +51,12 @@ export class EntityEventsPanelComponent {
     entityLevel: this.entityLevel(),
     entityId: this.entityId(),
   }));
+
+  /** Deep-link params for a single row: the entity scope + the event id the
+   *  Events page opens in its detail pane. */
+  protected rowParams(eventId: string): { entityLevel: string; entityId: string; eventId: string } {
+    return entityEventRowParams(this.entityLevel(), this.entityId(), eventId);
+  }
 
   constructor() {
     effect(() => {
