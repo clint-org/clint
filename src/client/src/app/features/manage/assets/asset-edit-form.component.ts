@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, input, model, output } from '@angul
 import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { InputNumber } from 'primeng/inputnumber';
-import { MultiSelect } from 'primeng/multiselect';
 import { Select } from 'primeng/select';
 
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
+import { TaxonomyMultiselectComponent } from '../shared/taxonomy-multiselect/taxonomy-multiselect.component';
+import type { CreateFn } from '../shared/taxonomy-multiselect/taxonomy-create-controller';
 
 /**
  * Presentational asset form body. No persistence: the host owns option loading,
@@ -16,7 +17,14 @@ import { FormFieldComponent } from '../../../shared/components/form-field.compon
   selector: 'app-asset-edit-form',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, InputText, InputNumber, Select, MultiSelect, FormFieldComponent],
+  imports: [
+    FormsModule,
+    InputText,
+    InputNumber,
+    Select,
+    TaxonomyMultiselectComponent,
+    FormFieldComponent,
+  ],
   templateUrl: './asset-edit-form.component.html',
 })
 export class AssetEditFormComponent {
@@ -30,6 +38,11 @@ export class AssetEditFormComponent {
   readonly companyOptions = input<{ id: string; name: string }[]>([]);
   readonly moaOptions = input<{ id: string; name: string }[]>([]);
   readonly roaOptions = input<{ id: string; name: string }[]>([]);
+  // Inline-create hooks supplied by the host (persist + register the new
+  // option). Null on read-only hosts (e.g. import review), degrading the field
+  // to a plain multiselect.
+  readonly moaCreateFn = input<CreateFn | null>(null);
+  readonly roaCreateFn = input<CreateFn | null>(null);
   readonly nameInvalid = input<boolean>(false);
   readonly showDisplayOrder = input<boolean>(true);
   readonly showLogoUrl = input<boolean>(true);

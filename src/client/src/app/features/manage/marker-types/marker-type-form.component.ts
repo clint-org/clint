@@ -16,12 +16,14 @@ import { Select } from 'primeng/select';
 import { ColorPicker } from 'primeng/colorpicker';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { Tooltip } from 'primeng/tooltip';
 
 import { MarkerType, MarkerCategory } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { MarkerCategoryService } from '../../../core/services/marker-category.service';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
+import { createInlineCategory } from './marker-type-form.inline-category';
 
 @Component({
   selector: 'app-marker-type-form',
@@ -34,6 +36,7 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
     ColorPicker,
     ButtonModule,
     MessageModule,
+    Tooltip,
     FormFieldComponent,
     FormActionsComponent,
   ],
@@ -76,6 +79,10 @@ export class MarkerTypeFormComponent implements OnInit {
   readonly nameBlurred = signal(false);
   readonly categoryBlurred = signal(false);
 
+  readonly showNewCategory = signal(false);
+  readonly newCategoryName = signal('');
+  readonly creatingCategory = signal(false);
+
   readonly nameInvalid = computed(() => this.nameBlurred() && !this.name().trim());
   readonly categoryInvalid = computed(() => this.categoryBlurred() && !this.categoryId());
 
@@ -95,6 +102,38 @@ export class MarkerTypeFormComponent implements OnInit {
       this.color.set(existing.color);
       this.displayOrder.set(existing.display_order);
       this.categoryId.set(existing.category_id);
+    }
+  }
+
+  toggleNewCategory(): void {
+    this.showNewCategory.update((v) => !v);
+    this.newCategoryName.set('');
+  }
+
+  async confirmNewCategory(): Promise<void> {
+    if (!this.newCategoryName().trim()) return;
+    this.creatingCategory.set(true);
+    this.error.set(null);
+    try {
+      const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+      const created = await createInlineCategory(
+        this.categoryService,
+        spaceId,
+        this.newCategoryName()
+      );
+      if (!created) return;
+      this.categories.update((list) => [...list, created]);
+      this.categoryId.set(created.id);
+      this.showNewCategory.set(false);
+      this.newCategoryName.set('');
+    } catch (e) {
+      this.error.set(
+        e && typeof e === 'object' && 'message' in e && typeof e.message === 'string'
+          ? e.message
+          : 'Could not create the category.'
+      );
+    } finally {
+      this.creatingCategory.set(false);
     }
   }
 

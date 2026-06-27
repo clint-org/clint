@@ -80,20 +80,16 @@
 }
 
 <app-form-field label="Indication" fieldId="trial-form-indication">
-  <p-multiselect
+  <app-taxonomy-multiselect
     inputId="trial-form-indication"
+    entityLabel="indication"
     [options]="indicationOptions()"
-    optionLabel="name"
-    optionValue="id"
-    [ngModel]="indicationIds()"
-    (ngModelChange)="onIndicationsChange($event)"
-    name="indication"
-    placeholder="Select indication(s)"
-    [filter]="true"
-    [showClear]="true"
-    styleClass="w-full"
-    appendTo="body"
+    [value]="indicationIds()"
+    (valueChange)="onIndicationsChange($event)"
+    [createFn]="indicationCreateFn()"
     [disabled]="disabled()"
+    placeholder="Select indication(s)"
+    appendTo="body"
   />
 </app-form-field>
 

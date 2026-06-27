@@ -7,6 +7,8 @@ import { DatePicker } from 'primeng/datepicker';
 import { Tooltip } from 'primeng/tooltip';
 
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
+import { TaxonomyMultiselectComponent } from '../shared/taxonomy-multiselect/taxonomy-multiselect.component';
+import type { CreateFn } from '../shared/taxonomy-multiselect/taxonomy-create-controller';
 
 interface SelectOption {
   id: string;
@@ -34,6 +36,7 @@ interface SelectOption {
     InputTextModule,
     Select,
     MultiSelect,
+    TaxonomyMultiselectComponent,
     DatePicker,
     Tooltip,
     FormFieldComponent,
@@ -56,6 +59,10 @@ export class TrialEditFormComponent {
   readonly assetOptions = input<SelectOption[]>([]);
   readonly indicationOptions = input<SelectOption[]>([]);
   readonly phaseOptions = input<SelectOption[]>([]);
+  // Inline-create hook for indications, supplied by the host. Null on hosts
+  // whose option ids are names rather than UUIDs (the import review dialog),
+  // degrading the field to a plain multiselect.
+  readonly indicationCreateFn = input<CreateFn | null>(null);
 
   readonly identifierReadonly = input<boolean>(false);
   // Locks every field when the host has linked this trial to an existing record.
