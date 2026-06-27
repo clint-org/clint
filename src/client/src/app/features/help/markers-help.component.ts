@@ -6,7 +6,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { MarkerType } from '../../core/models/marker.model';
 import { MarkerTypeService } from '../../core/services/marker-type.service';
@@ -25,11 +25,35 @@ interface MarkerGroup {
   types: MarkerType[];
 }
 
+// Plain-language definitions for the shared system marker types, keyed by name.
+// Custom marker types added for a space have no entry and render without a
+// definition line. These are the pre-installed types seeded for every space.
+const MARKER_DEFINITIONS: Record<string, string> = {
+  'Topline Data':
+    'First headline results from a trial: the high-level numbers, such as whether it hit its primary endpoint, released before the full dataset.',
+  'Interim Data':
+    'Results from a planned look at the data partway through a trial, before it has finished.',
+  'Full Data': 'The complete trial results, usually presented at a medical congress or published.',
+  'Primary Completion Date (PCD)':
+    'The date a trial finishes collecting data on its primary endpoint. Often when a topline readout is expected.',
+  'Trial Start': 'The trial begins: first patient enrolled or dosed.',
+  'Trial End': 'The trial completes: all data collected and the study closed.',
+  'Regulatory Filing':
+    'The sponsor files a marketing application with a regulator, such as an FDA NDA or BLA, or an EMA MAA.',
+  Submission:
+    'A regulatory submission to an agency, used for filings that are not a standard new-drug application.',
+  Acceptance: 'The regulator accepts the application for review, which starts the review clock.',
+  Approval: 'The regulator approves the drug for marketing.',
+  Launch: 'The drug becomes commercially available: first sales.',
+  'LOE Date':
+    'Loss of exclusivity: the date market protection ends, through patent expiry or loss of exclusivity.',
+  'Generic Entry Date': 'The date a generic or biosimilar competitor enters the market.',
+};
+
 @Component({
   selector: 'app-markers-help',
   standalone: true,
   imports: [
-    RouterLink,
     ManagePageShellComponent,
     CircleIconComponent,
     DiamondIconComponent,
@@ -170,7 +194,8 @@ interface MarkerGroup {
                   </p>
                   <ul class="space-y-1.5">
                     @for (mt of group.types; track mt.id) {
-                      <li class="flex items-center gap-3 text-sm text-slate-700">
+                      <li class="flex items-start gap-3 text-sm text-slate-700">
+                        <span class="mt-px shrink-0">
                         @if (mt.shape === 'dashed-line') {
                           <svg width="14" height="14" aria-hidden="true">
                             <line
@@ -233,10 +258,19 @@ interface MarkerGroup {
                             }
                           </svg>
                         }
-                        <span class="font-medium text-slate-900">{{ mt.name }}</span>
-                        <span class="text-xs uppercase tracking-wide text-slate-400">
-                          {{ mt.shape }}{{ mt.inner_mark !== 'none' ? ' / ' + mt.inner_mark : '' }}
                         </span>
+                        <div class="min-w-0">
+                          <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-medium text-slate-900">{{ mt.name }}</span>
+                            <span class="text-xs uppercase tracking-wide text-slate-400">
+                              {{ mt.shape
+                              }}{{ mt.inner_mark !== 'none' ? ' / ' + mt.inner_mark : '' }}
+                            </span>
+                          </div>
+                          @if (definitionFor(mt.name); as def) {
+                            <p class="mt-0.5 text-xs leading-snug text-slate-500">{{ def }}</p>
+                          }
+                        </div>
                       </li>
                     }
                   </ul>
@@ -259,10 +293,6 @@ interface MarkerGroup {
             }
           </div>
         </section>
-
-        <p class="mt-8 text-xs text-slate-400">
-          <a [routerLink]="backLink()" class="text-brand-700 hover:underline">Back to timeline</a>
-        </p>
       </div>
     </app-manage-page-shell>
   `,
@@ -379,15 +409,7 @@ export class MarkersHelpComponent implements OnInit {
     }
   }
 
-  protected backLink(): string[] {
-    const tenantId = this.route.snapshot.paramMap.get('tenantId');
-    const spaceId = this.route.snapshot.paramMap.get('spaceId');
-    if (tenantId && spaceId) {
-      return ['/t', tenantId, 's', spaceId, 'timeline'];
-    }
-    if (tenantId) {
-      return ['/t', tenantId, 'spaces'];
-    }
-    return ['/'];
+  protected definitionFor(name: string): string | undefined {
+    return MARKER_DEFINITIONS[name];
   }
 }

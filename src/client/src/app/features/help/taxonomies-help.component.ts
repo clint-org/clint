@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { IndicationService } from '../../core/services/indication.service';
 import { MechanismOfActionService } from '../../core/services/mechanism-of-action.service';
@@ -11,7 +11,7 @@ import { toVocabRows, type VocabRow } from './taxonomies-help.utils';
 
 @Component({
   selector: 'app-taxonomies-help',
-  imports: [RouterLink, ManagePageShellComponent, LoaderComponent],
+  imports: [ManagePageShellComponent, LoaderComponent],
   template: `
     <app-manage-page-shell>
       <div class="max-w-3xl">
@@ -78,10 +78,6 @@ import { toVocabRows, type VocabRow } from './taxonomies-help.utils';
             }
           </div>
         </section>
-
-        <p class="mt-8 text-xs text-slate-400">
-          <a [routerLink]="backLink()" class="text-brand-700 hover:underline">Back to timeline</a>
-        </p>
       </div>
     </app-manage-page-shell>
   `,
@@ -129,7 +125,7 @@ export class TaxonomiesHelpComponent implements OnInit {
       },
       {
         q: 'Can I edit a taxonomy?',
-        a: 'Space editors and owners manage taxonomies from Settings > Taxonomies. Viewers see this read-only guide.',
+        a: 'Editors and owners manage taxonomies from Settings > Taxonomies. If you do not see that option, your role does not include editing them.',
       },
     ];
   });
@@ -152,13 +148,5 @@ export class TaxonomiesHelpComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
-  }
-
-  protected backLink(): string[] {
-    const tenantId = this.route.snapshot.paramMap.get('tenantId');
-    const spaceId = this.route.snapshot.paramMap.get('spaceId');
-    if (tenantId && spaceId) return ['/t', tenantId, 's', spaceId, 'timeline'];
-    if (tenantId) return ['/t', tenantId, 'spaces'];
-    return ['/'];
   }
 }

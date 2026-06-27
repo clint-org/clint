@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { PHASE_DESCRIPTORS } from '../../core/models/phase-colors';
 import { BrandContextService } from '../../core/services/brand-context.service';
@@ -8,7 +7,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
 @Component({
   selector: 'app-phases-help',
   standalone: true,
-  imports: [RouterLink, ManagePageShellComponent],
+  imports: [ManagePageShellComponent],
   template: `
     <app-manage-page-shell>
       <div class="max-w-3xl">
@@ -73,7 +72,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
                 prominent.
               </li>
               <li>P4 and APPROVED shift to the violet family to mark the regulatory transition.</li>
-              <li>LAUNCHED uses the brand teal -- the strongest commercial state, hero color.</li>
+              <li>LAUNCHED uses the brand teal, the strongest commercial state and hero color.</li>
               <li>
                 Observational arms use amber so they sit visually apart from interventional
                 progression.
@@ -109,17 +108,12 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
             }
           </div>
         </section>
-
-        <p class="mt-8 text-xs text-slate-400">
-          <a [routerLink]="backLink()" class="text-brand-700 hover:underline">Back</a>
-        </p>
       </div>
     </app-manage-page-shell>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PhasesHelpComponent {
-  private readonly route = inject(ActivatedRoute);
   private readonly brand = inject(BrandContextService);
 
   // Plural-people slot. Companies take a singular noun, so the agency name
@@ -141,16 +135,12 @@ export class PhasesHelpComponent {
     const subject = this.analystSubject();
     return [
       {
-        q: 'Why is P3 the brightest color?',
-        a: 'Pivotal trials decide the commercial and partnership narrative. The hero color cues the eye to the assets in or near pivotal readout. Earlier phases stay muted so they recede into context.',
-      },
-      {
         q: 'Why are APPROVED and LAUNCHED separate?',
         a: `Regulatory approval and commercial launch are different competitive events. APPROVED marks the regulatory clearance; LAUNCHED marks revenue exposure. Distinct colors let ${subject} spot assets that are approved-but-not-launched at a glance.`,
       },
       {
         q: 'What does PRECLIN mean for a competitor analysis?',
-        a: 'Preclinical assets are early-signal indicators. They appear muted because they are weak signals individually but matter in aggregate -- a cluster of preclinical activity in an area is itself a competitive datum.',
+        a: 'Preclinical assets are early signals. They appear muted because each one is a weak signal on its own, but they matter in aggregate. A cluster of preclinical activity in one area is itself worth watching.',
       },
       {
         q: 'Why don\'t I see the preclinical phase in my space?',
@@ -158,13 +148,8 @@ export class PhasesHelpComponent {
       },
       {
         q: 'Can the colors change per tenant?',
-        a: 'No. Phase colors are a global semantic and stay consistent across all tenants and spaces so anyone moving between them reads the same signal the same way.',
+        a: 'No. Phase colors are fixed and stay the same across every workspace and space, so a color always means the same phase no matter whose space you are looking at.',
       },
     ];
   });
-
-  protected backLink(): string[] {
-    const tenantId = this.route.snapshot.paramMap.get('tenantId');
-    return tenantId ? ['/t', tenantId, 'spaces'] : ['/'];
-  }
 }
