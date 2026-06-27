@@ -33,6 +33,12 @@ Out of scope:
   their multiselects with `[ngModel]`/`(ngModelChange)`. We keep that pattern to
   avoid ballooning the diff (per `src/client/CLAUDE.md` section 11); the new
   wrapper exposes the same `string[]` model contract.
+- **Unicode / accent folding** — `normalize` lowercases and strips ASCII
+  punctuation/whitespace only. It does NOT fold accents or Greek letters, so
+  `GLP-1α` and `GLP-1a` are treated as distinct. Conscious omission: pharma
+  vocabulary is intentionally precise about such characters, and accent-folding
+  risks collapsing genuinely different terms. Revisit only if it causes real
+  duplication in practice.
 
 ## Why this is mostly a frontend problem
 
@@ -95,13 +101,19 @@ Rendered in the `p-multiselect` footer based on `footerState`:
 
 Create-row click flow:
 
-1. Set `creating`, call `createFn(filterText)`.
-2. On success: emit `optionCreated`, push the new id into `value`, clear the
-   filter, unset `creating`.
+1. Trim `filterText`; set `creating`, call `createFn(trimmed)`. The filter input
+   is capped at `maxlength=255` (the tightest column, `indications.name`) so the
+   created name cannot exceed any target column; an over-length paste is
+   truncated at entry rather than failing at the DB.
+2. On success: emit `optionCreated`, append the new id to `value` (existing
+   selections preserved), clear the filter, unset `creating`.
 3. On failure (e.g. a race-condition unique violation if two tabs create the
    same name): the error surfaces as a toast at the service origin per the
    client guardrails; the component clears `creating` and leaves the filter so
    the user can retry or pick the now-existing value.
+
+While `creating` is set the Create row is disabled, so a double-click cannot
+fire two inserts.
 
 ### Matching helper — `taxonomy-match.ts`
 
@@ -153,14 +165,34 @@ post-click permission toasts (per `src/client/CLAUDE.md` section 13.5).
 
 ## Testing
 
-- `taxonomy-match.spec.ts` — `normalize`, `levenshtein`, and `classify`:
-  exact (incl. whitespace/case/hyphen variants), near (substring + typo within
-  threshold, and correctly NOT firing past threshold), none, empty text, near
-  list cap and ordering.
-- `taxonomy-multiselect.component.spec.ts` — type a novel value then click
-  Create → option appears selected and `optionCreated` emitted; exact-match text
-  suppresses the Create row; near-match text shows the Similar hint and clicking
-  it selects the existing option; `createFn=null` hides the Create affordance.
+`taxonomy-match.spec.ts` (pure helper):
+
+- `normalize` — case-folding, trim, internal-whitespace collapse, punctuation
+  and hyphen stripping; whitespace/punctuation-only input normalizes to empty.
+- `levenshtein` — known distances incl. zero, insert/delete/substitute.
+- `classify` — exact (incl. whitespace/case/hyphen variants on either side),
+  near via substring (both directions), near via typo just inside the threshold,
+  correctly NOT near just outside the threshold (boundary cases pinned), none,
+  empty/whitespace-only text → none, near-list cap of 2 and closeness ordering.
+
+`taxonomy-multiselect.component.spec.ts` (component):
+
+- Happy path: type a novel value, click Create → option appears selected and
+  `optionCreated` emitted with `{ id, name }`.
+- Append semantics: with a pre-existing selection, creating a new value adds to
+  it (does not replace) and the filter clears afterward.
+- Input hygiene: leading/trailing whitespace is trimmed before `createFn`; a
+  whitespace-only filter shows no Create row.
+- Exact match suppresses the Create row.
+- Near match shows the Similar hint; clicking a suggestion selects the existing
+  option (and does not create).
+- In-flight guard: while a create is pending the Create row is disabled, so a
+  second click cannot trigger a second `createFn` call.
+- Failure path: when `createFn` rejects, the component clears `creating`, keeps
+  the filter text, and does not crash or mutate `value`.
+- `createFn=null` hides the Create affordance entirely (read-only fallback).
+- Accessibility: the Create row and Similar suggestions are keyboard-operable
+  and the footer passes an AXE check (per `src/client/CLAUDE.md` section 7).
 
 Each test ships with its task, not deferred to a separate phase.
 
