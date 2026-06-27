@@ -25,11 +25,15 @@ const APP = join(__dirname, '../..');
 // Self-reference: exclude this spec file and the features/manage/ folder
 // (import paths and component names in that folder legitimately contain
 // the folder name).
+// Only this spec is excluded (it necessarily contains the literal it bans).
+// The features/manage/ folder is NOT excluded: its import paths look like
+// '../manage/...' / 'features/manage/...' and its selectors like
+// 'app-manage-page-shell', none of which are the exact `'manage'` route-segment
+// token this guard matches -- but its TEMPLATES do hold real entity-navigation
+// arrays that must use 'profiles'. Excluding the folder here is what let the
+// rename regression ship (entity links 404'd to /manage/*).
 function isExcluded(filePath: string): boolean {
-  return (
-    filePath.includes('/features/manage/') ||
-    filePath.endsWith('no-manage-route-segments.spec.ts')
-  );
+  return filePath.endsWith('no-manage-route-segments.spec.ts');
 }
 
 function collectFiles(dir: string, exts: string[]): string[] {
@@ -46,10 +50,14 @@ function collectFiles(dir: string, exts: string[]): string[] {
   return results;
 }
 
-// Matches a route array literal element: [ or , then optional whitespace then
-// the quoted string literal manage. Uses a character class without backslash
-// escaping the bracket (lint: no-useless-escape).
-const ROUTE_SEGMENT_RE = /[[,]\s*['"]manage['"]/;
+// Matches the exact quoted route segment `'manage'` / `"manage"` anywhere on a
+// line. Deliberately NOT anchored to a preceding [ or , -- multi-line route
+// arrays put the segment on its own line (e.g. `  'manage',`), and the old
+// anchored pattern missed those. The exact-token form does not match import
+// paths ('../manage/...'), selectors ('app-manage-...'), persistence keys
+// ('manage-trials'), or prose ('manage members'), so no folder exclusion is
+// needed.
+const ROUTE_SEGMENT_RE = /['"]manage['"]/;
 
 // Matches the route URL structure: /s/<spaceId>/manage/ where spaceId is a
 // UUID-like segment. This targets actual navigation URLs, not import paths
@@ -59,7 +67,7 @@ const ROUTE_URL_RE = /\/s\/[^/'"]+\/manage\//;
 describe('no-manage-route-segments (rename regression guard)', () => {
   const files = collectFiles(APP, ['.ts', '.html']).filter((f) => !isExcluded(f));
 
-  it('no file outside features/manage/ contains a manage route-array segment', () => {
+  it('no file contains a quoted manage route-array segment', () => {
     const violations: string[] = [];
     for (const file of files) {
       const src = readFileSync(file, 'utf8');
@@ -74,7 +82,7 @@ describe('no-manage-route-segments (rename regression guard)', () => {
     expect(violations, `Stray 'manage' route segments:\n${violations.join('\n')}`).toEqual([]);
   });
 
-  it('no file outside features/manage/ contains a /s/<id>/manage/ route URL', () => {
+  it('no file contains a /s/<id>/manage/ route URL', () => {
     const violations: string[] = [];
     for (const file of files) {
       const src = readFileSync(file, 'utf8');
