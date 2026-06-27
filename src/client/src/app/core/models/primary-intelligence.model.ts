@@ -69,19 +69,33 @@ export interface ReferencedInRow {
   gloss: string | null;
 }
 
+/** One brief (anchor) with its current published/draft payloads. Matches
+ *  one element of the detail bundle `briefs[]` array. */
+export interface PrimaryIntelligenceBrief {
+  anchor_id: string;
+  is_lead: boolean;
+  display_order: number;
+  published: IntelligencePayload | null;
+  draft: IntelligencePayload | null;
+  updated_at: string | null;
+  version_count: number;
+}
+
 /** Detail-page bundle returned by the get_*_with_intelligence RPCs. */
 export interface IntelligenceDetailBundle {
   space_id: string;
   entity_type: IntelligenceEntityType;
   entity_id: string;
-  published: IntelligencePayload | null;
-  draft: IntelligencePayload | null;
+  briefs: PrimaryIntelligenceBrief[];
   referenced_in: ReferencedInRow[];
+  authors?: Record<string, string>;
 }
 
 /** Compact row used by Latest-from-Stout feed and the browse view. */
 export interface IntelligenceFeedRow {
   id: string;
+  anchor_id: string;
+  is_lead: boolean;
   space_id: string;
   entity_type: IntelligenceEntityType;
   entity_id: string;
@@ -106,6 +120,7 @@ export interface IntelligenceFeedResult {
 
 export interface UpsertIntelligenceInput {
   id: string | null;
+  anchor_id: string | null;
   space_id: string;
   entity_type: IntelligenceEntityType;
   entity_id: string;
