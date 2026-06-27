@@ -295,6 +295,54 @@ describe('multi-intelligence briefs (anchor-aware upsert)', () => {
     expect(result.error!.message).toMatch(/no published version|not published/i);
   });
 
+  it('list_intelligence_for_entity: lead first; viewer sees only published anchor; payload has record+links', async () => {
+    const trialId = await createTrial();
+
+    // First upsert creates the lead anchor (published).
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'Lead Published',
+      changeNote: null,
+    });
+    // Second upsert creates a draft-only sibling anchor.
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'draft',
+      headline: 'Draft Only',
+      changeNote: null,
+    });
+
+    // Agency sees both anchors: lead (published) and sibling (draft-only).
+    const agencyResult = await as(p, 'agency_only').rpc('list_intelligence_for_entity', {
+      p_space_id: p.org.spaceId,
+      p_entity_type: 'trial',
+      p_entity_id: trialId,
+    });
+    const agencyRows = agencyResult.data as any[];
+    expect(agencyRows).toHaveLength(2);
+    expect(agencyRows[0].is_lead).toBe(true);
+
+    // Viewer sees only the published-bearing anchor.
+    const viewerResult = await as(p, 'reader').rpc('list_intelligence_for_entity', {
+      p_space_id: p.org.spaceId,
+      p_entity_type: 'trial',
+      p_entity_id: trialId,
+    });
+    const viewerRows = viewerResult.data as any[];
+    expect(viewerRows).toHaveLength(1);
+    // The one visible anchor carries a rich published payload.
+    expect(viewerRows[0].published).toBeTruthy();
+    expect(viewerRows[0].published.record).toBeTruthy();
+    expect(viewerRows[0].published.links).toBeDefined();
+  });
+
   it('reorder_intelligence writes display_order and rejects a mismatched set', async () => {
     const trialId = await createTrial();
     await rpcUpsert({
