@@ -148,6 +148,7 @@ export class BullseyeDetailPanelComponent {
   private readonly perSpacePaths = signal<string[] | null>(null);
   private readonly snapshotByTrial = signal<Map<string, unknown>>(new Map());
   readonly intelligenceNotes = signal<AssetIntelligenceNote[]>([]);
+  readonly companyIntelligenceRefs = signal<PiReference[]>([]);
 
   /** Asset PI notes mapped to the shared PiDetailSection reference shape. */
   protected readonly intelligenceReferences = computed<PiReference[]>(() =>
@@ -243,6 +244,40 @@ export class BullseyeDetailPanelComponent {
           this.intelligenceNotes.set(notes);
         } catch {
           this.intelligenceNotes.set([]);
+        }
+      })();
+    });
+
+    // Fetch company-level intelligence for the selected asset's parent company.
+    // Shown as a separate "Company intelligence" section below the asset PI block.
+    // Runs on every asset selection change; guards against stale responses.
+    effect(() => {
+      const asset = this.selectedAsset();
+      this.companyIntelligenceRefs.set([]);
+      if (!asset) return;
+      const spaceId = this.resolvedSpaceId;
+      if (!spaceId) return;
+      const capturedAsset = asset;
+      void (async () => {
+        try {
+          const briefs = await this.intelligenceService.listIntelligenceForEntity(
+            spaceId,
+            'company',
+            asset.company_id
+          );
+          if (this.selectedAsset() !== capturedAsset) return;
+          const refs: PiReference[] = briefs
+            .filter((br) => br.published !== null)
+            .map((br) => ({
+              id: br.published!.record.id,
+              entity_type: 'company' as IntelligenceEntityType,
+              entity_id: asset.company_id,
+              entity_name: asset.company_name,
+              headline: br.published!.record.headline,
+            }));
+          this.companyIntelligenceRefs.set(refs);
+        } catch {
+          if (this.selectedAsset() === capturedAsset) this.companyIntelligenceRefs.set([]);
         }
       })();
     });

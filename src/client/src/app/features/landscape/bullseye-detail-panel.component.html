@@ -214,6 +214,15 @@
         </app-detail-panel-section>
       }
 
+      @if (companyIntelligenceRefs().length > 0) {
+        <app-detail-panel-section label="Company intelligence" [piMark]="true">
+          <app-pi-detail-section
+            [references]="companyIntelligenceRefs()"
+            (referenceClick)="onIntelligenceClick($event)"
+          />
+        </app-detail-panel-section>
+      }
+
       <app-detail-panel-section [label]="trialsSectionLabel()">
         @if (asset.trials.length === 0) {
           <p class="text-[12px] text-slate-500">No trials tracked.</p>

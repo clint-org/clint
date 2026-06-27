@@ -11,6 +11,7 @@ import {
   IntelligenceHistoryPayload,
   IntelligenceLinkEntityType,
   PiReference,
+  PrimaryIntelligenceBrief,
   UpsertIntelligenceInput,
 } from '../models/primary-intelligence.model';
 
@@ -152,6 +153,42 @@ export class PrimaryIntelligenceService {
         return (data as IntelligenceFeedResult) ?? { rows: [], total: 0, limit: 50, offset: 0 };
       },
     });
+  }
+
+  /**
+   * Returns the ordered brief list for one entity (company / product / trial).
+   * Each element carries `{anchor_id, is_lead, display_order, published, draft,
+   * updated_at, version_count}`. Published and draft are full payload objects or
+   * null. Callers filter to `published !== null` for read-only surfaces.
+   * SECURITY INVOKER on the DB side: non-agency callers only see anchors that
+   * have a published version.
+   */
+  async listIntelligenceForEntity(
+    spaceId: string,
+    entityType: 'company' | 'product' | 'trial',
+    entityId: string
+  ): Promise<PrimaryIntelligenceBrief[]> {
+    return this.cache.get(
+      'list_intelligence_for_entity',
+      { spaceId, entityType, entityId },
+      {
+        ttl: HEAVY_TTL,
+        tags: [
+          `space:${spaceId}:primary-intelligence`,
+          `${entityType}:${entityId}:detail`,
+        ],
+        fetch: async () => {
+          const { data } = await this.supabase.client
+            .rpc('list_intelligence_for_entity', {
+              p_space_id: spaceId,
+              p_entity_type: entityType,
+              p_entity_id: entityId,
+            })
+            .throwOnError();
+          return (data as PrimaryIntelligenceBrief[]) ?? [];
+        },
+      }
+    );
   }
 
   async getIntelligenceNotesForAsset(
