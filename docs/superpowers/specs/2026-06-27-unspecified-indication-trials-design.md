@@ -54,10 +54,23 @@ classifying it). The defect is that the optional case becomes invisible.
   (rejected: pollutes shared reference data; the fix must stay read-side and
   reversible).
 
+## Timeline rendering reality (correction)
+
+The timeline does **not** render indication grouping rows. `dashboard-grid`
+flattens company -> asset -> trial into `flattenedTrials()` -- one row per
+trial per asset (`dashboard-grid.component.ts:180-216`). Indications appear only
+as small chips in an optional, toggle-able **indication column**
+(`dashboard-grid.component.html:233-259`); a trial with no indication already
+renders a muted placeholder in that column's `@else` branch. There is no bucket
+to "sort last" or badge. The design below reflects this: the orphan fix gets the
+trial onto a normal row, and the "needs attention" signal lives in the
+indication column placeholder.
+
 ## Design
 
-Two reinforcing parts. Part 1 (read-side query change) is the load-bearing
-correctness fix. Part 2 (create-dialog note) is the behavioral nudge on top.
+Three parts. Part 1 (read-side query change) is the load-bearing correctness
+fix. Part 2 (create-dialog note) is the behavioral nudge. Part 3 (column
+placeholder) is the in-timeline "needs classification" signal.
 
 ### Part 1 -- Synthetic "Unspecified" bucket in `get_dashboard_data` (backend, read-side only)
 
@@ -92,7 +105,7 @@ Implementation notes:
 
 - The `indications` jsonb array (currently built from
   `asset_indications ai join indications ind`) becomes a UNION of the real
-  indications and the synthetic bucket. To avoid duplicating the ~100-line
+  indications and the synthetic node. To avoid duplicating the ~100-line
   `trial_obj` lateral across both branches, factor it into a helper SQL function
   (e.g. `public._dashboard_trial_obj(t public.trials, p_space_id uuid,
   p_start_year int, p_end_year int) returns jsonb`) and call it from both. This
@@ -132,19 +145,35 @@ it would be scrolled out of view.
 - Applies on **edit** too: editing a trial down to zero indications shows the
   same footer note.
 
-### Part 3 -- Timeline rendering (frontend, muted + needs-attention)
+### Part 3 -- Timeline rendering (frontend, column placeholder)
 
-`mapDashboardCompanies` (`core/services/dashboard.service.ts`, plus the
-indication view model in `core/models`) maps the synthetic node like any
-indication but threads the `is_unspecified` flag into the view model. In the
-landscape/timeline grid (`features/landscape/`):
+Two changes, both in `features/dashboard/grid/`:
 
-- **Label:** `Unspecified indication`, muted slate, italic -- visually distinct
-  from the structural uppercase-tracked real indication labels, reading as a
-  holding area rather than a real classification.
-- **Order:** always sorted **last** under its asset, after all real indications.
-- **Count badge:** a small slate count of orphan trials on the bucket header, so
-  the cleanup debt is visible at a glance without shouting.
+**Mapper (`core/services/dashboard.service.ts:71-120`).** When the synthetic
+node is encountered (`ind.is_unspecified === true`, or equivalently `ind.id`
+is null), still fold its trials into the per-asset `byTrialId` flat list so they
+render as normal rows, but do **not** push an `indicationRef` for them. The
+orphan trial therefore lands in the timeline with an **empty `_indications`**
+array. This is deliberate: it keeps the synthetic node from rendering as a fake
+"Unspecified" chip in the indication column, and it lets the existing
+empty-indications branch carry the signal. (A trial with no real indication can
+never also have a real one, so there is no merge conflict.)
+
+**Indication column placeholder
+(`features/dashboard/grid/dashboard-grid.component.html:233-259`).** The
+`@else` branch (trial has zero indications) currently renders a bare
+placeholder using an em-dash (`&mdash;`), which both reads as "no data" and
+violates the project no-em-dash rule. Replace it with a muted but legible
+"Unclassified" affordance -- e.g. a small slate pill or italic slate label
+reading `Unclassified`, with a `pTooltip` (from `primeng/tooltip`, positioned
+`top`) reading `No indication set. Classify to group this trial.` This is the
+in-timeline "needs attention" signal.
+
+Caveat (accepted): the indication column is toggle-able
+(`showIndicationColumn() && !hideIndicationColumn()`), so this signal is only
+visible when the column is shown. The **correctness** fix (the trial appearing
+at all) is independent of the column and always applies; only the nudge is
+column-gated.
 
 ## Testing
 
@@ -154,22 +183,26 @@ landscape/timeline grid (`features/landscape/`):
   still lands under its real indication and is **absent** from the Unspecified
   bucket. Assert the bucket is suppressed when `p_indication_ids` is passed.
 - **Frontend unit (Vitest):**
-  - `mapDashboardCompanies` maps the sentinel node and threads
-    `is_unspecified` into the view model.
-  - The grid sorts the Unspecified bucket last and applies the muted treatment.
+  - `mapDashboardCompanies` folds synthetic-node trials into the flat
+    per-asset `trials` list with an **empty `_indications`** array (no fake
+    chip), while real-indication trials keep their `_indications` refs.
   - The create/edit dialog shows the footer note iff the indication set is
     empty, and never blocks save.
+  - (Template behavior -- the `Unclassified` placeholder + tooltip rendering
+    in the indication column's empty branch -- is verified manually in the
+    browser per the client a11y/verification convention; quoted in the plan.)
 
 ## Files touched (anticipated)
 
 - `supabase/migrations/<new>_dashboard_unspecified_indication_bucket.sql` --
   helper fn + `get_dashboard_data` UNION + smoke + schema reload.
-- `src/client/src/app/core/services/dashboard.service.ts` /
-  `core/models/*` -- map `is_unspecified` into the view model.
-- `src/client/src/app/features/landscape/*` -- muted bucket, sort-last, badge.
+- `src/client/src/app/core/services/dashboard.service.ts` -- fold synthetic-node
+  trials into the flat list with empty `_indications`.
+- `src/client/src/app/features/dashboard/grid/dashboard-grid.component.html` --
+  replace the em-dash placeholder with the `Unclassified` affordance + tooltip.
 - `src/client/src/app/features/manage/trials/trial-create-dialog.component.{ts,html}`
   -- footer note (covers create + edit).
-- Corresponding `.spec.ts` files alongside each touched component/service.
+- Corresponding `.spec.ts` files alongside the touched service.
 
 ## Open questions
 
