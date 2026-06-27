@@ -11,23 +11,22 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
-import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
-import { IntelligenceBriefListComponent } from '../../../shared/components/intelligence-brief-list/intelligence-brief-list.component';
+import { IntelligenceStackComponent } from '../../../shared/components/intelligence-stack/intelligence-stack.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
-import { IntelligenceHistoryPanelComponent } from '../../../shared/components/intelligence-history-panel/intelligence-history-panel.component';
 import { WithdrawIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/withdraw-dialog.component';
 import { PurgeIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/purge-dialog.component';
-import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
-import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
+import {
+  IntelligenceDetailBundle,
+  IntelligenceHistoryPayload,
+} from '../../../core/models/primary-intelligence.model';
 
 @Component({
   selector: 'app-engagement-detail',
@@ -36,11 +35,9 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
     ToastModule,
     ManagePageShellComponent,
     SectionHeaderComponent,
-    IntelligenceBlockComponent,
-    IntelligenceBriefListComponent,
+    IntelligenceStackComponent,
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,
-    IntelligenceHistoryPanelComponent,
     WithdrawIntelligenceDialogComponent,
     PurgeIntelligenceDialogComponent,
     MaterialsSectionComponent,
@@ -63,21 +60,11 @@ export class EngagementDetailComponent implements OnInit {
   protected readonly drawerAnchorId = signal<string | null>(null);
   protected readonly loading = signal(true);
 
-  protected readonly leadBrief = computed(() => {
-    const briefs = this.intelligence()?.briefs;
-    if (!briefs?.length) return null;
-    return briefs.find((b) => b.is_lead) ?? briefs[0];
-  });
+  // Per-anchor history map; populated lazily via onRequestHistory.
+  protected readonly histories = signal<Record<string, IntelligenceHistoryPayload>>({});
+  // Stores the published record id surfaced by the stack's withdraw output.
+  protected readonly withdrawTargetId = signal<string | null>(null);
 
-  protected readonly otherBriefs = computed(() => {
-    const briefs = this.intelligence()?.briefs;
-    if (!briefs?.length) return [];
-    const lead = briefs.find((b) => b.is_lead) ?? briefs[0];
-    return briefs.filter((b) => b !== lead);
-  });
-
-  // Intelligence history (version list, withdraw / purge dialogs)
-  protected readonly historyHost = new IntelligenceHistoryHost(this.intelligenceService);
   protected readonly withdrawDialogOpen = signal(false);
   protected readonly purgeDialogOpen = signal(false);
   protected readonly purgeAnchorMode = signal(false);
@@ -110,10 +97,6 @@ export class EngagementDetailComponent implements OnInit {
       const sid = this.spaceIdSig();
       if (!sid) return;
       this.intelligence.set(await this.intelligenceService.getSpaceIntelligence(sid));
-      // Engagement detail is a singleton per space: entity_id == space_id.
-      // Refresh history alongside the intelligence bundle so the panel
-      // stays in lockstep with the IntelligenceBlock.
-      await this.refreshHistory();
     } catch {
       this.intelligence.set(null);
     } finally {
@@ -121,36 +104,32 @@ export class EngagementDetailComponent implements OnInit {
     }
   }
 
-  private async refreshHistory(): Promise<void> {
-    const sid = this.spaceIdSig();
-    const anchorId = this.leadBrief()?.anchor_id;
-    if (!sid || !anchorId) return;
-    try {
-      await this.historyHost.load(anchorId, 'space', sid);
-    } catch {
-      // History panel mirrors the intelligence-block: load failures should
-      // not block the page. The panel renders an empty state on its own.
-    }
-  }
-
-  /** Load history for a non-lead brief when the user activates Version history. */
-  protected async onViewHistory(anchorId: string): Promise<void> {
+  /** Lazily loads version history for one anchor card; called by the stack on first expand. */
+  protected async onRequestHistory(anchorId: string): Promise<void> {
     const sid = this.spaceIdSig();
     if (!sid) return;
     try {
-      await this.historyHost.load(anchorId, 'space', sid);
+      const payload = await this.intelligenceService.loadHistory(anchorId, 'space', sid);
+      this.histories.update((m) => ({ ...m, [anchorId]: payload }));
     } catch {
-      // Silent: panel shows its own empty state on load failure.
+      // Per-card history load failure must not block the page; the card keeps
+      // its loading state and the user can collapse/expand to retry.
     }
   }
 
+  protected onWithdrawRequested(e: { anchorId: string; id: string; headline: string }): void {
+    this.withdrawTargetId.set(e.id);
+    this.withdrawDialogOpen.set(true);
+  }
+
   protected async onWithdrawConfirmed(reason: string): Promise<void> {
-    const id = this.historyHost.payload().current?.id;
+    const id = this.withdrawTargetId();
     if (!id) return;
     try {
-      await this.historyHost.withdraw(id, reason);
+      await this.intelligenceService.withdraw(id, reason);
       this.withdrawDialogOpen.set(false);
       await this.loadIntelligence();
+      this.histories.set({});
       this.messageService.add({
         severity: 'success',
         summary: 'Intelligence withdrawn.',
@@ -177,9 +156,10 @@ export class EngagementDetailComponent implements OnInit {
     const id = this.purgeTargetId();
     if (!id) return;
     try {
-      await this.historyHost.purge(id, confirmation, this.purgeAnchorMode());
+      await this.intelligenceService.purge(id, confirmation, this.purgeAnchorMode());
       this.purgeDialogOpen.set(false);
       await this.loadIntelligence();
+      this.histories.set({});
       this.messageService.add({
         severity: 'success',
         summary: 'Intelligence purged.',
@@ -195,9 +175,32 @@ export class EngagementDetailComponent implements OnInit {
     }
   }
 
-  protected onIntelligenceEdit(): void {
-    this.drawerAnchorId.set(this.leadBrief()?.anchor_id ?? null);
-    this.drawerOpen.set(true);
+  protected onDiscardDraft(anchorId: string): void {
+    const brief = this.intelligence()?.briefs.find((b) => b.anchor_id === anchorId);
+    const id = brief?.draft?.record.id;
+    if (!id) return;
+    this.confirmation.confirm({
+      header: 'Discard draft?',
+      message: 'This permanently removes the unpublished draft. This cannot be undone.',
+      acceptLabel: 'Discard draft',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectLabel: 'Cancel',
+      accept: async () => {
+        try {
+          await this.intelligenceService.delete(id);
+          this.messageService.add({ severity: 'success', summary: 'Draft discarded.', life: 3000 });
+          await this.loadIntelligence();
+          this.histories.set({});
+        } catch (err) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Discard failed',
+            detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+            life: 4000,
+          });
+        }
+      },
+    });
   }
 
   protected openDrawerForNewBrief(): void {
@@ -216,6 +219,7 @@ export class EngagementDetailComponent implements OnInit {
     try {
       await this.intelligenceService.setLead(anchorId, i.space_id, i.entity_type, i.entity_id);
       await this.loadIntelligence();
+      this.histories.set({});
     } catch (err) {
       this.messageService.add({
         severity: 'error',
@@ -232,6 +236,7 @@ export class EngagementDetailComponent implements OnInit {
     try {
       await this.intelligenceService.reorder(i.space_id, i.entity_type, i.entity_id, anchorIds);
       await this.loadIntelligence();
+      this.histories.set({});
     } catch (err) {
       this.messageService.add({
         severity: 'error',
@@ -250,40 +255,11 @@ export class EngagementDetailComponent implements OnInit {
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
     await this.loadIntelligence();
+    this.histories.set({});
     this.messageService.add({
       severity: 'success',
       summary: 'Intelligence published.',
       life: 3000,
     });
-  }
-
-  protected async onIntelligenceDelete(): Promise<void> {
-    const lead = this.leadBrief();
-    const id = lead?.published?.record.id ?? lead?.draft?.record.id;
-    if (!id) return;
-    // Unnamed-item path: the engagement intelligence is a single read,
-    // require the literal word 'delete' to gate the destructive action.
-    const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete this intelligence',
-      message: 'Delete the intelligence for this space?',
-      requireTypedConfirmation: true,
-      typedConfirmationValue: 'delete',
-    });
-    if (!ok) return;
-    try {
-      await this.intelligenceService.delete(id);
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Deleted',
-        detail: 'Intelligence removed.',
-      });
-      await this.loadIntelligence();
-    } catch (err) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Delete failed',
-        detail: (err as Error).message,
-      });
-    }
   }
 }
