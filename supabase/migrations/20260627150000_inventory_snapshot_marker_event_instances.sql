@@ -90,7 +90,7 @@ begin
     raise notice 'inventory_snapshot: markers truncated (% rows, cap 1000) for space %', v_marker_count, p_space_id;
   end if;
 
-  select coalesce(jsonb_agg(row_data order by (row_data->>'event_date') desc nulls last), '[]'::jsonb)
+  select coalesce(jsonb_agg(row_data order by (row_data->>'event_date') desc nulls last, (row_data->>'id')), '[]'::jsonb)
     into v_markers
     from (
       select jsonb_build_object(
@@ -104,7 +104,7 @@ begin
         join public.marker_assignments ma on ma.marker_id = m.id
         join public.marker_types mt on mt.id = m.marker_type_id
        where m.space_id = p_space_id
-       order by m.event_date desc nulls last
+       order by m.event_date desc nulls last, m.id
        limit 1000
     ) sub;
 
@@ -118,7 +118,7 @@ begin
     raise notice 'inventory_snapshot: events truncated (% rows, cap 1000) for space %', v_event_count, p_space_id;
   end if;
 
-  select coalesce(jsonb_agg(row_data), '[]'::jsonb)
+  select coalesce(jsonb_agg(row_data order by (row_data->>'event_date') desc nulls last, (row_data->>'id')), '[]'::jsonb)
     into v_events
     from (
       select jsonb_build_object(
@@ -139,7 +139,7 @@ begin
         from public.events e
         left join public.event_categories ec on ec.id = e.category_id
        where e.space_id = p_space_id
-       order by e.event_date desc nulls last
+       order by e.event_date desc nulls last, e.id
        limit 1000
     ) sub;
 
