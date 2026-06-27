@@ -201,4 +201,20 @@
   }
 </p-dialog>
 
+<p-dialog
+  header="Add asset"
+  [(visible)]="creatingAsset"
+  [modal]="true"
+  styleClass="!w-[32rem]"
+  (onHide)="creatingAsset.set(false)"
+>
+  @if (creatingAsset() && company(); as c) {
+    <app-asset-form
+      [lockedCompanyId]="c.id"
+      (saved)="onAssetCreated($event)"
+      (cancelled)="creatingAsset.set(false)"
+    />
+  }
+</p-dialog>
+
 <app-entity-marker-drawer />

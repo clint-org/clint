@@ -225,6 +225,13 @@
         />
       }
     </p-dialog>
+    <app-trial-create-dialog
+      [visible]="creatingTrial()"
+      (visibleChange)="creatingTrial.set($event)"
+      [spaceId]="spaceIdSig()"
+      [lockedAssetId]="p.id"
+      (saved)="onTrialCreated($event)"
+    />
   } @else {
     <div class="px-4 py-8 text-sm text-slate-500">Asset not found.</div>
   }

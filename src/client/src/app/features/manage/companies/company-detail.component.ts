@@ -42,6 +42,8 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
 import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
 import { CompanyFormComponent } from './company-form.component';
+import { AssetFormComponent } from '../assets/asset-form.component';
+import { Asset } from '../../../core/models/asset.model';
 import { buildFilterQueryParams } from '../../../shared/grids';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
@@ -54,6 +56,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     Dialog,
     ToastModule,
     CompanyFormComponent,
+    AssetFormComponent,
     ManagePageShellComponent,
     IntelligenceBlockComponent,
     IntelligenceEmptyComponent,
@@ -85,6 +88,7 @@ export class CompanyDetailComponent implements OnDestroy {
   protected spaceRole = inject(SpaceRoleService);
   private topbarState = inject(TopbarStateService);
   protected readonly editingCompany = signal(false);
+  protected readonly creatingAsset = signal(false);
 
   // Route paramMap as a signal so companyId reacts to in-place navigation
   // when clicking a LINKED company chip on a company detail page (same route
@@ -126,9 +130,19 @@ export class CompanyDetailComponent implements OnDestroy {
   private readonly overflowEffect = effect(() => {
     const company = this.company();
     if (!company || !this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([]);
       this.topbarState.overflowActions.set([]);
       return;
     }
+    // Primary action: add an asset for this company (company pre-locked in the form).
+    this.topbarState.actions.set([
+      {
+        label: 'Add asset',
+        icon: 'fa-solid fa-plus',
+        text: true,
+        callback: () => this.creatingAsset.set(true),
+      },
+    ]);
     this.topbarState.overflowActions.set(
       buildEntityActionMenu({
         canEdit: true,
@@ -155,7 +169,22 @@ export class CompanyDetailComponent implements OnDestroy {
   });
 
   ngOnDestroy(): void {
+    this.topbarState.actions.set([]);
     this.topbarState.overflowActions.set([]);
+  }
+
+  protected onAssetCreated(asset: Asset): void {
+    this.creatingAsset.set(false);
+    this.messageService.add({ severity: 'success', summary: 'Asset created.', life: 3000 });
+    void this.router.navigate([
+      '/t',
+      this.tenantIdSig(),
+      's',
+      this.spaceIdSig(),
+      'manage',
+      'assets',
+      asset.id,
+    ]);
   }
 
   protected async onCompanyEdited(): Promise<void> {
