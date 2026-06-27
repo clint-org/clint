@@ -234,7 +234,7 @@ export class TimelineViewComponent {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'trials',
       trial.id,
     ]);

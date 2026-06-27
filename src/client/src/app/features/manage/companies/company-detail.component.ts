@@ -181,7 +181,7 @@ export class CompanyDetailComponent implements OnDestroy {
       this.tenantIdSig(),
       's',
       this.spaceIdSig(),
-      'manage',
+      'profiles',
       'assets',
       asset.id,
     ]);

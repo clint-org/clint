@@ -34,7 +34,7 @@
       <tr>
         <td>
           <a
-            [routerLink]="['/t', tenantId, 's', spaceId, 'manage', 'companies', company.id]"
+            [routerLink]="['/t', tenantId, 's', spaceId, 'profiles', 'companies', company.id]"
             class="text-left text-brand-700 hover:text-brand-800 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <span [innerHTML]="company.name | highlight: grid.debouncedGlobalSearch()"></span>

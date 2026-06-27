@@ -12,7 +12,7 @@
       >
         @if (p.companies; as co) {
           <a
-            [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'manage', 'companies', co.id]"
+            [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'profiles', 'companies', co.id]"
             class="inline-flex items-center gap-1.5 text-slate-700 hover:text-brand-700 hover:underline"
           >
             @if (co.logo_url) {

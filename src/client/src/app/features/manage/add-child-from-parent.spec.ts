@@ -30,7 +30,7 @@ describe('asset detail: add trial', () => {
 
   it('navigates to the new trial after creation', () => {
     expect(ts).toContain('onTrialCreated({ trialId }: { trialId: string })');
-    expect(ts).toMatch(/'manage',\s*'trials',\s*trialId/);
+    expect(ts).toMatch(/'profiles',\s*'trials',\s*trialId/);
   });
 });
 
@@ -52,7 +52,7 @@ describe('company detail: add asset', () => {
 
   it('navigates to the new asset after creation', () => {
     expect(ts).toContain('onAssetCreated(asset: Asset)');
-    expect(ts).toMatch(/'manage',\s*'assets',\s*asset\.id/);
+    expect(ts).toMatch(/'profiles',\s*'assets',\s*asset\.id/);
   });
 
   it('clears the primary action on destroy', () => {
