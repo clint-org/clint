@@ -400,6 +400,102 @@ describe('multi-intelligence briefs (anchor-aware upsert)', () => {
     expect(strangerRows).toHaveLength(0);
   });
 
+  // ------------------------------------------------------------------
+  // Task 5: detail bundle RPCs return briefs[] instead of published/draft
+  // ------------------------------------------------------------------
+
+  it('get_trial_detail_with_intelligence returns briefs[] + referenced_in (no published key)', async () => {
+    const trialId = await createTrial();
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'X',
+      changeNote: null,
+    });
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'Y',
+      changeNote: null,
+    });
+
+    const res = await as(p, 'agency_only')
+      .rpc('get_trial_detail_with_intelligence', { p_trial_id: trialId })
+      .throwOnError();
+    const bundle = res.data as any;
+
+    expect(bundle.entity_type).toBe('trial');
+    expect(bundle.briefs).toHaveLength(2);
+    expect(Array.isArray(bundle.referenced_in)).toBe(true);
+    expect(bundle).not.toHaveProperty('published'); // old shape removed
+    expect(bundle).not.toHaveProperty('draft');     // old shape removed
+  });
+
+  it('published brief contributors exclude draft-only editors (metadata-leak fix)', async () => {
+    const trialId = await createTrial();
+
+    // Create a published anchor -- agency_only becomes the editor/contributor.
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'Published',
+      changeNote: null,
+    });
+
+    const admin = adminClient();
+    const { data: anchorRow } = await admin
+      .from('primary_intelligence_anchors')
+      .select('id')
+      .eq('entity_id', trialId)
+      .eq('is_lead', true)
+      .single();
+    const anchorId: string = anchorRow!.id;
+
+    // Insert a draft row to the SAME anchor via pg, attributing it to the
+    // reader persona -- simulating a "draft-only editor" whose identity must
+    // not leak into the published brief's contributors.
+    const draftEditorId: string = p.ids.reader;
+    const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
+    try {
+      await pg.connect();
+      await pg.query(
+        `insert into public.primary_intelligence
+           (anchor_id, space_id, state, headline, summary_md, implications_md, last_edited_by)
+         values ($1, $2, 'draft', 'Draft Revision', '', '', $3)`,
+        [anchorId, p.org.spaceId, draftEditorId],
+      );
+    } finally {
+      await pg.end();
+    }
+
+    // Reader calls the detail RPC -- they have space access and can see the
+    // published anchor but must NOT see the draft editor's identity.
+    const res = await as(p, 'reader')
+      .rpc('get_trial_detail_with_intelligence', { p_trial_id: trialId })
+      .throwOnError();
+    const bundle = res.data as any;
+
+    expect(bundle.briefs).toHaveLength(1);
+    const publishedBrief = bundle.briefs[0].published;
+    expect(publishedBrief).toBeTruthy();
+
+    const contributors: string[] = publishedBrief.contributors ?? [];
+    const authorKeys: string[] = Object.keys(publishedBrief.authors ?? {});
+
+    // The draft-only editor must not appear in contributors or authors.
+    expect(contributors).not.toContain(draftEditorId);
+    expect(authorKeys).not.toContain(draftEditorId);
+  });
+
   it('reorder_intelligence writes display_order and rejects a mismatched set', async () => {
     const trialId = await createTrial();
     await rpcUpsert({
