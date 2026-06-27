@@ -27,6 +27,44 @@
         [attr.aria-invalid]="categoryInvalid()"
         [attr.aria-describedby]="categoryInvalid() ? 'mt-category-error' : null"
       />
+      @if (!showNewCategory()) {
+        <p-button
+          [text]="true"
+          size="small"
+          icon="fa-solid fa-plus"
+          label="New category"
+          styleClass="mt-1"
+          (onClick)="toggleNewCategory()"
+        />
+      } @else {
+        <div class="mt-2 flex items-center gap-2">
+          <input
+            pInputText
+            class="w-full"
+            [ngModel]="newCategoryName()"
+            (ngModelChange)="newCategoryName.set($event)"
+            name="newCategoryName"
+            placeholder="New category name"
+            aria-label="New category name"
+          />
+          <p-button
+            icon="fa-solid fa-check"
+            pTooltip="Create category"
+            tooltipPosition="top"
+            ariaLabel="Create category"
+            [disabled]="creatingCategory() || !newCategoryName().trim()"
+            (onClick)="confirmNewCategory()"
+          />
+          <p-button
+            [text]="true"
+            icon="fa-solid fa-xmark"
+            pTooltip="Cancel"
+            tooltipPosition="top"
+            ariaLabel="Cancel new category"
+            (onClick)="toggleNewCategory()"
+          />
+        </div>
+      }
     </app-form-field>
 
     <app-form-field
