@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   input,
   OnInit,
@@ -23,6 +24,7 @@ import { RouteOfAdministrationService } from '../../../core/services/route-of-ad
 import { extractConstraintMessage } from '../../../core/util/db-error';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 import { AssetEditFormComponent } from './asset-edit-form.component';
+import { resolveCreateCompanyId } from './asset-form-company';
 import type { CreateFn } from '../shared/taxonomy-multiselect/taxonomy-create-controller';
 
 const ASSET_FIELD_LABELS: Record<string, string> = {
@@ -39,9 +41,19 @@ const ASSET_FIELD_LABELS: Record<string, string> = {
 })
 export class AssetFormComponent implements OnInit {
   readonly asset = input<Asset | null>(null);
+  /**
+   * When set (and not editing), the company is pre-selected and locked. Used
+   * when the create form is opened from a company's detail page so the new
+   * asset is bound to that company without the user re-picking it.
+   */
+  readonly lockedCompanyId = input<string | null>(null);
 
   readonly saved = output<Asset>();
   readonly cancelled = output<void>();
+
+  protected readonly companyLocked = computed(
+    () => this.asset() === null && !!this.lockedCompanyId()
+  );
 
   readonly name = signal('');
   readonly genericName = signal('');
@@ -112,8 +124,13 @@ export class AssetFormComponent implements OnInit {
       this.companies.set(list);
       this.moaOptions.set(moas);
       this.roaOptions.set(roas);
-      if (!p && list.length > 0) {
-        this.companyId.set(list[0].id);
+      if (!p) {
+        this.companyId.set(
+          resolveCreateCompanyId({
+            lockedCompanyId: this.lockedCompanyId(),
+            companyIds: list.map((c) => c.id),
+          })
+        );
       }
       if (p) {
         this.selectedMoaIds.set((p.mechanisms_of_action ?? []).map((m) => m.id));

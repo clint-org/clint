@@ -44,6 +44,7 @@ import {
 } from '../../../core/models/primary-intelligence.model';
 import { buildEntityRouterLink } from '../../../shared/utils/intelligence-router-link';
 import { AssetFormComponent } from './asset-form.component';
+import { TrialCreateDialogComponent } from '../trials/trial-create-dialog.component';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 
@@ -68,6 +69,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
     AssetFormComponent,
+    TrialCreateDialogComponent,
     LoaderComponent,
     SourceProvenanceLineComponent,
   ],
@@ -108,13 +110,24 @@ export class AssetDetailComponent implements OnDestroy {
   protected readonly purgeTargetId = signal<string | null>(null);
 
   readonly editingAsset = signal(false);
+  protected readonly creatingTrial = signal(false);
 
   private readonly topbarActionsEffect = effect(() => {
     const asset = this.asset();
     if (!asset || !this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([]);
       this.topbarState.overflowActions.set([]);
       return;
     }
+    // Primary action: add a trial for this asset (asset pre-locked in the dialog).
+    this.topbarState.actions.set([
+      {
+        label: 'Add trial',
+        icon: 'fa-solid fa-plus',
+        text: true,
+        callback: () => this.creatingTrial.set(true),
+      },
+    ]);
     this.topbarState.overflowActions.set(
       buildEntityActionMenu({
         canEdit: true,
@@ -127,6 +140,19 @@ export class AssetDetailComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.topbarState.clear();
+  }
+
+  protected onTrialCreated({ trialId }: { trialId: string }): void {
+    this.creatingTrial.set(false);
+    void this.router.navigate([
+      '/t',
+      this.tenantIdSig(),
+      's',
+      this.spaceIdSig(),
+      'manage',
+      'trials',
+      trialId,
+    ]);
   }
 
   private async deleteAsset(asset: Asset): Promise<void> {
