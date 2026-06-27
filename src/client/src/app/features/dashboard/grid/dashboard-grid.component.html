@@ -155,7 +155,10 @@
                           class="font-bold text-[11px] uppercase tracking-wider text-slate-700 truncate"
                           >{{ row.companyName }}</span
                         >
-                        @if (row.companyHasIntelligence) {
+                        @if (
+                          row.companyHasIntelligence &&
+                          !(showIntelligenceHeadlines() && row.companyIntelligenceHeadline)
+                        ) {
                           <app-pi-mark [size]="10" class="shrink-0" />
                         }
                       </span>
@@ -193,7 +196,10 @@
                       <span class="text-sm text-slate-600 font-medium truncate">{{
                         row.assetName
                       }}</span>
-                      @if (row.assetHasIntelligence) {
+                      @if (
+                        row.assetHasIntelligence &&
+                        !(showIntelligenceHeadlines() && row.assetIntelligenceHeadline)
+                      ) {
                         <app-pi-mark [size]="10" class="shrink-0" />
                       }
                     </span>
@@ -328,7 +334,10 @@
                       ></i>
                     }
                     <span class="truncate">{{ row.trial.acronym ?? row.trial.name }}</span>
-                    @if (row.trial.has_intelligence) {
+                    @if (
+                      row.trial.has_intelligence &&
+                      !(showIntelligenceHeadlines() && row.trial.intelligence_headline)
+                    ) {
                       <app-pi-mark [size]="11" class="shrink-0" />
                     }
                     <app-change-badge

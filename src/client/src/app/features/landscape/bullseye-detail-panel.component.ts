@@ -150,16 +150,22 @@ export class BullseyeDetailPanelComponent {
   readonly intelligenceNotes = signal<AssetIntelligenceNote[]>([]);
   readonly companyIntelligenceRefs = signal<PiReference[]>([]);
 
-  /** Asset PI notes mapped to the shared PiDetailSection reference shape. */
-  protected readonly intelligenceReferences = computed<PiReference[]>(() =>
-    this.intelligenceNotes().map((n) => ({
+  /**
+   * Asset/trial PI notes plus the asset's company-level briefs, mapped to the
+   * shared PiDetailSection reference shape. Company briefs carry entity_type
+   * 'company' so they render with a "Company" tag in the same list rather than
+   * a separate section.
+   */
+  protected readonly intelligenceReferences = computed<PiReference[]>(() => [
+    ...this.intelligenceNotes().map((n) => ({
       id: n.id,
       entity_type: n.entity_type,
       entity_id: n.entity_id,
       entity_name: n.entity_name,
       headline: n.headline,
-    }))
-  );
+    })),
+    ...this.companyIntelligenceRefs(),
+  ]);
   private lastVisibilitySpaceId: string | null = null;
   private resolvedSpaceId: string | null = null;
 

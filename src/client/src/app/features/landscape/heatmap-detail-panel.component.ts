@@ -107,20 +107,11 @@ const GROUPING_LABEL: Record<HeatmapGrouping, string> = {
           </app-detail-panel-section>
         }
 
-        @if (piReferences().length > 0) {
+        @if (allPiReferences().length > 0) {
           <app-detail-panel-section label="Primary intelligence" [piMark]="true">
             <app-pi-detail-section
-              [references]="piReferences()"
+              [references]="allPiReferences()"
               [countLabel]="piCountLabel()"
-              (referenceClick)="onPiReferenceClick($event)"
-            />
-          </app-detail-panel-section>
-        }
-
-        @if (companyIntelligenceRefs().length > 0) {
-          <app-detail-panel-section label="Company intelligence" [piMark]="true">
-            <app-pi-detail-section
-              [references]="companyIntelligenceRefs()"
               (referenceClick)="onPiReferenceClick($event)"
             />
           </app-detail-panel-section>
@@ -235,6 +226,16 @@ export class HeatmapDetailPanelComponent {
    * navigate to the company's intelligence profile.
    */
   protected readonly companyIntelligenceRefs = signal<PiReference[]>([]);
+
+  /**
+   * Per-asset/trial PI notes plus any company-level briefs, in one list.
+   * Company briefs carry entity_type 'company' so they render with a "Company"
+   * tag in the same section rather than a separate one.
+   */
+  protected readonly allPiReferences = computed<PiReference[]>(() => [
+    ...this.piReferences(),
+    ...this.companyIntelligenceRefs(),
+  ]);
 
   constructor() {
     // When the selected bubble (or its space) changes, load the real PI notes

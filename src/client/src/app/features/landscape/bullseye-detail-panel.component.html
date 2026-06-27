@@ -195,9 +195,11 @@
         </div>
       }
 
-      @if (asset.intelligence_count > 0) {
+      @if (asset.intelligence_count > 0 || companyIntelligenceRefs().length > 0) {
         <app-detail-panel-section
-          [label]="'Intelligence (' + asset.intelligence_count + ')'"
+          [label]="
+            'Intelligence (' + (asset.intelligence_count + companyIntelligenceRefs().length) + ')'
+          "
           [piMark]="true"
         >
           @if (intelligenceReferences().length > 0) {
@@ -211,15 +213,6 @@
               <div class="h-3 w-3/5 animate-pulse rounded bg-slate-100"></div>
             </div>
           }
-        </app-detail-panel-section>
-      }
-
-      @if (companyIntelligenceRefs().length > 0) {
-        <app-detail-panel-section label="Company intelligence" [piMark]="true">
-          <app-pi-detail-section
-            [references]="companyIntelligenceRefs()"
-            (referenceClick)="onIntelligenceClick($event)"
-          />
         </app-detail-panel-section>
       }
 
