@@ -230,4 +230,124 @@ describe('multi-intelligence briefs (anchor-aware upsert)', () => {
     expect(rows!.map((r: { state: string }) => r.state)).toEqual(['archived', 'published']);
     expect(rows!.map((r: { version_number: number }) => r.version_number)).toEqual([1, 2]);
   });
+
+  it('set_intelligence_lead flips the lead and keeps exactly one', async () => {
+    const trialId = await createTrial();
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'A',
+      changeNote: null,
+    });
+    const v2Id = await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'B',
+      changeNote: null,
+    });
+
+    const admin = adminClient();
+    const { data: v2Row } = await admin
+      .from('primary_intelligence')
+      .select('anchor_id')
+      .eq('id', v2Id)
+      .single();
+    const a2: string = v2Row!.anchor_id;
+
+    await as(p, 'agency_only').rpc('set_intelligence_lead', { p_anchor_id: a2 }).throwOnError();
+
+    const { data: anchors } = await admin
+      .from('primary_intelligence_anchors')
+      .select('id, is_lead')
+      .eq('entity_id', trialId);
+
+    expect(anchors!.filter((a: { is_lead: boolean }) => a.is_lead).map((a: { id: string }) => a.id)).toEqual([a2]);
+  });
+
+  it('set_intelligence_lead rejects a draft-only anchor', async () => {
+    const trialId = await createTrial();
+    const dId = await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'draft',
+      headline: 'draft',
+      changeNote: null,
+    });
+
+    const admin = adminClient();
+    const { data: dRow } = await admin
+      .from('primary_intelligence')
+      .select('anchor_id')
+      .eq('id', dId)
+      .single();
+    const aId: string = dRow!.anchor_id;
+
+    const result = await as(p, 'agency_only').rpc('set_intelligence_lead', { p_anchor_id: aId });
+    expect(result.error).toBeTruthy();
+    expect(result.error!.message).toMatch(/no published version|not published/i);
+  });
+
+  it('reorder_intelligence writes display_order and rejects a mismatched set', async () => {
+    const trialId = await createTrial();
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'A',
+      changeNote: null,
+    });
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'B',
+      changeNote: null,
+    });
+
+    const admin = adminClient();
+    const { data: anchorRows } = await admin
+      .from('primary_intelligence_anchors')
+      .select('id')
+      .eq('entity_id', trialId)
+      .order('display_order');
+    const ids = anchorRows!.map((a: { id: string }) => a.id);
+
+    await as(p, 'agency_only')
+      .rpc('reorder_intelligence', {
+        p_space_id: p.org.spaceId,
+        p_entity_type: 'trial',
+        p_entity_id: trialId,
+        p_anchor_ids: [ids[1], ids[0]],
+      })
+      .throwOnError();
+
+    const { data: after } = await admin
+      .from('primary_intelligence_anchors')
+      .select('id, display_order')
+      .eq('entity_id', trialId)
+      .order('display_order');
+    expect(after!.map((a: { id: string }) => a.id)).toEqual([ids[1], ids[0]]);
+
+    // Mismatched set (only one anchor when two exist) must be rejected.
+    const bad = await as(p, 'agency_only').rpc('reorder_intelligence', {
+      p_space_id: p.org.spaceId,
+      p_entity_type: 'trial',
+      p_entity_id: trialId,
+      p_anchor_ids: [ids[0]],
+    });
+    expect(bad.error).toBeTruthy();
+    expect(bad.error!.message).toMatch(/anchor set/i);
+  });
 });
