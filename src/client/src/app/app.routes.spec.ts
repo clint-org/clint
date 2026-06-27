@@ -28,8 +28,10 @@ describe('app.routes profiles rename', () => {
   });
 
   it('removes editGuard from profiles list routes (viewer-browsable)', () => {
-    const companies = find('profiles/companies')!;
-    expect(companies.route.canActivate ?? []).not.toContain(editGuard);
+    for (const suffix of ['profiles/companies', 'profiles/assets', 'profiles/trials']) {
+      const list = find(suffix)!;
+      expect(list.route.canActivate ?? [], suffix).not.toContain(editGuard);
+    }
   });
 
   it('reuses editGuard on the two reference-settings routes', () => {
