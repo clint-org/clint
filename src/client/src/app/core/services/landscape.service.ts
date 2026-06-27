@@ -80,7 +80,10 @@ export class LandscapeService {
     );
   }
 
-  async getBullseyeAssets(spaceId: string, filters: LandscapeFilters): Promise<BullseyeAsset[]> {
+  async getBullseyeAssets(
+    spaceId: string,
+    filters: LandscapeFilters,
+  ): Promise<{ assets: BullseyeAsset[]; companiesWithIntelligence: string[] }> {
     return this.cache.get(
       'get_bullseye_assets',
       { spaceId, filters },
@@ -102,8 +105,11 @@ export class LandscapeService {
               p_trial_ids: filters.trialIds.length ? filters.trialIds : null,
             })
             .throwOnError();
-          const result = data as { assets: BullseyeAsset[] };
-          return result.assets;
+          const result = data as { assets: BullseyeAsset[]; companies_with_intelligence?: string[] };
+          return {
+            assets: result.assets,
+            companiesWithIntelligence: result.companies_with_intelligence ?? [],
+          };
         },
       }
     );

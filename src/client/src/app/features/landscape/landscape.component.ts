@@ -99,15 +99,20 @@ export class LandscapeComponent implements OnInit {
     },
   });
 
-  readonly allAssets = computed<BullseyeAsset[]>(() => this.bullseyeAssets.value() ?? []);
+  readonly allAssets = computed<BullseyeAsset[]>(() => this.bullseyeAssets.value()?.assets ?? []);
 
   /** Intermediate computed that holds the raw grouping result. */
   private readonly groupedResult = computed(() => {
-    const assets = this.bullseyeAssets.value();
-    if (!assets) return null;
+    const result = this.bullseyeAssets.value();
+    if (!result) return null;
+    const { assets, companiesWithIntelligence } = result;
     if (assets.length === 0)
       return { spokes: [] as BullseyeSpoke[], duplicatedAssetIds: new Set<string>() };
-    return groupAssetsIntoSpokes(assets, this.state.spokeGrouping());
+    return groupAssetsIntoSpokes(
+      assets,
+      this.state.spokeGrouping(),
+      new Set(companiesWithIntelligence),
+    );
   });
 
   readonly chartData = computed<BullseyeData | null>(() => {
@@ -226,10 +231,10 @@ export class LandscapeComponent implements OnInit {
     inject(DestroyRef).onDestroy(() => this.exportSync.teardown());
 
     effect(() => {
-      const assets = this.bullseyeAssets.value();
+      const result = this.bullseyeAssets.value();
       const currentSelected = this.selectedAssetId();
-      if (!assets || !currentSelected) return;
-      const exists = assets.some((a) => a.id === currentSelected);
+      if (!result || !currentSelected) return;
+      const exists = result.assets.some((a) => a.id === currentSelected);
       if (!exists) {
         this.selectedAssetId.set(null);
         this.updateQueryParam(null);

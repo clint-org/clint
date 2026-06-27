@@ -56,6 +56,7 @@ interface SpokeLabelSpec extends SpokeLabelTransform {
   id: string;
   name: string;
   abbreviation: string;
+  hasIntelligence: boolean;
 }
 
 interface DotSpec {
@@ -240,6 +241,7 @@ export class BullseyeChartComponent {
         id: s.id,
         name: displayName,
         abbreviation: s.name,
+        hasIntelligence: s.has_intelligence ?? false,
         ...transform,
       };
     });

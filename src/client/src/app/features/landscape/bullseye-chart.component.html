@@ -80,6 +80,24 @@
     >
       {{ label.name }}
     </text>
+    @if (label.hasIntelligence) {
+      <g
+        role="img"
+        aria-label="Company has primary intelligence"
+        class="pi-badge"
+        [attr.transform]="
+          'translate(' + label.x + ',' + (label.y - 14) + ') scale(' + bookmarkScale + ')'
+        "
+      >
+        <path
+          [attr.d]="bookmarkPath"
+          fill="var(--brand-600)"
+          stroke="#ffffff"
+          stroke-width="2"
+          stroke-linejoin="round"
+        />
+      </g>
+    }
   }
 
   <!-- dots -->
