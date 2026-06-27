@@ -1669,11 +1669,20 @@ begin
     values (v_trial_c, v_space_id, v_user_id, v_asset_id, 'CTM Trial C', 'NCT-CTM-C');
 
   -- ===== test 2: over-time precision UPSERT (trial A) =====
+  -- Drive the seeder under test (_seed_ctgov_markers) directly rather than through
+  -- ingest_ctgov_snapshot, whose secret gate (_verify_ctgov_worker_secret) only
+  -- accepts the LOCAL placeholder secret; on a remote db push the vault holds a
+  -- rotated real secret, so the hardcoded 'local-dev-ctgov-secret' raises 42501
+  -- and aborts the migration. The seeder is exactly what ingest invokes after the
+  -- gate (perform _seed_ctgov_markers(p_trial_id, p_payload, v_snapshot_id)); it
+  -- sets the clint.ctgov_seeding GUC around its own writes, so emitted events are
+  -- sourced 'ctgov' just as in a real sync. A distinct snapshot uuid per "version"
+  -- mirrors metadata.snapshot_id differing across syncs (the seeder only stamps it
+  -- into marker metadata; no trial_ctgov_snapshots FK row is needed).
   -- v1: year-precision anticipated -> 1 Trial Start, 2026-07-01 / year / company.
-  perform public.ingest_ctgov_snapshot(
-    'local-dev-ctgov-secret', v_trial_a, v_space_id, 'NCT-CTM-A', 1, '2026-01-01'::date,
+  perform public._seed_ctgov_markers(v_trial_a,
     '{"protocolSection":{"statusModule":{"startDateStruct":{"date":"2026","type":"ANTICIPATED"}}}}'::jsonb,
-    'manual_sync', null);
+    'b0000001-0000-0000-0000-000000000001'::uuid);
 
   select count(*) into v_cnt
     from public.marker_assignments ma join public.markers m on m.id = ma.marker_id
@@ -1689,10 +1698,9 @@ begin
   end if;
 
   -- v2: month-precision anticipated -> SAME marker id, 2026-11-15 / month / company.
-  perform public.ingest_ctgov_snapshot(
-    'local-dev-ctgov-secret', v_trial_a, v_space_id, 'NCT-CTM-A', 2, '2026-02-01'::date,
+  perform public._seed_ctgov_markers(v_trial_a,
     '{"protocolSection":{"statusModule":{"startDateStruct":{"date":"2026-11","type":"ANTICIPATED"}}}}'::jsonb,
-    'manual_sync', null);
+    'b0000001-0000-0000-0000-000000000002'::uuid);
 
   select count(*) into v_cnt
     from public.marker_assignments ma join public.markers m on m.id = ma.marker_id
@@ -1709,9 +1717,12 @@ begin
   end if;
 
   -- single-emitter: the v1->v2 start-date slip must emit EXACTLY ONE date_moved
-  -- (the marker audit), not two (it previously also fired via _classify_change),
-  -- and it must be sourced 'ctgov'. (v1 had no prior snapshot -> no field diff;
-  -- the new marker emitted marker_added, not date_moved.)
+  -- (the marker audit), sourced 'ctgov'. Driving the seeder directly, the marker
+  -- audit (_log_marker_change under the seeding GUC) is the sole emitter: v1
+  -- created the marker (marker_added, not date_moved); v2 moved its event_date,
+  -- emitting one date_moved. (The ingest-level _classify_change double-emit
+  -- suppression is proven by the ctgov-marker-precision-over-time integration
+  -- spec, which runs the real ingest path, so it is not re-proved here.)
   select count(*) into v_cnt
     from public.trial_change_events
    where trial_id = v_trial_a and event_type = 'date_moved';
@@ -1727,10 +1738,9 @@ begin
   raise notice 'ctgov markers smoke ok test 2b: ct.gov date slip emits exactly 1 date_moved, source ctgov';
 
   -- v3: exact actual -> SAME marker, 2026-11-03 / exact / actual.
-  perform public.ingest_ctgov_snapshot(
-    'local-dev-ctgov-secret', v_trial_a, v_space_id, 'NCT-CTM-A', 3, '2026-03-01'::date,
+  perform public._seed_ctgov_markers(v_trial_a,
     '{"protocolSection":{"statusModule":{"startDateStruct":{"date":"2026-11-03","type":"ACTUAL"}}}}'::jsonb,
-    'manual_sync', null);
+    'b0000001-0000-0000-0000-000000000003'::uuid);
 
   select count(*) into v_cnt
     from public.marker_assignments ma join public.markers m on m.id = ma.marker_id
@@ -1760,10 +1770,9 @@ begin
     from public.marker_assignments ma
    where ma.marker_id = m.id and ma.trial_id = v_trial_b and m.marker_type_id = c_start_id;
 
-  perform public.ingest_ctgov_snapshot(
-    'local-dev-ctgov-secret', v_trial_b, v_space_id, 'NCT-CTM-B', 1, '2026-01-01'::date,
+  perform public._seed_ctgov_markers(v_trial_b,
     '{"protocolSection":{"statusModule":{"startDateStruct":{"date":"2026-05-20","type":"ACTUAL"}}}}'::jsonb,
-    'manual_sync', null);
+    'b0000002-0000-0000-0000-000000000001'::uuid);
 
   select count(*) into v_cnt
     from public.marker_assignments ma join public.markers m on m.id = ma.marker_id
@@ -1794,10 +1803,9 @@ begin
    where ma.trial_id = v_trial_c and m.marker_type_id = c_start_id;
   if v_cnt <> 2 then raise exception 'no-adopt FAIL setup: expected 2 un-owned, got %', v_cnt; end if;
 
-  perform public.ingest_ctgov_snapshot(
-    'local-dev-ctgov-secret', v_trial_c, v_space_id, 'NCT-CTM-C', 1, '2026-01-01'::date,
+  perform public._seed_ctgov_markers(v_trial_c,
     '{"protocolSection":{"statusModule":{"startDateStruct":{"date":"2026-09","type":"ANTICIPATED"}}}}'::jsonb,
-    'manual_sync', null);
+    'b0000003-0000-0000-0000-000000000001'::uuid);
 
   select count(*) into v_cnt
     from public.marker_assignments ma join public.markers m on m.id = ma.marker_id
@@ -1823,11 +1831,11 @@ begin
   select event_date into v_d from public.markers where id = v_mid1;
   if v_d <> '2026-11-03' then raise exception 'lock FAIL: ctgov marker was modified to %', v_d; end if;
 
-  -- a subsequent ct.gov sync still updates it (ct.gov retains ownership).
-  perform public.ingest_ctgov_snapshot(
-    'local-dev-ctgov-secret', v_trial_a, v_space_id, 'NCT-CTM-A', 4, '2026-04-01'::date,
+  -- a subsequent ct.gov sync still updates it (ct.gov retains ownership): the
+  -- seeder runs under its GUC, which bypasses the marker lock for ctgov writes.
+  perform public._seed_ctgov_markers(v_trial_a,
     '{"protocolSection":{"statusModule":{"startDateStruct":{"date":"2027-01-15","type":"ACTUAL"}}}}'::jsonb,
-    'manual_sync', null);
+    'b0000001-0000-0000-0000-000000000004'::uuid);
   select event_date into v_d from public.markers where id = v_mid1;
   if v_d <> '2027-01-15' then raise exception 'lock FAIL: ct.gov sync did not update locked marker (got %)', v_d; end if;
   raise notice 'ctgov markers smoke ok test 4: analyst edit locked, ct.gov sync still updates';
