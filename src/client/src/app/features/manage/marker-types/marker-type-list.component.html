@@ -31,6 +31,10 @@
           Name <p-sortIcon field="name" />
           <p-column-filter type="text" field="name" display="menu" />
         </th>
+        <th pSortableColumn="marker_categories.name">
+          Category <p-sortIcon field="marker_categories.name" />
+          <p-column-filter type="text" field="marker_categories.name" display="menu" />
+        </th>
         <th pSortableColumn="shape">
           Shape <p-sortIcon field="shape" />
           <p-column-filter type="text" field="shape" display="menu" />
@@ -50,6 +54,11 @@
     <ng-template #body let-mt>
       <tr>
         <td><span [innerHTML]="mt.name | highlight: grid.debouncedGlobalSearch()"></span></td>
+        <td class="col-secondary">
+          <span
+            [innerHTML]="(mt.marker_categories?.name ?? '—') | highlight: grid.debouncedGlobalSearch()"
+          ></span>
+        </td>
         <td class="col-secondary">
           <span [innerHTML]="mt.shape | highlight: grid.debouncedGlobalSearch()"></span>
         </td>
@@ -89,6 +98,7 @@
       <app-table-skeleton-body
         [cells]="[
           { w: '48%' },
+          { w: '40%' },
           { w: '56px' },
           { w: '56px' },
           { w: '18px', h: '18px' },
@@ -99,7 +109,7 @@
     </ng-template>
     <ng-template #emptymessage>
       <tr>
-        <td colspan="6">
+        <td colspan="7">
           @if (grid.isFiltered()) {
             No marker types match your filters.
           } @else {

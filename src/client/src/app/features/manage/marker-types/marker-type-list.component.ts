@@ -86,6 +86,7 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
   readonly grid = createGridState<MarkerType>({
     columns: [
       { field: 'name', header: 'Name', filter: { kind: 'text' } },
+      { field: 'marker_categories.name', header: 'Category', filter: { kind: 'text' } },
       { field: 'shape', header: 'Shape', filter: { kind: 'text' } },
       { field: 'fill_style', header: 'Fill', filter: { kind: 'text' } },
       {
@@ -95,7 +96,7 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
         getValue: (mt) => (mt.is_system ? 'system' : 'custom'),
       },
     ],
-    globalSearchFields: ['name', 'shape', 'fill_style'],
+    globalSearchFields: ['name', 'marker_categories.name', 'shape', 'fill_style'],
     defaultSort: { field: 'name', order: 1 },
     persistenceKey: 'manage-marker-types',
   });
