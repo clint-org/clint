@@ -77,7 +77,9 @@ erDiagram
   SPACES ||--o{ MECHANISMS_OF_ACTION : "space_id"
   SPACES ||--o{ PALETTE_PINNED : "space_id"
   SPACES ||--o{ PALETTE_RECENTS : "space_id"
+  PRIMARY_INTELLIGENCE_ANCHORS ||--o{ PRIMARY_INTELLIGENCE : "anchor_id"
   SPACES ||--o{ PRIMARY_INTELLIGENCE : "space_id"
+  SPACES ||--o{ PRIMARY_INTELLIGENCE_ANCHORS : "space_id"
   PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
   SPACES ||--o{ ROUTES_OF_ADMINISTRATION : "space_id"
   SPACES ||--o{ SOURCE_DOCUMENTS : "space_id"
@@ -114,6 +116,50 @@ erDiagram
   USER_REDACTIONS { }
 ```
 <!-- /AUTO-GEN:ER -->
+
+### primary_intelligence_anchors and the many-briefs model
+
+An entity (engagement, company, asset, or trial) can own many intelligence briefs. Each brief is a row in `primary_intelligence_anchors`, which records the polymorphic entity binding (`entity_type text`, `entity_id uuid`, no FK enforcement) plus two ordering fields:
+
+- `is_lead bool` -- the one brief surfaced on entity detail pages and the landscape strip. Enforced as a partial unique index (`is_lead = true` per `(space_id, entity_type, entity_id)`); the `set_intelligence_lead` RPC clears all sibling `is_lead` flags atomically.
+- `display_order int` -- manual sort position among siblings. Set by `reorder_intelligence`, which rejects partial arrays to prevent accidental omission.
+
+```mermaid
+erDiagram
+  PRIMARY_INTELLIGENCE_ANCHORS {
+    uuid id PK
+    uuid space_id FK
+    text entity_type
+    uuid entity_id
+    bool is_lead
+    int display_order
+  }
+  PRIMARY_INTELLIGENCE {
+    uuid id PK
+    uuid anchor_id FK
+    text state
+    int version_number
+    text headline
+    text summary_md
+    text implications_md
+    text publish_note
+    uuid published_by
+    timestamptz archived_at
+    text withdraw_note
+  }
+  PRIMARY_INTELLIGENCE_LINKS {
+    uuid id PK
+    uuid primary_intelligence_id FK
+    text entity_type
+    uuid entity_id
+    text relationship_type
+    text gloss
+  }
+  PRIMARY_INTELLIGENCE_ANCHORS ||--o{ PRIMARY_INTELLIGENCE : "anchor_id"
+  PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
+```
+
+Marker rows are valid link targets in `primary_intelligence_links` but are not anchor owners; the marker description carries the catalyst-level write-up.
 
 ### primary_intelligence version columns
 
@@ -689,6 +735,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `change_event_annotations`
 - `palette_pinned`
 - `palette_recents`
+- `primary_intelligence_anchors`
 - `primary_intelligence_links`
 - `r2_pending_deletes`
 - `source_documents`
@@ -973,5 +1020,16 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260626170000_landscape_primary_intelligence_presence.sql`
 - `20260626180000_positioning_intelligence_includes_trials.sql`
 - `20260627032406_marker_categories_unique_name.sql`
+- `20260627044328_grant_marker_categories_writes.sql`
 - `20260627120000_dashboard_data_drop_notes.sql`
+- `20260627130000_intelligence_anchors_schema.sql`
+- `20260627130100_intelligence_upsert_anchor_aware.sql`
+- `20260627130200_intelligence_lead_and_order_rpcs.sql`
+- `20260627130300_list_intelligence_for_entity.sql`
+- `20260627130350_intelligence_payload_for_row_definer.sql`
+- `20260627130400_intelligence_detail_bundles_multi.sql`
+- `20260627130500_intelligence_history_and_lifecycle_multi.sql`
+- `20260627130600_intelligence_feed_and_landscape_multi.sql`
+- `20260627130700_intelligence_seed_multi.sql`
+- `20260627130800_drop_dead_build_intelligence_payload.sql`
 <!-- /AUTO-GEN:DRIFT -->
