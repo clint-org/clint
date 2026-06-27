@@ -372,9 +372,9 @@ end;
 $$;
 
 comment on function public._seed_demo_primary_intelligence(uuid, uuid) is
-  'Seeds 8 published primary intelligence reads (6 trial-anchored, 1 company-anchored, '
-  '1 space-thematic) plus 1 draft trial-anchored read, plus a second published brief on '
-  'SUMMIT (non-lead sibling, display_order=1) demonstrating the multi-brief drawer. '
+  'Seeds 9 published primary intelligence reads (7 trial-anchored -- incl. the SUMMIT '
+  'non-lead sibling at display_order=1 demonstrating the multi-brief drawer -- 1 '
+  'company-anchored, 1 space-thematic) plus 1 draft trial-anchored read. '
   'Read 9 (marker-anchored orforglipron draft) was removed: markers are not anchor owners. '
   'Each brief inserts an anchor row first, then a version row referencing it via anchor_id; '
   'entity_type/entity_id live on the anchor, not on the version row.';
