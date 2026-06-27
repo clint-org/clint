@@ -1,3 +1,4 @@
+import { computed, signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -156,6 +157,7 @@ describe('planTrialDateMarker', () => {
         event_date: '2024-01-01',
         projection: 'actual',
         date_precision: 'exact',
+        metadata: { source: 'analyst' },
       },
     });
   });
@@ -196,5 +198,34 @@ describe('planTrialDateMarker', () => {
     expect(plan.create?.marker_type_id).toBe(TRIAL_END_MARKER_TYPE_ID);
     expect(plan.create?.title).toBe(TRIAL_END_TITLE);
     expect(plan.create?.projection).toBe('company');
+    expect(plan.create?.metadata).toEqual({ source: 'analyst' });
+  });
+});
+
+/**
+ * ctgovLocked computed pattern (used in MarkerFormComponent).
+ * Verified in isolation because the component requires Angular TestBed
+ * (Playwright unit config) to mount; this covers the predicate logic
+ * that the computed delegates to.
+ */
+describe('ctgovLocked computed pattern', () => {
+  it('is true for a ct.gov-owned marker, false otherwise', () => {
+    const markerSig = signal<{ metadata: Record<string, unknown> | null } | null>(null);
+    const ctgovLocked = computed(() => isCtgovOwnedMarker(markerSig()));
+
+    // null input (create mode)
+    expect(ctgovLocked()).toBe(false);
+
+    // ct.gov-owned
+    markerSig.set({ metadata: { source: 'ctgov' } });
+    expect(ctgovLocked()).toBe(true);
+
+    // analyst-owned
+    markerSig.set({ metadata: { source: 'analyst' } });
+    expect(ctgovLocked()).toBe(false);
+
+    // no metadata
+    markerSig.set({ metadata: null });
+    expect(ctgovLocked()).toBe(false);
   });
 });

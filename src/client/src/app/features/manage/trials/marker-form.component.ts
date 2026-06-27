@@ -26,6 +26,7 @@ import {
   markerPeriodFromDate,
   precisionMidpointISO,
 } from '../../../core/models/marker-date-precision';
+import { isCtgovOwnedMarker } from '../../../core/models/trial-date-marker';
 import { PROJECTION_LABEL } from '../../../shared/utils/marker-fields';
 import { Trial } from '../../../core/models/trial.model';
 import { MarkerService } from '../../../core/services/marker.service';
@@ -48,6 +49,11 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
   imports: [FormsModule, InputText, Textarea, Select, MultiSelect, ButtonModule, MessageModule],
   template: `
     <form (ngSubmit)="onSubmit()" class="space-y-4" aria-label="Marker form">
+      @if (ctgovLocked()) {
+        <p-message severity="warn" [closable]="false">
+          This marker is managed by ClinicalTrials.gov and is read-only.
+        </p-message>
+      }
       @if (error()) {
         <p-message severity="error" [closable]="false">{{ error() }}</p-message>
       }
@@ -114,6 +120,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             name="title"
             required
             aria-required="true"
+            [disabled]="ctgovLocked()"
           />
         </div>
 
@@ -133,6 +140,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             placeholder="Select source"
             styleClass="w-full"
             class="mt-1"
+            [disabled]="ctgovLocked()"
           />
           <p class="mt-1 text-xs text-slate-500">
             Where the date comes from. "Confirmed actual" renders filled; every projected source
@@ -155,6 +163,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             optionValue="value"
             styleClass="w-full"
             class="mt-1"
+            [disabled]="ctgovLocked()"
           />
         </div>
 
@@ -181,6 +190,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
               name="eventDate"
               required
               aria-required="true"
+              [disabled]="ctgovLocked()"
             />
           } @else {
             <div class="mt-1 flex gap-2">
@@ -194,6 +204,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
                   optionValue="value"
                   styleClass="flex-1"
                   [attr.aria-label]="'Period within ' + datePrecision()"
+                  [disabled]="ctgovLocked()"
                 />
               }
               <input
@@ -205,6 +216,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
                 max="2100"
                 aria-label="Year"
                 class="w-24 rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                [disabled]="ctgovLocked()"
               />
             </div>
             <p class="mt-1 text-[11px] text-slate-500">
@@ -229,6 +241,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             optionValue="value"
             styleClass="w-full"
             class="mt-1"
+            [disabled]="ctgovLocked()"
           />
           @if (extent() === 'onwards') {
             <p class="mt-1 text-[11px] text-slate-500">
@@ -253,6 +266,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
               optionValue="value"
               styleClass="w-full"
               class="mt-1"
+              [disabled]="ctgovLocked()"
             />
           </div>
 
@@ -272,6 +286,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
                 [ngModel]="endDate()"
                 (ngModelChange)="endDate.set($event)"
                 name="endDate"
+                [disabled]="ctgovLocked()"
               />
             } @else {
               <div class="mt-1 flex gap-2">
@@ -285,6 +300,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
                     optionValue="value"
                     styleClass="flex-1"
                     [attr.aria-label]="'End period within ' + endDatePrecision()"
+                    [disabled]="ctgovLocked()"
                   />
                 }
                 <input
@@ -296,6 +312,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
                   max="2100"
                   aria-label="End year"
                   class="w-24 rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  [disabled]="ctgovLocked()"
                 />
               </div>
             }
@@ -318,6 +335,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             (ngModelChange)="description.set($event)"
             name="description"
             rows="3"
+            [disabled]="ctgovLocked()"
           ></textarea>
         </div>
 
@@ -335,6 +353,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             name="sourceUrl"
             placeholder="https://..."
             type="url"
+            [disabled]="ctgovLocked()"
           />
         </div>
 
@@ -355,6 +374,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
               placeholder="Select pathway"
               styleClass="w-full"
               class="mt-1"
+              [disabled]="ctgovLocked()"
             />
           </div>
         }
@@ -381,6 +401,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             appendTo="body"
             [maxSelectedLabels]="0"
             [selectedItemsLabel]="'Trial (' + selectedTrialIds().length + ')'"
+            [disabled]="ctgovLocked()"
           >
             <ng-template let-opt pTemplate="item">
               <div class="flex flex-col py-0.5">
@@ -415,12 +436,14 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
           (onClick)="cancelled.emit()"
           type="button"
         />
-        <p-button
-          [label]="marker() ? 'Update Marker' : 'Add Marker'"
-          type="submit"
-          [loading]="saving()"
-          [disabled]="!canSubmit()"
-        />
+        @if (!ctgovLocked()) {
+          <p-button
+            [label]="marker() ? 'Update Marker' : 'Add Marker'"
+            type="submit"
+            [loading]="saving()"
+            [disabled]="!canSubmit()"
+          />
+        }
       </div>
     </form>
   `,
@@ -722,6 +745,15 @@ export class MarkerFormComponent implements OnInit {
       this.regulatoryPathway.set('');
     }
   }
+
+  /**
+   * True when the form is editing a ct.gov-owned marker. In this state all
+   * editable controls (including the trial-assignment multiselect) and the
+   * Save button are hidden/disabled: the DB BEFORE UPDATE trigger would reject
+   * the write, and the a11y rule prohibits offering an action that will fail.
+   * Create mode and analyst-owned markers are never locked.
+   */
+  protected readonly ctgovLocked = computed(() => isCtgovOwnedMarker(this.marker()));
 
   protected readonly showCtgovAutoMarkerHint = computed(() => {
     const typeId = this.markerTypeId();

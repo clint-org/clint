@@ -107,6 +107,7 @@ export interface TrialDateMarkerPlan {
     event_date: string;
     projection: Extract<Projection, 'actual' | 'company'>;
     date_precision: 'exact';
+    metadata: { source: 'analyst' };
   };
   /** Present for update: only the fields that change. */
   update?: {
@@ -168,6 +169,7 @@ export function planTrialDateMarker(input: PlanTrialDateMarkerInput): TrialDateM
         event_date: newDate,
         projection,
         date_precision: 'exact',
+        metadata: { source: 'analyst' },
       },
     };
   }

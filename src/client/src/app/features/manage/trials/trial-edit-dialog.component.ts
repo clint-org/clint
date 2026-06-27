@@ -224,6 +224,7 @@ export class TrialEditDialogComponent {
             projection: plan.create!.projection,
             event_date: plan.create!.event_date,
             date_precision: plan.create!.date_precision,
+            metadata: plan.create!.metadata,
           },
           [trial.id],
         );
@@ -242,13 +243,9 @@ export class TrialEditDialogComponent {
     }
   }
 
-  /** Local-time today as YYYY-MM-DD, for the marker projection rule. */
+  /** UTC today as YYYY-MM-DD, for the marker projection rule. Matches the DB's UTC session. */
   private todayIso(): string {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return new Date().toISOString().slice(0, 10);
   }
 
   async save(): Promise<void> {
