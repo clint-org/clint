@@ -31,19 +31,20 @@ import { MarkerService } from '../../../core/services/marker.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
-import {
-  IntelligenceDetailBundle,
-  ReferencedInRow,
-} from '../../../core/models/primary-intelligence.model';
-import { buildEntityRouterLink } from '../../../shared/utils/intelligence-router-link';
+import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
 import { ChangeEvent } from '../../../core/models/change-event.model';
 import {
   CTGOV_DETAIL_DEFAULT_PATHS,
   CTGOV_FIELD_CATALOGUE,
 } from '../../../core/models/ctgov-field.model';
+import { deriveTrialPhaseSpan } from '../../../core/models/trial-phase-span';
+import { selectTrialStartMarker, selectTrialEndMarker, isCtgovOwnedMarker } from '../../../core/models/trial-date-marker';
+import { markerStartCaption } from '../../../core/models/marker-date-precision';
 
 import { MarkerFormComponent } from './marker-form.component';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
+import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.component';
+import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
@@ -87,6 +88,8 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     SourceProvenanceLineComponent,
     MarkerFormComponent,
     SectionCardComponent,
+    PiMarkComponent,
+    ReferencedInPanelComponent,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
@@ -294,22 +297,46 @@ export class TrialDetailComponent implements OnDestroy {
     (this.intelligence()?.briefs.length ?? 0) > 0
   );
 
+  protected readonly phaseSpan = computed(() => deriveTrialPhaseSpan(this.trial()?.markers ?? []));
+
+  protected readonly phaseStartMarker = computed(() =>
+    selectTrialStartMarker(this.trial()?.markers ?? [])
+  );
+  protected readonly phaseEndMarker = computed(() =>
+    selectTrialEndMarker(this.trial()?.markers ?? [])
+  );
+
+  protected readonly phaseStartSource = computed<'ctgov' | 'analyst' | null>(() => {
+    const m = this.phaseStartMarker();
+    if (!m) return null;
+    return isCtgovOwnedMarker(m) ? 'ctgov' : 'analyst';
+  });
+  protected readonly phaseEndSource = computed<'ctgov' | 'analyst' | null>(() => {
+    const m = this.phaseEndMarker();
+    if (!m) return null;
+    return isCtgovOwnedMarker(m) ? 'ctgov' : 'analyst';
+  });
+
+  protected readonly phaseStartLabel = computed(() => {
+    const span = this.phaseSpan();
+    if (!span.start) return null;
+    return markerStartCaption(span.start, span.startPrecision);
+  });
+  protected readonly phaseEndLabel = computed(() => {
+    const span = this.phaseSpan();
+    if (!span.end) return null;
+    return markerStartCaption(span.end, span.endPrecision);
+  });
+
   protected readonly spaceIdSig = computed(() => this.trial()?.space_id ?? '');
   protected readonly tenantIdSig = computed(
     () => this.route.snapshot.paramMap.get('tenantId') ?? this.findAncestorParam('tenantId')
   );
 
-  /** Router link to the anchor entity whose intelligence references this trial. */
-  protected referencedRouterLink(ref: ReferencedInRow): unknown[] {
-    return (
-      buildEntityRouterLink(
-        this.tenantIdSig(),
-        this.spaceIdSig(),
-        ref.entity_type,
-        ref.entity_id
-      ) ?? []
-    );
-  }
+  // Header count badges for the events / materials cards, fed by each panel's
+  // (loaded) output since those counts are fetched inside the child component.
+  protected readonly eventsCount = signal(0);
+  protected readonly materialsCount = signal(0);
 
   private readonly landscape = inject(LandscapeStateService);
 

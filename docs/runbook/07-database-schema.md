@@ -1022,7 +1022,8 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260627032406_marker_categories_unique_name.sql`
 - `20260627044328_grant_marker_categories_writes.sql`
 - `20260627120000_dashboard_data_drop_notes.sql`
-- `20260627130000_intelligence_anchors_schema.sql`
+- `20260627130000_ctgov_trial_dates_markers.sql`
+- `20260627130050_intelligence_anchors_schema.sql`
 - `20260627130100_intelligence_upsert_anchor_aware.sql`
 - `20260627130200_intelligence_lead_and_order_rpcs.sql`
 - `20260627130300_list_intelligence_for_entity.sql`
@@ -1032,4 +1033,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260627130600_intelligence_feed_and_landscape_multi.sql`
 - `20260627130700_intelligence_seed_multi.sql`
 - `20260627130800_drop_dead_build_intelligence_payload.sql`
+- `20260627130900_fix_asset_entity_type_anchors.sql`
+- `20260627140000_ctgov_marker_robustness.sql`
+- `20260627150000_dashboard_unspecified_indication_node.sql`
 <!-- /AUTO-GEN:DRIFT -->

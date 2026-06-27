@@ -143,14 +143,6 @@
 
     <div class="grid grid-cols-2 gap-4">
       <app-form-field label="Phase start" fieldId="create-phase-start" spacing="">
-        <span labelSuffix>
-          @if (phaseStartFromCtgov()) {
-            <span
-              class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
-              >ct.gov</span
-            >
-          }
-        </span>
         <p-datepicker
           inputId="create-phase-start"
           [ngModel]="phaseStartDate()"
@@ -158,25 +150,12 @@
           name="phaseStart"
           dateFormat="yy-mm-dd"
           styleClass="w-full"
-          [disabled]="phaseStartFromCtgov()"
           [showIcon]="true"
           appendTo="body"
-          [pTooltip]="
-            phaseStartFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''
-          "
-          tooltipPosition="top"
         />
       </app-form-field>
 
       <app-form-field label="Phase end" fieldId="create-phase-end" spacing="">
-        <span labelSuffix>
-          @if (phaseEndFromCtgov()) {
-            <span
-              class="ml-1 rounded-sm border border-slate-200 bg-slate-50 px-1 py-px font-mono text-[9px] uppercase tracking-wider text-slate-500"
-              >ct.gov</span
-            >
-          }
-        </span>
         <p-datepicker
           inputId="create-phase-end"
           [ngModel]="phaseEndDate()"
@@ -184,16 +163,18 @@
           name="phaseEnd"
           dateFormat="yy-mm-dd"
           styleClass="w-full"
-          [disabled]="phaseEndFromCtgov()"
           [showIcon]="true"
           appendTo="body"
-          [pTooltip]="
-            phaseEndFromCtgov() ? 'Pre-filled from ct.gov. Clear the NCT to override.' : ''
-          "
-          tooltipPosition="top"
         />
       </app-form-field>
     </div>
+
+    @if (showNoIndicationNote()) {
+      <p aria-live="polite" class="mb-3 text-[11px] leading-snug text-amber-700">
+        No indication set. This trial will appear under <span class="italic">Unspecified</span>
+        until you classify it.
+      </p>
+    }
 
     <app-form-actions
       submitLabel="Create"

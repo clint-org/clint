@@ -42,3 +42,14 @@ Write Postgres-compatible SQL code for Supabase migration files that:
   - Include comments explaining the rationale and intended behavior of each security policy
 
 The generated SQL code should be production-ready, well-documented, and aligned with Supabase's best practices.
+
+## In-migration smoke tests
+
+Migrations may include a `do $$ ... $$` smoke block that exercises the new logic and `raise exception` on any failed assertion (this aborts the migration, so a bad change never lands). Keep the block hermetic: use fixed recognizable UUIDs, and tear the fixtures down in reverse-dependency order at the end.
+
+**Never call a secret-gated or environment-specific RPC with a hardcoded secret in a smoke block.** The ctgov worker RPCs (`ingest_ctgov_snapshot`, `get_trials_for_polling`, `record_sync_run`) verify `_verify_ctgov_worker_secret(p_secret)` first and raise `42501 unauthorized` on mismatch. The local `vault` secret is the placeholder `local-dev-ctgov-secret` (seeded by `20260502120300`), but dev/prod use a real rotated secret. A smoke that hardcodes the placeholder PASSES on `supabase db reset` but ABORTS `supabase db push` on any environment whose secret has been rotated -- silently blocking the deploy. Instead:
+
+- drive the internal `SECURITY DEFINER` functions under test directly (e.g. `_seed_ctgov_markers`, `_materialize_trial_from_snapshot`) -- no secret gate, and it tests the real logic; or
+- read the configured secret from `vault.decrypted_secrets` and pass that.
+
+CI enforces this: `npm run migrations:check-secrets` fails the build if a new migration contains the `local-dev-ctgov-secret` literal (the few pre-existing, already-applied migrations are grandfathered and cannot be edited).
