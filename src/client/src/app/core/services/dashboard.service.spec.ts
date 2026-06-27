@@ -240,3 +240,55 @@ describe('mapDashboardCompanies', () => {
     expect(withoutPi.intelligence_headline).toBeNull();
   });
 });
+
+describe('mapDashboardCompanies — unspecified node', () => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const data = [
+    {
+      id: 'co1',
+      name: 'Co',
+      logo_url: null,
+      assets: [
+        {
+          id: 'a1',
+          name: 'Asset',
+          indications: [
+            {
+              id: 'ind1',
+              name: 'Obesity',
+              is_unspecified: false,
+              trials: [{ id: 't1', name: 'Classified', markers: [] }],
+            },
+            {
+              id: null,
+              name: 'Unspecified',
+              is_unspecified: true,
+              trials: [{ id: 't2', name: 'Orphan', markers: [] }],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  it('folds orphan trials into the flat list', () => {
+    const out = mapDashboardCompanies(data);
+    const ids = out[0].assets[0].trials.map((t: any) => t.id);
+    expect(ids).toEqual(['t1', 't2']);
+  });
+
+  it('gives orphan trials an empty _indications (no fake chip)', () => {
+    const out = mapDashboardCompanies(data);
+    const orphan = out[0].assets[0].trials.find((t: any) => t.id === 't2');
+    expect(orphan._indications).toEqual([]);
+  });
+
+  it('keeps real indication refs on classified trials', () => {
+    const out = mapDashboardCompanies(data);
+    const classified = out[0].assets[0].trials.find((t: any) => t.id === 't1');
+    expect(classified._indications).toEqual([
+      { id: 'ind1', indication_id: 'ind1', indication_name: 'Obesity' },
+    ]);
+  });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+});
