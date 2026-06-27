@@ -90,18 +90,14 @@
     </app-form-field>
 
     <app-form-field label="Indication" fieldId="trial-indication">
-      <p-multiselect
+      <app-taxonomy-multiselect
         inputId="trial-indication"
+        entityLabel="indication"
         [options]="indications()"
-        optionLabel="name"
-        optionValue="id"
-        [ngModel]="indicationIds()"
-        (ngModelChange)="onIndicationsChange($event)"
-        name="indication"
+        [value]="indicationIds()"
+        (valueChange)="onIndicationsChange($event)"
+        [createFn]="createIndication"
         placeholder="Select indication(s)"
-        [filter]="true"
-        [showClear]="true"
-        styleClass="w-full"
         appendTo="body"
       />
     </app-form-field>

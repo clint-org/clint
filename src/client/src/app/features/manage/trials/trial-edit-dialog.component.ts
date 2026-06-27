@@ -19,6 +19,7 @@ import { SpaceSettingsService } from '../../../core/services/space-settings.serv
 import { Trial } from '../../../core/models/trial.model';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 import { TrialEditFormComponent } from './trial-edit-form.component';
+import type { CreateFn } from '../shared/taxonomy-multiselect/taxonomy-create-controller';
 
 interface SelectOption {
   id: string;
@@ -146,6 +147,25 @@ export class TrialEditDialogComponent {
       }
     });
   }
+
+  // Inline-create handler for indications: persist a name-only indication,
+  // register it in the option list, and surface failures as a toast. Re-throws
+  // so the multiselect keeps the typed text for retry.
+  protected readonly createIndication: CreateFn = async (name) => {
+    try {
+      const created = await this.indicationService.create(this.trial().space_id, { name });
+      this.indications.update((list) => [...list, { id: created.id, name: created.name }]);
+      return created;
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not add indication',
+        detail: e instanceof Error ? e.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+      throw e;
+    }
+  };
 
   private async loadOptions(spaceId: string): Promise<void> {
     const [products, indicationList] = await Promise.all([
