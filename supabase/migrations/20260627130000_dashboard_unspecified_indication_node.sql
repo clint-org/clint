@@ -46,7 +46,9 @@ as $$
     'intelligence_headline', pi_trial.headline,
     'phase_data', case
       when p_trial.phase_type is not null then jsonb_build_object(
-        'phase_type', p_trial.phase_type
+        'phase_type',       p_trial.phase_type,
+        'phase_start_date', p_trial.phase_start_date,
+        'phase_end_date',   p_trial.phase_end_date
       )
       else null
     end,
@@ -54,7 +56,6 @@ as $$
       select jsonb_agg(
         jsonb_build_object(
           'id',                 mk.id,
-          'marker_type_id',     mk.marker_type_id,
           'title',              mk.title,
           'projection',         mk.projection,
           'event_date',         mk.event_date,
@@ -307,6 +308,7 @@ declare
   v_orphan_in_real   boolean;
   v_classified_in_unspec boolean;
   v_suppressed boolean;
+  v_phase_data jsonb;
 begin
   insert into auth.users (id, email) values (v_owner, 'unspec-smoke@invalid.local');
   insert into public.agencies (id, name, slug, subdomain, app_display_name, contact_email)
@@ -336,6 +338,16 @@ begin
   if not v_orphan_in_unspec then raise exception 'unspec FAIL: orphan trial not under Unspecified node'; end if;
   if v_orphan_in_real then raise exception 'unspec FAIL: orphan trial leaked into a real indication'; end if;
   if v_classified_in_unspec then raise exception 'unspec FAIL: classified trial wrongly under Unspecified'; end if;
+
+  -- phase_data must carry all three keys (regression guard): classified trial is P3,
+  -- so phase_data is non-null and must expose phase_type/phase_start_date/phase_end_date.
+  v_phase_data := jsonb_path_query_first(v_result,
+    ('$[*].assets[*] ? (@.id == "' || v_asset || '").indications[*].trials[*] ? (@.id == "' || v_classified || '").phase_data')::jsonpath);
+  if v_phase_data is null then raise exception 'unspec FAIL: classified trial phase_data missing'; end if;
+  if not (v_phase_data ?& array['phase_type', 'phase_start_date', 'phase_end_date']) then
+    raise exception 'unspec FAIL: phase_data missing one of phase_type/phase_start_date/phase_end_date keys: %', v_phase_data;
+  end if;
+  if (v_phase_data ->> 'phase_type') is null then raise exception 'unspec FAIL: phase_data.phase_type is null for P3 trial'; end if;
 
   -- filter suppression: filtering to a specific indication must hide the Unspecified node
   v_suppressed := not jsonb_path_exists(
