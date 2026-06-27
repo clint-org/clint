@@ -63,7 +63,11 @@ A single standalone component wrapping PrimeNG `p-multiselect`, service-agnostic
 so the same component serves all three fields.
 
 Location: `src/client/src/app/features/manage/shared/taxonomy-multiselect/`
-(matching `.ts` / `.html` / `.spec.ts`).
+Following the repo's testing convention (unit tests never mount templates; the
+testable logic is extracted and tested in the node env), the create/footer state
+machine lives in a framework-light controller (`taxonomy-create-controller.ts`,
+plain `@angular/core` signals, no `inject()`), and the component only binds
+PrimeNG events/templates to it. Matching logic lives in `taxonomy-match.ts`.
 
 Contract:
 
@@ -71,22 +75,26 @@ Contract:
   owned by the parent.
 - `value = model<string[]>([])` — selected ids; same shape the forms bind today.
 - `createFn = input<((name: string) => Promise<{ id: string; name: string }>)
-  | null>(null)` — supplied by the parent, wired to the right service's
-  `create()`. When `null`, the component degrades to a plain multiselect (no
-  Create affordance) — this is also the read-only / non-editor fallback.
+  | null>(null)` — supplied by the parent. It is responsible for BOTH persisting
+  the value and registering the saved row in the parent's `options` signal (so
+  it renders as selected), then returning the row. When `null`, the component
+  degrades to a plain multiselect (no Create affordance) — this is also the
+  read-only / non-editor fallback. Folding the option-append into `createFn`
+  avoids threading an output back up through the presentational form bodies.
 - `entityLabel = input.required<string>()` — singular noun for copy
   (`"mechanism"`, `"route"`, `"indication"`).
-- `optionCreated = output<{ id: string; name: string }>()` — lets the parent
-  append the new option to its own `options` signal so the list stays in sync.
 - Pass-through inputs to preserve current behaviour: `inputId`, `placeholder`,
-  `selectedItemsLabel`, `maxSelectedLabels`, `styleClass`, `disabled`.
+  `selectedItemsLabel`, `maxSelectedLabels`, `styleClass`, `disabled`, and
+  `appendTo` (`'body'` when hosted inside a dialog so the panel is not clipped).
 
-Internals:
+Controller internals:
 
 - A `filterText` signal updated from `p-multiselect`'s `(onFilter)` event.
-- A `footerState` computed that classifies `filterText` against `options` using
-  the matching helper into `exact | near | none` plus the near-match list.
+- A `footer` computed that classifies `filterText` against `options` via the
+  matching helper into `{ near, showCreate, createLabel }`.
 - A `creating` signal to disable the Create row while the insert is in flight.
+- `create()` resolves `true`/`false` so the component knows whether to close the
+  panel (success → `hide()` clears the filter via `resetFilterOnHide`).
 
 ### Footer template behaviour
 
@@ -101,16 +109,16 @@ Rendered in the `p-multiselect` footer based on `footerState`:
 
 Create-row click flow:
 
-1. Trim `filterText`; set `creating`, call `createFn(trimmed)`. The filter input
-   is capped at `maxlength=255` (the tightest column, `indications.name`) so the
-   created name cannot exceed any target column; an over-length paste is
-   truncated at entry rather than failing at the DB.
-2. On success: emit `optionCreated`, append the new id to `value` (existing
-   selections preserved), clear the filter, unset `creating`.
+1. Trim `filterText`, then truncate to `TAXONOMY_NAME_MAXLEN` (255, the tightest
+   column `indications.name`) so the created name cannot exceed any target
+   column; set `creating`, call `createFn(name)`.
+2. On success: append the new id to `value` (existing selections preserved),
+   clear the filter, unset `creating`, and the component closes the panel.
 3. On failure (e.g. a race-condition unique violation if two tabs create the
-   same name): the error surfaces as a toast at the service origin per the
-   client guardrails; the component clears `creating` and leaves the filter so
-   the user can retry or pick the now-existing value.
+   same name): the host `createFn` surfaces the error (the asset form's error
+   banner, the trial dialogs' toast) and re-throws; the controller clears
+   `creating`, returns `false`, and leaves the filter so the user can retry or
+   pick the now-existing value. Selection is untouched.
 
 While `creating` is set the Create row is disabled, so a double-click cannot
 fire two inserts.
@@ -119,8 +127,9 @@ fire two inserts.
 
 A small pure module, unit-tested in isolation, no third-party dependency:
 
-- `normalize(s)`: lowercase, trim, collapse internal whitespace, strip
-  punctuation and hyphens.
+- `normalize(s)`: lowercase and strip every non-alphanumeric character
+  (whitespace, hyphens, punctuation all removed) so `GLP-1`, `GLP 1`, and `GLP1`
+  converge to `glp1`.
 - `levenshtein(a, b)`: standard edit distance (~15 lines).
 - `classify(text, options)`: returns `{ kind: 'exact' | 'near' | 'none';
   near: Option[] }`.
@@ -136,25 +145,29 @@ lookalikes, not on every option sharing a letter.
 
 ## Wiring in the host forms
 
-### Asset form (`asset-edit-form.component.html`)
+The presentational form bodies (`asset-edit-form`, `trial-edit-form`) gain a
+`createFn` input per taxonomy field and pass it straight through to
+`app-taxonomy-multiselect`; the owning host components supply the closures. Each
+host closure persists via the service, appends the saved row to its own typed
+`options` signal, surfaces failures (asset form error banner / trial dialog
+toast), and re-throws on failure.
 
-Replace the MOA and ROA `p-multiselect` blocks with `app-taxonomy-multiselect`:
+### Asset (`asset-edit-form` + host `asset-form`)
 
-- MOA: `[options]="moaOptions()"`, `[(value)]="moaIds"` (matching existing
-  `moaIds` signal), `entityLabel="mechanism"`,
-  `[createFn]="createMoa"`, `(optionCreated)="onMoaCreated($event)"`.
-- ROA: same with `roaOptions` / `roaIds` / `entityLabel="route"` /
-  `createRoa` / `onRoaCreated`.
+MOA and ROA `p-multiselect` blocks become `app-taxonomy-multiselect`
+(`entityLabel` `"mechanism"` / `"route"`, `[(value)]` on the existing
+`moaIds` / `roaIds` models). `asset-edit-form` exposes `moaCreateFn` /
+`roaCreateFn` inputs; `asset-form` passes `createMoa` / `createRoa`, both built
+from a shared `createTaxonomy<T>()` helper over the MOA/ROA services.
 
-The component owns the `space_id` indirectly: the parent's `createFn` closes over
-the current `spaceId` and calls `service.create(spaceId, { name })`, then
-`onXCreated` appends `{ id, name }` to the `xOptions` signal.
+### Trial (three surfaces)
 
-### Trial form (`trial-edit-form.component.html`)
-
-Replace the Indication `p-multiselect` with `app-taxonomy-multiselect` wired to
-`indicationOptions` / the indication selection model / `entityLabel="indication"`
-/ `createIndication` / `onIndicationCreated`.
+- `trial-create-dialog` (the Add-trial surface): its own Indication
+  `p-multiselect` becomes `app-taxonomy-multiselect` with `[createFn]="createIndication"`.
+- `trial-edit-form` + host `trial-edit-dialog` (Manage edit): `indicationCreateFn`
+  input, host passes `createIndication`.
+- `review-edit-dialog` (import review): passes no `createFn` — its option ids are
+  indication NAMES, not UUIDs, so it stays a plain multiselect.
 
 ## Permissions
 
@@ -167,32 +180,37 @@ post-click permission toasts (per `src/client/CLAUDE.md` section 13.5).
 
 `taxonomy-match.spec.ts` (pure helper):
 
-- `normalize` — case-folding, trim, internal-whitespace collapse, punctuation
-  and hyphen stripping; whitespace/punctuation-only input normalizes to empty.
+- `normalize` — case-folding, full whitespace/hyphen/punctuation stripping;
+  whitespace/punctuation-only input normalizes to empty.
 - `levenshtein` — known distances incl. zero, insert/delete/substitute.
 - `classify` — exact (incl. whitespace/case/hyphen variants on either side),
   near via substring (both directions), near via typo just inside the threshold,
   correctly NOT near just outside the threshold (boundary cases pinned), none,
-  empty/whitespace-only text → none, near-list cap of 2 and closeness ordering.
+  short (single-char) query → none, empty/whitespace-only text → none, near-list
+  cap of 2 and closeness ordering.
 
-`taxonomy-multiselect.component.spec.ts` (component):
+`taxonomy-create-controller.spec.ts` (the create/footer state machine — the
+component itself is thin view-binding, exercised by build + manual, consistent
+with the repo's `heatmap-view` / `engagement-landing` signal specs):
 
-- Happy path: type a novel value, click Create → option appears selected and
-  `optionCreated` emitted with `{ id, name }`.
-- Append semantics: with a pre-existing selection, creating a new value adds to
-  it (does not replace) and the filter clears afterward.
-- Input hygiene: leading/trailing whitespace is trimmed before `createFn`; a
-  whitespace-only filter shows no Create row.
-- Exact match suppresses the Create row.
-- Near match shows the Similar hint; clicking a suggestion selects the existing
-  option (and does not create).
-- In-flight guard: while a create is pending the Create row is disabled, so a
-  second click cannot trigger a second `createFn` call.
-- Failure path: when `createFn` rejects, the component clears `creating`, keeps
-  the filter text, and does not crash or mutate `value`.
-- `createFn=null` hides the Create affordance entirely (read-only fallback).
-- Accessibility: the Create row and Similar suggestions are keyboard-operable
-  and the footer passes an AXE check (per `src/client/CLAUDE.md` section 7).
+- Footer state: hidden for empty/whitespace filter; hidden when `createFn` is
+  null; create offered with trimmed label for a novel value; suppressed on exact
+  match; near suggestion shown alongside the create row.
+- Happy path: create appends the new id, preserves existing selections, clears
+  the filter.
+- Input hygiene: trimmed text passed to `createFn`; over-length input truncated
+  to `TAXONOMY_NAME_MAXLEN`.
+- `create()` returns `true` on success, `false` on failure / no-op.
+- In-flight guard: a second `create()` while one is pending does not call
+  `createFn` twice.
+- Failure path: a rejected `createFn` leaves `value` and the filter untouched
+  and clears `creating`.
+- `selectExisting` adds the option and clears the filter without creating, and
+  does not duplicate an already-selected option.
+
+Accessibility: the Create row and Similar suggestions are real `<button>`
+elements with `aria-label`, keyboard-operable by default; verified during manual
+browser exercise (per `src/client/CLAUDE.md` section 7).
 
 Each test ships with its task, not deferred to a separate phase.
 
