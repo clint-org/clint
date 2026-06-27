@@ -24,8 +24,9 @@ export type VersionState = Exclude<IntelligenceState, 'draft'>;
 export interface PrimaryIntelligence {
   id: string;
   space_id: string;
-  entity_type: IntelligenceEntityType;
-  entity_id: string;
+  // entity_type and entity_id were dropped from the primary_intelligence table when
+  // the anchor model was introduced; those fields now live on primary_intelligence_anchors.
+  // They are not present on rows returned from the DB and must not be read here.
   state: IntelligenceState;
   headline: string;
   summary_md: string;

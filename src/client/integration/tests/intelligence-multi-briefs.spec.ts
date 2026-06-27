@@ -829,3 +829,86 @@ describe('RLS: primary_intelligence_anchors (direct table)', () => {
     expect(viewerAnchors.data![0].is_lead).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// T5: asset entity_type='product' path
+//
+// primary_intelligence_anchors CHECK forbids 'asset'; assets are stored as
+// 'product'. Regression guard for the fix in migration 20260627130900:
+//   - get_asset_detail_with_intelligence must return briefs when the anchor
+//     was created with p_entity_type='product'
+//   - _cleanup_polymorphic_refs must delete the 'product' anchor when the
+//     asset row is deleted (without the fix it leaves an orphaned anchor)
+// ---------------------------------------------------------------------------
+
+describe('T5: asset briefs via entity_type=product path', () => {
+  it('get_asset_detail_with_intelligence returns briefs authored on the asset', async () => {
+    // Publish a brief on the shared assetId using entity_type='product'
+    // (the value stored in primary_intelligence_anchors; 'asset' is forbidden).
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'product',
+      entityId: assetId,
+      state: 'published',
+      headline: 'Asset brief T5',
+      changeNote: null,
+    });
+
+    const r = await as(p, 'reader')
+      .rpc('get_asset_detail_with_intelligence', { p_asset_id: assetId })
+      .throwOnError();
+
+    const bundle = r.data as { briefs: unknown[]; entity_type: string };
+    expect(bundle, 'bundle should be non-null').toBeTruthy();
+    expect(bundle.entity_type).toBe('product');
+    expect(bundle.briefs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('deleting an asset removes its product anchor (cleanup trigger fix)', async () => {
+    const admin = adminClient();
+
+    // Create a fresh asset so we can delete it without affecting shared fixtures.
+    const { data: newAsset } = await admin
+      .from('assets')
+      .insert({
+        space_id: p.org.spaceId,
+        company_id: companyId,
+        name: `T5-delete-asset-${Date.now()}`,
+        created_by: p.ids.tenant_owner,
+      })
+      .select('id')
+      .single();
+    const newAssetId = newAsset!.id;
+
+    // Author a published brief on the new asset.
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'product',
+      entityId: newAssetId,
+      state: 'published',
+      headline: 'Brief on soon-to-be-deleted asset',
+      changeNote: null,
+    });
+
+    // Confirm the anchor exists before deletion.
+    const { data: before } = await admin
+      .from('primary_intelligence_anchors')
+      .select('id')
+      .eq('entity_type', 'product')
+      .eq('entity_id', newAssetId);
+    expect(before ?? []).toHaveLength(1);
+
+    // Delete the asset; the trigger should cascade-delete the 'product' anchor.
+    await admin.from('assets').delete().eq('id', newAssetId).throwOnError();
+
+    // Anchor must be gone.
+    const { data: after } = await admin
+      .from('primary_intelligence_anchors')
+      .select('id')
+      .eq('entity_type', 'product')
+      .eq('entity_id', newAssetId);
+    expect(after ?? [], 'anchor should be deleted with the asset').toHaveLength(0);
+  });
+});
