@@ -141,6 +141,12 @@ export class IntelligenceStackComponent {
     const items: MenuItem[] = [
       { label: 'Edit entry', command: () => this.edit.emit(brief.anchor_id) },
     ];
+    if (brief.draft) {
+      items.push({
+        label: 'Discard draft',
+        command: () => this.discardDraft.emit(brief.anchor_id),
+      });
+    }
     const published = brief.published?.record;
     if (published) {
       items.push({

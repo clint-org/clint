@@ -63,6 +63,8 @@ describe('IntelligenceStackComponent template contract', () => {
   it('offers withdraw and purge in the overflow menu (menuFor labels)', () => {
     expect(tsSrc).toContain("label: 'Withdraw'");
     expect(tsSrc).toContain("label: 'Purge entry'");
+    expect(tsSrc).toContain("label: 'Discard draft'");
+    expect(tsSrc).toContain('this.discardDraft.emit(');
   });
 });
 
