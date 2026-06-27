@@ -138,6 +138,27 @@ export interface InventorySnapshot {
   event_categories: { id: string; name: string }[];
   mechanisms_of_action: { id: string; name: string }[];
   routes_of_administration: { id: string; name: string; abbreviation?: string }[];
+  /** Existing marker instances in the space, one entry per (marker, trial) pair.
+   *  Used by the import validator to detect duplicate markers across re-imports. */
+  markers?: {
+    id: string;
+    trial_id: string;
+    marker_type: string;
+    title: string;
+    event_date: string | null;
+  }[];
+  /** Existing event instances in the space with their anchor.
+   *  Used by the import validator to detect duplicate events across re-imports. */
+  events?: {
+    id: string;
+    anchor: {
+      level: 'space' | 'company' | 'asset' | 'trial';
+      id: string | null;
+    };
+    category: string;
+    title: string;
+    event_date: string | null;
+  }[];
   hash: string;
 }
 
