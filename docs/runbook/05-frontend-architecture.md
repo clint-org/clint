@@ -281,7 +281,7 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /profiles/assets/:id   AssetDetailComponent
     /profiles/engagement   EngagementDetailComponent
     /settings/marker-types   editGuard | MarkerTypeListComponent
-    /settings/marker-categories   MarkerCategoryListComponent
+    /settings/marker-categories   editGuard | MarkerCategoryListComponent
     /settings/taxonomies   editGuard | TaxonomiesPageComponent
     /settings/general   spaceOwnerGuard | SpaceGeneralComponent
     /settings/members   spaceOwnerGuard | SpaceMembersComponent
