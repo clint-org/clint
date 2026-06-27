@@ -659,3 +659,106 @@ describe('history, lifecycle, and lead promotion (anchor-keyed)', () => {
     expect((hist.data as any).versions).toHaveLength(1); // only anchor A's versions
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 7: feed is_lead + landscape presence (multi-anchor)
+// ---------------------------------------------------------------------------
+
+/**
+ * Traverse the get_dashboard_data payload shape:
+ *   companies[] -> assets[] -> indications[] -> trials[]
+ * and return the trial node matching trialId, or null if absent.
+ */
+function findTrial(payload: any, trialId: string): any {
+  if (!Array.isArray(payload)) return null;
+  for (const company of payload) {
+    for (const asset of (company.assets ?? [])) {
+      for (const indication of (asset.indications ?? [])) {
+        for (const trial of (indication.trials ?? [])) {
+          if (trial.id === trialId) return trial;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+describe('landscape presence: has_intelligence + headline + count (multi-anchor)', () => {
+  let indicationId: string;
+  let conditionId: string;
+
+  beforeAll(async () => {
+    const admin = adminClient();
+    const userId = p.ids.tenant_owner;
+
+    // Create a fresh indication + condition + asset_indication so trials
+    // created in this describe block appear in get_dashboard_data.
+    const { data: ind } = await admin
+      .from('indications')
+      .insert({
+        space_id: p.org.spaceId,
+        name: `DashInd-${Date.now()}`,
+        abbreviation: 'DSHI',
+        created_by: userId,
+      })
+      .select('id')
+      .single();
+    indicationId = ind!.id;
+
+    const { data: cond } = await admin
+      .from('conditions')
+      .insert({ space_id: p.org.spaceId, name: `DashCond-${Date.now()}`, source: 'analyst' })
+      .select('id')
+      .single();
+    conditionId = cond!.id;
+
+    await admin.from('condition_indication_map').insert({
+      condition_id: conditionId,
+      indication_id: indicationId,
+    });
+    await admin.from('asset_indications').insert({
+      asset_id: assetId,
+      indication_id: indicationId,
+      space_id: p.org.spaceId,
+      development_status: 'P3',
+      created_by: userId,
+    });
+  }, 60_000);
+
+  it('reflects lead headline and counts two published anchors in get_dashboard_data', async () => {
+    const trialId = await createTrial();
+    const admin = adminClient();
+    // Wire the trial into the indication hierarchy so it appears in the dashboard.
+    await admin.from('trial_conditions').insert({ trial_id: trialId, condition_id: conditionId });
+
+    // First upsert: creates the lead anchor (is_lead=true).
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'Lead headline',
+      changeNote: null,
+    });
+    // Second upsert: creates a non-lead sibling anchor.
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'Second',
+      changeNote: null,
+    });
+
+    const dash = await as(p, 'reader')
+      .rpc('get_dashboard_data', { p_space_id: p.org.spaceId })
+      .throwOnError();
+    const trialNode = findTrial(dash.data as any[], trialId);
+    expect(trialNode, `trial ${trialId} not found in dashboard payload`).toBeTruthy();
+    expect(trialNode.has_intelligence).toBe(true);
+    expect(trialNode.intelligence_headline).toBe('Lead headline');
+    expect(trialNode.intelligence_count).toBe(2);
+  });
+});
