@@ -75,6 +75,10 @@ interface MarkerGroup {
               </div>
             }
           </div>
+          <p class="mt-2 text-xs text-slate-500">
+            These color roles apply to the system categories. Custom categories added for this
+            space use analyst-chosen colors and carry no fixed color convention.
+          </p>
         </section>
 
         <section class="mb-8">
@@ -309,6 +313,10 @@ export class MarkersHelpComponent implements OnInit {
       {
         q: 'Can I add a custom marker type?',
         a: 'Yes. Space owners can add custom marker types from Settings > Marker Types. The list above shows the shared system markers plus any custom ones added for this space.',
+      },
+      {
+        q: 'Can I add my own marker categories?',
+        a: 'Yes. Space owners and editors can add categories from Settings > Marker Categories, then file custom marker types under them. New categories appear as their own group in this legend.',
       },
     ];
   });
