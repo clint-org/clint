@@ -189,9 +189,9 @@ export class EngagementLandingComponent implements OnInit {
     if (!tid || !sid) return null;
     const base = `/t/${tid}/s/${sid}`;
     return {
-      activeTrials: `${base}/manage/trials`,
-      companies: `${base}/manage/companies`,
-      assets: `${base}/manage/assets`,
+      activeTrials: `${base}/profiles/trials`,
+      companies: `${base}/profiles/companies`,
+      assets: `${base}/profiles/assets`,
       catalysts: `${base}/catalysts`,
       intelligence: `${base}/intelligence`,
     };

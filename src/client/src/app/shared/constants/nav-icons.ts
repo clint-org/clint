@@ -3,7 +3,8 @@ export const NAV_ICONS: Record<string, string> = {
   // Sections (icon rail)
   landscape: 'fa-solid fa-chart-line',
   intelligence: 'fa-solid fa-star',
-  manage: 'fa-solid fa-table-list',
+  profiles: 'fa-solid fa-id-card',
+  reference: 'fa-solid fa-book',
   settings: 'fa-solid fa-gear',
 
   // Landscape pages
@@ -19,7 +20,7 @@ export const NAV_ICONS: Record<string, string> = {
   'intelligence-feed': 'fa-solid fa-newspaper',
   materials: 'fa-solid fa-folder-open',
 
-  // Manage pages
+  // Profiles pages
   companies: 'fa-solid fa-building',
   assets: 'fa-solid fa-capsules',
   trials: 'fa-solid fa-flask',
@@ -31,4 +32,5 @@ export const NAV_ICONS: Record<string, string> = {
   taxonomies: 'fa-solid fa-tags',
   'marker-types': 'fa-solid fa-shapes',
   'audit-log': 'fa-solid fa-clock-rotate-left',
+  phases: 'fa-solid fa-layer-group',
 };

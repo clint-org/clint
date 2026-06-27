@@ -615,7 +615,7 @@ export class SidebarComponent {
 
   readonly activeSection = computed(() => {
     const route = this.activeRoute();
-    if (route.startsWith('manage/')) return 'manage';
+    if (route.startsWith('profiles/')) return 'profiles';
     if (route.startsWith('settings/')) return 'settings';
     if (route === 'events' || route === 'intelligence' || route === 'materials') {
       return 'intelligence';
