@@ -109,8 +109,9 @@ as $$
       union all
       select 'intelligence_published'::text as etype, pi.updated_at as ets, null::uuid as eid
       from public.primary_intelligence pi
-      where pi.entity_type = 'trial'
-        and pi.entity_id = p_trial.id
+      join public.primary_intelligence_anchors a_pi on a_pi.id = pi.anchor_id
+      where a_pi.entity_type = 'trial'
+        and a_pi.entity_id = p_trial.id
         and pi.space_id = p_space_id
         and pi.state = 'published'
         and pi.updated_at >= now() - public.recent_change_window()
@@ -119,11 +120,12 @@ as $$
   left join lateral (
     select pi.headline
     from public.primary_intelligence pi
-    where pi.entity_type = 'trial'
-      and pi.entity_id   = p_trial.id
-      and pi.space_id    = p_space_id
-      and pi.state       = 'published'
-    order by pi.updated_at desc
+    join public.primary_intelligence_anchors a_pi on a_pi.id = pi.anchor_id
+    where a_pi.entity_type = 'trial'
+      and a_pi.entity_id   = p_trial.id
+      and pi.space_id       = p_space_id
+      and pi.state          = 'published'
+    order by a_pi.is_lead desc, pi.published_at desc nulls last
     limit 1
   ) pi_trial on true
 $$;

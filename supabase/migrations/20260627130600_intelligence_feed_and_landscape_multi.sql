@@ -320,9 +320,7 @@ begin
                         'intelligence_count', coalesce(pi_count.cnt, 0),
                         'phase_data', case
                           when t.phase_type is not null then jsonb_build_object(
-                            'phase_type',       t.phase_type,
-                            'phase_start_date', t.phase_start_date,
-                            'phase_end_date',   t.phase_end_date
+                            'phase_type', t.phase_type
                           )
                           else null
                         end,
