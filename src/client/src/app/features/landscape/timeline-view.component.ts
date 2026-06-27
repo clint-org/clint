@@ -269,7 +269,7 @@ export class TimelineViewComponent {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'trials',
       trial.id,
     ]);
@@ -282,7 +282,7 @@ export class TimelineViewComponent {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'companies',
       companyId,
     ]);
@@ -290,7 +290,7 @@ export class TimelineViewComponent {
 
   onAssetClick(assetId: string): void {
     if (!assetId) return;
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'assets', assetId]);
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'profiles', 'assets', assetId]);
   }
 
   retry(): void {

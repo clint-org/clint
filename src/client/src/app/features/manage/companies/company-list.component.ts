@@ -154,7 +154,7 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   }
 
   openAssets(companyName: string): void {
-    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'assets'], {
+    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'profiles', 'assets'], {
       queryParams: buildFilterQueryParams({
         companyName: { kind: 'text', contains: companyName },
       }),

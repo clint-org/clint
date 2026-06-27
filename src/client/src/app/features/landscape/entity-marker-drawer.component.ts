@@ -64,7 +64,7 @@ export class EntityMarkerDrawerComponent {
       this.tenantId,
       's',
       this.spaceId,
-      'manage',
+      'profiles',
       'trials',
       trialId,
     ]);
@@ -78,7 +78,7 @@ export class EntityMarkerDrawerComponent {
   protected onEditMarker(target: { trialId: string; markerId: string }): void {
     if (!target.trialId) return;
     this.router.navigate(
-      ['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials', target.trialId],
+      ['/t', this.tenantId, 's', this.spaceId, 'profiles', 'trials', target.trialId],
       { queryParams: { marker: target.markerId } },
     );
   }

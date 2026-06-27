@@ -228,7 +228,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
   }
 
   openTrials(assetName: string): void {
-    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'trials'], {
+    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'profiles', 'trials'], {
       queryParams: buildFilterQueryParams({
         assetName: { kind: 'text', contains: assetName },
       }),
