@@ -85,9 +85,7 @@
         role="img"
         aria-label="Company has primary intelligence"
         class="pi-badge"
-        [attr.transform]="
-          'translate(' + label.x + ',' + (label.y - 14) + ') scale(' + bookmarkScale + ')'
-        "
+        [attr.transform]="'rotate(' + label.rotate + ' ' + label.x + ' ' + label.y + ') translate(' + label.x + ' ' + (label.y - 14) + ') scale(' + bookmarkScale + ')'"
       >
         <path
           [attr.d]="bookmarkPath"
