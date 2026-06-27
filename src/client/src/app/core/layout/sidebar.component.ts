@@ -579,6 +579,12 @@ export class SidebarComponent {
   readonly hasSpace = input<boolean>(false);
   readonly canEdit = input<boolean>(true);
   readonly isOwner = input<boolean>(false);
+  /**
+   * Whether the current space has an engagement write-up (published or draft).
+   * Gates the Engagement nav item: hidden for every role when false. Editors
+   * still author the first one from the Intelligence Feed.
+   */
+  readonly hasEngagement = input<boolean>(false);
   readonly userInitials = input<string>('');
   readonly userEmail = input<string>('');
   readonly userAvatarUrl = input<string | null>(null);
@@ -606,7 +612,7 @@ export class SidebarComponent {
 
   readonly visibleSections = computed(() => {
     if (!this.hasSpace()) return ORG_ONLY_SECTIONS;
-    return filterNavSections(NAV_SECTIONS, this.canEdit(), this.isOwner());
+    return filterNavSections(NAV_SECTIONS, this.canEdit(), this.isOwner(), this.hasEngagement());
   });
 
   isParentExpanded(route: string): boolean {

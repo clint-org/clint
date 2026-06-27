@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
@@ -25,6 +25,14 @@ const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
 export class PrimaryIntelligenceService {
   private supabase = inject(SupabaseService);
   private cache = inject(RpcCache);
+
+  /**
+   * Bumps on every intelligence mutation (upsert / lead / reorder / delete /
+   * withdraw / purge). Reactive consumers depend on this to re-derive state
+   * after a write -- e.g. the shell re-checks engagement presence so the
+   * Engagement nav item appears as soon as a space write-up is published.
+   */
+  readonly changed = signal(0);
 
   async getTrialDetail(trialId: string): Promise<IntelligenceDetailBundle | null> {
     return this.cache.get(
@@ -283,9 +291,7 @@ export class PrimaryIntelligenceService {
       .select('space_id, primary_intelligence_anchors!inner(entity_type, entity_id)')
       .eq('id', id)
       .single();
-    await this.supabase.client
-      .rpc('delete_primary_intelligence', { p_id: id })
-      .throwOnError();
+    await this.supabase.client.rpc('delete_primary_intelligence', { p_id: id }).throwOnError();
     if (existing?.space_id) {
       const ent = existing.primary_intelligence_anchors as unknown as {
         entity_type: IntelligenceEntityType;
@@ -358,5 +364,6 @@ export class PrimaryIntelligenceService {
       `${entityType}:${entityId}:detail`,
       `${entityType}:${entityId}:history-intelligence`,
     ]);
+    this.changed.update((n) => n + 1);
   }
 }

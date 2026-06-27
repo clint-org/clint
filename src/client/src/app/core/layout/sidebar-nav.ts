@@ -5,12 +5,7 @@ import { NAV_ICONS } from '../../shared/constants/nav-icons';
  * `Section` union in `app-shell.component.ts` and the `NAV_SECTIONS` array
  * below.
  */
-export type SidebarSectionId =
-  | 'landscape'
-  | 'intelligence'
-  | 'profiles'
-  | 'settings'
-  | 'reference';
+export type SidebarSectionId = 'landscape' | 'intelligence' | 'profiles' | 'settings' | 'reference';
 
 export interface NavItem {
   label: string;
@@ -30,6 +25,13 @@ export interface NavItem {
    * the read-only guides in the Reference group instead.
    */
   editorOnly?: boolean;
+  /**
+   * When true, the item is hidden for every role until the current space has
+   * an engagement write-up (published or draft). Used for the Engagement item:
+   * with no write-up there is nothing to show, and editors can still author
+   * the first one from the Intelligence Feed ("Publish intelligence" -> Space).
+   */
+  requiresEngagement?: boolean;
 }
 
 export interface NavSection {
@@ -63,14 +65,19 @@ export const NAV_SECTIONS: NavSection[] = [
     id: 'intelligence',
     label: 'Intelligence',
     items: [
-      { label: 'Engagement', route: 'profiles/engagement', icon: NAV_ICONS['engagement'] },
       {
         label: 'Intelligence Feed',
         route: 'intelligence',
         icon: NAV_ICONS['intelligence-feed'],
       },
-      { label: 'Materials', route: 'materials', icon: NAV_ICONS['materials'] },
+      {
+        label: 'Engagement',
+        route: 'profiles/engagement',
+        icon: NAV_ICONS['engagement'],
+        requiresEngagement: true,
+      },
       { label: 'Events', route: 'events', icon: NAV_ICONS['events'] },
+      { label: 'Materials', route: 'materials', icon: NAV_ICONS['materials'] },
     ],
   },
   {
@@ -90,8 +97,18 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'General', route: 'settings/general', icon: NAV_ICONS['general'], ownerOnly: true },
       { label: 'Members', route: 'settings/members', icon: NAV_ICONS['members'], ownerOnly: true },
       { label: 'Fields', route: 'settings/fields', icon: NAV_ICONS['fields'], ownerOnly: true },
-      { label: 'Taxonomies', route: 'settings/taxonomies', icon: NAV_ICONS['taxonomies'], editorOnly: true },
-      { label: 'Marker Types', route: 'settings/marker-types', icon: NAV_ICONS['marker-types'], editorOnly: true },
+      {
+        label: 'Taxonomies',
+        route: 'settings/taxonomies',
+        icon: NAV_ICONS['taxonomies'],
+        editorOnly: true,
+      },
+      {
+        label: 'Marker Types',
+        route: 'settings/marker-types',
+        icon: NAV_ICONS['marker-types'],
+        editorOnly: true,
+      },
       {
         label: 'Audit log',
         route: 'settings/audit-log',
@@ -119,19 +136,25 @@ export const ORG_ONLY_SECTIONS: NavSection[] = [];
  * so it can be unit-tested directly:
  * - `ownerOnly` items (General, Members, Fields, Audit log) drop for non-owners,
  * - `editorOnly` items (Taxonomies / Marker Types management) drop for viewers,
+ * - `requiresEngagement` items (Engagement) drop for every role when the space
+ *   has no engagement write-up (`hasEngagement` false),
  * - the Profiles and Reference sections carry no flags, so they survive for all
  *   roles. A section left with no items is dropped.
  */
 export function filterNavSections(
   sections: NavSection[],
   canEdit: boolean,
-  isOwner: boolean
+  isOwner: boolean,
+  hasEngagement: boolean
 ): NavSection[] {
   return sections
     .map((section) => ({
       ...section,
       items: section.items.filter(
-        (item) => (isOwner || !item.ownerOnly) && (canEdit || !item.editorOnly)
+        (item) =>
+          (isOwner || !item.ownerOnly) &&
+          (canEdit || !item.editorOnly) &&
+          (hasEngagement || !item.requiresEngagement)
       ),
     }))
     .filter((section) => section.items.length > 0);

@@ -27,6 +27,7 @@ import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.compon
 import { TopbarStateService } from '../services/topbar-state.service';
 import { OnboardingTooltipService } from '../../features/engagement-landing/onboarding-tooltip.service';
 import { SpaceRoleService } from '../services/space-role.service';
+import { PrimaryIntelligenceService } from '../services/primary-intelligence.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -70,6 +71,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [hasSpace]="!!spaceId()"
         [canEdit]="spaceRole.canEdit()"
         [isOwner]="spaceRole.isOwner()"
+        [hasEngagement]="hasEngagement()"
         [userInitials]="initials()"
         [userEmail]="user()?.email ?? ''"
         [userAvatarUrl]="avatarUrl()"
@@ -139,7 +141,9 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
                 referrerpolicy="no-referrer"
               />
             } @else {
-              <span class="account-menu__avatar account-menu__avatar--initials">{{ initials() }}</span>
+              <span class="account-menu__avatar account-menu__avatar--initials">{{
+                initials()
+              }}</span>
             }
             <div class="account-menu__who">
               <p class="account-menu__name">{{ displayName() }}</p>
@@ -393,12 +397,20 @@ export class AppShellComponent implements OnInit {
   readonly topbarState = inject(TopbarStateService);
   readonly onboardingTooltip = inject(OnboardingTooltipService);
   protected readonly spaceRole = inject(SpaceRoleService);
+  private readonly primaryIntelligence = inject(PrimaryIntelligenceService);
   protected readonly appVersion = APP_VERSION;
   readonly user = this.supabase.currentUser;
   readonly tenantId = signal('');
   readonly spaceId = signal('');
   readonly spaces = signal<Space[]>([]);
   readonly tenants = signal<Tenant[]>([]);
+  /**
+   * Whether the current space has an engagement write-up (published or draft).
+   * Gates the Engagement nav item in the sidebar. Refreshed on space change and
+   * after any intelligence mutation (via `primaryIntelligence.changed`).
+   */
+  readonly hasEngagement = signal(false);
+  private engagementProbeToken = 0;
   readonly accountOpen = signal(false);
 
   // Create space dialog state
@@ -652,6 +664,37 @@ export class AppShellComponent implements OnInit {
         this.loadSpaces(tenantId);
       }
     });
+
+    // Keep the Engagement nav item in sync with whether the current space has a
+    // write-up. Re-runs on space change and after any intelligence mutation, so
+    // the item appears the moment an editor publishes a space write-up from the
+    // Intelligence Feed and disappears again if it is withdrawn.
+    effect(() => {
+      const spaceId = this.spaceId();
+      this.primaryIntelligence.changed();
+      this.refreshEngagementPresence(spaceId);
+    });
+  }
+
+  private async refreshEngagementPresence(spaceId: string): Promise<void> {
+    const token = ++this.engagementProbeToken;
+    if (!spaceId) {
+      this.hasEngagement.set(false);
+      return;
+    }
+    try {
+      const bundle = await this.primaryIntelligence.getSpaceIntelligence(spaceId);
+      // Ignore a stale probe if the space changed (or another probe started)
+      // while this request was in flight.
+      if (token !== this.engagementProbeToken) return;
+      // Presence mirrors the engagement page's own `hasIntelligence` rule: any
+      // brief (published or draft) means there is a write-up to show.
+      this.hasEngagement.set((bundle?.briefs.length ?? 0) > 0);
+    } catch {
+      if (token === this.engagementProbeToken) {
+        this.hasEngagement.set(false);
+      }
+    }
   }
 
   async ngOnInit(): Promise<void> {
@@ -716,7 +759,7 @@ export class AppShellComponent implements OnInit {
   onSectionClick(section: Section): void {
     const defaultRoutes: Record<Section, string> = {
       landscape: '',
-      intelligence: 'events',
+      intelligence: 'intelligence',
       profiles: 'profiles/companies',
       settings: 'settings/taxonomies',
       reference: 'help/taxonomies',
