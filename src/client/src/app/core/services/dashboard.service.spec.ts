@@ -198,6 +198,26 @@ describe('mapDashboardCompanies', () => {
     expect(trials.find((t: { id: string }) => t.id === 't2').ctgov_withdrawn_at).toBeNull();
   });
 
+  it('maps company and asset intelligence presence + headline through', () => {
+    const out = mapDashboardCompanies([
+      {
+        id: 'c1', name: 'Novo', logo_url: null,
+        has_intelligence: true, intelligence_headline: 'Co headline',
+        assets: [
+          {
+            id: 'a1', name: 'Sema',
+            has_intelligence: true, intelligence_headline: 'Asset headline',
+            indications: [], trials: [],
+          },
+        ],
+      },
+    ]);
+    expect(out[0].has_intelligence).toBe(true);
+    expect(out[0].intelligence_headline).toBe('Co headline');
+    expect(out[0].assets[0].has_intelligence).toBe(true);
+    expect(out[0].assets[0].intelligence_headline).toBe('Asset headline');
+  });
+
   it('threads has_intelligence and intelligence_headline from the RPC onto the trial', () => {
     const raw = [
       {

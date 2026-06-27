@@ -71,6 +71,8 @@ export class DashboardService {
 export function mapDashboardCompanies(data: any[]): any[] {
   return (data ?? []).map((c: any) => ({
     ...c,
+    has_intelligence: c.has_intelligence ?? false,
+    intelligence_headline: c.intelligence_headline ?? null,
     assets: (c.assets ?? []).map((p: any) => {
       const byTrialId = new Map<string, any>();
       for (const ind of p.indications ?? []) {
@@ -97,6 +99,8 @@ export function mapDashboardCompanies(data: any[]): any[] {
       const allTrials = indicationTrials.length > 0 ? indicationTrials : (p.trials ?? []);
       return {
         ...p,
+        has_intelligence: p.has_intelligence ?? false,
+        intelligence_headline: p.intelligence_headline ?? null,
         indications: (p.indications ?? []).filter((ind: any) => !(ind.is_unspecified === true || ind.id == null)),
         trials: allTrials.map((t: any) => ({
           ...t,

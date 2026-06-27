@@ -41,4 +41,8 @@ export interface Asset {
   mechanisms_of_action?: { id: string; name: string }[];
   routes_of_administration?: { id: string; name: string; abbreviation: string | null }[];
   companies?: { id: string; name: string; logo_url: string | null } | null;
+  // asset owns published primary intelligence; intelligence_headline carries the
+  // lead brief's headline (fallback most-recent published). See landscape multilevel intel.
+  has_intelligence?: boolean;
+  intelligence_headline?: string | null;
 }

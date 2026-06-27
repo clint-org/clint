@@ -52,6 +52,10 @@ export interface FlattenedTrial {
   isFirstInCompany: boolean;
   isFirstInAsset: boolean;
   isLastInCompany: boolean;
+  companyHasIntelligence: boolean;
+  companyIntelligenceHeadline: string | null;
+  assetHasIntelligence: boolean;
+  assetIntelligenceHeadline: string | null;
 }
 
 @Component({
@@ -202,6 +206,10 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
             isFirstInCompany,
             isFirstInAsset,
             isLastInCompany: false,
+            companyHasIntelligence: company.has_intelligence ?? false,
+            companyIntelligenceHeadline: company.intelligence_headline ?? null,
+            assetHasIntelligence: asset.has_intelligence ?? false,
+            assetIntelligenceHeadline: asset.intelligence_headline ?? null,
           });
           isFirstInCompany = false;
           isFirstInAsset = false;
