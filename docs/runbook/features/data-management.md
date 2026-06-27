@@ -14,7 +14,6 @@ A full CRUD interface for managing all data within a space:
 | Trials | Clinical studies with all metadata + CT.gov dimensions |
 | Trial Phases | Phase records with phase_type, start_date, end_date, color, label |
 | Trial Markers | Event markers with event_date, end_date, tooltip_text, is_projected |
-| Trial Notes | Free-text annotations on trials |
 | Marker Types | Custom marker types beyond the 10 system defaults (each assigned to a category) |
 | Indications | Disease indications with optional hierarchy (name, abbreviation, parent) |
 | Conditions | Granular disease conditions mapped to indications |
