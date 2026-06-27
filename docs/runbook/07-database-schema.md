@@ -977,4 +977,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260627120000_dashboard_data_drop_notes.sql`
 - `20260627130000_ctgov_trial_dates_markers.sql`
 - `20260627140000_ctgov_marker_robustness.sql`
+- `20260627150000_dashboard_unspecified_indication_node.sql`
 <!-- /AUTO-GEN:DRIFT -->
