@@ -17,6 +17,7 @@ import {
   markerLeafDisplay,
   eventLeafDisplay,
   pickMarkerType,
+  defaultSelections,
   type MarkerTypeLite,
 } from './review-grid.logic';
 
@@ -444,5 +445,77 @@ describe('eventLeafDisplay', () => {
       category: null,
       date: null,
     });
+  });
+});
+
+describe('defaultSelections (initial checked state for the review grid)', () => {
+  it('selects a new marker (state new -> selected)', () => {
+    const proposals = {
+      markers: [{ marker_type: 'Topline Data', match: { kind: 'new' } }],
+    };
+    const sel = defaultSelections(proposals);
+    expect(sel['markers_0']).toBe(true);
+  });
+
+  it('deselects a matched marker (state existing -> not selected by default)', () => {
+    const proposals = {
+      markers: [{ marker_type: 'Topline Data', match: { kind: 'existing', id: 'x' } }],
+    };
+    const sel = defaultSelections(proposals);
+    expect(sel['markers_0']).toBe(false);
+  });
+
+  it('deselects a matched event (state existing -> not selected by default)', () => {
+    const proposals = {
+      events: [{ category: 'Regulatory', match: { kind: 'existing', id: 'e1' } }],
+    };
+    const sel = defaultSelections(proposals);
+    expect(sel['events_0']).toBe(false);
+  });
+
+  it('keeps an existing company selected (parent entities are always selected)', () => {
+    const proposals = {
+      companies: [{ name: 'Novo Nordisk', match: { kind: 'existing', id: 'c1' } }],
+    };
+    const sel = defaultSelections(proposals);
+    expect(sel['companies_0']).toBe(true);
+  });
+
+  it('keeps an existing asset selected', () => {
+    const proposals = {
+      assets: [{ name: 'Semaglutide', match: { kind: 'existing', id: 'a1' } }],
+    };
+    const sel = defaultSelections(proposals);
+    expect(sel['assets_0']).toBe(true);
+  });
+
+  it('keeps an existing trial selected', () => {
+    const proposals = {
+      trials: [{ name: 'NCT001', match: { kind: 'existing', id: 't1' }, asset_ref: 0 }],
+    };
+    const sel = defaultSelections(proposals);
+    expect(sel['trials_0']).toBe(true);
+  });
+
+  it('produces per-index keys for multiple entities in one type', () => {
+    const proposals = {
+      markers: [
+        { marker_type: 'Topline Data', match: { kind: 'existing', id: 'x' } },
+        { marker_type: 'IND Filing', match: { kind: 'new' } },
+      ],
+    };
+    const sel = defaultSelections(proposals);
+    expect(sel['markers_0']).toBe(false);
+    expect(sel['markers_1']).toBe(true);
+  });
+
+  it('ignores non-array fields in the proposals bag', () => {
+    const proposals = {
+      source_summary: 'Test' as unknown as Record<string, unknown>[],
+      markers: [{ match: { kind: 'new' } }],
+    };
+    expect(() => defaultSelections(proposals)).not.toThrow();
+    const sel = defaultSelections(proposals);
+    expect(sel['markers_0']).toBe(true);
   });
 });

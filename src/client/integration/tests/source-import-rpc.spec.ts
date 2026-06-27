@@ -707,6 +707,115 @@ describe('commit_source_import', () => {
     createdSourceDocIds.push(result.source_doc_id as string);
     expect((result.warnings as string[]).includes('inventory_drift')).toBe(true);
   });
+
+  it('skips existing-matched markers and events; reports them in skipped', async () => {
+    // First commit: create baseline entities including one marker and one event.
+    const aiCallId1 = await openAndCloseAiCall();
+    const snap1 = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
+      p_space_id: p.org.spaceId,
+    });
+    const snapHash1 = expectOk(snap1).hash as string;
+    const r1 = await as(p, 'contributor').rpc('commit_source_import', {
+      p_space_id: p.org.spaceId,
+      p_ai_call_id: aiCallId1,
+      p_source_document: makeSourceDoc(),
+      p_proposal: makeProposal(),
+      p_inventory_snapshot_hash: snapHash1,
+    });
+    const result1 = expectOk(r1) as Record<string, unknown>;
+    createdSourceDocIds.push(result1.source_doc_id as string);
+    const created1 = result1.created as Record<string, string[]>;
+    const existingMarkerId = created1.markers[0];
+    const existingEventId = created1.events[0];
+
+    // Second commit: one marker and one event match existing entities; one of each is new.
+    const aiCallId2 = await openAndCloseAiCall();
+    const snap2 = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
+      p_space_id: p.org.spaceId,
+    });
+    const snapHash2 = expectOk(snap2).hash as string;
+    const newMarkerTitle = `New marker dedup ${uniqueSuffix()}`;
+    const newEventTitle = `New event dedup ${uniqueSuffix()}`;
+
+    const proposal2 = makeProposal({
+      markers: [
+        // Matched to existing: should be skipped, not inserted again.
+        {
+          marker_type: 'Topline Data',
+          title: 'Existing readout (skip me)',
+          event_date: '2026-06-01',
+          projection: 'company',
+          match: { kind: 'existing', id: existingMarkerId },
+        },
+        // New: should be created.
+        {
+          marker_type: 'Topline Data',
+          title: newMarkerTitle,
+          event_date: '2026-07-01',
+          projection: 'company',
+        },
+      ],
+      events: [
+        // Matched to existing: should be skipped.
+        {
+          category: 'Regulatory',
+          title: 'Existing filing (skip me)',
+          event_date: '2026-06-15',
+          priority: 'high',
+          tags: [],
+          anchor: { level: 'company', ref: 0 },
+          match: { kind: 'existing', id: existingEventId },
+        },
+        // New: should be created.
+        {
+          category: 'Regulatory',
+          title: newEventTitle,
+          event_date: '2026-08-01',
+          priority: 'low',
+          tags: [],
+          anchor: { level: 'company', ref: 0 },
+        },
+      ],
+    });
+
+    const r2 = await as(p, 'contributor').rpc('commit_source_import', {
+      p_space_id: p.org.spaceId,
+      p_ai_call_id: aiCallId2,
+      p_source_document: makeSourceDoc(),
+      p_proposal: proposal2,
+      p_inventory_snapshot_hash: snapHash2,
+    });
+    const result2 = expectOk(r2) as Record<string, unknown>;
+    createdSourceDocIds.push(result2.source_doc_id as string);
+
+    // skipped field lists the bypassed ids.
+    const skipped = result2['skipped'] as Record<string, string[]>;
+    expect(skipped, 'skipped field must exist in result').toBeTruthy();
+    expect(skipped.markers).toContain(existingMarkerId);
+    expect(skipped.events).toContain(existingEventId);
+
+    // created lists only the genuinely new rows.
+    const created2 = result2.created as Record<string, string[]>;
+    expect(created2.markers).toHaveLength(1);
+    expect(created2.events).toHaveLength(1);
+    expect(created2.markers).not.toContain(existingMarkerId);
+    expect(created2.events).not.toContain(existingEventId);
+
+    // DB check: no duplicate marker row.
+    const { count: markerCount } = await admin
+      .from('markers')
+      .select('*', { count: 'exact', head: true })
+      .eq('id', existingMarkerId);
+    expect(markerCount).toBe(1);
+
+    // Regression guard: the genuinely new marker was created with the correct title.
+    const { data: newMarkerRow } = await admin
+      .from('markers')
+      .select('title')
+      .eq('id', created2.markers[0])
+      .single();
+    expect(newMarkerRow!.title).toBe(newMarkerTitle);
+  });
 });
 
 // ---------------------------------------------------------------------------
