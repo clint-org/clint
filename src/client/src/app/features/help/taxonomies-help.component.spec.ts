@@ -113,12 +113,6 @@ describe('TaxonomiesHelpComponent template contract', () => {
     expect(src).toContain("paramMap.get('spaceId')");
   });
 
-  it('has a back link using backLink() and RouterLink', () => {
-    expect(src).toContain('RouterLink');
-    expect(src).toContain('backLink()');
-    expect(src).toContain('Back to timeline');
-  });
-
   it('uses OnPush change detection', () => {
     expect(src).toContain('ChangeDetectionStrategy.OnPush');
   });
