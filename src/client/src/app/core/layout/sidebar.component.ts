@@ -615,8 +615,10 @@ export class SidebarComponent {
 
   readonly activeSection = computed(() => {
     const route = this.activeRoute();
+    if (route === 'profiles/engagement') return 'intelligence';
     if (route.startsWith('profiles/')) return 'profiles';
     if (route.startsWith('settings/')) return 'settings';
+    if (route.startsWith('help/')) return 'reference';
     if (route === 'events' || route === 'intelligence' || route === 'materials') {
       return 'intelligence';
     }

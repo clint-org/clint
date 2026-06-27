@@ -38,4 +38,10 @@ describe('filterNavSections role gating', () => {
       expect(ids(filterNavSections(NAV_SECTIONS, canEdit, isOwner))).toContain('reference');
     }
   });
+
+  it('does not mutate the input sections', () => {
+    const before = NAV_SECTIONS.map((s) => s.items.length);
+    filterNavSections(NAV_SECTIONS, false, false);
+    expect(NAV_SECTIONS.map((s) => s.items.length)).toEqual(before);
+  });
 });
