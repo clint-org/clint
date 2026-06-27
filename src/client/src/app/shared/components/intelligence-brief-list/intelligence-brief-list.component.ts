@@ -54,6 +54,8 @@ export class IntelligenceBriefListComponent {
   readonly pin = output<string>();
   /** Emitted after a drag-reorder. Carries the full ordered anchor_id array. */
   readonly reorderTo = output<string[]>();
+  /** Emitted when the user activates Version history for a brief. Carries anchor_id. */
+  readonly viewHistory = output<string>();
 
   /** Which anchor_ids are currently expanded. */
   protected readonly expandedIds = signal<ReadonlySet<string>>(new Set());
@@ -94,6 +96,10 @@ export class IntelligenceBriefListComponent {
 
   protected onOpenClick(anchorId: string): void {
     this.open.emit(anchorId);
+  }
+
+  protected onViewHistoryClick(anchorId: string): void {
+    this.viewHistory.emit(anchorId);
   }
 
   /**

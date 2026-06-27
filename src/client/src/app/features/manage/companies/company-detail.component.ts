@@ -305,6 +305,17 @@ export class CompanyDetailComponent implements OnDestroy {
     }
   }
 
+  /** Load history for a non-lead brief when the user activates Version history. */
+  protected async onViewHistory(anchorId: string): Promise<void> {
+    const c = this.company();
+    if (!c) return;
+    try {
+      await this.historyHost.load(anchorId, 'company', c.id);
+    } catch {
+      // Silent: panel shows its own empty state on load failure.
+    }
+  }
+
   protected async onWithdrawConfirmed(reason: string): Promise<void> {
     const id = this.historyHost.payload().current?.id;
     if (!id) return;

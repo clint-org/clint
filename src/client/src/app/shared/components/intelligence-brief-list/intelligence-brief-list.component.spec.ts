@@ -40,12 +40,18 @@ describe('IntelligenceBriefListComponent contract', () => {
     expect(tsSrc).toContain("open = output<string>()");
     expect(tsSrc).toContain("pin = output<string>()");
     expect(tsSrc).toContain("reorderTo = output<string[]>()");
+    expect(tsSrc).toContain("viewHistory = output<string>()");
   });
 
   it('declares expandedIds as a signal and toggleExpand as a method', () => {
     expect(tsSrc).toContain('expandedIds');
     expect(tsSrc).toContain('signal<');
     expect(tsSrc).toContain('toggleExpand(');
+  });
+
+  it('declares onViewHistoryClick that emits viewHistory with the anchor_id', () => {
+    expect(tsSrc).toContain('onViewHistoryClick(anchorId: string)');
+    expect(tsSrc).toContain('this.viewHistory.emit(anchorId)');
   });
 
   it('uses CDK drag-drop for reorder', () => {
@@ -89,6 +95,12 @@ describe('IntelligenceBriefListComponent template contract', () => {
   it('uses brand utilities rather than teal or indigo', () => {
     expect(htmlSrc).not.toMatch(/\bteal-/);
     expect(htmlSrc).not.toMatch(/\bindigo-/);
+  });
+
+  it('renders a Version history button in the expanded body that calls onViewHistoryClick', () => {
+    expect(htmlSrc).toContain('Version history');
+    expect(htmlSrc).toContain('onViewHistoryClick(brief.anchor_id)');
+    expect(htmlSrc).toContain('aria-label="View version history for this entry"');
   });
 
   it('includes a pTooltip on the pin icon-only button', () => {

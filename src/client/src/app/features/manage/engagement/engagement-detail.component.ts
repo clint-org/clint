@@ -133,6 +133,17 @@ export class EngagementDetailComponent implements OnInit {
     }
   }
 
+  /** Load history for a non-lead brief when the user activates Version history. */
+  protected async onViewHistory(anchorId: string): Promise<void> {
+    const sid = this.spaceIdSig();
+    if (!sid) return;
+    try {
+      await this.historyHost.load(anchorId, 'space', sid);
+    } catch {
+      // Silent: panel shows its own empty state on load failure.
+    }
+  }
+
   protected async onWithdrawConfirmed(reason: string): Promise<void> {
     const id = this.historyHost.payload().current?.id;
     if (!id) return;

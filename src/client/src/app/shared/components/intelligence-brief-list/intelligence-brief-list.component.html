@@ -164,6 +164,17 @@
               </div>
             </div>
           }
+          <div class="mt-4 flex justify-end border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500 hover:bg-slate-50 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+              aria-label="View version history for this entry"
+              (click)="onViewHistoryClick(brief.anchor_id)"
+            >
+              <i class="fa-solid fa-clock-rotate-left text-[10px]" aria-hidden="true"></i>
+              Version history
+            </button>
+          </div>
         </div>
       }
     </li>

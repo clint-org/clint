@@ -554,6 +554,17 @@ export class TrialDetailComponent implements OnDestroy {
     }
   }
 
+  /** Load history for a non-lead brief when the user activates Version history. */
+  protected async onViewHistory(anchorId: string): Promise<void> {
+    const t = this.trial();
+    if (!t) return;
+    try {
+      await this.historyHost.load(anchorId, 'trial', t.id);
+    } catch {
+      // Silent: panel shows its own empty state on load failure.
+    }
+  }
+
   protected async onWithdrawConfirmed(reason: string): Promise<void> {
     const id = this.historyHost.payload().current?.id;
     if (!id) return;
