@@ -76,6 +76,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             styleClass="w-full"
             class="mt-1"
             [attr.aria-required]="true"
+            [disabled]="ctgovLocked()"
           />
         </div>
 
@@ -95,7 +96,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
             placeholder="Select marker type"
             styleClass="w-full"
             class="mt-1"
-            [disabled]="!categoryId()"
+            [disabled]="ctgovLocked() || !categoryId()"
             [attr.aria-required]="true"
           />
           @if (showCtgovAutoMarkerHint()) {
@@ -771,6 +772,7 @@ export class MarkerFormComponent implements OnInit {
   });
 
   async onSubmit(): Promise<void> {
+    if (this.ctgovLocked()) return;
     if (!this.canSubmit()) return;
 
     this.saving.set(true);
