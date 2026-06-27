@@ -41,6 +41,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_cleanup_orphan_marker` | markers | marker_assignments |
 | `_cleanup_polymorphic_refs` | material_links, primary_intelligence, primary_intelligence_links | - |
 | `_create_trial_date_markers` | marker_assignments, markers | - |
+| `_dashboard_trial_obj` | - | marker_assignments, marker_categories, marker_types, markers, primary_intelligence, trial_change_events |
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes, marker_types |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
@@ -77,8 +78,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -115,7 +116,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_assets, trial_conditions, trials |
 | `get_catalyst_detail` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_company_detail_with_intelligence` | - | companies |
-| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_assets, trial_change_events, trial_conditions, trials |
+| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, mechanisms_of_action, routes_of_administration, trial_assets, trial_conditions, trials |
 | `get_event_detail` | - | assets, companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_assets, trial_change_events, trials |
@@ -671,6 +672,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_cleanup_orphan_marker`
 - `_cleanup_polymorphic_refs`
 - `_create_trial_date_markers`
+- `_dashboard_trial_obj`
 - `_emit_events_from_marker_change`
 - `_enqueue_r2_delete`
 - `_guard_ctgov_locked_phase_fields`

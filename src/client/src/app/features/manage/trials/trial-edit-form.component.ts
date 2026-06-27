@@ -72,6 +72,11 @@ export class TrialEditFormComponent {
   readonly phaseTypeLocked = input<boolean>(false);
   readonly phaseStartLocked = input<boolean>(false);
   readonly phaseEndLocked = input<boolean>(false);
+  // Non-null when the underlying marker is approximate (e.g. "~Q3 '26"); the
+  // field then renders the period caption read-only instead of a day-precise
+  // picker, since precision is edited in the marker editor.
+  readonly phaseStartApproxLabel = input<string | null>(null);
+  readonly phaseEndApproxLabel = input<string | null>(null);
   readonly nameInvalid = input<boolean>(false);
   readonly nameBlur = output<void>();
 

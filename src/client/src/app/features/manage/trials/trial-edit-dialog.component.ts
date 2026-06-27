@@ -22,6 +22,7 @@ import { Marker } from '../../../core/models/marker.model';
 import {
   TRIAL_END_TITLE,
   TRIAL_START_TITLE,
+  approxDateLabel,
   isCtgovOwnedMarker,
   planTrialDateMarker,
   selectTrialEndMarker,
@@ -104,6 +105,13 @@ export class TrialEditDialogComponent {
   readonly phaseStartLocked = computed(() => isCtgovOwnedMarker(this.startMarker()));
   readonly phaseEndLocked = computed(() => isCtgovOwnedMarker(this.endMarker()));
 
+  // When the underlying marker is approximate (month/quarter/half/year) we cannot
+  // honestly show its midpoint date in a day-precise picker, so the field renders
+  // the period caption read-only (e.g. "~Q3 '26"). Precision is edited in the
+  // marker editor, which has the period controls. Null for exact / no marker.
+  readonly phaseStartApproxLabel = computed(() => approxDateLabel(this.startMarker()));
+  readonly phaseEndApproxLabel = computed(() => approxDateLabel(this.endMarker()));
+
   private readonly ALL_PHASE_OPTIONS: { id: string; name: string }[] = [
     { id: 'PRECLIN', name: 'Preclinical' },
     { id: 'P1', name: 'Phase 1' },
@@ -136,6 +144,8 @@ export class TrialEditDialogComponent {
     const assetsValid = ids.length > 0 && !!primary && ids.includes(primary);
     return this.name().trim().length > 0 && assetsValid && idValid;
   });
+
+  protected readonly showNoIndicationNote = computed(() => this.indicationIds().length === 0);
 
   constructor() {
     // Seed form from the input trial when the dialog opens. Re-seeds on every

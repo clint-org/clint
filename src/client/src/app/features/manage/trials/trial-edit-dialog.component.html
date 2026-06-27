@@ -23,7 +23,16 @@
       [phaseTypeLocked]="phaseTypeLocked()"
       [phaseStartLocked]="phaseStartLocked()"
       [phaseEndLocked]="phaseEndLocked()"
+      [phaseStartApproxLabel]="phaseStartApproxLabel()"
+      [phaseEndApproxLabel]="phaseEndApproxLabel()"
     />
+
+    @if (showNoIndicationNote()) {
+      <p aria-live="polite" class="mb-3 text-[11px] leading-snug text-amber-700">
+        No indication set. This trial will appear under <span class="italic">Unspecified</span>
+        until you classify it.
+      </p>
+    }
 
     <app-form-actions
       submitLabel="Save"
