@@ -73,29 +73,136 @@ const MARKER_DEFINITIONS: Record<string, string> = {
           <p class="mt-1 max-w-xl text-sm text-slate-500">
             Markers show the events {{ analystSubject() }} and executives scan for on the timeline.
             Read each marker by its shape (event family), color (editorial role), inner mark
-            (variant of that shape), and fill style (actual or projected). The list below shows the
+            (variant of that shape), and fill style (actual or projected). The list shows the
             marker types set up for this space.
           </p>
         </header>
 
-        <div class="lg:grid lg:grid-cols-[19rem_42rem] lg:items-start lg:gap-10">
-          <aside class="lg:sticky lg:top-6">
-            <section class="mb-8 lg:mb-0">
+        <div class="lg:grid lg:grid-cols-2 lg:items-start lg:gap-10">
+          <section class="mb-8 lg:mb-0">
+            <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Marker types in this space
+            </h2>
+            @if (loading()) {
+              <app-loader [size]="20" label="Loading marker types" />
+            } @else if (groupedMarkerTypes().length === 0) {
+              <p class="text-sm text-slate-500">No marker types configured.</p>
+            } @else {
+              <div class="border border-slate-200 bg-white">
+                @for (group of groupedMarkerTypes(); track group.label) {
+                  <div class="border-b border-slate-100 px-5 py-4 last:border-b-0">
+                    <p
+                      class="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                    >
+                      {{ group.label }}
+                    </p>
+                    <ul class="space-y-1.5">
+                      @for (mt of group.types; track mt.id) {
+                        <li class="flex items-start gap-3 text-sm text-slate-700">
+                          <span class="mt-px shrink-0">
+                            @if (mt.shape === 'dashed-line') {
+                              <svg width="14" height="14" aria-hidden="true">
+                                <line
+                                  x1="7"
+                                  y1="2"
+                                  x2="7"
+                                  y2="12"
+                                  [attr.stroke]="mt.color"
+                                  stroke-width="1.5"
+                                  stroke-dasharray="3,2"
+                                  stroke-linecap="round"
+                                />
+                              </svg>
+                            } @else {
+                              <svg width="14" height="14" aria-hidden="true">
+                                @switch (mt.shape) {
+                                  @case ('circle') {
+                                    <g
+                                      app-circle-icon
+                                      [size]="14"
+                                      [color]="mt.color"
+                                      fillStyle="filled"
+                                      [innerMark]="mt.inner_mark"
+                                    />
+                                  }
+                                  @case ('diamond') {
+                                    <g
+                                      app-diamond-icon
+                                      [size]="14"
+                                      [color]="mt.color"
+                                      fillStyle="filled"
+                                      [innerMark]="mt.inner_mark"
+                                    />
+                                  }
+                                  @case ('flag') {
+                                    <g
+                                      app-flag-icon
+                                      [size]="14"
+                                      [color]="mt.color"
+                                      fillStyle="filled"
+                                    />
+                                  }
+                                  @case ('triangle') {
+                                    <g
+                                      app-triangle-icon
+                                      [size]="14"
+                                      [color]="mt.color"
+                                      fillStyle="filled"
+                                    />
+                                  }
+                                  @case ('square') {
+                                    <g
+                                      app-square-icon
+                                      [size]="14"
+                                      [color]="mt.color"
+                                      fillStyle="filled"
+                                      [innerMark]="mt.inner_mark"
+                                    />
+                                  }
+                                }
+                              </svg>
+                            }
+                          </span>
+                          <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <span class="font-medium text-slate-900">{{ mt.name }}</span>
+                              <span class="text-xs uppercase tracking-wide text-slate-400">
+                                {{ mt.shape
+                                }}{{ mt.inner_mark !== 'none' ? ' / ' + mt.inner_mark : '' }}
+                              </span>
+                            </div>
+                            @if (definitionFor(mt.name); as def) {
+                              <p class="mt-0.5 text-xs leading-snug text-slate-500">{{ def }}</p>
+                            }
+                          </div>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+
+          <div>
+            <section class="mb-8">
               <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                 Editorial color rule
               </h2>
               <div class="border border-slate-200 bg-white">
                 @for (rule of colorRules; track rule.label) {
-                  <div class="border-b border-slate-100 px-4 py-3 last:border-b-0">
+                  <div
+                    class="grid grid-cols-[8rem_1fr] gap-4 border-b border-slate-100 px-5 py-4 last:border-b-0"
+                  >
                     <div class="flex items-center gap-2 text-sm font-semibold text-slate-900">
                       <span
-                        class="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                        class="inline-block h-3 w-3 rounded-full"
                         [style.background-color]="rule.color"
                         aria-hidden="true"
                       ></span>
                       {{ rule.label }}
                     </div>
-                    <p class="mt-1 text-xs leading-snug text-slate-600">{{ rule.description }}</p>
+                    <div class="text-sm text-slate-600">{{ rule.description }}</div>
                   </div>
                 }
               </div>
@@ -104,9 +211,7 @@ const MARKER_DEFINITIONS: Record<string, string> = {
                 space use analyst-chosen colors and carry no fixed color convention.
               </p>
             </section>
-          </aside>
 
-          <div>
         <section class="mb-8">
           <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
             Projection convention
@@ -175,111 +280,6 @@ const MARKER_DEFINITIONS: Record<string, string> = {
               these markers are the bar.
             </p>
           </div>
-        </section>
-
-        <section class="mb-8">
-          <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Marker types in this space
-          </h2>
-          @if (loading()) {
-            <app-loader [size]="20" label="Loading marker types" />
-          } @else if (groupedMarkerTypes().length === 0) {
-            <p class="text-sm text-slate-500">No marker types configured.</p>
-          } @else {
-            <div class="border border-slate-200 bg-white">
-              @for (group of groupedMarkerTypes(); track group.label) {
-                <div class="border-b border-slate-100 px-5 py-4 last:border-b-0">
-                  <p
-                    class="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
-                  >
-                    {{ group.label }}
-                  </p>
-                  <ul class="space-y-1.5">
-                    @for (mt of group.types; track mt.id) {
-                      <li class="flex items-start gap-3 text-sm text-slate-700">
-                        <span class="mt-px shrink-0">
-                        @if (mt.shape === 'dashed-line') {
-                          <svg width="14" height="14" aria-hidden="true">
-                            <line
-                              x1="7"
-                              y1="2"
-                              x2="7"
-                              y2="12"
-                              [attr.stroke]="mt.color"
-                              stroke-width="1.5"
-                              stroke-dasharray="3,2"
-                              stroke-linecap="round"
-                            />
-                          </svg>
-                        } @else {
-                          <svg width="14" height="14" aria-hidden="true">
-                            @switch (mt.shape) {
-                              @case ('circle') {
-                                <g
-                                  app-circle-icon
-                                  [size]="14"
-                                  [color]="mt.color"
-                                  fillStyle="filled"
-                                  [innerMark]="mt.inner_mark"
-                                />
-                              }
-                              @case ('diamond') {
-                                <g
-                                  app-diamond-icon
-                                  [size]="14"
-                                  [color]="mt.color"
-                                  fillStyle="filled"
-                                  [innerMark]="mt.inner_mark"
-                                />
-                              }
-                              @case ('flag') {
-                                <g
-                                  app-flag-icon
-                                  [size]="14"
-                                  [color]="mt.color"
-                                  fillStyle="filled"
-                                />
-                              }
-                              @case ('triangle') {
-                                <g
-                                  app-triangle-icon
-                                  [size]="14"
-                                  [color]="mt.color"
-                                  fillStyle="filled"
-                                />
-                              }
-                              @case ('square') {
-                                <g
-                                  app-square-icon
-                                  [size]="14"
-                                  [color]="mt.color"
-                                  fillStyle="filled"
-                                  [innerMark]="mt.inner_mark"
-                                />
-                              }
-                            }
-                          </svg>
-                        }
-                        </span>
-                        <div class="min-w-0">
-                          <div class="flex flex-wrap items-center gap-2">
-                            <span class="font-medium text-slate-900">{{ mt.name }}</span>
-                            <span class="text-xs uppercase tracking-wide text-slate-400">
-                              {{ mt.shape
-                              }}{{ mt.inner_mark !== 'none' ? ' / ' + mt.inner_mark : '' }}
-                            </span>
-                          </div>
-                          @if (definitionFor(mt.name); as def) {
-                            <p class="mt-0.5 text-xs leading-snug text-slate-500">{{ def }}</p>
-                          }
-                        </div>
-                      </li>
-                    }
-                  </ul>
-                </div>
-              }
-            </div>
-          }
         </section>
 
         <section class="mb-8">

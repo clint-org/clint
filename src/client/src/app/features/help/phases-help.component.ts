@@ -23,32 +23,32 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
           </p>
         </header>
 
-        <div class="lg:grid lg:grid-cols-[19rem_42rem] lg:items-start lg:gap-10">
-          <aside class="lg:sticky lg:top-6">
-            <section class="mb-8 lg:mb-0">
-              <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Phase progression
-              </h2>
-              <div class="border border-slate-200 bg-white">
-                @for (phase of phases(); track phase.key) {
-                  <div class="border-b border-slate-100 px-4 py-3 last:border-b-0">
-                    <div class="flex items-center gap-2.5">
-                      <span
-                        class="inline-block h-3 w-8 shrink-0 rounded-sm"
-                        [style.background-color]="phase.color"
-                        aria-hidden="true"
-                      ></span>
-                      <span class="text-sm font-semibold text-slate-900">{{ phase.label }}</span>
-                      <span class="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400">{{
-                        phase.shortLabel
-                      }}</span>
-                    </div>
-                    <p class="mt-1 text-xs leading-snug text-slate-600">{{ phase.description }}</p>
+        <div class="lg:grid lg:grid-cols-2 lg:items-start lg:gap-10">
+          <section class="mb-8 lg:mb-0">
+            <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Phase progression
+            </h2>
+            <div class="border border-slate-200 bg-white">
+              @for (phase of phases(); track phase.key) {
+                <div
+                  class="grid grid-cols-[14rem_1fr] items-start gap-4 border-b border-slate-100 px-5 py-4 last:border-b-0"
+                >
+                  <div class="flex items-center gap-2.5">
+                    <span
+                      class="inline-block h-3 w-8 shrink-0 rounded-sm"
+                      [style.background-color]="phase.color"
+                      aria-hidden="true"
+                    ></span>
+                    <span class="text-sm font-semibold text-slate-900">{{ phase.label }}</span>
+                    <span class="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400">{{
+                      phase.shortLabel
+                    }}</span>
                   </div>
-                }
-              </div>
-            </section>
-          </aside>
+                  <div class="text-sm text-slate-600">{{ phase.description }}</div>
+                </div>
+              }
+            </div>
+          </section>
 
           <div>
         <section class="mb-8">
