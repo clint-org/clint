@@ -53,15 +53,11 @@
               >Lead</span
             >
             @if (brief.published) {
-              <span
-                class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-[0.06em] text-brand-700"
-              >
-                <span
-                  class="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-brand-600 align-middle"
-                  aria-hidden="true"
-                ></span
-                >Published
+              <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-[0.06em] text-brand-700">
+                <span class="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-brand-600 align-middle" aria-hidden="true"></span>Published
               </span>
+            } @else if (brief.draft) {
+              <span class="shrink-0 rounded-sm border border-slate-200 bg-slate-100 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-600">Draft</span>
             }
             @if (draftPendingFor(brief)) {
               <span

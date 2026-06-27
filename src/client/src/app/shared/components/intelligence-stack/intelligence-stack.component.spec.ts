@@ -30,8 +30,9 @@ describe('IntelligenceStackComponent contract', () => {
     expect(tsSrc).toContain('this.reorderTo.emit(');
   });
 
-  it('emits requestHistory at most once per anchor (lazy load guard)', () => {
-    expect(tsSrc).toContain('requestedHistoryIds');
+  it('lazily requests history via a reconciling effect that survives a cache clear', () => {
+    expect(tsSrc).toContain('inFlight');
+    expect(tsSrc).toContain('expandedAnchorIds');
     expect(tsSrc).toContain('this.requestHistory.emit(');
   });
 });
@@ -47,6 +48,7 @@ describe('IntelligenceStackComponent template contract', () => {
   it('shows the Published/Draft state and a Draft pending pill on the lead', () => {
     expect(htmlSrc).toContain('Published');
     expect(htmlSrc).toContain('Draft pending');
+    expect(htmlSrc).toContain('brief.draft');
   });
 
   it('gates pin/edit/menu behind canManage', () => {

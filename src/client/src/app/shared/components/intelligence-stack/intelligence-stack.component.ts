@@ -80,8 +80,8 @@ export class IntelligenceStackComponent {
   /** Which cards are expanded. Lead (index 0) is expanded by default. */
   protected readonly expandedIds = signal<ReadonlySet<string>>(new Set());
 
-  /** Cards whose history has already been requested (lazy-load guard). */
-  private readonly requestedHistoryIds = new Set<string>();
+  /** Anchors with a history request emitted but not yet fulfilled (an in-flight guard). */
+  private readonly inFlight = new Set<string>();
 
   protected readonly leadAnchorId = computed<string | null>(
     () => this.ordered().find((b) => b.is_lead)?.anchor_id ?? this.ordered()[0]?.anchor_id ?? null,
@@ -127,10 +127,29 @@ export class IntelligenceStackComponent {
   /** Anchors the user has explicitly toggled (so default-open can be undone). */
   private readonly touchedIds = signal<ReadonlySet<string>>(new Set());
 
+  /** The set of anchor ids whose cards are currently expanded (lead is open by default until toggled). */
+  protected readonly expandedAnchorIds = computed<ReadonlySet<string>>(() => {
+    const ids = new Set(this.expandedIds());
+    const leadId = this.leadAnchorId();
+    if (leadId && !this.touchedIds().has(leadId)) ids.add(leadId);
+    return ids;
+  });
+
   constructor() {
+    // Lazily request history for every expanded card that lacks it, and re-request
+    // after the parent clears its histories cache on a mutation. One reconciling
+    // effect so a cleared cache can never strand an open card on the loading state.
     effect(() => {
-      const id = this.leadAnchorId();
-      if (id) this.ensureHistory(id);
+      const hist = this.histories();
+      for (const id of [...this.inFlight]) {
+        if (hist[id]) this.inFlight.delete(id);
+      }
+      for (const id of this.expandedAnchorIds()) {
+        if (!hist[id] && !this.inFlight.has(id)) {
+          this.inFlight.add(id);
+          this.requestHistory.emit(id);
+        }
+      }
     });
   }
 
@@ -139,9 +158,7 @@ export class IntelligenceStackComponent {
   }
 
   protected isExpanded(anchorId: string): boolean {
-    // The lead is open by default until the user explicitly collapses it.
-    if (anchorId === this.leadAnchorId() && !this.touchedIds().has(anchorId)) return true;
-    return this.expandedIds().has(anchorId);
+    return this.expandedAnchorIds().has(anchorId);
   }
 
   protected toggleExpand(anchorId: string): void {
@@ -153,13 +170,7 @@ export class IntelligenceStackComponent {
       else next.add(anchorId);
       return next;
     });
-    if (!currentlyExpanded) this.ensureHistory(anchorId);
-  }
-
-  private ensureHistory(anchorId: string): void {
-    if (this.requestedHistoryIds.has(anchorId)) return;
-    this.requestedHistoryIds.add(anchorId);
-    this.requestHistory.emit(anchorId);
+    if (currentlyExpanded) this.inFlight.delete(anchorId);
   }
 
   protected onDrop(event: CdkDragDrop<PrimaryIntelligenceBrief[]>): void {
