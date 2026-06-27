@@ -272,6 +272,24 @@ function looksLikeUrl(s: string): boolean {
                 <p-message severity="error" [closable]="false">{{ extractError() }}</p-message>
               }
 
+              @if (duplicateInfo()) {
+                <p-message severity="warn" [closable]="false">{{ duplicateInfo() }}</p-message>
+                <div class="flex gap-2">
+                  <p-button
+                    label="Continue anyway"
+                    size="small"
+                    [outlined]="true"
+                    (onClick)="extractFromText(true)"
+                  />
+                  <p-button
+                    label="Cancel"
+                    size="small"
+                    [text]="true"
+                    (onClick)="clearDuplicate()"
+                  />
+                </div>
+              }
+
               @if (rateLimitCountdown() > 0) {
                 <span class="text-sm text-slate-500">Try again in {{ rateLimitCountdown() }}s</span>
               }
@@ -354,6 +372,7 @@ export class ImportPageComponent implements OnInit, OnDestroy {
   protected readonly canExtractText = computed(() => {
     if (this.extracting()) return false;
     if (this.rateLimitCountdown() > 0) return false;
+    if (this.duplicateInfo()) return false;
     return this.textInput().trim().length > 50;
   });
 
@@ -400,8 +419,8 @@ export class ImportPageComponent implements OnInit, OnDestroy {
     await this.extract('url', allowDuplicate);
   }
 
-  protected async extractFromText(): Promise<void> {
-    await this.extract('text');
+  protected async extractFromText(allowDuplicate = false): Promise<void> {
+    await this.extract('text', allowDuplicate);
   }
 
   async refreshAiStatus(): Promise<void> {
