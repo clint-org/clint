@@ -123,18 +123,6 @@ import { LandscapeStateService } from './landscape-state.service';
             />
             <label for="strip-col-indication" class="cursor-pointer">Indication</label>
           </div>
-          <div
-            class="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer select-none"
-          >
-            <p-checkbox
-              [ngModel]="state.showNotesColumn()"
-              (ngModelChange)="state.showNotesColumn.set($event)"
-              [binary]="true"
-              inputId="strip-col-notes"
-              size="small"
-            />
-            <label for="strip-col-notes" class="cursor-pointer">Notes</label>
-          </div>
         </div>
       </div>
     </div>

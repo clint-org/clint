@@ -95,7 +95,6 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - trials
     - markers
     - marker_types
-    - trial_notes
   related:
     - timeline-zoom
     - timeline-filtering
@@ -129,19 +128,6 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   related:
     - timeline-grid
     - timeline-legend
-  user_facing: true
-  role: viewer
-  status: active
-- id: timeline-trial-notes
-  summary: Free-text trial annotations rendered inline on timeline rows.
-  routes:
-    - /t/:tenantId/s/:spaceId/timeline
-  rpcs:
-    - get_dashboard_data
-  tables:
-    - trial_notes
-  related:
-    - timeline-grid
   user_facing: true
   role: viewer
   status: active
