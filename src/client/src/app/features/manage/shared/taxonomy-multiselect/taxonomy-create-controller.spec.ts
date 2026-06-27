@@ -80,13 +80,27 @@ describe('footer state', () => {
     expect(controller.footer().near).toEqual([]);
   });
 
-  it('shows a near suggestion alongside the create row', () => {
+  it('shows a near suggestion the multiselect filter would miss (hyphen bridged)', () => {
     const { controller } = setup({
       createFn: async () => opt('x', 'x'),
       options: [opt('1', 'GLP-1 receptor agonist')],
     });
-    controller.setFilter('GLP-1');
+    // "glp1" is not a raw substring of "GLP-1 receptor agonist" (the hyphen),
+    // so the multiselect would not list it -- the Similar nudge adds value.
+    controller.setFilter('GLP1 receptor');
     expect(controller.footer().near.map((o) => o.name)).toEqual(['GLP-1 receptor agonist']);
+    expect(controller.footer().showCreate).toBe(true);
+  });
+
+  it('omits a near suggestion the multiselect already lists (raw substring)', () => {
+    const { controller } = setup({
+      createFn: async () => opt('x', 'x'),
+      options: [opt('1', 'New MOA')],
+    });
+    // "New MOA" contains "moa" (case-insensitive) so the multiselect already
+    // shows it as a selectable row -- repeating it under Similar is redundant.
+    controller.setFilter('moa');
+    expect(controller.footer().near).toEqual([]);
     expect(controller.footer().showCreate).toBe(true);
   });
 });

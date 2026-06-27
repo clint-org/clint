@@ -54,7 +54,14 @@ export function createTaxonomyController(deps: TaxonomyControllerDeps): Taxonomy
 
     const match = classify(label, deps.options());
     if (match.kind === 'exact') return HIDDEN;
-    return { near: match.near, showCreate: true, createLabel: label };
+
+    // Drop near matches the wrapped multiselect already lists via its own
+    // case-insensitive substring filter -- surfacing them again under "Similar"
+    // is redundant. Only typo / hyphen-spacing matches (which the substring
+    // filter misses but normalization/Levenshtein catches) remain useful.
+    const lower = label.toLowerCase();
+    const near = match.near.filter((option) => !option.name.toLowerCase().includes(lower));
+    return { near, showCreate: true, createLabel: label };
   });
 
   function addId(id: string): void {
