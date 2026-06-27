@@ -762,3 +762,70 @@ describe('landscape presence: has_intelligence + headline + count (multi-anchor)
     expect(trialNode.intelligence_count).toBe(2);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 8: RLS on primary_intelligence_anchors (direct table access)
+//
+// The policy "primary_intelligence_anchors read" (20260627130000) allows:
+//   - agency members: all anchors in their space
+//   - space members: only anchors with at least one published version
+// So a viewer (space member, non-agency) cannot see a draft-only anchor,
+// and a non-member sees nothing at all.
+//
+// The list_intelligence_for_entity test (Task 4, above) already covers viewer
+// visibility via the RPC. These tests pin the RLS policy on the TABLE directly,
+// which is distinct from the DEFINER RPC path.
+// ---------------------------------------------------------------------------
+
+describe('RLS: primary_intelligence_anchors (direct table)', () => {
+  it('viewer cannot see a draft-only anchor; non-member sees nothing', async () => {
+    const trialId = await createTrial();
+
+    // Agency creates a draft-only brief (no published version).
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'draft',
+      headline: 'Hidden draft anchor',
+      changeNote: null,
+    });
+
+    // viewer (space member, non-agency): the RLS policy requires a published
+    // version on the anchor, so a draft-only anchor is invisible.
+    const viewerAnchors = await as(p, 'reader')
+      .from('primary_intelligence_anchors')
+      .select('id')
+      .eq('entity_id', trialId);
+    expect(viewerAnchors.data ?? []).toHaveLength(0);
+
+    // non-member: no space access at all, so nothing is visible.
+    const strangerAnchors = await as(p, 'no_memberships')
+      .from('primary_intelligence_anchors')
+      .select('id')
+      .eq('entity_id', trialId);
+    expect(strangerAnchors.data ?? []).toHaveLength(0);
+  });
+
+  it('viewer can see an anchor once it has a published version', async () => {
+    const trialId = await createTrial();
+
+    await rpcUpsert({
+      anchorId: null,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'published',
+      headline: 'Visible to viewer',
+      changeNote: null,
+    });
+
+    const viewerAnchors = await as(p, 'reader')
+      .from('primary_intelligence_anchors')
+      .select('id, is_lead')
+      .eq('entity_id', trialId);
+    expect(viewerAnchors.data ?? []).toHaveLength(1);
+    expect(viewerAnchors.data![0].is_lead).toBe(true);
+  });
+});

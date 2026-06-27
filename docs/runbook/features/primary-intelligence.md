@@ -9,7 +9,7 @@ Stout's primary analytical work product, attached to entities in an engagement. 
 
 **UI terminology.** The deliverable is labeled **"Primary intelligence"** in section/page headings, empty states, and the authoring drawer, and shortened to **"Intelligence"** in compact surfaces (nav, buttons, toasts, badges, tight tooltips). A single instance / count is an **"entry"/"entries"** ("intelligence" is a mass noun). The two body sections inside an entry are **"Summary"** (`summary_md`) and **"Implications"** (`implications_md`). The earlier "Analysis" label and the UI noun "read" are retired (the auto-generated landscape narration strip, formerly "Summary", is now labeled **"At a glance"** so it no longer collides with the Summary body section). Internal symbols keep their names (`primary_intelligence`, `summary_md`, `competitive-read`).
 
-**Data model.** Single polymorphic table `primary_intelligence` keyed on `(space_id, entity_type, entity_id)`. The DB constraint still permits `entity_type in ('trial', 'marker', 'company', 'product', 'space')`, but the frontend only writes `trial | company | product | space` -- markers are no longer first-class PI owners (the marker description carries the catalyst-level write-up; trial/asset PI carries the competitive read). Each row carries `state in ('draft','published','archived','withdrawn')`, a per-anchor `version_number` stamped on entry into `published`, and four lifecycle columns: `publish_note` + `published_by` set at publish, `archived_at` set when a newer version publishes over this one, `withdraw_note` set when the row is withdrawn. A unique partial index on `state = 'published'` enforces one published row per anchor; drafts can co-exist. One child table: `primary_intelligence_links` (cross-entity relations with `relationship_type` and optional gloss; marker remains valid as a link target).
+**Data model.** Two-table anchor-version model. `primary_intelligence_anchors` owns the entity binding (`entity_type`, `entity_id`, polymorphic, no FK), the pinned-lead flag (`is_lead`), and manual display order. One entity can now own many briefs (anchors); the first becomes the lead and additional sibling anchors carry `is_lead=false`. `primary_intelligence` rows are versions of an anchor (referenced via `anchor_id`); `entity_type`/`entity_id` are NOT on version rows. Each version carries `state in ('draft','published','archived','withdrawn')`, a per-anchor `version_number` stamped on entry into `published`, and four lifecycle columns: `publish_note` + `published_by` set at publish, `archived_at` set when a newer version publishes over this one, `withdraw_note` set when the row is withdrawn. A unique partial index on `state = 'published'` enforces one published row per anchor; drafts can co-exist. One child table: `primary_intelligence_links` (cross-entity relations with `relationship_type` and optional gloss; marker remains valid as a link target, but marker rows are not anchor owners).
 
 **RLS.** Published reads are visible to anyone with `has_space_access(space_id)`. Drafts are visible only to agency members of the tenant's agency, gated by the `is_agency_member_of_space(space_id)` helper added in this branch (joins space → tenant → agency, calls existing `is_agency_member`).
 
@@ -36,13 +36,14 @@ Stout's primary analytical work product, attached to entities in an engagement. 
 
 ```yaml
 - id: primary-intelligence-data-model
-  summary: Polymorphic primary_intelligence table keyed on space, entity_type, entity_id with draft, published, archived, withdrawn lifecycle and per-anchor version_number.
+  summary: Anchor-version model; primary_intelligence_anchors owns entity binding and lead/order; primary_intelligence rows are versions scoped to an anchor with draft, published, archived, withdrawn lifecycle and per-anchor version_number.
   routes: []
   rpcs:
     - guard_primary_intelligence_state
     - assign_primary_intelligence_version
   tables:
     - primary_intelligence
+    - primary_intelligence_anchors
     - primary_intelligence_links
   related: []
   user_facing: false
@@ -63,14 +64,14 @@ Stout's primary analytical work product, attached to entities in an engagement. 
   role: viewer
   status: active
 - id: primary-intelligence-upsert
-  summary: Agency-only authoring RPC handles draft, publish, archive-prior-on-publish, and wholesale link replacement.
+  summary: Agency-or-editor authoring RPC handles draft, publish, archive-prior-on-publish, and wholesale link replacement. Creates or reuses an anchor for the entity; a new anchor is created when p_anchor_id is null.
   routes: []
   rpcs:
     - upsert_primary_intelligence
-    - build_intelligence_payload
     - validate_material_links_payload
   tables:
     - primary_intelligence
+    - primary_intelligence_anchors
     - primary_intelligence_links
   related:
     - primary-intelligence-drawer
@@ -78,7 +79,7 @@ Stout's primary analytical work product, attached to entities in an engagement. 
   role: agency
   status: active
 - id: primary-intelligence-entity-bundle
-  summary: Per-entity single-round-trip bundles (published, draft, referenced_in) for trial, company, product, and space detail pages. Marker-level PI is no longer surfaced; the marker description carries the catalyst-level write-up and trial/asset PI carries the competitive read.
+  summary: Per-entity single-round-trip bundles (briefs[], referenced_in) for trial, company, product, and space detail pages. Marker-level PI is not surfaced; the marker description carries the catalyst-level write-up and trial/asset PI carries the competitive read.
   routes:
     - /t/:tenantId/s/:spaceId/manage/trials/:id
     - /t/:tenantId/s/:spaceId/manage/companies/:id
@@ -87,11 +88,14 @@ Stout's primary analytical work product, attached to entities in an engagement. 
     - get_trial_detail_with_intelligence
     - get_company_detail_with_intelligence
     - get_asset_detail_with_intelligence
-    - get_marker_detail_with_intelligence
     - get_space_intelligence
     - referenced_in_entity
+    - list_intelligence_for_entity
+    - build_intelligence_payload_for_row
+    - build_intelligence_payload
   tables:
     - primary_intelligence
+    - primary_intelligence_anchors
     - primary_intelligence_links
   related: []
   user_facing: true
@@ -135,6 +139,7 @@ Stout's primary analytical work product, attached to entities in an engagement. 
     - get_primary_intelligence_history
   tables:
     - primary_intelligence
+    - primary_intelligence_anchors
   related:
     - primary-intelligence-block
   user_facing: true
@@ -181,14 +186,29 @@ Stout's primary analytical work product, attached to entities in an engagement. 
   user_facing: true
   role: viewer
   status: active
+- id: primary-intelligence-ordering
+  summary: Agency-only RPCs to pin the lead brief for an entity and manually reorder sibling anchors.
+  routes: []
+  rpcs:
+    - set_intelligence_lead
+    - reorder_intelligence
+  tables:
+    - primary_intelligence_anchors
+  related:
+    - primary-intelligence-entity-bundle
+  user_facing: false
+  role: agency
+  status: active
 - id: primary-intelligence-withdraw
-  summary: Withdraw a published row with optional withdraw_note, rendered as a withdraw event in the history timeline.
+  summary: Withdraw a published row with optional withdraw_note, rendered as a withdraw event in the history timeline. Auto-promotes the next published anchor as lead when the withdrawn row belongs to the current lead.
   routes: []
   rpcs:
     - withdraw_primary_intelligence
     - purge_primary_intelligence
+    - _promote_next_intelligence_lead
   tables:
     - primary_intelligence
+    - primary_intelligence_anchors
   related:
     - primary-intelligence-history
   user_facing: true
