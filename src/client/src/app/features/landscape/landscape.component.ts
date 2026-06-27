@@ -316,15 +316,6 @@ export class LandscapeComponent implements OnInit {
     ]);
   }
 
-  onOpenInTimeline(payload: { assetId: string; therapeuticAreaId: string }): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
-      queryParams: {
-        assetIds: payload.assetId,
-        indicationIds: payload.therapeuticAreaId,
-      },
-    });
-  }
-
   onOpenMarker(markerId: string): void {
     const product = this.selectedAsset();
     const queryParams: Record<string, string> = { markerId };

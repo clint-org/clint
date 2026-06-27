@@ -64,7 +64,7 @@ const MARKER_DEFINITIONS: Record<string, string> = {
   ],
   template: `
     <app-manage-page-shell>
-      <div class="max-w-3xl">
+      <div class="max-w-6xl">
         <header class="mb-6">
           <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Help</p>
           <h1 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">
@@ -78,33 +78,35 @@ const MARKER_DEFINITIONS: Record<string, string> = {
           </p>
         </header>
 
-        <section class="mb-8">
-          <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Editorial color rule
-          </h2>
-          <div class="border border-slate-200 bg-white">
-            @for (rule of colorRules; track rule.label) {
-              <div
-                class="grid grid-cols-[8rem_1fr] gap-4 border-b border-slate-100 px-5 py-4 last:border-b-0"
-              >
-                <div class="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  <span
-                    class="inline-block h-3 w-3 rounded-full"
-                    [style.background-color]="rule.color"
-                    aria-hidden="true"
-                  ></span>
-                  {{ rule.label }}
-                </div>
-                <div class="text-sm text-slate-600">{{ rule.description }}</div>
+        <div class="lg:grid lg:grid-cols-[19rem_42rem] lg:items-start lg:gap-10">
+          <aside class="lg:sticky lg:top-6">
+            <section class="mb-8 lg:mb-0">
+              <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Editorial color rule
+              </h2>
+              <div class="border border-slate-200 bg-white">
+                @for (rule of colorRules; track rule.label) {
+                  <div class="border-b border-slate-100 px-4 py-3 last:border-b-0">
+                    <div class="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                      <span
+                        class="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                        [style.background-color]="rule.color"
+                        aria-hidden="true"
+                      ></span>
+                      {{ rule.label }}
+                    </div>
+                    <p class="mt-1 text-xs leading-snug text-slate-600">{{ rule.description }}</p>
+                  </div>
+                }
               </div>
-            }
-          </div>
-          <p class="mt-2 text-xs text-slate-500">
-            These color roles apply to the system categories. Custom categories added for this
-            space use analyst-chosen colors and carry no fixed color convention.
-          </p>
-        </section>
+              <p class="mt-2 text-xs text-slate-500">
+                These color roles apply to the system categories. Custom categories added for this
+                space use analyst-chosen colors and carry no fixed color convention.
+              </p>
+            </section>
+          </aside>
 
+          <div>
         <section class="mb-8">
           <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
             Projection convention
@@ -293,6 +295,8 @@ const MARKER_DEFINITIONS: Record<string, string> = {
             }
           </div>
         </section>
+          </div>
+        </div>
       </div>
     </app-manage-page-shell>
   `,

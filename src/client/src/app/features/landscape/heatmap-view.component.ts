@@ -15,12 +15,9 @@ import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 
 import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
-import {
-  HeatmapBubble,
-  HeatmapGrouping,
-  RingPhase,
-  SpokeGrouping,
-} from '../../core/models/landscape.model';
+import { HeatmapBubble, HeatmapGrouping, RingPhase } from '../../core/models/landscape.model';
+import { IntelligenceEntityType } from '../../core/models/primary-intelligence.model';
+import { buildEntityRouterLink } from '../../shared/utils/intelligence-router-link';
 import { LandscapeService } from '../../core/services/landscape.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
@@ -113,8 +110,7 @@ import { buildHeatmapSheets } from './heatmap-export.util';
                   [tenantId]="tenantId()"
                   [spaceId]="spaceId()"
                   (clearSelection)="selectedBubble.set(null)"
-                  (openAsset)="onOpenAsset($event)"
-                  (openInBullseye)="onOpenInBullseye()"
+                  (openIntelligence)="onOpenIntelligence($event)"
                 />
               </div>
             }
@@ -294,29 +290,13 @@ export class HeatmapViewComponent implements OnInit {
     this.hoverY.set(event.y);
   }
 
-  onOpenAsset(assetId: string): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
-      queryParams: { assetIds: assetId },
-    });
-  }
-
-  onOpenInBullseye(): void {
-    // Bullseye groups via in-memory spoke-grouping state (the old per-dimension
-    // path segments are now legacy redirects to the default), so carry the
-    // heatmap grouping across explicitly before navigating to the plain route.
-    this.state.spokeGrouping.set(this.bullseyeSpokeGrouping());
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'bullseye']);
-  }
-
-  /** Map the heatmap grouping to the closest bullseye spoke grouping. */
-  private bullseyeSpokeGrouping(): SpokeGrouping {
-    const map: Record<HeatmapGrouping, SpokeGrouping> = {
-      moa: 'moa',
-      indication: 'indication',
-      'moa+indication': 'indication',
-      company: 'company',
-      roa: 'roa',
-    };
-    return map[this.state.heatmapGrouping()] ?? 'indication';
+  onOpenIntelligence(payload: { entityType: IntelligenceEntityType; entityId: string }): void {
+    const link = buildEntityRouterLink(
+      this.tenantId(),
+      this.spaceId(),
+      payload.entityType,
+      payload.entityId
+    );
+    if (link) this.router.navigate(link as string[]);
   }
 }
