@@ -370,6 +370,9 @@ export interface MatrixCell {
                   tooltipPosition="top"
                   >{{ row.bubble.label }}</span
                 >
+                @if (row.bubble.has_intelligence) {
+                  <app-pi-mark [size]="9" class="ml-1 inline-block align-middle" />
+                }
                 <div class="row-label-sub">
                   {{ row.bubble.competitor_count }}
                   {{ row.bubble.competitor_count === 1 ? 'company' : 'companies' }}

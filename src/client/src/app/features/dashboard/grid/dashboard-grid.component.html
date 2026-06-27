@@ -149,10 +149,29 @@
                     />
                   }
                   @if (!isScrolled()) {
-                    <span
-                      class="font-bold text-[11px] uppercase tracking-wider text-slate-700 truncate"
-                      >{{ row.companyName }}</span
-                    >
+                    <div class="flex min-w-0 flex-col justify-center">
+                      <span class="flex min-w-0 items-center gap-1">
+                        <span
+                          class="font-bold text-[11px] uppercase tracking-wider text-slate-700 truncate"
+                          >{{ row.companyName }}</span
+                        >
+                        @if (row.companyHasIntelligence) {
+                          <app-pi-mark [size]="10" class="shrink-0" />
+                        }
+                      </span>
+                      @if (
+                        showIntelligenceHeadlines() &&
+                        row.companyHasIntelligence &&
+                        row.companyIntelligenceHeadline
+                      ) {
+                        <span
+                          class="flex min-w-0 items-center gap-1 text-[10px] leading-tight text-brand-700"
+                        >
+                          <app-pi-mark [size]="9" class="shrink-0" />
+                          <span class="truncate">{{ row.companyIntelligenceHeadline }}</span>
+                        </span>
+                      }
+                    </div>
                   }
                 }
               </div>
@@ -169,9 +188,28 @@
                 (keydown.space)="onAssetClick(row.assetId)"
               >
                 @if (row.isFirstInAsset) {
-                  <span class="text-sm text-slate-600 font-medium truncate">{{
-                    row.assetName
-                  }}</span>
+                  <div class="flex min-w-0 flex-col justify-center">
+                    <span class="flex min-w-0 items-center gap-1">
+                      <span class="text-sm text-slate-600 font-medium truncate">{{
+                        row.assetName
+                      }}</span>
+                      @if (row.assetHasIntelligence) {
+                        <app-pi-mark [size]="10" class="shrink-0" />
+                      }
+                    </span>
+                    @if (
+                      showIntelligenceHeadlines() &&
+                      row.assetHasIntelligence &&
+                      row.assetIntelligenceHeadline
+                    ) {
+                      <span
+                        class="flex min-w-0 items-center gap-1 text-[10px] leading-tight text-brand-700"
+                      >
+                        <app-pi-mark [size]="9" class="shrink-0" />
+                        <span class="truncate">{{ row.assetIntelligenceHeadline }}</span>
+                      </span>
+                    }
+                  </div>
                 }
               </div>
             }

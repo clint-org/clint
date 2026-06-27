@@ -164,6 +164,7 @@ export interface BullseyeSpoke {
   display_order: number;
   highest_phase_rank: number;
   products: BullseyeAsset[];
+  has_intelligence?: boolean;
 }
 
 export interface BullseyeData {
@@ -365,7 +366,8 @@ export interface GroupedSpokesResult {
  */
 export function groupAssetsIntoSpokes(
   assets: BullseyeAsset[],
-  grouping: SpokeGrouping
+  grouping: SpokeGrouping,
+  companiesWithIntelligence: ReadonlySet<string> = new Set(),
 ): GroupedSpokesResult {
   const groups = new Map<string, { name: string; assets: BullseyeAsset[] }>();
   const assetSpokeCount = new Map<string, number>();
@@ -396,6 +398,7 @@ export function groupAssetsIntoSpokes(
     display_order: 0,
     highest_phase_rank: Math.max(...group.assets.map((a) => a.highest_phase_rank)),
     products: group.assets,
+    has_intelligence: grouping === 'company' && companiesWithIntelligence.has(id),
   }));
 
   spokes.sort((a, b) => {
@@ -455,6 +458,9 @@ export interface HeatmapBubble {
   unit_count: number;
   /** Count of assets in this group that own published primary intelligence. */
   intelligence_count?: number;
+  // company-anchored intelligence presence; set by get_positioning_data only when
+  // grouped by company. Distinct from intelligence_count (assets-with-intelligence).
+  has_intelligence?: boolean;
   phase_counts: Partial<Record<RingPhase, number>>;
   products: HeatmapAsset[];
 }
