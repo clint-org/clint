@@ -552,3 +552,110 @@ describe('multi-intelligence briefs (anchor-aware upsert)', () => {
     expect(bad.error!.message).toMatch(/anchor set/i);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 6: per-anchor history + lead auto-promotion + anchor cleanup
+// ---------------------------------------------------------------------------
+
+describe('history, lifecycle, and lead promotion (anchor-keyed)', () => {
+  it('withdrawing the lead\'s only published version auto-promotes the next published anchor', async () => {
+    const trialId = await createTrial();
+    const v1 = await rpcUpsert({
+      anchorId: null, id: null, entityType: 'trial', entityId: trialId,
+      state: 'published', headline: 'Lead', changeNote: null,
+    });
+    const v2 = await rpcUpsert({
+      anchorId: null, id: null, entityType: 'trial', entityId: trialId,
+      state: 'published', headline: 'Other', changeNote: null,
+    });
+    const admin = adminClient();
+    const { data: row1 } = await admin.from('primary_intelligence').select('anchor_id').eq('id', v1).single();
+    const { data: row2 } = await admin.from('primary_intelligence').select('anchor_id').eq('id', v2).single();
+    const leadAnchor: string = row1!.anchor_id;
+    const otherAnchor: string = row2!.anchor_id;
+
+    // Precondition: the FIRST brief's anchor is the entity's lead before withdraw.
+    // Without this, the test could pass trivially if upsert made the other anchor lead.
+    const { data: pre } = await admin
+      .from('primary_intelligence_anchors')
+      .select('id,is_lead')
+      .eq('entity_id', trialId);
+    expect(pre!.filter((a: any) => a.is_lead).map((a: any) => a.id)).toEqual([leadAnchor]);
+
+    await as(p, 'agency_only')
+      .rpc('withdraw_primary_intelligence', { p_id: v1, p_change_note: 'pulled' })
+      .throwOnError();
+
+    const { data: anchors } = await admin
+      .from('primary_intelligence_anchors')
+      .select('id,is_lead')
+      .eq('entity_id', trialId);
+
+    expect(anchors!.filter((a: any) => a.is_lead).map((a: any) => a.id)).toEqual([otherAnchor]);
+  });
+
+  it('deleting a fresh draft removes its anchor', async () => {
+    const trialId = await createTrial();
+    const d = await rpcUpsert({
+      anchorId: null, id: null, entityType: 'trial', entityId: trialId,
+      state: 'draft', headline: 'Solo draft', changeNote: null,
+    });
+    const admin = adminClient();
+    const { data: piRow } = await admin.from('primary_intelligence').select('anchor_id').eq('id', d).single();
+    const aId: string = piRow!.anchor_id;
+
+    await as(p, 'agency_only').rpc('delete_primary_intelligence', { p_id: d }).throwOnError();
+
+    const { data: left } = await admin.from('primary_intelligence_anchors').select('id').eq('id', aId);
+    expect(left).toHaveLength(0);
+  });
+
+  it('purge with p_purge_anchor removes the whole anchor (and its versions)', async () => {
+    const trialId = await createTrial();
+    const headline = 'Purge Me';
+    const d = await rpcUpsert({
+      anchorId: null, id: null, entityType: 'trial', entityId: trialId,
+      state: 'draft', headline, changeNote: null,
+    });
+    const admin = adminClient();
+    const { data: piRow } = await admin.from('primary_intelligence').select('anchor_id').eq('id', d).single();
+    const aId: string = piRow!.anchor_id;
+
+    // purge requires p_confirmation to match the brief's headline.
+    await as(p, 'agency_only')
+      .rpc('purge_primary_intelligence', { p_id: d, p_confirmation: headline, p_purge_anchor: true })
+      .throwOnError();
+
+    const { data: anchorLeft } = await admin
+      .from('primary_intelligence_anchors')
+      .select('id')
+      .eq('id', aId);
+    expect(anchorLeft).toHaveLength(0);
+
+    const { data: versionsLeft } = await admin
+      .from('primary_intelligence')
+      .select('id')
+      .eq('anchor_id', aId);
+    expect(versionsLeft).toHaveLength(0);
+  });
+
+  it('get_primary_intelligence_history is scoped to one anchor', async () => {
+    const trialId = await createTrial();
+    const v1 = await rpcUpsert({
+      anchorId: null, id: null, entityType: 'trial', entityId: trialId,
+      state: 'published', headline: 'A', changeNote: null,
+    });
+    await rpcUpsert({
+      anchorId: null, id: null, entityType: 'trial', entityId: trialId,
+      state: 'published', headline: 'B', changeNote: null,
+    });
+    const admin = adminClient();
+    const { data: piRow } = await admin.from('primary_intelligence').select('anchor_id').eq('id', v1).single();
+    const aId: string = piRow!.anchor_id;
+
+    const hist = await as(p, 'agency_only')
+      .rpc('get_primary_intelligence_history', { p_anchor_id: aId })
+      .throwOnError();
+    expect((hist.data as any).versions).toHaveLength(1); // only anchor A's versions
+  });
+});
