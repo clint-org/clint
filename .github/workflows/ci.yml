@@ -24,6 +24,7 @@ jobs:
       - run: cd src/client && npx ng lint
       - run: cd src/client && npx ng build
       - run: cd src/client && npm run test:scripts
+      - run: cd src/client && npm run migrations:check-secrets
 
   tests:
     needs: lint-and-build
