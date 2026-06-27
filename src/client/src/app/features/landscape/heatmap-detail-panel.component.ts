@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { Tooltip } from 'primeng/tooltip';
 
 import {
   HeatmapBubble,
@@ -14,7 +13,10 @@ import {
   CompetitorRaceGroup,
   DetailPanelCompetitorRaceComponent,
 } from '../../shared/components/detail-panel-competitor-race.component';
-import { PiReference } from '../../core/models/primary-intelligence.model';
+import {
+  IntelligenceEntityType,
+  PiReference,
+} from '../../core/models/primary-intelligence.model';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
@@ -28,20 +30,6 @@ const GROUPING_LABEL: Record<HeatmapGrouping, string> = {
   roa: 'ROA group',
 };
 
-/**
- * Bullseye destination per heatmap grouping. Mirrors
- * `heatmap-view.bullseyeSegment()`. The `moa+indication` row
- * intentionally drops MOA and lands on Indication; the tooltip names
- * the resolved dimension so the user can predict the navigation.
- */
-const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
-  moa: 'mechanism of action',
-  indication: 'indication',
-  'moa+indication': 'indication',
-  company: 'company',
-  roa: 'route of administration',
-};
-
 @Component({
   selector: 'app-heatmap-detail-panel',
   imports: [
@@ -50,7 +38,6 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
     DetailPanelSectionComponent,
     DetailPanelShellComponent,
     PiDetailSectionComponent,
-    Tooltip,
   ],
   template: `
     <app-detail-panel-shell
@@ -129,21 +116,6 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
           </p>
         </app-detail-panel-empty-state>
       }
-
-      @if (bubble()) {
-        <div footer class="border-t border-slate-100 px-5 py-3">
-          <button
-            type="button"
-            class="inline-flex w-full items-center justify-center gap-1.5 rounded-sm border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            [pTooltip]="openInBullseyeTooltip()"
-            tooltipPosition="top"
-            (click)="openInBullseye.emit()"
-          >
-            Open in bullseye
-            <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
-          </button>
-        </div>
-      }
     </app-detail-panel-shell>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -160,15 +132,11 @@ export class HeatmapDetailPanelComponent {
   readonly spaceId = input<string | null>(null);
 
   readonly clearSelection = output<void>();
-  readonly openAsset = output<string>();
-  readonly openInBullseye = output<void>();
+  /** Routes to the PI-bearing entity's profile (where its intelligence lives). */
+  readonly openIntelligence = output<{ entityType: IntelligenceEntityType; entityId: string }>();
 
   readonly headerLabel = computed(() =>
     this.bubble() ? GROUPING_LABEL[this.grouping()] : 'Heatmap · overview'
-  );
-
-  readonly openInBullseyeTooltip = computed(
-    () => `Open in Bullseye, grouped by ${BULLSEYE_TARGET_LABEL[this.grouping()]}`
   );
 
   readonly fullLabel = computed(() => {
@@ -253,7 +221,10 @@ export class HeatmapDetailPanelComponent {
   });
 
   protected onPiReferenceClick(ref: PiReference): void {
-    this.openAsset.emit(ref.entity_id);
+    this.openIntelligence.emit({
+      entityType: ref.entity_type as IntelligenceEntityType,
+      entityId: ref.entity_id,
+    });
   }
 
   protected phaseColor(phase: RingPhase): string {

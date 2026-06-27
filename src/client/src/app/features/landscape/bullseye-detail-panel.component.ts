@@ -83,7 +83,6 @@ export class BullseyeDetailPanelComponent {
 
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();
-  readonly openInTimeline = output<{ assetId: string; therapeuticAreaId: string }>();
   readonly openMarker = output<string>();
   readonly openIntelligence = output<{ entityType: IntelligenceEntityType; entityId: string }>();
   readonly ringHighlightToggle = output<RingPhase | null>();
@@ -326,14 +325,6 @@ export class BullseyeDetailPanelComponent {
   protected onCompanyClick(): void {
     const p = this.selectedAsset();
     if (p) this.openCompany.emit(p.company_id);
-  }
-
-  protected onOpenTimeline(): void {
-    const p = this.selectedAsset();
-    const d = this.data();
-    if (p && d?.scope) {
-      this.openInTimeline.emit({ assetId: p.id, therapeuticAreaId: d.scope.id });
-    }
   }
 
   protected onRingRowClick(phase: RingPhase): void {

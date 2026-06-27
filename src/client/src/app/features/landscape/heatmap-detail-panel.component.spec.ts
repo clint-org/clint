@@ -80,8 +80,17 @@ describe('heatmap detail panel PI section wiring', () => {
     expect(src).toContain('PiDetailSectionComponent');
   });
 
-  it('opens the asset when a PI reference is activated', () => {
+  it('emits the intelligence entity so the parent routes to its profile', () => {
     expect(src).toContain('onPiReferenceClick(ref: PiReference)');
-    expect(src).toContain('this.openAsset.emit(ref.entity_id)');
+    expect(src).toContain('this.openIntelligence.emit(');
+    expect(src).toContain('entityType: ref.entity_type as IntelligenceEntityType');
+    expect(src).toContain('entityId: ref.entity_id');
+    // Regression: PI rows used to navigate to the timeline via openAsset.
+    expect(src).not.toContain('openAsset');
+  });
+
+  it('has no cross-navigation footer button', () => {
+    expect(src).not.toContain('openInBullseye');
+    expect(src).not.toContain('Open in bullseye');
   });
 });
