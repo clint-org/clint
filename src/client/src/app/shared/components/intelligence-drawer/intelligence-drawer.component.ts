@@ -38,7 +38,6 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
  */
 @Component({
   selector: 'app-intelligence-drawer',
-  standalone: true,
   imports: [
     FormsModule,
     ButtonModule,

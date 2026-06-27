@@ -229,6 +229,11 @@
           <!-- Primary intelligence -->
           <div id="primary-intelligence">
             @if (hasIntelligence()) {
+              <h2
+                class="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-slate-700"
+              >
+                Intelligence ({{ intelligence()?.briefs?.length ?? 0 }})
+              </h2>
               <app-intelligence-block
                 [published]="leadBrief()?.published ?? null"
                 [draft]="leadBrief()?.draft ?? null"
