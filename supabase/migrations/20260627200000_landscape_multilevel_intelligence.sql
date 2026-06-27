@@ -795,10 +795,14 @@ declare
   v_anchor_company uuid; v_anchor_asset uuid;
   v_dash jsonb; v_pos jsonb; v_company_obj jsonb; v_asset_obj jsonb;
 begin
-  -- pick any space with a company+asset, and its owner; skip smoke if none
+  -- pick a space with a positioning-eligible company+asset (asset_indications row with non-null
+  -- development_status), so the get_positioning_data assertion cannot nondeterministically fail
+  -- when the random fixture company has no phase-ranked indication; skip smoke if none exists
   select c.space_id, c.id, a.id into v_space, v_company, v_asset
   from public.companies c
   join public.assets a on a.company_id = c.id and a.space_id = c.space_id
+  join public.asset_indications ai on ai.asset_id = a.id and ai.space_id = c.space_id
+    and ai.development_status is not null
   limit 1;
   if v_space is null then
     raise notice 'multilevel-intel smoke: no fixture data, skipping';
