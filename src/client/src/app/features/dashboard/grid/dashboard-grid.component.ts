@@ -341,7 +341,13 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
         this.scrollRafId = requestAnimationFrame(() => {
           // Relative to the auto-anchored home position, not absolute 0, so the
           // initial programmatic scroll-to-today does not count as "scrolled".
-          this.isScrolled.set(Math.abs(scrollEl.scrollLeft - this.homeScrollLeft) > 50);
+          // The threshold is about half a viewport: one wheel tick moves ~100px,
+          // so a small 50px threshold collapsed on nearly every nudge. Only a
+          // deliberate scroll away from today should reclaim the company column.
+          const collapseThreshold = Math.max(400, scrollEl.clientWidth * 0.5);
+          this.isScrolled.set(
+            Math.abs(scrollEl.scrollLeft - this.homeScrollLeft) > collapseThreshold
+          );
           this.scrollRafId = null;
         });
       };
