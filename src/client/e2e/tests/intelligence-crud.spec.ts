@@ -43,7 +43,7 @@ test.describe('Intelligence detail pages: route smoke', () => {
     await expect(page.getByRole('heading', { name: 'Smoke Co', level: 1 })).toBeVisible({
       timeout: 5000,
     });
-    await expect(page.getByRole('button', { name: 'Add primary intelligence' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add intelligence' })).toBeVisible();
   });
 
   test('engagement detail page renders the empty intelligence state', async () => {
@@ -53,7 +53,7 @@ test.describe('Intelligence detail pages: route smoke', () => {
     await expect(page.getByRole('heading', { name: 'Engagement', level: 1 })).toBeVisible({
       timeout: 5000,
     });
-    await expect(page.getByRole('button', { name: 'Add primary intelligence' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add intelligence' })).toBeVisible();
   });
 
   test('company list links navigate to the detail page', async () => {
