@@ -15,12 +15,14 @@ import { SelectModule } from 'primeng/select';
 
 import { IntelligenceEntityType } from '../../../core/models/primary-intelligence.model';
 import { SupabaseService } from '../../../core/services/supabase.service';
-import { buildComposeEntityOptions, ComposeEntityRow } from './compose-entity-options';
+import {
+  buildComposeEntityOptions,
+  buildComposeTarget,
+  ComposeEntityRow,
+  ComposeTarget,
+} from './compose-entity-options';
 
-export interface ComposeTarget {
-  entityType: IntelligenceEntityType;
-  entityId: string;
-}
+export type { ComposeTarget };
 
 interface EntityOption {
   label: string;
@@ -214,7 +216,9 @@ export class IntelligenceComposeDialogComponent {
     const id = lvl === 'space' ? this.spaceId() : this.entityId();
     if (!id) return;
     this.open.set(false);
-    this.chosen.emit({ entityType: lvl, entityId: id });
+    // anchorId is always null from the compose path: the drawer opens in
+    // new-brief mode and creates a fresh anchor for the chosen entity.
+    this.chosen.emit(buildComposeTarget(lvl, id));
   }
 
   private async loadOptions(): Promise<void> {

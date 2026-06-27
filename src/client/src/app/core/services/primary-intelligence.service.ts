@@ -189,24 +189,25 @@ export class PrimaryIntelligenceService {
     }));
   }
 
+  /**
+   * Load the version history for a single anchor. The cache is keyed by
+   * anchorId (so parallel anchors on the same entity get distinct entries)
+   * but tagged with the entity tag so upsert/delete/withdraw/purge flush it.
+   */
   async loadHistory(
-    spaceId: string,
+    anchorId: string,
     entityType: IntelligenceEntityType,
     entityId: string
   ): Promise<IntelligenceHistoryPayload> {
     return this.cache.get(
       'get_primary_intelligence_history',
-      { spaceId, entityType, entityId },
+      { anchorId },
       {
         ttl: HEAVY_TTL,
         tags: [`${entityType}:${entityId}:history-intelligence`],
         fetch: async () => {
           const { data } = await this.supabase.client
-            .rpc('get_primary_intelligence_history', {
-              p_space_id: spaceId,
-              p_entity_type: entityType,
-              p_entity_id: entityId,
-            })
+            .rpc('get_primary_intelligence_history', { p_anchor_id: anchorId })
             .throwOnError();
           return (
             (data as IntelligenceHistoryPayload) ?? {
@@ -225,6 +226,7 @@ export class PrimaryIntelligenceService {
     const { data } = await this.supabase.client
       .rpc('upsert_primary_intelligence', {
         p_id: input.id,
+        p_anchor_id: input.anchor_id,
         p_space_id: input.space_id,
         p_entity_type: input.entity_type,
         p_entity_id: input.entity_id,
@@ -242,46 +244,63 @@ export class PrimaryIntelligenceService {
         })),
       })
       .throwOnError();
-    this.cache.invalidateTags([
-      `space:${input.space_id}:primary-intelligence`,
-      `space:${input.space_id}:drafts`,
-      `space:${input.space_id}:activity`,
-      `space:${input.space_id}:landing-stats`,
-      `space:${input.space_id}:dashboard`,
-      `${input.entity_type}:${input.entity_id}:detail`,
-      `${input.entity_type}:${input.entity_id}:history-intelligence`,
-    ]);
+    this.invalidateEntity(input.space_id, input.entity_type, input.entity_id);
     return data as string;
+  }
+
+  async setLead(
+    anchorId: string,
+    spaceId: string,
+    entityType: IntelligenceEntityType,
+    entityId: string
+  ): Promise<void> {
+    await this.supabase.client
+      .rpc('set_intelligence_lead', { p_anchor_id: anchorId })
+      .throwOnError();
+    this.invalidateEntity(spaceId, entityType, entityId);
+  }
+
+  async reorder(
+    spaceId: string,
+    entityType: IntelligenceEntityType,
+    entityId: string,
+    anchorIds: string[]
+  ): Promise<void> {
+    await this.supabase.client
+      .rpc('reorder_intelligence', {
+        p_space_id: spaceId,
+        p_entity_type: entityType,
+        p_entity_id: entityId,
+        p_anchor_ids: anchorIds,
+      })
+      .throwOnError();
+    this.invalidateEntity(spaceId, entityType, entityId);
   }
 
   async delete(id: string): Promise<void> {
     const { data: existing } = await this.supabase.client
       .from('primary_intelligence')
-      .select('space_id, entity_type, entity_id')
+      .select('space_id, primary_intelligence_anchors!inner(entity_type, entity_id)')
       .eq('id', id)
       .single();
     await this.supabase.client
-      .rpc('delete_primary_intelligence', {
-        p_id: id,
-      })
+      .rpc('delete_primary_intelligence', { p_id: id })
       .throwOnError();
     if (existing?.space_id) {
-      this.cache.invalidateTags([
-        `space:${existing.space_id}:primary-intelligence`,
-        `space:${existing.space_id}:drafts`,
-        `space:${existing.space_id}:activity`,
-        `space:${existing.space_id}:landing-stats`,
-        `space:${existing.space_id}:dashboard`,
-        `${existing.entity_type}:${existing.entity_id}:detail`,
-        `${existing.entity_type}:${existing.entity_id}:history-intelligence`,
-      ]);
+      const ent = existing.primary_intelligence_anchors as unknown as {
+        entity_type: IntelligenceEntityType;
+        entity_id: string;
+      } | null;
+      if (ent?.entity_type && ent?.entity_id) {
+        this.invalidateEntity(existing.space_id, ent.entity_type, ent.entity_id);
+      }
     }
   }
 
   async withdraw(id: string, changeNote: string): Promise<void> {
     const { data: existing } = await this.supabase.client
       .from('primary_intelligence')
-      .select('space_id, entity_type, entity_id')
+      .select('space_id, primary_intelligence_anchors!inner(entity_type, entity_id)')
       .eq('id', id)
       .single();
     await this.supabase.client
@@ -291,22 +310,20 @@ export class PrimaryIntelligenceService {
       })
       .throwOnError();
     if (existing?.space_id) {
-      this.cache.invalidateTags([
-        `space:${existing.space_id}:primary-intelligence`,
-        `space:${existing.space_id}:drafts`,
-        `space:${existing.space_id}:activity`,
-        `space:${existing.space_id}:landing-stats`,
-        `space:${existing.space_id}:dashboard`,
-        `${existing.entity_type}:${existing.entity_id}:detail`,
-        `${existing.entity_type}:${existing.entity_id}:history-intelligence`,
-      ]);
+      const ent = existing.primary_intelligence_anchors as unknown as {
+        entity_type: IntelligenceEntityType;
+        entity_id: string;
+      } | null;
+      if (ent?.entity_type && ent?.entity_id) {
+        this.invalidateEntity(existing.space_id, ent.entity_type, ent.entity_id);
+      }
     }
   }
 
   async purge(id: string, confirmation: string, purgeAnchor = false): Promise<void> {
     const { data: existing } = await this.supabase.client
       .from('primary_intelligence')
-      .select('space_id, entity_type, entity_id')
+      .select('space_id, primary_intelligence_anchors!inner(entity_type, entity_id)')
       .eq('id', id)
       .single();
     await this.supabase.client
@@ -317,15 +334,29 @@ export class PrimaryIntelligenceService {
       })
       .throwOnError();
     if (existing?.space_id) {
-      this.cache.invalidateTags([
-        `space:${existing.space_id}:primary-intelligence`,
-        `space:${existing.space_id}:drafts`,
-        `space:${existing.space_id}:activity`,
-        `space:${existing.space_id}:landing-stats`,
-        `space:${existing.space_id}:dashboard`,
-        `${existing.entity_type}:${existing.entity_id}:detail`,
-        `${existing.entity_type}:${existing.entity_id}:history-intelligence`,
-      ]);
+      const ent = existing.primary_intelligence_anchors as unknown as {
+        entity_type: IntelligenceEntityType;
+        entity_id: string;
+      } | null;
+      if (ent?.entity_type && ent?.entity_id) {
+        this.invalidateEntity(existing.space_id, ent.entity_type, ent.entity_id);
+      }
     }
+  }
+
+  private invalidateEntity(
+    spaceId: string,
+    entityType: IntelligenceEntityType,
+    entityId: string
+  ): void {
+    this.cache.invalidateTags([
+      `space:${spaceId}:primary-intelligence`,
+      `space:${spaceId}:drafts`,
+      `space:${spaceId}:activity`,
+      `space:${spaceId}:landing-stats`,
+      `space:${spaceId}:dashboard`,
+      `${entityType}:${entityId}:detail`,
+      `${entityType}:${entityId}:history-intelligence`,
+    ]);
   }
 }

@@ -1,5 +1,28 @@
 import { IntelligenceEntityType } from '../../../core/models/primary-intelligence.model';
 
+/**
+ * The resolved entity target emitted by the compose dialog when the user
+ * confirms their selection. `anchorId` is always null from the compose path --
+ * the drawer opens in new-brief mode and creates a fresh anchor.
+ */
+export interface ComposeTarget {
+  entityType: IntelligenceEntityType;
+  entityId: string;
+  anchorId: string | null;
+}
+
+/**
+ * Pure factory for a ComposeTarget. Always sets anchorId to null so the
+ * drawer opens in new-brief (new-anchor) mode regardless of which entity the
+ * user picks in the compose dialog.
+ */
+export function buildComposeTarget(
+  entityType: IntelligenceEntityType,
+  entityId: string
+): ComposeTarget {
+  return { entityType, entityId, anchorId: null };
+}
+
 /** One selectable anchor row for the compose dialog's entity select. */
 export interface ComposeEntityRow {
   entity_type: IntelligenceEntityType;

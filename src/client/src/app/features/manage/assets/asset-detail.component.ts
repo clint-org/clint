@@ -16,6 +16,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
+import { IntelligenceBriefListComponent } from '../../../shared/components/intelligence-brief-list/intelligence-brief-list.component';
 import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
@@ -56,6 +57,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     ToastModule,
     ManagePageShellComponent,
     IntelligenceBlockComponent,
+    IntelligenceBriefListComponent,
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,
     IntelligenceHistoryPanelComponent,
@@ -98,8 +100,23 @@ export class AssetDetailComponent implements OnDestroy {
   protected readonly asset = signal<Asset | null>(null);
   protected readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   protected readonly drawerOpen = signal(false);
+  // anchor_id of the brief currently open in the drawer; null = new brief
+  protected readonly drawerAnchorId = signal<string | null>(null);
   protected readonly loading = signal(true);
   protected readonly legendVisible = signal(false);
+
+  protected readonly leadBrief = computed(() => {
+    const briefs = this.intelligence()?.briefs;
+    if (!briefs?.length) return null;
+    return briefs.find((b) => b.is_lead) ?? briefs[0];
+  });
+
+  protected readonly otherBriefs = computed(() => {
+    const briefs = this.intelligence()?.briefs;
+    if (!briefs?.length) return [];
+    const lead = briefs.find((b) => b.is_lead) ?? briefs[0];
+    return briefs.filter((b) => b !== lead);
+  });
 
   // Intelligence history (version list, withdraw / purge dialogs)
   protected readonly historyHost = new IntelligenceHistoryHost(this.intelligenceService);
@@ -187,10 +204,9 @@ export class AssetDetailComponent implements OnDestroy {
     this.messageService.add({ severity: 'success', summary: 'Asset updated.', life: 3000 });
   }
 
-  protected readonly hasIntelligence = computed(() => {
-    const i = this.intelligence();
-    return !!(i?.published || i?.draft);
-  });
+  protected readonly hasIntelligence = computed(() =>
+    (this.intelligence()?.briefs.length ?? 0) > 0
+  );
 
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
@@ -252,12 +268,24 @@ export class AssetDetailComponent implements OnDestroy {
 
   private async refreshHistory(): Promise<void> {
     const p = this.asset();
-    if (!p) return;
+    const anchorId = this.leadBrief()?.anchor_id;
+    if (!p || !anchorId) return;
     try {
-      await this.historyHost.load(p.space_id, 'product', p.id);
+      await this.historyHost.load(anchorId, 'product', p.id);
     } catch {
       // History panel mirrors the intelligence-block: load failures should
       // not block the page. The panel renders an empty state on its own.
+    }
+  }
+
+  /** Load history for a non-lead brief when the user activates Version history. */
+  protected async onViewHistory(anchorId: string): Promise<void> {
+    const p = this.asset();
+    if (!p) return;
+    try {
+      await this.historyHost.load(anchorId, 'product', p.id);
+    } catch {
+      // Silent: panel shows its own empty state on load failure.
     }
   }
 
@@ -315,13 +343,57 @@ export class AssetDetailComponent implements OnDestroy {
   private async loadIntelligence(): Promise<void> {
     try {
       this.intelligence.set(await this.intelligenceService.getAssetDetail(this.assetId()));
+      await this.refreshHistory();
     } catch {
       this.intelligence.set(null);
     }
   }
 
   protected onIntelligenceEdit(): void {
+    this.drawerAnchorId.set(this.leadBrief()?.anchor_id ?? null);
     this.drawerOpen.set(true);
+  }
+
+  protected openDrawerForNewBrief(): void {
+    this.drawerAnchorId.set(null);
+    this.drawerOpen.set(true);
+  }
+
+  protected openBriefInDrawer(anchorId: string): void {
+    this.drawerAnchorId.set(anchorId);
+    this.drawerOpen.set(true);
+  }
+
+  protected async onBriefPin(anchorId: string): Promise<void> {
+    const i = this.intelligence();
+    if (!i) return;
+    try {
+      await this.intelligenceService.setLead(anchorId, i.space_id, i.entity_type, i.entity_id);
+      await this.loadIntelligence();
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not set lead entry',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
+  }
+
+  protected async onBriefReorder(anchorIds: string[]): Promise<void> {
+    const i = this.intelligence();
+    if (!i) return;
+    try {
+      await this.intelligenceService.reorder(i.space_id, i.entity_type, i.entity_id, anchorIds);
+      await this.loadIntelligence();
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not reorder entries',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
   }
 
   protected async onIntelligenceClosed(): Promise<void> {
@@ -340,8 +412,8 @@ export class AssetDetailComponent implements OnDestroy {
   }
 
   protected onIntelligenceDelete(): void {
-    const i = this.intelligence();
-    const id = i?.published?.record.id ?? i?.draft?.record.id;
+    const lead = this.leadBrief();
+    const id = lead?.published?.record.id ?? lead?.draft?.record.id;
     if (!id) return;
     this.confirmation.confirm({
       header: 'Delete this intelligence?',

@@ -27,7 +27,8 @@ afterEach(async () => {
   const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
   try {
     await pg.connect();
-    await pg.query(`delete from public.primary_intelligence where space_id = $1`, [p.org.spaceId]);
+    // Cascade: deleting anchors removes all version rows and links.
+    await pg.query(`delete from public.primary_intelligence_anchors where space_id = $1`, [p.org.spaceId]);
   } finally {
     await pg.end();
   }
@@ -46,6 +47,7 @@ function upsert(
 ) {
   return as(p, persona).rpc('upsert_primary_intelligence', {
     p_id: opts.id ?? null,
+    p_anchor_id: null,
     p_space_id: p.org.spaceId,
     p_entity_type: 'space',
     p_entity_id: opts.entityId,

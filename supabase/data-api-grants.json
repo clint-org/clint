@@ -113,6 +113,10 @@
       "authenticated": ["select"],
       "justification": "client: primary-intelligence.service reads scope rows for cache invalidation and listing. Writes go through upsert_primary_intelligence and related RPCs; e2e fixtures use the service-role key."
     },
+    "primary_intelligence_anchors": {
+      "authenticated": ["select"],
+      "justification": "client: primary-intelligence.service reads anchors for cache invalidation and brief lists via list_intelligence_for_entity. Writes go through upsert_primary_intelligence / set_intelligence_lead / reorder_intelligence (SECURITY DEFINER); e2e fixtures use the service-role key."
+    },
     "primary_intelligence_links": {
       "authenticated": ["select"],
       "justification": "client: list_primary_intelligence and referenced_in_entity (primary-intelligence.service, linked-entities surfaces) are SECURITY INVOKER and read the link rows as the caller. Link writes go through the upsert_primary_intelligence RPC family."

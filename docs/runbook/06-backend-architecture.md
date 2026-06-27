@@ -39,13 +39,14 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_auto_derive_asset_indication_status` | - | trial_assets |
 | `_auto_derive_on_trial_condition_change` | - | trial_assets |
 | `_cleanup_orphan_marker` | markers | marker_assignments |
-| `_cleanup_polymorphic_refs` | material_links, primary_intelligence, primary_intelligence_links | - |
+| `_cleanup_polymorphic_refs` | material_links, primary_intelligence_anchors, primary_intelligence_links | - |
 | `_create_trial_date_markers` | marker_assignments, markers | - |
-| `_dashboard_trial_obj` | - | marker_assignments, marker_categories, marker_types, markers, primary_intelligence, trial_change_events |
+| `_dashboard_trial_obj` | - | marker_assignments, marker_categories, marker_types, markers, primary_intelligence, primary_intelligence_anchors, trial_change_events |
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes, marker_types |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
 | `_materialize_trial_from_snapshot` | trial_change_events, trials | - |
+| `_promote_next_intelligence_lead` | primary_intelligence_anchors | primary_intelligence |
 | `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_assets, trial_conditions, trials |
 | `_seed_ctgov_marker_upsert` | marker_assignments, markers | - |
 | `_seed_ctgov_markers` | - | trials |
@@ -58,7 +59,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_seed_demo_markers` | marker_assignments, markers | events, materials |
 | `_seed_demo_materials` | material_links, materials | - |
 | `_seed_demo_moa_roa` | asset_mechanisms_of_action, asset_routes_of_administration, mechanisms_of_action, routes_of_administration | - |
-| `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_links | assets, companies, events |
+| `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_anchors, primary_intelligence_links | assets, companies, events |
 | `_seed_demo_recent_activity` | marker_assignments, markers | trials |
 | `_seed_demo_trial_notes` | trial_notes | - |
 | `_seed_demo_trials` | trial_conditions, trials | - |
@@ -78,8 +79,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `assign_primary_intelligence_version` | - | primary_intelligence |
 | `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
 | `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload` | - | assets, companies, primary_intelligence, primary_intelligence_links, trials |
-| `build_intelligence_payload` | - | assets, companies, markers, primary_intelligence, primary_intelligence_links, trials |
+| `build_intelligence_payload_for_row` | - | assets, companies, markers, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
@@ -93,7 +93,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
 | `delete_change_event_annotation` | change_event_annotations | trial_change_events |
 | `delete_material` | materials | space_members, spaces, tenants |
-| `delete_primary_intelligence` | primary_intelligence | - |
+| `delete_primary_intelligence` | primary_intelligence, primary_intelligence_anchors | - |
 | `discard_pending_material` | materials | - |
 | `download_material` | - | materials |
 | `enforce_agency_member_guards` | - | agency_members |
@@ -109,7 +109,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_ai_usage_rollup` | - | ai_calls, ai_config, assets, companies, events, indications, markers, source_documents, spaces, tenants, trials |
 | `get_asset_detail_with_intelligence` | - | assets |
 | `get_brand_by_host` | - | agencies, tenants |
-| `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_assets, trial_change_events, trials |
+| `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, primary_intelligence_anchors, routes_of_administration, trial_assets, trial_change_events, trials |
 | `get_bullseye_by_company` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, mechanisms_of_action, routes_of_administration, trial_conditions, trials |
 | `get_bullseye_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action, trials |
 | `get_bullseye_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration, trials |
@@ -120,17 +120,16 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_event_detail` | - | assets, companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_assets, trial_change_events, trials |
-| `get_intelligence_notes_for_asset` | - | assets, primary_intelligence, trials |
+| `get_intelligence_notes_for_asset` | - | assets, primary_intelligence, primary_intelligence_anchors, trials |
 | `get_key_catalysts` | - | assets, companies, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_landscape_index` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_company` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action |
 | `get_landscape_index_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration |
 | `get_latest_sync_run` | - | ctgov_sync_runs |
-| `get_marker_detail_with_intelligence` | - | markers |
 | `get_marker_history` | - | marker_changes |
-| `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_assets, trials |
-| `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_links, trials |
+| `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, primary_intelligence, primary_intelligence_anchors, routes_of_administration, trial_assets, trials |
+| `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trials |
 | `get_source_document` | - | ai_calls, source_documents |
 | `get_space_inventory_snapshot` | - | assets, companies, event_categories, events, indications, marker_assignments, marker_types, markers, mechanisms_of_action, routes_of_administration, trials |
 | `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
@@ -154,11 +153,12 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `link_asset_moa_roa` | asset_mechanisms_of_action, asset_routes_of_administration | mechanisms_of_action, routes_of_administration |
 | `list_agency_members` | - | agency_members |
 | `list_audit_events` | - | audit_events |
-| `list_draft_intelligence_for_space` | - | primary_intelligence |
+| `list_draft_intelligence_for_space` | - | primary_intelligence, primary_intelligence_anchors |
+| `list_intelligence_for_entity` | - | primary_intelligence, primary_intelligence_anchors |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
 | `list_materials_for_entity` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
 | `list_materials_for_space` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
-| `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_links |
+| `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_anchors, primary_intelligence_links |
 | `list_recent_materials_for_space` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
 | `list_space_members` | - | space_members |
 | `list_tenant_members` | - | agency_members, tenant_members, tenants |
@@ -170,32 +170,34 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `palette_set_pinned` | palette_pinned | - |
 | `palette_touch_recent` | palette_recents | - |
 | `palette_unpin` | palette_pinned | - |
-| `permanently_delete_space` | markers, spaces | assets, companies, events, marker_types, materials, primary_intelligence, tenants, trials |
+| `permanently_delete_space` | markers, primary_intelligence_anchors, spaces | assets, companies, events, marker_types, materials, primary_intelligence, tenants, trials |
 | `platform_admin_set_ai_enabled` | ai_config | - |
 | `platform_admin_update_ai_config` | ai_config | ai_model_pricing |
 | `platform_admin_upsert_ai_model_pricing` | ai_model_pricing | - |
 | `prepare_material_upload` | - | materials |
-| `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_assets, trial_notes, trials |
-| `preview_company_delete` | - | assets, companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
-| `preview_trial_delete` | - | events, marker_assignments, material_links, primary_intelligence, primary_intelligence_links, trial_notes, trials |
+| `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_assets, trial_notes, trials |
+| `preview_company_delete` | - | assets, companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_notes, trials |
+| `preview_trial_delete` | - | events, marker_assignments, material_links, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_notes, trials |
 | `provision_agency` | agencies, agency_invites, agency_members | - |
 | `provision_tenant` | tenant_members, tenants | agencies |
-| `purge_primary_intelligence` | primary_intelligence | - |
+| `purge_primary_intelligence` | primary_intelligence, primary_intelligence_anchors | - |
 | `recompute_trial_change_events` | trial_change_events, trial_field_changes | trial_ctgov_snapshots, trials |
 | `record_audit_event` | audit_events | - |
 | `record_sync_run` | ctgov_sync_runs | - |
 | `redact_user` | agency_members, audit_events, platform_admins, space_members, tenant_members, user_redactions | - |
 | `redact_user_pii` | audit_events | - |
-| `referenced_in_entity` | - | primary_intelligence, primary_intelligence_links |
+| `referenced_in_entity` | - | primary_intelligence, primary_intelligence_anchors, primary_intelligence_links |
 | `register_custom_domain` | tenants | agencies, retired_hostnames |
 | `register_material` | material_links, materials | spaces, tenants |
 | `release_retired_hostname` | retired_hostnames | - |
+| `reorder_intelligence` | primary_intelligence_anchors | - |
 | `reset_asset_indication_status` | asset_indications | assets |
 | `restore_space` | spaces | tenants |
 | `retire_hostname_on_change` | retired_hostnames | agencies, tenants |
 | `search_palette` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `seed_demo_data` | trials | companies, space_members |
 | `self_join_tenant` | tenant_members | tenants |
+| `set_intelligence_lead` | primary_intelligence_anchors | primary_intelligence |
 | `set_trial_assets` | trial_assets | trials |
 | `set_trial_indications` | condition_indication_map, conditions, trial_conditions | indications, trial_assets, trials |
 | `space_shows_preclinical` | - | spaces |
@@ -213,8 +215,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `update_tenant_access` | tenants | - |
 | `update_tenant_branding` | tenants | - |
 | `upsert_change_event_annotation` | change_event_annotations | trial_change_events |
-| `upsert_primary_intelligence` | primary_intelligence, primary_intelligence_links | - |
-| `withdraw_primary_intelligence` | primary_intelligence | - |
+| `upsert_primary_intelligence` | primary_intelligence, primary_intelligence_anchors, primary_intelligence_links | - |
+| `withdraw_primary_intelligence` | primary_intelligence, primary_intelligence_anchors | - |
 <!-- /AUTO-GEN:RPC_TABLE_MATRIX -->
 
 ## Supabase Services Used
@@ -367,17 +369,24 @@ is_platform_admin() -> boolean
 
 Returns true if `auth.uid()` is in `platform_admins`. Used in RLS disjuncts and as a permission gate in super-admin RPCs.
 
-## Primary intelligence version history
+## Primary intelligence: anchor-version model
 
-Published reads are versioned. Each `primary_intelligence` row carries a per-anchor `version_number` (stamped on entry into `state='published'` by a BEFORE trigger) plus four lifecycle columns -- `publish_note`, `published_by`, `archived_at`, `withdraw_note` -- written directly to the row by the RPCs. The state machine is `draft -> published -> archived | withdrawn`; archived and withdrawn are terminal except for an explicit purge (which hard-deletes the row). A second BEFORE trigger rejects illegal transitions (`published -> draft`, `archived -> *`, `withdrawn -> *`).
+An entity (engagement, company, asset, or trial) can own many intelligence briefs. Each brief is an **anchor** row (`primary_intelligence_anchors`) that records the entity binding (`entity_type`, `entity_id`, polymorphic, no FK enforcement) plus two ordering fields: `is_lead` (the brief that surfaces on entity detail pages and the landscape) and `display_order` (manual sort position among siblings). One anchor is the pinned lead at any time; the database enforces the invariant via a partial unique index and the `set_intelligence_lead` RPC.
 
-`upsert_primary_intelligence` archives the prior published row rather than deleting it: on entry into `state='published'` the function stamps `publish_note` + `published_by` on the new row and `archived_at = now()` on any prior published row for the same anchor, in the same transaction. A republish raises `change_note required when republishing` whenever any prior non-draft version exists for the anchor.
+`primary_intelligence` rows are **versions** of an anchor, referenced via `anchor_id`. Entity binding (`entity_type`, `entity_id`) is NOT on version rows. Each version carries `state in ('draft','published','archived','withdrawn')`, a per-anchor `version_number` stamped on entry into `published` by a BEFORE trigger, and four lifecycle columns: `publish_note` + `published_by` (stamped at publish time), `archived_at` (stamped on the prior published row when a newer version publishes over it), and `withdraw_note` (stamped at withdraw). A unique partial index on `state = 'published'` enforces one published row per anchor; multiple drafts can co-exist.
 
-New RPCs:
+`primary_intelligence_links` is the child table for cross-entity relations (`relationship_type`, optional gloss). Marker rows are valid link targets but are not anchor owners; the marker description carries the catalyst-level write-up.
 
-- `withdraw_primary_intelligence(p_id, p_change_note)` -- soft-deletes the current published version. Sets `state='withdrawn'` and writes `withdraw_note` directly to the row. Only valid when the target row is `state='published'`; requires a non-empty change note.
-- `purge_primary_intelligence(p_id, p_confirmation, p_purge_anchor)` -- hard-deletes a single version when `p_confirmation` exactly matches the row's `headline` (case-sensitive). When `p_purge_anchor=true`, cascades the delete across every row (drafts, published, archived, withdrawn) for the same anchor. Used for "this read should never have existed" recovery; the typed-confirmation gate protects against fat-fingered destructive clicks.
-- `get_primary_intelligence_history(p_space_id, p_entity_type, p_entity_id)` -- `security invoker`, returns `{ current, draft, versions[] }`. The `versions` array is ordered `version_number desc` and includes the live published row alongside archived and withdrawn versions. Each version carries its own `publish_note` and (if withdrawn) `withdraw_note` directly off the row -- no per-edit revision trail.
+### RPCs
+
+- `upsert_primary_intelligence` archives the prior published row rather than deleting it: on entry into `state='published'` the function stamps `publish_note` + `published_by` on the new row and `archived_at = now()` on any prior published row for the same anchor, in the same transaction. A republish raises `change_note required when republishing` whenever any prior non-draft version exists for the anchor. When `p_anchor_id` is null a new anchor is created; when supplied, the call targets an existing anchor.
+- `set_intelligence_lead(p_anchor_id)` -- pins one anchor as the entity's lead brief; clears `is_lead` on all sibling anchors in the same transaction. If the previously published lead is withdrawn and no published sibling exists, `_promote_next_intelligence_lead` auto-promotes the next available published anchor.
+- `reorder_intelligence(p_space_id, p_entity_type, p_entity_id, p_anchor_ids[])` -- sets `display_order` by array position; rejects if the supplied array does not cover all anchors for the entity (prevents accidental partial reorder).
+- `list_intelligence_for_entity(p_space_id, p_entity_type, p_entity_id)` -- returns all briefs for the entity, each as `{ anchor, current, draft }`, ordered by `display_order`. Used by the brief-list component to render the full sidebar.
+- `build_intelligence_payload_for_row(p_anchor_id)` -- builds the enriched payload (headline, body, byline, links with resolved names) for a single anchor's published version. Called by the detail-bundle RPCs.
+- `withdraw_primary_intelligence(p_id, p_change_note)` -- soft-deletes the current published version. Sets `state='withdrawn'` and writes `withdraw_note` directly to the row. Only valid when `state='published'`; requires a non-empty change note.
+- `purge_primary_intelligence(p_id, p_confirmation, p_purge_anchor)` -- hard-deletes a single version when `p_confirmation` exactly matches the row's `headline` (case-sensitive). When `p_purge_anchor=true`, cascades the delete across every version row for the same anchor. Used for "this read should never have existed" recovery.
+- `get_primary_intelligence_history(p_anchor_id uuid)` -- `security invoker`, returns `{ current, draft, versions[] }`. Re-keyed to a single anchor id (the old `(p_space_id, p_entity_type, p_entity_id)` overload is dropped). The `versions` array is ordered `version_number desc` and includes published, archived, and withdrawn rows. Each version carries its own `publish_note` and (if withdrawn) `withdraw_note` directly off the row.
 
 `delete_primary_intelligence` is narrowed to drafts only; it raises with errcode `22023` when called on a non-draft row, pointing the caller at withdraw or purge.
 
@@ -699,8 +708,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `assign_primary_intelligence_version`
 - `auto_join_demo_tenant_local`
 - `backfill_marker_history`
-- `build_intelligence_payload`
-- `build_intelligence_payload`
 - `claim_pending_r2_deletes`
 - `commit_source_import`
 - `create_asset`
@@ -732,7 +739,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`
 - `get_landscape_index_by_roa`
-- `get_marker_detail_with_intelligence`
 - `get_positioning_data`
 - `get_source_document`
 - `get_space_intelligence`

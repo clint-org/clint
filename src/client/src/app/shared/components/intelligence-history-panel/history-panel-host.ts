@@ -23,12 +23,12 @@ export class IntelligenceHistoryHost {
   constructor(private readonly service: PrimaryIntelligenceService) {}
 
   async load(
-    spaceId: string,
+    anchorId: string,
     entityType: IntelligenceEntityType,
     entityId: string,
   ): Promise<void> {
     this.payload.set(
-      await this.service.loadHistory(spaceId, entityType, entityId),
+      await this.service.loadHistory(anchorId, entityType, entityId),
     );
   }
 
