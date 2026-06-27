@@ -116,6 +116,11 @@ export class MarkerTypeListComponent implements OnInit, OnDestroy {
     return ['/t', tenantId, 's', this.spaceId, 'help', 'markers'];
   }
 
+  protected markerCategoriesLink(): string[] {
+    const tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+    return ['/t', tenantId, 's', this.spaceId, 'settings', 'marker-categories'];
+  }
+
   ngOnDestroy(): void {
     this.topbarState.clear();
   }
