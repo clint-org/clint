@@ -17,6 +17,7 @@ import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { Marker } from '../../../core/models/marker.model';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
+import { deriveTrialPhaseSpan, TrialPhaseSpan } from '../../../core/models/trial-phase-span';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { markerPeriodLabel, markerStartCaption } from '../../../core/models/marker-date-precision';
 import { MARKER_ICON_SIZE } from '../../../shared/utils/grid-constants';
@@ -47,6 +48,7 @@ export interface FlattenedTrial {
   assetRoas: { id: string; name: string; abbreviation: string | null }[];
   trialIndications: { id: string; name: string }[];
   trial: Trial;
+  phaseSpan: TrialPhaseSpan;
   isFirstInCompany: boolean;
   isFirstInAsset: boolean;
   isLastInCompany: boolean;
@@ -154,17 +156,13 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     return x >= 0 && x <= this.totalWidth() ? x : null;
   });
 
-  /** Pixel x-position of the latest phase start or marker across all trials. */
+  /** Pixel x-position of the latest marker event across all trials. */
   private readonly lastEventX = computed<number | null>(() => {
     const trials = this.flattenedTrials();
     if (trials.length === 0) return null;
 
     let latestMs = -Infinity;
     for (const row of trials) {
-      if (row.trial.phase_start_date) {
-        const t = new Date(row.trial.phase_start_date).getTime();
-        if (t > latestMs) latestMs = t;
-      }
       for (const marker of row.trial.markers ?? []) {
         const t = new Date(marker.event_date).getTime();
         if (t > latestMs) latestMs = t;
@@ -200,6 +198,7 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
               name: i.indication_name,
             })),
             trial,
+            phaseSpan: deriveTrialPhaseSpan(trial.markers ?? []),
             isFirstInCompany,
             isFirstInAsset,
             isLastInCompany: false,
