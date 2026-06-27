@@ -200,6 +200,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `set_intelligence_lead` | primary_intelligence_anchors | primary_intelligence |
 | `set_trial_assets` | trial_assets | trials |
 | `set_trial_indications` | condition_indication_map, conditions, trial_conditions | indications, trial_assets, trials |
+| `source_duplicate_check` | - | source_documents |
 | `space_shows_preclinical` | - | spaces |
 | `tenant_owner_update_ai_config` | ai_config | tenant_members |
 | `trigger_single_trial_sync` | - | trials |
@@ -787,6 +788,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `search_palette`
 - `set_trial_assets`
 - `set_trial_indications`
+- `source_duplicate_check`
 - `space_shows_preclinical`
 - `tenant_owner_update_ai_config`
 - `update_asset_mechanisms`

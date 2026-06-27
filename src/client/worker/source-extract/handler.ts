@@ -144,6 +144,33 @@ export async function handleSourceExtract(
 
   const textHash = await sha256(sourceText);
 
+  // Pre-extraction duplicate guard: if this exact source was already committed
+  // in this space, short-circuit before spending a Claude call. Mirrors the
+  // commit-stage text_hash check in commit_source_import. "Continue anyway"
+  // re-sends with allow_duplicate to bypass this and re-extract.
+  if (!body.allow_duplicate) {
+    let existingDocId: string | null = null;
+    try {
+      existingDocId = await callRpc<string | null>(cfg, null, 'source_duplicate_check', {
+        p_secret: env.EXTRACT_SOURCE_WORKER_SECRET,
+        p_space_id: body.space_id,
+        p_text_hash: textHash,
+      });
+    } catch {
+      // Non-fatal: if the guard lookup fails, fall through to extraction rather
+      // than blocking a legitimate import. The commit-stage guard still applies.
+      existingDocId = null;
+    }
+    if (existingDocId) {
+      return jsonErrorWithCode(
+        409,
+        'duplicate_source',
+        'This exact source was already imported. Continue anyway to extract it again.',
+        cors
+      );
+    }
+  }
+
   const tenantId = await fetchTenantId(cfg, auth, body.space_id);
   if (!tenantId) return jsonError(403, 'forbidden', cors);
 

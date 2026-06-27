@@ -178,6 +178,10 @@ export interface ExtractRequest {
   source_kind: 'url' | 'text';
   source_url?: string;
   source_text?: string;
+  // When true, skip the pre-extraction duplicate guard and re-extract even if
+  // a byte-identical source was already committed in this space. Set by the
+  // "Continue anyway" affordance after the guard fires.
+  allow_duplicate?: boolean;
 }
 
 export interface NctResolveRequest {
