@@ -31,8 +31,6 @@ Company
 
 Each marker carries a `Mon 'YY` date caption. Captions decollide per trial row: `DashboardGridComponent` keeps a caption only when it sits at least 38 px right of the previously kept one (greedy left-to-right, `marker-label-layout.ts`), so clustered catalysts no longer overprint at year zoom. Suppressed dates remain available in the marker hover tooltip.
 
-**Notes** -- free-text annotations attached to trials, displayed inline.
-
 **Entity-page surfaces.** The timeline now mounts on trial, asset, and company detail pages with a per-page `LandscapeStateService` instance whose filters are locked to that entity and persistence is disabled. Each page also embeds `EntityEventsPanelComponent`, which lists external events scoped to the same entity via the hierarchical `get_events_page_data` RPC (trial -> product -> company rollup). Company detail passes explicit `[startYear]` / `[endYear]` for a forward-2-year window; trial and product pages use the default window. See `docs/superpowers/specs/2026-05-10-catalysts-events-on-entity-pages-design.md` for full design context.
 
 ## Timeline Zoom
@@ -72,7 +70,7 @@ A horizontal strip (`TimelineInsightStripComponent`) between the filter bar and 
 
 - **READ** -- auto-generated competitive intelligence one-liner computed by `buildCompetitiveRead()` in `competitive-read.ts`. Identifies the leader (most late-stage trials), deepest P3 pipeline, and most active company (by recent changes count). Handles edge cases: single company shows a sole-entrant summary; suppresses duplicate names when one company wins both deepest and most-active.
 - **STATS** -- company, asset, trial, and catalyst counts. Catalyst count covers markers with `event_date` in the next 90 days, computed by `computeTimelineStats()`.
-- **COLUMNS** -- checkbox toggles for MOA, ROA, and Notes column visibility. These signals live on `LandscapeStateService` (`showMoaColumn`, `showRoaColumn`, `showNotesColumn`) and are persisted to sessionStorage alongside other landscape state. `DashboardGridComponent` reads column visibility from the service via optional injection (falls back to all-visible when used outside the landscape shell, e.g. on entity detail pages).
+- **COLUMNS** -- checkbox toggles for MOA, ROA, and Indication column visibility. These signals live on `LandscapeStateService` (`showMoaColumn`, `showRoaColumn`, `showIndicationColumn`) and are persisted to sessionStorage alongside other landscape state. `DashboardGridComponent` reads column visibility from the service via optional injection (falls back to all-visible when used outside the landscape shell, e.g. on entity detail pages).
 
 ## Legend
 
@@ -95,7 +93,6 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - trials
     - markers
     - marker_types
-    - trial_notes
   related:
     - timeline-zoom
     - timeline-filtering
@@ -132,19 +129,6 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   user_facing: true
   role: viewer
   status: active
-- id: timeline-trial-notes
-  summary: Free-text trial annotations rendered inline on timeline rows.
-  routes:
-    - /t/:tenantId/s/:spaceId/timeline
-  rpcs:
-    - get_dashboard_data
-  tables:
-    - trial_notes
-  related:
-    - timeline-grid
-  user_facing: true
-  role: viewer
-  status: active
 - id: timeline-entity-page-mount
   summary: Timeline embedded on trial, asset, and company detail pages with filters locked to the entity and persistence disabled.
   routes:
@@ -166,7 +150,7 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   role: viewer
   status: active
 - id: timeline-insight-strip
-  summary: Horizontal strip above the grid with competitive read (leader, deepest pipeline, most active), summary stats (companies, assets, trials, catalysts in 90d), and column visibility toggles (MOA, ROA, Notes).
+  summary: Horizontal strip above the grid with competitive read (leader, deepest pipeline, most active), summary stats (companies, assets, trials, catalysts in 90d), and column visibility toggles (MOA, ROA, Indication).
   routes:
     - /t/:tenantId/s/:spaceId/timeline
   rpcs:

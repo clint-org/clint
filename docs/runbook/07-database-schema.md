@@ -973,4 +973,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260626170000_landscape_primary_intelligence_presence.sql`
 - `20260626180000_positioning_intelligence_includes_trials.sql`
 - `20260627032406_marker_categories_unique_name.sql`
+- `20260627120000_dashboard_data_drop_notes.sql`
 <!-- /AUTO-GEN:DRIFT -->

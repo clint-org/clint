@@ -20,7 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { SourceProvenanceLineComponent } from '../../../shared/components/source-provenance/source-provenance-line.component';
 import { sectionHashUrl } from './section-hash-url';
-import { Trial, TrialNote } from '../../../core/models/trial.model';
+import { Trial } from '../../../core/models/trial.model';
 import { Marker } from '../../../core/models/marker.model';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
@@ -28,7 +28,6 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
 import { shouldShowTrialSecondaryName } from '../../../core/utils/display-fallbacks';
 import { TrialService } from '../../../core/services/trial.service';
 import { MarkerService } from '../../../core/services/marker.service';
-import { TrialNoteService } from '../../../core/services/trial-note.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
@@ -44,7 +43,6 @@ import {
 } from '../../../core/models/ctgov-field.model';
 
 import { MarkerFormComponent } from './marker-form.component';
-import { NoteFormComponent } from './note-form.component';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
@@ -87,7 +85,6 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     SkeletonComponent,
     SourceProvenanceLineComponent,
     MarkerFormComponent,
-    NoteFormComponent,
     SectionCardComponent,
     ManagePageShellComponent,
     RowActionsComponent,
@@ -127,7 +124,6 @@ export class TrialDetailComponent implements OnDestroy {
   private router = inject(Router);
   private trialService = inject(TrialService);
   private markerService = inject(MarkerService);
-  private noteService = inject(TrialNoteService);
   private intelligenceService = inject(PrimaryIntelligenceService);
   private readonly changeEventService = inject(ChangeEventService);
   private confirmation = inject(ConfirmationService);
@@ -135,8 +131,8 @@ export class TrialDetailComponent implements OnDestroy {
   private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
 
-  // Stable menu-item references per row id, keyed with a prefix so markers
-  // and notes don't collide (see CompanyListComponent comment).
+  // Stable menu-item references per marker id, keyed with a prefix
+  // (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
 
   private readonly trialEffect = effect(() => {
@@ -248,8 +244,6 @@ export class TrialDetailComponent implements OnDestroy {
 
   readonly addingMarker = signal(false);
   readonly editingMarker = signal<Marker | null>(null);
-  readonly addingNote = signal(false);
-  readonly editingNote = signal<TrialNote | null>(null);
 
   // Primary intelligence
   readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
@@ -313,7 +307,7 @@ export class TrialDetailComponent implements OnDestroy {
   private async initLandscape(spaceId: string, trialId: string): Promise<void> {
     await this.landscape.init(spaceId, {
       disablePersistence: true,
-      columnDefaults: { showMoaColumn: false, showRoaColumn: false, showNotesColumn: true },
+      columnDefaults: { showMoaColumn: false, showRoaColumn: false },
     });
     this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, trialIds: [trialId] });
   }
@@ -478,23 +472,6 @@ export class TrialDetailComponent implements OnDestroy {
         this.addingMarker.set(false);
       },
       onDelete: () => void this.deleteMarker(marker.id),
-    });
-    this.menuCache.set(key, items);
-    return items;
-  }
-
-  noteMenu(note: TrialNote): MenuItem[] {
-    const key = `note:${note.id}`;
-    const cached = this.menuCache.get(key);
-    if (cached) return cached;
-    const items = buildEntityActionMenu({
-      canEdit: this.spaceRole.canEdit(),
-      editLabel: 'Edit',
-      onEdit: () => {
-        this.editingNote.set(note);
-        this.addingNote.set(false);
-      },
-      onDelete: () => void this.deleteNote(note.id),
     });
     this.menuCache.set(key, items);
     return items;
@@ -666,36 +643,6 @@ export class TrialDetailComponent implements OnDestroy {
       this.messageService.add({
         severity: 'error',
         summary: 'Could not delete marker',
-        detail: e instanceof Error ? e.message : 'Check your connection and try again.',
-        life: 4000,
-      });
-    }
-  }
-
-  async onNoteSaved(): Promise<void> {
-    this.addingNote.set(false);
-    this.editingNote.set(null);
-    await this.loadTrial();
-    this.messageService.add({ severity: 'success', summary: 'Note saved.', life: 3000 });
-  }
-
-  async deleteNote(id: string): Promise<void> {
-    const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete note',
-      message: 'Delete this note?',
-      // Unnamed-item path: require the literal word 'delete'.
-      requireTypedConfirmation: true,
-      typedConfirmationValue: 'delete',
-    });
-    if (!ok) return;
-    try {
-      await this.noteService.delete(id);
-      await this.loadTrial();
-      this.messageService.add({ severity: 'success', summary: 'Note deleted.', life: 3000 });
-    } catch (e) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Could not delete note',
         detail: e instanceof Error ? e.message : 'Check your connection and try again.',
         life: 4000,
       });

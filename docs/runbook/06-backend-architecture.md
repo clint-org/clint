@@ -113,7 +113,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_assets, trial_conditions, trials |
 | `get_catalyst_detail` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_company_detail_with_intelligence` | - | companies |
-| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_assets, trial_change_events, trial_conditions, trial_notes, trials |
+| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, routes_of_administration, trial_assets, trial_change_events, trial_conditions, trials |
 | `get_event_detail` | - | assets, companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_assets, trial_change_events, trials |
