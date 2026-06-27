@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { IndicationService } from '../../core/services/indication.service';
 import { MechanismOfActionService } from '../../core/services/mechanism-of-action.service';
@@ -11,7 +11,7 @@ import { toVocabRows, type VocabRow } from './taxonomies-help.utils';
 
 @Component({
   selector: 'app-taxonomies-help',
-  imports: [ManagePageShellComponent, LoaderComponent, RouterLink],
+  imports: [ManagePageShellComponent, LoaderComponent],
   template: `
     <app-manage-page-shell>
       <div class="max-w-3xl">
@@ -78,14 +78,6 @@ import { toVocabRows, type VocabRow } from './taxonomies-help.utils';
             }
           </div>
         </section>
-
-        <a
-          [routerLink]="backLink()"
-          class="inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
-        >
-          <i class="fa-solid fa-arrow-left text-[10px]" aria-hidden="true"></i>
-          Back to timeline
-        </a>
       </div>
     </app-manage-page-shell>
   `,
@@ -99,18 +91,9 @@ export class TaxonomiesHelpComponent implements OnInit {
   private readonly brand = inject(BrandContextService);
 
   protected readonly loading = signal(true);
-  private readonly tenantId = signal('');
-  private readonly spaceId = signal('');
   private readonly indicationRows = signal<VocabRow[]>([]);
   private readonly moaRows = signal<VocabRow[]>([]);
   private readonly roaRows = signal<VocabRow[]>([]);
-
-  protected readonly backLink = computed(() => {
-    const tid = this.tenantId();
-    const sid = this.spaceId();
-    if (!tid || !sid) return ['/'];
-    return ['/t', tid, 's', sid, 'timeline'];
-  });
 
   protected readonly analystActor = computed(() => this.brand.agency()?.name ?? 'the analyst');
   protected readonly analystSubject = computed(() => this.brand.agency()?.name ?? 'analysts');
@@ -148,14 +131,7 @@ export class TaxonomiesHelpComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    let snap = this.route.snapshot;
-    while (snap) {
-      if (snap.paramMap.has('tenantId')) this.tenantId.set(snap.paramMap.get('tenantId')!);
-      if (snap.paramMap.has('spaceId')) this.spaceId.set(snap.paramMap.get('spaceId')!);
-      if (!snap.parent) break;
-      snap = snap.parent;
-    }
-    const spaceId = this.spaceId();
+    const spaceId = this.route.snapshot.paramMap.get('spaceId') ?? '';
     try {
       const [inds, moas, roas] = await Promise.all([
         this.indicationService.list(spaceId),
