@@ -171,7 +171,7 @@ export class CompanyDetailComponent implements OnDestroy {
             icon: 'fa-solid fa-box',
             command: () =>
               this.router.navigate(
-                ['/t', this.tenantIdSig(), 's', this.spaceIdSig(), 'manage', 'assets'],
+                ['/t', this.tenantIdSig(), 's', this.spaceIdSig(), 'profiles', 'assets'],
                 {
                   queryParams: buildFilterQueryParams({
                     companyName: { kind: 'text', contains: company.name },
@@ -197,7 +197,7 @@ export class CompanyDetailComponent implements OnDestroy {
       this.tenantIdSig(),
       's',
       this.spaceIdSig(),
-      'manage',
+      'profiles',
       'assets',
       asset.id,
     ]);
@@ -228,7 +228,7 @@ export class CompanyDetailComponent implements OnDestroy {
           this.tenantIdSig(),
           's',
           this.spaceIdSig(),
-          'manage',
+          'profiles',
           'companies',
         ]),
       errorFallback: 'Could not delete company. It may have associated assets.',

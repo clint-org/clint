@@ -66,6 +66,7 @@ Output schema (follow this exactly):
     "evidence": "verbatim quote"
   }],
   "markers": [{
+    "match": {"kind": "existing", "id": "uuid"} OR {"kind": "new"},
     "marker_type": "${markerTypeEnum}",
     "title": "short descriptive title",
     "event_date": "YYYY-MM-DD",
@@ -76,6 +77,7 @@ Output schema (follow this exactly):
     "evidence": "verbatim quote"
   }],
   "events": [{
+    "match": {"kind": "existing", "id": "uuid"} OR {"kind": "new"},
     "category": "${categoryEnum}",
     "title": "short descriptive title",
     "event_date": "YYYY-MM-DD",
@@ -88,6 +90,8 @@ Output schema (follow this exactly):
 }
 
 company_ref, sponsor_ref, asset_refs, primary_asset_ref, trial_refs, and anchor.ref are zero-based indices into their respective arrays in THIS output (not inventory ids). asset_refs is the list of assets a trial tests (empty for observational; multiple for a master protocol testing several drugs) and primary_asset_ref (one of asset_refs) is the headline asset. Use "existing" match with the inventory id when the entity already exists. Use "new" match when it does not.
+
+For markers and events, set match.kind to "existing" with the inventory id ONLY when the proposal describes the SAME real-world milestone as an existing marker/event on the same trial/anchor. Anchor on trial + event_date; tolerate differences in title wording and marker_type/category. Read the title, type, category, and evidence to keep genuinely different same-date developments separate. When uncertain, use "new": a missed duplicate is recoverable, but a wrong match permanently drops a distinct item.
 
 If nothing can be extracted, return all arrays as empty.`;
 }

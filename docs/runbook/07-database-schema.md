@@ -1034,5 +1034,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260627130900_fix_asset_entity_type_anchors.sql`
 - `20260627140000_ctgov_marker_robustness.sql`
 - `20260627150000_dashboard_unspecified_indication_node.sql`
-- `20260627160000_dashboard_data_intelligence_presence_anchors.sql`
+- `20260627160000_commit_source_import_skip_existing.sql`
+- `20260627161000_dashboard_data_intelligence_presence_anchors.sql`
+- `20260627170000_inventory_snapshot_marker_event_instances.sql`
 <!-- /AUTO-GEN:DRIFT -->

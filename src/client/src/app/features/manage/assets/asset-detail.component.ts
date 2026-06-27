@@ -166,7 +166,7 @@ export class AssetDetailComponent implements OnDestroy {
       this.tenantIdSig(),
       's',
       this.spaceIdSig(),
-      'manage',
+      'profiles',
       'trials',
       trialId,
     ]);
@@ -191,7 +191,7 @@ export class AssetDetailComponent implements OnDestroy {
           this.tenantIdSig(),
           's',
           this.spaceIdSig(),
-          'manage',
+          'profiles',
           'assets',
         ]),
       errorFallback: 'Could not delete asset. It may have associated trials.',

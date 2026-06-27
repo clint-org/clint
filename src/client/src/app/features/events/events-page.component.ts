@@ -602,7 +602,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       this.getTenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'trials',
       trialId,
     ]);
@@ -639,7 +639,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       const trialId = this.selectedCatalystDetail()?.catalyst.trial_id;
       if (!trialId) return;
       this.router.navigate(
-        ['/t', this.tenantId, 's', this.spaceId(), 'manage', 'trials', trialId],
+        ['/t', this.tenantId, 's', this.spaceId(), 'profiles', 'trials', trialId],
         {
           queryParams: { marker: item.id },
         }

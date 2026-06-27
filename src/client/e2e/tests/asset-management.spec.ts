@@ -17,7 +17,7 @@ test.describe('Asset Management CRUD', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
-  const assetsUrl = () => `/t/${tenantId}/s/${spaceId}/manage/assets`;
+  const assetsUrl = () => `/t/${tenantId}/s/${spaceId}/profiles/assets`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Asset CRUD Org');

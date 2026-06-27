@@ -19,7 +19,7 @@ test.describe('Trial Management CRUD', () => {
   let tenantId: string;
   let spaceId: string;
   let trialId: string;
-  const trialUrl = () => `/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`;
+  const trialUrl = () => `/t/${tenantId}/s/${spaceId}/profiles/trials/${trialId}`;
 
   test.beforeAll(async ({ browser }) => {
     test.setTimeout(60000);
@@ -175,7 +175,7 @@ test.describe('Trial List CRUD', () => {
   let companyId: string;
   let assetId: string;
   let taId: string;
-  const trialsUrl = () => `/t/${tenantId}/s/${spaceId}/manage/trials`;
+  const trialsUrl = () => `/t/${tenantId}/s/${spaceId}/profiles/trials`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Trial List Org');
@@ -209,7 +209,7 @@ test.describe('Trial List CRUD', () => {
     // where the "Edit details" topbar action opens the edit dialog.
     const row = page.locator('tr', { hasText: 'KEYNOTE-001' });
     await clickRowAction(page, row, 'Edit');
-    await expect(page).toHaveURL(/\/manage\/trials\/[0-9a-f-]+/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/profiles\/trials\/[0-9a-f-]+/, { timeout: 10000 });
 
     await clickTopbarAction(page, 'Edit details');
     await expect(page.locator('#trial-form-name')).toBeVisible({ timeout: 5000 });
@@ -350,7 +350,7 @@ test.describe('Trial Edit Dialog Phase Lock State', () => {
   let ctgovTrialId: string;
   let analystTrialId: string;
 
-  const trialDetailUrl = (id: string) => `/t/${tenantId}/s/${spaceId}/manage/trials/${id}`;
+  const trialDetailUrl = (id: string) => `/t/${tenantId}/s/${spaceId}/profiles/trials/${id}`;
 
   test.beforeAll(async ({ browser }) => {
     test.setTimeout(60000);

@@ -147,7 +147,7 @@ test.describe('intelligence version history', () => {
     await createTestAgency('Intel History Agency', { tenantId });
     spaceId = await createTestSpace(tenantId, 'Intel History Space');
     companyId = await createTestCompany(spaceId, 'Acme Bio');
-    companyUrl = `/t/${tenantId}/s/${spaceId}/manage/companies/${companyId}`;
+    companyUrl = `/t/${tenantId}/s/${spaceId}/profiles/companies/${companyId}`;
     page = await authenticatedPage(browser);
     const { getAuthStorage } = await import('../helpers/auth.helper');
     userId = getAuthStorage().userId;

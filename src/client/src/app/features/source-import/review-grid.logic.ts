@@ -285,3 +285,26 @@ export function blockingReason(b: { noAsset: number; duplicates: number }): stri
   }
   return null;
 }
+
+// Marker and event rows are leaf nodes attached to parent entities. When a
+// leaf is already matched to an existing record, re-importing it is a no-op,
+// so these rows default to deselected. Parent entities (companies, assets,
+// trials) remain selected even when matched because the commit needs the full
+// hierarchy to attach leaf rows.
+const LEAF_ENTITY_TYPES = new Set(['markers', 'events']);
+
+// Produce the initial Record<key, boolean> that backs the selections signal.
+// Keys follow the pattern `${type}_${index}`. Matched markers and events are
+// set to false; everything else is set to true. Non-array fields (source_summary,
+// source_title, source_date) are silently skipped.
+export function defaultSelections(proposals: Record<string, unknown>): Record<string, boolean> {
+  const sel: Record<string, boolean> = {};
+  for (const [type, items] of Object.entries(proposals)) {
+    if (!Array.isArray(items)) continue;
+    const isLeaf = LEAF_ENTITY_TYPES.has(type);
+    for (let i = 0; i < items.length; i++) {
+      sel[`${type}_${i}`] = isLeaf ? entityState(items[i] as Entity) !== 'existing' : true;
+    }
+  }
+  return sel;
+}

@@ -47,6 +47,17 @@ const helpRules = [
     helpPage: "src/client/src/app/features/help/phases-help.component.ts",
   },
   {
+    patterns: [
+      /indications?/i,
+      /mechanisms?_of_action/i,
+      /routes?_of_administration/i,
+      /indication\.service/,
+      /mechanism-of-action\.service/,
+      /route-of-administration\.service/,
+    ],
+    helpPage: "src/client/src/app/features/help/taxonomies-help.component.ts",
+  },
+  {
     patterns: [/space-members/, /space_members/, /space-role/, /space_role/],
     helpPage: "src/client/src/app/features/help/roles-help.component.ts",
   },

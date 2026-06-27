@@ -119,12 +119,12 @@ test.describe('Landscape bullseye', () => {
     await expect(page).not.toHaveURL(/product=/);
   });
 
-  test('empty space shows the empty state and manage assets link', async () => {
+  test('empty space shows the empty state and view assets button', async () => {
     const emptySpaceId = await createTestSpace(tenantId, 'Empty Bullseye Space');
     await page.goto(`/t/${tenantId}/s/${emptySpaceId}/bullseye`, {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.getByText(/No assets match the current filters/)).toBeVisible();
-    await expect(page.getByText('Manage assets')).toBeVisible();
+    await expect(page.getByText('View assets')).toBeVisible();
   });
 });

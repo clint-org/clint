@@ -994,7 +994,7 @@ export class SuperAdminAiUsageComponent implements OnInit {
   }
 
   manageLink(detail: AiCallDetail, type: 'companies' | 'assets' | 'trials', id: string): unknown[] {
-    return ['/t', detail.tenant_id, 's', detail.space_id, 'manage', type, id];
+    return ['/t', detail.tenant_id, 's', detail.space_id, 'profiles', type, id];
   }
 
   // "3 companies, 2 assets, 1 trial" -- omits zero counts; falls back when the

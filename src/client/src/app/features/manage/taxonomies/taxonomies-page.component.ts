@@ -7,7 +7,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
@@ -39,6 +39,7 @@ type TabValue = 'indications' | 'moa' | 'roa';
   standalone: true,
   imports: [
     FormsModule,
+    RouterLink,
     TableModule,
     ButtonModule,
     SelectButton,
@@ -53,6 +54,13 @@ type TabValue = 'indications' | 'moa' | 'roa';
   ],
   template: `
     <app-manage-page-shell>
+      <p class="mb-3 text-[11px] text-slate-500 max-w-2xl">
+        Indications, mechanisms of action, and routes of administration used to classify assets and
+        trials across this space.
+        <a [routerLink]="taxonomiesGuideLink()" class="ml-1 text-brand-700 hover:underline"
+          >Taxonomies guide</a
+        >.
+      </p>
       <div class="mb-4">
         <p-selectbutton
           [options]="tabOptions"
@@ -332,6 +340,11 @@ export class TaxonomiesPageComponent implements OnInit, OnDestroy {
   }
 
   // --- Computed display helpers ---
+
+  protected taxonomiesGuideLink(): string[] {
+    const tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+    return ['/t', tenantId, 's', this.spaceId, 'help', 'taxonomies'];
+  }
 
   pageTitle(): string {
     switch (this.activeTab()) {

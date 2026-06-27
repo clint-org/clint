@@ -30,12 +30,12 @@ test.describe('Navigation', () => {
     await expect(sidebar.locator('button[aria-label="Trials"]')).toBeVisible();
   });
 
-  test('clicking sidebar nav item navigates to manage page', async () => {
+  test('clicking sidebar nav item navigates to profiles page', async () => {
     const sidebar = page.locator('app-sidebar');
     const companiesBtn = sidebar.locator('button[aria-label="Companies"]');
 
     await companiesBtn.click();
-    await expect(page).toHaveURL(/\/manage\/companies/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/profiles\/companies/, { timeout: 10000 });
   });
 
   test('topbar displays organization settings link', async () => {
@@ -46,10 +46,10 @@ test.describe('Navigation', () => {
   test('navigating to companies then back to space root works', async () => {
     await navigateToSpace(page, tenantId, spaceId);
     // Navigate to companies via URL
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/companies`, {
       waitUntil: 'domcontentloaded',
     });
-    await expect(page).toHaveURL(/\/manage\/companies/);
+    await expect(page).toHaveURL(/\/profiles\/companies/);
 
     // Navigate back to space root
     await page.goto(`/t/${tenantId}/s/${spaceId}`, { waitUntil: 'domcontentloaded' });

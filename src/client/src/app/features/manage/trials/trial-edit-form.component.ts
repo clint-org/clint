@@ -17,14 +17,14 @@ interface SelectOption {
 
 /**
  * Presentational trial form body. No persistence: the host owns option loading,
- * validation, and save. Shared by the Manage trial EDIT dialog and the
+ * validation, and save. Shared by the Profiles trial edit dialog and the
  * import-review edit dialog.
  *
  * Indication is a multi-select of {id,name} options; the host decides what the
- * option `id` means -- Manage binds indication UUIDs, the review dialog binds
+ * option `id` means -- Profiles binds indication UUIDs, the review dialog binds
  * indication NAMES (the import commit resolves names). The component is agnostic.
  *
- * The Manage CREATE dialog is intentionally NOT a consumer: its single-asset +
+ * The Profiles trial create dialog is intentionally NOT a consumer: its single-asset +
  * NCT-autopopulate flow diverges enough that sharing would balloon the surface.
  */
 @Component({
@@ -50,7 +50,7 @@ export class TrialEditFormComponent {
   // primaryAssetId (one of assetIds) is the headline asset.
   readonly assetIds = model<string[]>([]);
   readonly primaryAssetId = model<string | null>(null);
-  // Selected indication option ids (UUIDs in Manage, names in review).
+  // Selected indication option ids (UUIDs in Profiles, names in review).
   readonly indicationIds = model<string[]>([]);
   readonly phaseType = model<string | null>(null);
   readonly phaseStart = model<string | null>(null); // YYYY-MM-DD
@@ -72,6 +72,11 @@ export class TrialEditFormComponent {
   readonly phaseTypeLocked = input<boolean>(false);
   readonly phaseStartLocked = input<boolean>(false);
   readonly phaseEndLocked = input<boolean>(false);
+  // Non-null when the underlying marker is approximate (e.g. "~Q3 '26"); the
+  // field then renders the period caption read-only instead of a day-precise
+  // picker, since precision is edited in the marker editor.
+  readonly phaseStartApproxLabel = input<string | null>(null);
+  readonly phaseEndApproxLabel = input<string | null>(null);
   readonly nameInvalid = input<boolean>(false);
   readonly nameBlur = output<void>();
 

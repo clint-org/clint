@@ -135,9 +135,9 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
 - id: timeline-entity-page-mount
   summary: Timeline embedded on trial, asset, and company detail pages with filters locked to the entity and persistence disabled.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
-    - /t/:tenantId/s/:spaceId/manage/assets/:id
-    - /t/:tenantId/s/:spaceId/manage/companies/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/assets/:id
+    - /t/:tenantId/s/:spaceId/profiles/companies/:id
   rpcs:
     - get_dashboard_data
     - get_events_page_data

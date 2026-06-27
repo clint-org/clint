@@ -143,7 +143,7 @@ interface CtgovProvenanceBlock {
                         tenantIdSig(),
                         's',
                         spaceId(),
-                        'manage',
+                        'profiles',
                         'companies',
                         d.catalyst.company_id,
                       ]"
@@ -165,7 +165,7 @@ interface CtgovProvenanceBlock {
                           tenantIdSig(),
                           's',
                           spaceId(),
-                          'manage',
+                          'profiles',
                           'assets',
                           d.catalyst.asset_id,
                         ]"

@@ -39,7 +39,7 @@ import {
   menuSlideUpAnimation,
 } from '../../shared/animations/overlay.animation';
 
-type Section = 'landscape' | 'intelligence' | 'manage' | 'settings';
+type Section = 'landscape' | 'intelligence' | 'profiles' | 'settings' | 'reference';
 type PageType = 'landscape' | 'list' | 'detail' | 'blank';
 
 @Component({
@@ -413,7 +413,7 @@ export class AppShellComponent implements OnInit {
   readonly sidebarPinned = signal(false);
   private hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // The space-relative route path (e.g., 'manage/companies', 'events', 'bullseye/by-indication')
+  // The space-relative route path (e.g., 'profiles/companies', 'events', 'bullseye/by-indication')
   readonly activeSpaceRoute = signal('');
 
   // Current URL segments after spaceId for determining page context
@@ -465,12 +465,13 @@ export class AppShellComponent implements OnInit {
   // Determine which section is active from the route
   readonly activeSection = computed<Section>(() => {
     const route = this.activeSpaceRoute();
-    // Engagement lives under /manage for routing history but belongs to the
+    // Engagement lives under /profiles for routing but belongs to the
     // Intelligence group (matches the nav rail); without this it rendered
-    // the Manage tab set with no tab marked active.
-    if (route === 'manage/engagement') return 'intelligence';
-    if (route.startsWith('manage/')) return 'manage';
+    // the Profiles tab set with no tab marked active.
+    if (route === 'profiles/engagement') return 'intelligence';
+    if (route.startsWith('profiles/')) return 'profiles';
     if (route.startsWith('settings/')) return 'settings';
+    if (route.startsWith('help/')) return 'reference';
     if (route === 'events' || route === 'intelligence' || route === 'materials')
       return 'intelligence';
     if (route === 'catalysts') return 'landscape';
@@ -481,11 +482,11 @@ export class AppShellComponent implements OnInit {
   readonly pageType = computed<PageType>(() => {
     const route = this.activeSpaceRoute();
     if (!this.spaceId()) return 'blank';
-    // Trial detail (check before manage)
-    if (route.match(/^manage\/trials\/[^/]+$/)) {
+    // Trial detail (check before profiles)
+    if (route.match(/^profiles\/trials\/[^/]+$/)) {
       return 'detail';
     }
-    // Tab-based sections: landscape (incl. engagement-landing home), intelligence, manage
+    // Tab-based sections: landscape (incl. engagement-landing home), intelligence, profiles
     if (
       route === '' ||
       route === 'timeline' ||
@@ -495,7 +496,7 @@ export class AppShellComponent implements OnInit {
       route === 'intelligence' ||
       route === 'materials' ||
       route === 'catalysts' ||
-      route.startsWith('manage/')
+      route.startsWith('profiles/')
     ) {
       return 'landscape';
     }
@@ -511,8 +512,9 @@ export class AppShellComponent implements OnInit {
     const labels: Record<Section, string> = {
       landscape: 'Landscape',
       intelligence: 'Intelligence',
-      manage: 'Manage',
+      profiles: 'Profiles',
       settings: 'Settings',
+      reference: 'Reference',
     };
     return labels[this.activeSection()] ?? '';
   });
@@ -561,8 +563,8 @@ export class AppShellComponent implements OnInit {
         return [
           {
             label: 'Engagement',
-            value: 'manage/engagement',
-            active: route === 'manage/engagement',
+            value: 'profiles/engagement',
+            active: route === 'profiles/engagement',
             icon: NAV_ICONS['engagement'],
           },
           {
@@ -584,25 +586,24 @@ export class AppShellComponent implements OnInit {
             icon: NAV_ICONS['events'],
           },
         ];
-      case 'manage':
-        if (!this.spaceRole.canEdit()) return [];
+      case 'profiles':
         return [
           {
             label: 'Companies',
             value: 'companies',
-            active: route === 'manage/companies',
+            active: route === 'profiles/companies',
             icon: NAV_ICONS['companies'],
           },
           {
             label: 'Assets',
             value: 'assets',
-            active: route === 'manage/assets',
+            active: route === 'profiles/assets',
             icon: NAV_ICONS['assets'],
           },
           {
             label: 'Trials',
             value: 'trials',
-            active: route === 'manage/trials',
+            active: route === 'profiles/trials',
             icon: NAV_ICONS['trials'],
           },
         ];
@@ -615,9 +616,9 @@ export class AppShellComponent implements OnInit {
   readonly topbarListTitle = computed(() => {
     const route = this.activeSpaceRoute();
     const titleMap: Record<string, string> = {
-      'manage/companies': 'Companies',
-      'manage/assets': 'Assets',
-      'manage/trials': 'Trials',
+      'profiles/companies': 'Companies',
+      'profiles/assets': 'Assets',
+      'profiles/trials': 'Trials',
       events: 'Events',
       catalysts: 'Future Catalysts',
       'settings/taxonomies': 'Taxonomies',
@@ -634,7 +635,7 @@ export class AppShellComponent implements OnInit {
   // Detail page metadata
   readonly topbarBackLabel = computed(() => {
     const route = this.activeSpaceRoute();
-    if (route.match(/^manage\/trials\/[^/]+$/)) return 'Trials';
+    if (route.match(/^profiles\/trials\/[^/]+$/)) return 'Trials';
     return '';
   });
 
@@ -716,8 +717,9 @@ export class AppShellComponent implements OnInit {
     const defaultRoutes: Record<Section, string> = {
       landscape: '',
       intelligence: 'events',
-      manage: 'manage/companies',
+      profiles: 'profiles/companies',
       settings: 'settings/taxonomies',
+      reference: 'help/taxonomies',
     };
     this.navigateToSpaceRoute(defaultRoutes[section]);
   }
@@ -759,16 +761,16 @@ export class AppShellComponent implements OnInit {
       case 'intelligence':
         this.navigateToSpaceRoute(tab);
         break;
-      case 'manage':
-        this.navigateToSpaceRoute(`manage/${tab}`);
+      case 'profiles':
+        this.navigateToSpaceRoute(`profiles/${tab}`);
         break;
     }
   }
 
   onBackClick(): void {
     const route = this.activeSpaceRoute();
-    if (route.match(/^manage\/trials\/[^/]+$/)) {
-      this.navigateToSpaceRoute('manage/trials');
+    if (route.match(/^profiles\/trials\/[^/]+$/)) {
+      this.navigateToSpaceRoute('profiles/trials');
     }
   }
 

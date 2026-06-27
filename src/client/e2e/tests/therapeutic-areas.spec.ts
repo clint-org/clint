@@ -13,7 +13,7 @@ test.describe('Indication Management CRUD', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
-  // The old /manage/therapeutic-areas now redirects to /settings/taxonomies
+  // Navigate directly to /settings/taxonomies; the old /manage/therapeutic-areas route was removed
   const taUrl = () => `/t/${tenantId}/s/${spaceId}/settings/taxonomies?tab=indications`;
 
   test.beforeAll(async ({ browser }) => {

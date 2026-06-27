@@ -279,7 +279,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
   }
 
   onTrialCreated({ trialId }: { trialId: string }): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trialId]);
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'profiles', 'trials', trialId]);
   }
 
   openDetail(trial: Trial): void {
@@ -288,7 +288,7 @@ export class TrialListComponent implements OnInit, OnDestroy {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'trials',
       trial.id,
     ]);

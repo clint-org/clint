@@ -233,6 +233,18 @@ export const routes: Routes = [
               import('./features/help/markers-help.component').then((m) => m.MarkersHelpComponent),
           },
           {
+            path: 'help/taxonomies',
+            loadComponent: () =>
+              import('./features/help/taxonomies-help.component').then((m) => m.TaxonomiesHelpComponent),
+          },
+          {
+            // Space-level alias so the Reference nav group (space-relative links) can reach
+            // the phases guide. The tenant-level help/phases route stays for the dashboard legend.
+            path: 'help/phases',
+            loadComponent: () =>
+              import('./features/help/phases-help.component').then((m) => m.PhasesHelpComponent),
+          },
+          {
             path: '',
             loadComponent: () =>
               import('./features/landscape/landscape-shell.component').then(
@@ -362,54 +374,51 @@ export const routes: Routes = [
           { path: 'landscape/by-roa', redirectTo: 'bullseye' },
           { path: 'landscape/by-roa/:entityId', redirectTo: 'bullseye' },
           { path: 'landscape/:therapeuticAreaId', redirectTo: 'bullseye' },
-          // Manage routes (unchanged)
+          // Profiles routes (entity catalog -- viewer-browsable; editGuard removed from list routes)
           {
-            path: 'manage/companies',
-            canActivate: [editGuard],
+            path: 'profiles/companies',
             loadComponent: () =>
               import('./features/manage/companies/company-list.component').then(
                 (m) => m.CompanyListComponent
               ),
           },
           {
-            path: 'manage/assets',
-            canActivate: [editGuard],
+            path: 'profiles/assets',
             loadComponent: () =>
               import('./features/manage/assets/asset-list.component').then(
                 (m) => m.AssetListComponent
               ),
           },
           {
-            path: 'manage/trials',
-            canActivate: [editGuard],
+            path: 'profiles/trials',
             loadComponent: () =>
               import('./features/manage/trials/trial-list.component').then(
                 (m) => m.TrialListComponent
               ),
           },
           {
-            path: 'manage/trials/:id',
+            path: 'profiles/trials/:id',
             loadComponent: () =>
               import('./features/manage/trials/trial-detail.component').then(
                 (m) => m.TrialDetailComponent
               ),
           },
           {
-            path: 'manage/companies/:id',
+            path: 'profiles/companies/:id',
             loadComponent: () =>
               import('./features/manage/companies/company-detail.component').then(
                 (m) => m.CompanyDetailComponent
               ),
           },
           {
-            path: 'manage/assets/:id',
+            path: 'profiles/assets/:id',
             loadComponent: () =>
               import('./features/manage/assets/asset-detail.component').then(
                 (m) => m.AssetDetailComponent
               ),
           },
           {
-            path: 'manage/engagement',
+            path: 'profiles/engagement',
             loadComponent: () =>
               import('./features/manage/engagement/engagement-detail.component').then(
                 (m) => m.EngagementDetailComponent
@@ -418,6 +427,7 @@ export const routes: Routes = [
           // Settings routes (moved from manage)
           {
             path: 'settings/marker-types',
+            canActivate: [editGuard],
             loadComponent: () =>
               import('./features/manage/marker-types/marker-type-list.component').then(
                 (m) => m.MarkerTypeListComponent
@@ -425,6 +435,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings/marker-categories',
+            canActivate: [editGuard],
             loadComponent: () =>
               import('./features/manage/marker-categories/marker-category-list.component').then(
                 (m) => m.MarkerCategoryListComponent
@@ -432,6 +443,7 @@ export const routes: Routes = [
           },
           {
             path: 'settings/taxonomies',
+            canActivate: [editGuard],
             loadComponent: () =>
               import('./features/manage/taxonomies/taxonomies-page.component').then(
                 (m) => m.TaxonomiesPageComponent
@@ -468,23 +480,6 @@ export const routes: Routes = [
               import('./features/space-settings/space-audit-log.component').then(
                 (m) => m.SpaceAuditLogComponent
               ),
-          },
-          // Redirects: old manage taxonomy/marker paths -> new settings paths
-          {
-            path: 'manage/marker-types',
-            redirectTo: 'settings/marker-types',
-          },
-          {
-            path: 'manage/therapeutic-areas',
-            redirectTo: 'settings/taxonomies',
-          },
-          {
-            path: 'manage/mechanisms-of-action',
-            redirectTo: 'settings/taxonomies',
-          },
-          {
-            path: 'manage/routes-of-administration',
-            redirectTo: 'settings/taxonomies',
           },
           {
             path: 'events',

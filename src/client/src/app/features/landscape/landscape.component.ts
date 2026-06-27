@@ -300,7 +300,7 @@ export class LandscapeComponent implements OnInit {
   }
 
   onOpenTrial(trialId: string): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trialId]);
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'profiles', 'trials', trialId]);
   }
 
   onOpenCompany(companyId: string): void {
@@ -310,7 +310,7 @@ export class LandscapeComponent implements OnInit {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'companies',
       companyId,
     ]);
