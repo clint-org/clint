@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   input,
   linkedSignal,
   output,
@@ -81,6 +82,13 @@ export class IntelligenceStackComponent {
   /** Anchors the user has explicitly toggled (so default-open can be undone). */
   private readonly touchedIds = signal<ReadonlySet<string>>(new Set());
 
+  constructor() {
+    effect(() => {
+      const id = this.leadAnchorId();
+      if (id) this.ensureHistory(id);
+    });
+  }
+
   protected isLead(brief: PrimaryIntelligenceBrief): boolean {
     return brief.anchor_id === this.leadAnchorId();
   }
@@ -92,15 +100,15 @@ export class IntelligenceStackComponent {
   }
 
   protected toggleExpand(anchorId: string): void {
+    const currentlyExpanded = this.isExpanded(anchorId);
     this.touchedIds.update((s) => new Set(s).add(anchorId));
-    const willOpen = !this.isExpanded(anchorId);
     this.expandedIds.update((current) => {
       const next = new Set(current);
-      if (next.has(anchorId)) next.delete(anchorId);
+      if (currentlyExpanded) next.delete(anchorId);
       else next.add(anchorId);
       return next;
     });
-    if (willOpen) this.ensureHistory(anchorId);
+    if (!currentlyExpanded) this.ensureHistory(anchorId);
   }
 
   private ensureHistory(anchorId: string): void {

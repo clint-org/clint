@@ -60,9 +60,9 @@ describe('IntelligenceStackComponent template contract', () => {
     expect(htmlSrc).toContain('histories()[brief.anchor_id]');
   });
 
-  it('offers withdraw and purge in the overflow menu', () => {
-    expect(htmlSrc).toContain('Withdraw');
-    expect(htmlSrc).toContain('Purge');
+  it('offers withdraw and purge in the overflow menu (menuFor labels)', () => {
+    expect(tsSrc).toContain("label: 'Withdraw'");
+    expect(tsSrc).toContain("label: 'Purge entry'");
   });
 });
 
