@@ -1,3 +1,5 @@
+import '@angular/compiler';
+
 import { describe, expect, it } from 'vitest';
 
 import { PrimaryIntelligenceBrief } from '../../../core/models/primary-intelligence.model';

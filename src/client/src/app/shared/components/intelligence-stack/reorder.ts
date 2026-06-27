@@ -1,5 +1,3 @@
-import '@angular/compiler';
-
 import { moveItemInArray } from '@angular/cdk/drag-drop';
 
 import { PrimaryIntelligenceBrief } from '../../../core/models/primary-intelligence.model';
