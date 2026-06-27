@@ -34,7 +34,11 @@ function fixture(overrides: Partial<Trial> = {}): TrialExportRow {
 
 describe('buildTrialExportColumns', () => {
   it('carries the visible columns plus detail fields with date cells', () => {
-    const spec = buildExportSheet('Trials', buildTrialExportColumns([], () => ''), [fixture()]);
+    const spec = buildExportSheet(
+      'Trials',
+      buildTrialExportColumns([], () => ''),
+      [fixture()]
+    );
     expect(spec.columns.map((c) => c.header)).toEqual([
       'Trial',
       'Acronym',
@@ -48,7 +52,6 @@ describe('buildTrialExportColumns', () => {
       'Recruitment status',
       'Study type',
       'Markers',
-      'Notes',
     ]);
     const row = spec.rows[0];
     expect(row['c1']).toBe('DELIVER');
@@ -58,7 +61,6 @@ describe('buildTrialExportColumns', () => {
     expect(row['c8']).toEqual(new Date(Date.UTC(2026, 11, 31)));
     expect(row['c9']).toBe('RECRUITING');
     expect(row['c11']).toBe(2);
-    expect(row['c12']).toBe('Pivotal HFpEF readout expected H2.');
   });
 
   it('appends per-space CT.gov columns resolved through the snapshot lookup', () => {
@@ -68,7 +70,7 @@ describe('buildTrialExportColumns', () => {
     );
     const spec = buildExportSheet('Trials', columns, [fixture()]);
     expect(spec.columns.at(-1)!.header).toBe('Brief title');
-    expect(spec.rows[0]['c13']).toBe('t1:briefTitle');
+    expect(spec.rows[0]['c12']).toBe('t1:briefTitle');
   });
 
   it('collapses absent optional fields to empty cells', () => {
@@ -90,7 +92,7 @@ describe('buildTrialExportColumns', () => {
       ]
     );
     const row = spec.rows[0];
-    for (const key of ['c1', 'c2', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c12']) {
+    for (const key of ['c1', 'c2', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10']) {
       expect(row[key]).toBe('');
     }
   });

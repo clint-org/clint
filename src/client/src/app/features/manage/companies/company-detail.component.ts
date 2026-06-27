@@ -210,7 +210,7 @@ export class CompanyDetailComponent implements OnDestroy {
   private async initLandscape(spaceId: string, companyId: string): Promise<void> {
     await this.landscape.init(spaceId, {
       disablePersistence: true,
-      columnDefaults: { showMoaColumn: false, showRoaColumn: false, showNotesColumn: true },
+      columnDefaults: { showMoaColumn: false, showRoaColumn: false },
     });
     this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, companyIds: [companyId] });
   }

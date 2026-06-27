@@ -29,7 +29,7 @@ To explore the matrix structurally:
 | In-app Help Pages | Tenant-scoped help page describing space-membership roles and permissions; linked from the Space Members page. | [in-app-help.md](features/in-app-help.md) |
 | Landscape Views | Shared landscape shell hosting Timeline, Bullseye, Heatmap, and Future Catalysts tabs with cross-tab filter and detail-panel continuity. | [landscape-views.md](features/landscape-views.md) |
 | Marketing Landing | Default-host page with logo, tagline, and Find your workspace form; gated by marketingLandingGuard. | [marketing-landing.md](features/marketing-landing.md) |
-| Materials Registry | materials table keyed on space_id with material_type (briefing, priority_notice, ad_hoc) and polymorphic material_links to five entity kinds. | [materials-registry.md](features/materials-registry.md) |
+| Materials Registry | materials table keyed on space_id with material_type (briefing, priority_notice, ad_hoc) and polymorphic material_links to six entity kinds (trial, marker, company, asset, space, event). | [materials-registry.md](features/materials-registry.md) |
 | Multi-Tenant Workspaces | Owner-or-super-admin tenant creation with subdomain, branding fields, and first-user invite. | [multi-tenant-workspaces.md](features/multi-tenant-workspaces.md) |
 | PowerPoint Export | Client-side PPTX generation via pptxgenjs replicating the dashboard view as shown, at the current on-screen zoom, directly from the header Export menu. | [pptx-export.md](features/pptx-export.md) |
 | Primary Intelligence | Polymorphic primary_intelligence table keyed on space, entity_type, entity_id with draft, published, archived, withdrawn lifecycle and per-anchor version_number. | [primary-intelligence.md](features/primary-intelligence.md) |

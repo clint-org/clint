@@ -32,7 +32,6 @@ interface PersistedLandscapeState {
   showMoaColumn: boolean;
   showRoaColumn: boolean;
   showIndicationColumn: boolean;
-  showNotesColumn: boolean;
 }
 
 const STORAGE_PREFIX = 'landscape-state:';
@@ -93,7 +92,6 @@ export class LandscapeStateService {
   // only earns its width when a user wants the indication cut. Toggled via
   // the COLUMNS control in the insight strip.
   readonly showIndicationColumn = signal(false);
-  readonly showNotesColumn = signal(true);
 
   // ─── Shared detail panel ─────────────────────────────────────────────
   readonly selectedMarkerId = signal<string | null>(null);
@@ -149,7 +147,6 @@ export class LandscapeStateService {
       showMoaColumn: this.showMoaColumn(),
       showRoaColumn: this.showRoaColumn(),
       showIndicationColumn: this.showIndicationColumn(),
-      showNotesColumn: this.showNotesColumn(),
     };
     if (!this.storageKey || this.disablePersistence) return;
     try {
@@ -173,7 +170,6 @@ export class LandscapeStateService {
         showMoaColumn?: boolean;
         showRoaColumn?: boolean;
         showIndicationColumn?: boolean;
-        showNotesColumn?: boolean;
       };
     }
   ): Promise<void> {
@@ -193,8 +189,6 @@ export class LandscapeStateService {
         this.showRoaColumn.set(opts.columnDefaults.showRoaColumn);
       if (opts.columnDefaults.showIndicationColumn !== undefined)
         this.showIndicationColumn.set(opts.columnDefaults.showIndicationColumn);
-      if (opts.columnDefaults.showNotesColumn !== undefined)
-        this.showNotesColumn.set(opts.columnDefaults.showNotesColumn);
     }
     if (!this.disablePersistence) {
       this.restorePersistedState();
@@ -318,8 +312,6 @@ export class LandscapeStateService {
       if (typeof saved.showRoaColumn === 'boolean') this.showRoaColumn.set(saved.showRoaColumn);
       if (typeof saved.showIndicationColumn === 'boolean')
         this.showIndicationColumn.set(saved.showIndicationColumn);
-      if (typeof saved.showNotesColumn === 'boolean')
-        this.showNotesColumn.set(saved.showNotesColumn);
     } catch {
       // Corrupt data -- ignore and start fresh.
     }

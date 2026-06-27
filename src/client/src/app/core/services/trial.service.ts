@@ -18,8 +18,7 @@ const TRIAL_SELECT = `
       *,
       marker_types(*, marker_categories(*))
     )
-  ),
-  trial_notes(*)
+  )
 `;
 
 const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
@@ -263,9 +262,10 @@ export class TrialService {
     const { data } = await this.supabase.client
       .rpc('get_trial_indications', { p_trial_id: trialId })
       .throwOnError();
-    return (
-      (data ?? []) as { indication_id: string; indication_name: string }[]
-    ).map((row) => ({ id: row.indication_id, name: row.indication_name }));
+    return ((data ?? []) as { indication_id: string; indication_name: string }[]).map((row) => ({
+      id: row.indication_id,
+      name: row.indication_name,
+    }));
   }
 
   /**

@@ -33,7 +33,6 @@ import { LegendComponent } from '../legend/legend.component';
       [hideMoaColumn]="hideMoaColumn()"
       [hideRoaColumn]="hideRoaColumn()"
       [hideIndicationColumn]="hideIndicationColumn()"
-      [hideNotesColumn]="hideNotesColumn()"
     />
     <app-legend [spaceId]="spaceId()" />
     <app-export-footer
@@ -56,7 +55,6 @@ export class ExportSnapshotHostComponent {
   readonly hideMoaColumn = input(false);
   readonly hideRoaColumn = input(false);
   readonly hideIndicationColumn = input(false);
-  readonly hideNotesColumn = input(false);
   readonly spaceId = input.required<string>();
   readonly tenantName = input('');
   /** Pre-rasterized PNG data URIs (or null), supplied by PngExportService. */
