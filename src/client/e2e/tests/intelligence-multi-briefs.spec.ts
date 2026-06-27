@@ -100,7 +100,7 @@ test.describe('multi-brief drawer', () => {
     await createTestAgency('Multi Brief Agency', { tenantId });
     spaceId = await createTestSpace(tenantId, 'Multi Brief Space');
     companyId = await createTestCompany(spaceId, 'Briefs Co');
-    companyUrl = `/t/${tenantId}/s/${spaceId}/manage/companies/${companyId}`;
+    companyUrl = `/t/${tenantId}/s/${spaceId}/profiles/companies/${companyId}`;
     page = await authenticatedPage(browser);
     userId = getAuthStorage().userId;
   });
