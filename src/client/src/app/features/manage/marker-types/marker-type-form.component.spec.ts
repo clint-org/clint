@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { MarkerCategory } from '../../../core/models/marker.model';
-import { createInlineCategory } from './marker-type-form.inline-category';
+import {
+  createInlineCategory,
+  shouldOfferCategoryCreate,
+} from './marker-type-form.inline-category';
 
 // The component itself is not constructed here: importing a templateUrl component
 // into the plain-node unit runner triggers JIT compilation. Following the repo
@@ -35,5 +38,21 @@ describe('createInlineCategory', () => {
 
     expect(create).not.toHaveBeenCalled();
     expect(result).toBeNull();
+  });
+});
+
+describe('shouldOfferCategoryCreate', () => {
+  const categories = [{ name: 'Clinical Trial' }, { name: 'Manufacturing' }];
+
+  it('offers create when the typed name has no exact match', () => {
+    expect(shouldOfferCategoryCreate('Intellectual property', categories)).toBe(true);
+  });
+
+  it('suppresses create on an exact case-insensitive match', () => {
+    expect(shouldOfferCategoryCreate('  manufacturing  ', categories)).toBe(false);
+  });
+
+  it('suppresses create for blank filter text', () => {
+    expect(shouldOfferCategoryCreate('   ', categories)).toBe(false);
   });
 });

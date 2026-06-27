@@ -18,3 +18,18 @@ export async function createInlineCategory(
   if (!name) return null;
   return service.create(spaceId, name);
 }
+
+/**
+ * Whether the category dropdown should offer a "Create '<name>'" footer row for
+ * the current filter text: non-empty and not an exact (case-insensitive) match
+ * of an existing category.
+ */
+export function shouldOfferCategoryCreate(
+  rawName: string,
+  categories: { name: string }[]
+): boolean {
+  const label = rawName.trim();
+  if (!label) return false;
+  const lower = label.toLowerCase();
+  return !categories.some((c) => c.name.toLowerCase() === lower);
+}
