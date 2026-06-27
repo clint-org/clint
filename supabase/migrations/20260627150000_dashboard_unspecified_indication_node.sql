@@ -14,7 +14,10 @@
 -- Read-side only: no indication / condition / asset_indication row is ever written.
 
 -- 1. Per-trial JSON helper. Body copied verbatim from the live get_dashboard_data
---    trial_obj construction (correlated `t` -> p_trial, laterals inlined).
+--    trial_obj construction (ctgov-trial-dates base 20260627130000;
+--    correlated `t` -> p_trial, laterals inlined). phase_data emits phase_type
+--    only (phase_start_date/phase_end_date columns were dropped); the markers
+--    array carries the flat marker_type_id alongside the nested marker_type.
 create or replace function public._dashboard_trial_obj(
   p_trial public.trials,
   p_space_id uuid,
@@ -46,9 +49,7 @@ as $$
     'intelligence_headline', pi_trial.headline,
     'phase_data', case
       when p_trial.phase_type is not null then jsonb_build_object(
-        'phase_type',       p_trial.phase_type,
-        'phase_start_date', p_trial.phase_start_date,
-        'phase_end_date',   p_trial.phase_end_date
+        'phase_type', p_trial.phase_type
       )
       else null
     end,
@@ -56,6 +57,7 @@ as $$
       select jsonb_agg(
         jsonb_build_object(
           'id',                 mk.id,
+          'marker_type_id',     mk.marker_type_id,
           'title',              mk.title,
           'projection',         mk.projection,
           'event_date',         mk.event_date,
@@ -339,13 +341,15 @@ begin
   if v_orphan_in_real then raise exception 'unspec FAIL: orphan trial leaked into a real indication'; end if;
   if v_classified_in_unspec then raise exception 'unspec FAIL: classified trial wrongly under Unspecified'; end if;
 
-  -- phase_data must carry all three keys (regression guard): classified trial is P3,
-  -- so phase_data is non-null and must expose phase_type/phase_start_date/phase_end_date.
+  -- phase_data carries phase_type only (regression guard): classified trial is P3,
+  -- so phase_data is non-null and must expose a non-null phase_type. The
+  -- phase_start_date/phase_end_date keys were dropped with their columns by the
+  -- ctgov-trial-dates base; the bar is now derived from markers client-side.
   v_phase_data := jsonb_path_query_first(v_result,
     ('$[*].assets[*] ? (@.id == "' || v_asset || '").indications[*].trials[*] ? (@.id == "' || v_classified || '").phase_data')::jsonpath);
   if v_phase_data is null then raise exception 'unspec FAIL: classified trial phase_data missing'; end if;
-  if not (v_phase_data ?& array['phase_type', 'phase_start_date', 'phase_end_date']) then
-    raise exception 'unspec FAIL: phase_data missing one of phase_type/phase_start_date/phase_end_date keys: %', v_phase_data;
+  if not (v_phase_data ? 'phase_type') then
+    raise exception 'unspec FAIL: phase_data missing phase_type key: %', v_phase_data;
   end if;
   if (v_phase_data ->> 'phase_type') is null then raise exception 'unspec FAIL: phase_data.phase_type is null for P3 trial'; end if;
 
