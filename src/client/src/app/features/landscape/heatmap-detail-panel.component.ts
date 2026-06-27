@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
 import {
   HeatmapBubble,
@@ -17,6 +26,7 @@ import {
   IntelligenceEntityType,
   PiReference,
 } from '../../core/models/primary-intelligence.model';
+import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
@@ -198,18 +208,55 @@ export class HeatmapDetailPanelComponent {
     return [...byCompany.values()];
   });
 
-  /** PI-bearing assets in this group, mapped to the shared reference shape. */
-  protected readonly piReferences = computed<PiReference[]>(() =>
-    (this.bubble()?.products ?? [])
-      .filter((p) => p.has_intelligence)
-      .map((p) => ({
-        id: p.id,
-        entity_type: 'product' as const,
-        entity_id: p.id,
-        entity_name: p.name,
-        headline: p.name,
-      }))
-  );
+  private readonly intelligenceService = inject(PrimaryIntelligenceService);
+
+  /**
+   * Real PI references for the group's PI-bearing assets. Each reference carries
+   * the true entity (a trial, the asset, or a company) the intelligence is
+   * attached to, so a click routes to the page that actually holds the PI --
+   * not always the asset. Populated by the fetch effect below; empty until the
+   * per-asset notes resolve.
+   */
+  protected readonly piReferences = signal<PiReference[]>([]);
+
+  constructor() {
+    // When the selected bubble (or its space) changes, load the real PI notes
+    // for every PI-bearing asset in the group and aggregate them, deduped by
+    // PI id. Mirrors the bullseye panel, which fetches the same notes per
+    // selected asset; here we fan out across the group's assets. A bubble-
+    // identity guard discards a stale response if the selection moved on.
+    effect(() => {
+      const b = this.bubble();
+      const spaceId = this.spaceId();
+      this.piReferences.set([]);
+      if (!b || !spaceId) return;
+      const assetIds = b.products.filter((p) => p.has_intelligence).map((p) => p.id);
+      if (assetIds.length === 0) return;
+      void (async () => {
+        try {
+          const perAsset = await Promise.all(
+            assetIds.map((id) => this.intelligenceService.getIntelligenceNotesForAsset(spaceId, id))
+          );
+          if (this.bubble() !== b) return;
+          const byId = new Map<string, PiReference>();
+          for (const notes of perAsset) {
+            for (const n of notes) {
+              byId.set(n.id, {
+                id: n.id,
+                entity_type: n.entity_type,
+                entity_id: n.entity_id,
+                entity_name: n.entity_name,
+                headline: n.headline,
+              });
+            }
+          }
+          this.piReferences.set([...byId.values()]);
+        } catch {
+          if (this.bubble() === b) this.piReferences.set([]);
+        }
+      })();
+    });
+  }
 
   /** "N of M assets have intelligence" summary for the PI section. */
   protected readonly piCountLabel = computed<string | null>(() => {
