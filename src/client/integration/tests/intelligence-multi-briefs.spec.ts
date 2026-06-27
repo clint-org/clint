@@ -297,17 +297,40 @@ describe('multi-intelligence briefs (anchor-aware upsert)', () => {
 
   it('list_intelligence_for_entity: lead first; viewer sees only published anchor; payload has record+links', async () => {
     const trialId = await createTrial();
+    // A second trial to link from the lead brief; proves DEFINER entity_name
+    // resolution works for the agency persona (which has no space_members row).
+    const linkedTrialId = await createTrial();
+    const { data: linkedTrial } = await adminClient()
+      .from('trials')
+      .select('name')
+      .eq('id', linkedTrialId)
+      .single();
+    const linkedTrialName: string = linkedTrial!.name;
 
-    // First upsert creates the lead anchor (published).
-    await rpcUpsert({
-      anchorId: null,
-      id: null,
-      entityType: 'trial',
-      entityId: trialId,
-      state: 'published',
-      headline: 'Lead Published',
-      changeNote: null,
-    });
+    // First upsert creates the lead anchor (published) WITH a link.
+    await as(p, 'agency_only')
+      .rpc('upsert_primary_intelligence', {
+        p_id: null,
+        p_anchor_id: null,
+        p_space_id: p.org.spaceId,
+        p_entity_type: 'trial',
+        p_entity_id: trialId,
+        p_headline: 'Lead Published',
+        p_summary_md: '',
+        p_implications_md: '',
+        p_state: 'published',
+        p_change_note: null,
+        p_links: [
+          {
+            entity_type: 'trial',
+            entity_id: linkedTrialId,
+            relationship_type: 'related',
+            gloss: '',
+            display_order: 0,
+          },
+        ],
+      })
+      .throwOnError();
     // Second upsert creates a draft-only sibling anchor.
     await rpcUpsert({
       anchorId: null,
@@ -328,6 +351,28 @@ describe('multi-intelligence briefs (anchor-aware upsert)', () => {
     const agencyRows = agencyResult.data as any[];
     expect(agencyRows).toHaveLength(2);
     expect(agencyRows[0].is_lead).toBe(true);
+    // DEFINER name resolution: the lead brief's link carries a resolved
+    // entity_name even though agency_only has no space_members row.
+    expect(agencyRows[0].published.links[0].entity_name).toBe(linkedTrialName);
+
+    // Add a draft to the SAME (lead, published) anchor so we can prove the
+    // per-row guard hides drafts from viewers even on an anchor they can see.
+    const admin = adminClient();
+    const { data: leadAnchor } = await admin
+      .from('primary_intelligence_anchors')
+      .select('id')
+      .eq('entity_id', trialId)
+      .eq('is_lead', true)
+      .single();
+    await rpcUpsert({
+      anchorId: leadAnchor!.id,
+      id: null,
+      entityType: 'trial',
+      entityId: trialId,
+      state: 'draft',
+      headline: 'Lead Draft Revision',
+      changeNote: null,
+    });
 
     // Viewer sees only the published-bearing anchor.
     const viewerResult = await as(p, 'reader').rpc('list_intelligence_for_entity', {
@@ -341,6 +386,18 @@ describe('multi-intelligence briefs (anchor-aware upsert)', () => {
     expect(viewerRows[0].published).toBeTruthy();
     expect(viewerRows[0].published.record).toBeTruthy();
     expect(viewerRows[0].published.links).toBeDefined();
+    // No draft leak: the per-row DEFINER guard nulls the draft for a viewer
+    // even though the anchor itself is visible (it has a published version).
+    expect(viewerRows[0].draft).toBeNull();
+
+    // Non-member: a user with no space_members row for this space gets [].
+    const strangerResult = await as(p, 'no_memberships').rpc('list_intelligence_for_entity', {
+      p_space_id: p.org.spaceId,
+      p_entity_type: 'trial',
+      p_entity_id: trialId,
+    });
+    const strangerRows = strangerResult.data as any[];
+    expect(strangerRows).toHaveLength(0);
   });
 
   it('reorder_intelligence writes display_order and rejects a mismatched set', async () => {
