@@ -564,7 +564,12 @@ const LEAF_KINDS = new Set<GridRow['kind']>(['marker', 'event']);
         }
 
         @if (commitError()) {
-          <span class="text-xs text-red-600">{{ commitError() }}</span>
+          <span
+            class="text-xs"
+            [class.text-amber-700]="duplicateBlocked()"
+            [class.text-red-600]="!duplicateBlocked()"
+            >{{ commitError() }}</span
+          >
         }
 
         <div class="flex items-center gap-2">
@@ -575,15 +580,27 @@ const LEAF_KINDS = new Set<GridRow['kind']>(['marker', 'event']);
             [text]="true"
             (onClick)="navigateBack()"
           />
-          <p-button
-            [label]="'Confirm ' + selectedCount() + ' items'"
-            size="small"
-            [loading]="committing()"
-            [disabled]="!canConfirm()"
-            (onClick)="confirm()"
-            pTooltip="Cmd/Ctrl+Enter"
-            tooltipPosition="top"
-          />
+          @if (duplicateBlocked()) {
+            <p-button
+              label="Commit anyway"
+              size="small"
+              severity="warn"
+              [loading]="committing()"
+              (onClick)="commitAllowingDuplicate()"
+              pTooltip="Import this source again even though the same source text was already imported"
+              tooltipPosition="top"
+            />
+          } @else {
+            <p-button
+              [label]="'Confirm ' + selectedCount() + ' items'"
+              size="small"
+              [loading]="committing()"
+              [disabled]="!canConfirm()"
+              (onClick)="confirm()"
+              pTooltip="Cmd/Ctrl+Enter"
+              tooltipPosition="top"
+            />
+          }
         </div>
       </footer>
 
@@ -645,6 +662,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   readonly committing = signal(false);
   readonly commitError = signal<string | null>(null);
   readonly committed = signal(false);
+  protected readonly duplicateBlocked = signal(false);
   readonly highlightedEvidence = signal<{ text: string; pinned: boolean } | null>(null);
 
   // The entity currently open in the edit dialog (null when closed).
@@ -1244,11 +1262,86 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       return;
     }
 
+    const result = data as { code?: string; existing_id?: string } | null;
+    if (result?.code === 'duplicate_source') {
+      this.committing.set(false);
+      this.duplicateBlocked.set(true);
+      this.commitError.set(
+        'This exact source was already imported, so nothing was added. Choose Commit anyway to import it again.'
+      );
+      return;
+    }
+
     if (this.isNctImport()) {
       const result = data as { created?: { trials?: string[] } } | null;
       const createdTrialIds = result?.created?.trials ?? [];
       for (const trialId of createdTrialIds) {
         // fire-and-forget: sync runs in the background via the worker
+        this.changeEventService
+          .triggerSingleTrialSync(trialId)
+          .catch(Function.prototype as () => void);
+      }
+    }
+
+    this.committed.set(true);
+    this.committing.set(false);
+    this.sourceImportService.clearProposal();
+
+    const sid = this.spaceId();
+    this.rpcCache.invalidateTags([
+      `space:${sid}:dashboard`,
+      `space:${sid}:landing-stats`,
+      `space:${sid}:companies`,
+      `space:${sid}:products`,
+      `space:${sid}:trials`,
+      `space:${sid}:activity`,
+      `space:${sid}:events`,
+      `space:${sid}:tags`,
+      `space:${sid}:moa`,
+      `space:${sid}:roa`,
+    ]);
+
+    const title = this.proposal()?.source_title ?? 'source';
+    this.messages.add({
+      severity: 'success',
+      summary: `Committed ${this.selectedCount()} items from ${title}. View in timeline.`,
+      life: 5000,
+    });
+
+    void this.router.navigate(['/t', this.tenantId(), 's', this.spaceId()]);
+  }
+
+  protected async commitAllowingDuplicate(): Promise<void> {
+    this.committing.set(true);
+    this.duplicateBlocked.set(false);
+    this.commitError.set(null);
+
+    const session = this.supabase.session();
+    if (!session) {
+      this.committing.set(false);
+      return;
+    }
+
+    const payload = this.buildCommitPayload(true);
+
+    const { data, error } = await this.supabase.client.rpc('commit_source_import', {
+      p_space_id: this.spaceId(),
+      p_ai_call_id: this.aiCallId(),
+      p_source_document: payload.sourceDocument,
+      p_proposal: payload.proposal,
+      p_inventory_snapshot_hash: this.proposal()!.inventory_snapshot_hash,
+    });
+
+    if (error) {
+      this.committing.set(false);
+      this.commitError.set(error.message);
+      return;
+    }
+
+    if (this.isNctImport()) {
+      const result = data as { created?: { trials?: string[] } } | null;
+      const createdTrialIds = result?.created?.trials ?? [];
+      for (const trialId of createdTrialIds) {
         this.changeEventService
           .triggerSingleTrialSync(trialId)
           .catch(Function.prototype as () => void);
@@ -1340,7 +1433,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     }
   }
 
-  private buildCommitPayload(): {
+  private buildCommitPayload(allowDuplicate = false): {
     sourceDocument: Record<string, unknown>;
     proposal: Record<string, unknown>;
   } {
@@ -1425,6 +1518,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         source_summary: p.source_summary,
         source_text: p.source_text,
         text_hash: p.source_text_hash,
+        ...(allowDuplicate ? { allow_duplicate: true } : {}),
       },
       proposal: {
         ...filteredProposals,
