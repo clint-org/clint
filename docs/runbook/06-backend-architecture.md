@@ -41,7 +41,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_cleanup_orphan_marker` | markers | marker_assignments |
 | `_cleanup_polymorphic_refs` | material_links, primary_intelligence_anchors, primary_intelligence_links | - |
 | `_create_trial_date_markers` | marker_assignments, markers | - |
-| `_dashboard_trial_obj` | - | marker_assignments, marker_categories, marker_types, markers, primary_intelligence, trial_change_events |
+| `_dashboard_trial_obj` | - | marker_assignments, marker_categories, marker_types, markers, primary_intelligence, primary_intelligence_anchors, trial_change_events |
 | `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes, marker_types |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
 | `_log_marker_change` | marker_changes | - |
@@ -116,7 +116,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_assets, trial_conditions, trials |
 | `get_catalyst_detail` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_company_detail_with_intelligence` | - | companies |
-| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, primary_intelligence_anchors, routes_of_administration, trial_assets, trial_change_events, trial_conditions, trials |
+| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, mechanisms_of_action, routes_of_administration, trial_assets, trial_conditions, trials |
 | `get_event_detail` | - | assets, companies, event_categories, event_links, event_sources, event_threads, events, trials |
 | `get_event_thread` | - | event_categories, event_threads, events |
 | `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_assets, trial_change_events, trials |
@@ -690,7 +690,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
-- `_promote_next_intelligence_lead`
 - `_safe_iso_date`
 - `_set_created_by`
 - `_set_updated_audit`
@@ -709,7 +708,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `assign_primary_intelligence_version`
 - `auto_join_demo_tenant_local`
 - `backfill_marker_history`
-- `build_intelligence_payload_for_row`
 - `claim_pending_r2_deletes`
 - `commit_source_import`
 - `create_asset`
@@ -756,7 +754,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `link_asset_moa_roa`
 - `list_audit_events`
 - `list_draft_intelligence_for_space`
-- `list_intelligence_for_entity`
 - `list_latest_snapshots_for_space`
 - `list_materials_for_entity`
 - `list_materials_for_space`
@@ -784,12 +781,10 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `redact_user_pii`
 - `referenced_in_entity`
 - `register_material`
-- `reorder_intelligence`
 - `reset_asset_indication_status`
 - `resolve_user_display_names`
 - `restore_space`
 - `search_palette`
-- `set_intelligence_lead`
 - `set_trial_assets`
 - `set_trial_indications`
 - `space_shows_preclinical`

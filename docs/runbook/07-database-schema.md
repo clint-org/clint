@@ -735,8 +735,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `change_event_annotations`
 - `palette_pinned`
 - `palette_recents`
-- `primary_intelligence_anchors`
-- `primary_intelligence_links`
 - `r2_pending_deletes`
 - `source_documents`
 - `trial_assets`
@@ -1036,4 +1034,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260627130900_fix_asset_entity_type_anchors.sql`
 - `20260627140000_ctgov_marker_robustness.sql`
 - `20260627150000_dashboard_unspecified_indication_node.sql`
+- `20260627160000_dashboard_data_intelligence_presence_anchors.sql`
 <!-- /AUTO-GEN:DRIFT -->
