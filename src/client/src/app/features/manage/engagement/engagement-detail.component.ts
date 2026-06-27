@@ -15,6 +15,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
+import { IntelligenceBriefListComponent } from '../../../shared/components/intelligence-brief-list/intelligence-brief-list.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
 import { IntelligenceHistoryPanelComponent } from '../../../shared/components/intelligence-history-panel/intelligence-history-panel.component';
@@ -30,13 +31,13 @@ import { IntelligenceDetailBundle } from '../../../core/models/primary-intellige
 
 @Component({
   selector: 'app-engagement-detail',
-  standalone: true,
   imports: [
     ConfirmDialogModule,
     ToastModule,
     ManagePageShellComponent,
     SectionHeaderComponent,
     IntelligenceBlockComponent,
+    IntelligenceBriefListComponent,
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,
     IntelligenceHistoryPanelComponent,
@@ -58,7 +59,22 @@ export class EngagementDetailComponent implements OnInit {
 
   protected readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   protected readonly drawerOpen = signal(false);
+  // anchor_id of the brief currently open in the drawer; null = new brief
+  protected readonly drawerAnchorId = signal<string | null>(null);
   protected readonly loading = signal(true);
+
+  protected readonly leadBrief = computed(() => {
+    const briefs = this.intelligence()?.briefs;
+    if (!briefs?.length) return null;
+    return briefs.find((b) => b.is_lead) ?? briefs[0];
+  });
+
+  protected readonly otherBriefs = computed(() => {
+    const briefs = this.intelligence()?.briefs;
+    if (!briefs?.length) return [];
+    const lead = briefs.find((b) => b.is_lead) ?? briefs[0];
+    return briefs.filter((b) => b !== lead);
+  });
 
   // Intelligence history (version list, withdraw / purge dialogs)
   protected readonly historyHost = new IntelligenceHistoryHost(this.intelligenceService);
@@ -68,10 +84,9 @@ export class EngagementDetailComponent implements OnInit {
   protected readonly purgeTargetHeadline = signal('');
   protected readonly purgeTargetId = signal<string | null>(null);
 
-  protected readonly hasIntelligence = computed(() => {
-    const i = this.intelligence();
-    return !!(i?.published || i?.draft);
-  });
+  protected readonly hasIntelligence = computed(() =>
+    (this.intelligence()?.briefs.length ?? 0) > 0
+  );
 
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
@@ -108,9 +123,10 @@ export class EngagementDetailComponent implements OnInit {
 
   private async refreshHistory(): Promise<void> {
     const sid = this.spaceIdSig();
-    if (!sid) return;
+    const anchorId = this.leadBrief()?.anchor_id;
+    if (!sid || !anchorId) return;
     try {
-      await this.historyHost.load(sid, 'space', sid);
+      await this.historyHost.load(anchorId, 'space', sid);
     } catch {
       // History panel mirrors the intelligence-block: load failures should
       // not block the page. The panel renders an empty state on its own.
@@ -169,7 +185,50 @@ export class EngagementDetailComponent implements OnInit {
   }
 
   protected onIntelligenceEdit(): void {
+    this.drawerAnchorId.set(this.leadBrief()?.anchor_id ?? null);
     this.drawerOpen.set(true);
+  }
+
+  protected openDrawerForNewBrief(): void {
+    this.drawerAnchorId.set(null);
+    this.drawerOpen.set(true);
+  }
+
+  protected openBriefInDrawer(anchorId: string): void {
+    this.drawerAnchorId.set(anchorId);
+    this.drawerOpen.set(true);
+  }
+
+  protected async onBriefPin(anchorId: string): Promise<void> {
+    const i = this.intelligence();
+    if (!i) return;
+    try {
+      await this.intelligenceService.setLead(anchorId, i.space_id, i.entity_type, i.entity_id);
+      await this.loadIntelligence();
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not set lead entry',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
+  }
+
+  protected async onBriefReorder(anchorIds: string[]): Promise<void> {
+    const i = this.intelligence();
+    if (!i) return;
+    try {
+      await this.intelligenceService.reorder(i.space_id, i.entity_type, i.entity_id, anchorIds);
+      await this.loadIntelligence();
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not reorder entries',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
   }
 
   protected async onIntelligenceClosed(): Promise<void> {
@@ -188,8 +247,8 @@ export class EngagementDetailComponent implements OnInit {
   }
 
   protected async onIntelligenceDelete(): Promise<void> {
-    const i = this.intelligence();
-    const id = i?.published?.record.id ?? i?.draft?.record.id;
+    const lead = this.leadBrief();
+    const id = lead?.published?.record.id ?? lead?.draft?.record.id;
     if (!id) return;
     // Unnamed-item path: the engagement intelligence is a single read,
     // require the literal word 'delete' to gate the destructive action.

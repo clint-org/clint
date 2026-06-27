@@ -67,8 +67,8 @@
       <div class="min-w-0 flex-1">
         @if (hasIntelligence()) {
           <app-intelligence-block
-            [published]="intelligence()?.published ?? null"
-            [draft]="intelligence()?.draft ?? null"
+            [published]="leadBrief()?.published ?? null"
+            [draft]="leadBrief()?.draft ?? null"
             [agencyView]="spaceRole.canAuthorIntelligence()"
             [canPurge]="spaceRole.canPurgeIntelligence()"
             [tenantId]="tenantIdSig()"
@@ -86,6 +86,30 @@
               )
             "
           />
+          @if (otherBriefs().length > 0) {
+            <app-intelligence-brief-list
+              [briefs]="otherBriefs()"
+              [canManage]="spaceRole.canAuthorIntelligence()"
+              [authorMap]="intelligence()?.authors ?? {}"
+              [tenantId]="tenantIdSig()"
+              [spaceId]="spaceIdSig()"
+              (open)="openBriefInDrawer($event)"
+              (pin)="onBriefPin($event)"
+              (reorderTo)="onBriefReorder($event)"
+            />
+          }
+          @if (spaceRole.canAuthorIntelligence()) {
+            <div class="mt-2 flex justify-end">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-600 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                (click)="openDrawerForNewBrief()"
+              >
+                <i class="fa-solid fa-plus text-[10px]" aria-hidden="true"></i>
+                Add entry
+              </button>
+            </div>
+          }
         } @else {
           <app-intelligence-empty
             [canEdit]="spaceRole.canAuthorIntelligence()"
@@ -202,6 +226,7 @@
     @if (spaceIdSig()) {
       <app-intelligence-drawer
         [visible]="drawerOpen()"
+        [anchorId]="drawerAnchorId()"
         [spaceId]="spaceIdSig()"
         entityType="company"
         [entityId]="companyId()"
