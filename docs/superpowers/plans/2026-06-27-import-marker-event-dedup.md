@@ -254,7 +254,7 @@ it('keeps first claim and demotes duplicate claim of same existing id', () => {
 });
 ```
 
-- [ ] **Step 2: Run, verify they fail** — `cd src/client && npm run test:units -- response-validator` → FAIL.
+- [ ] **Step 2: Run, verify they fail** — `cd src/client && npm run test:worker -- response-validator` → FAIL. (Worker specs run via `test:worker`, NOT `test:units` which only globs `src/app/**`.)
 
 - [ ] **Step 3: Schema.** In `types.ts`, add to `MarkerSchema` and `EventSchema` a `match` field mirroring the existing entity union:
 
@@ -273,7 +273,7 @@ match: z.discriminatedUnion('kind', [existingMatch, newMatch]).default({ kind: '
 
 - [ ] **Step 5: Validator.** In `response-validator.ts`, after parsing, add a step (analogous to the existing `checkExistingId` for companies/assets/trials): build `Set` of inventory marker ids and event ids; for each proposed marker/event with `match.kind==='existing'`, demote to `{kind:'new'}` if the id is not in the set, OR the matched inventory record's `trial_id`/anchor differs from the trial/anchor the proposal resolves to. Track claimed ids in a `Set`; on a second claim of an already-claimed id, demote to `new`.
 
-- [ ] **Step 6: Run + build** — `npm run test:units -- response-validator` → PASS; `ng lint && ng build` → clean.
+- [ ] **Step 6: Run + build** — `cd src/client && npm run test:worker -- response-validator` → PASS; `ng lint && ng build` → clean.
 
 - [ ] **Step 7: Commit**
 
