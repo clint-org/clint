@@ -172,35 +172,56 @@ begin
   perform public.seed_demo_data('00000000-0000-0000-0000-0000000d0100'::uuid);
   reset role;
 
-  -- The active P3 trials ship without a phase_end_date, so their phase bars
+  -- The active P3 trials ship without a Trial End marker, so their phase bars
   -- feather to "today" on the demo timeline instead of running to completion.
-  -- Give them their projected primary-completion dates so the demo reads
-  -- correctly. (Run as the seeding superuser, after reset role, so RLS does not
-  -- block the update.)
-  update public.trials set phase_end_date = '2025-10-31'
-    where space_id = '00000000-0000-0000-0000-0000000d0100'
-      and identifier = 'NCT05556512' and phase_end_date is null; -- SURMOUNT-MMO
-  update public.trials set phase_end_date = '2026-11-30'
-    where space_id = '00000000-0000-0000-0000-0000000d0100'
-      and identifier = 'NCT05929066' and phase_end_date is null; -- TRIUMPH-1
-  update public.trials set phase_end_date = '2026-06-30'
-    where space_id = '00000000-0000-0000-0000-0000000d0100'
-      and identifier = 'NCT06081894' and phase_end_date is null; -- ACACIA-HCM
+  -- Give them their projected primary-completion dates as Trial End markers
+  -- (the bar now derives from markers) so the demo reads correctly. (Run as the
+  -- seeding superuser, after reset role, so RLS does not block the insert.)
+  declare
+    r record;
+  begin
+    for r in
+      select t.id, t.space_id, t.created_by, v.end_date
+      from public.trials t
+      join (values
+        ('NCT05556512', date '2025-10-31'),  -- SURMOUNT-MMO
+        ('NCT05929066', date '2026-11-30'),  -- TRIUMPH-1
+        ('NCT06081894', date '2026-06-30')   -- ACACIA-HCM
+      ) as v(nct, end_date) on v.nct = t.identifier
+      where t.space_id = '00000000-0000-0000-0000-0000000d0100'
+        and not exists (
+          select 1 from public.marker_assignments ma
+          join public.markers m on m.id = ma.marker_id
+          where ma.trial_id = t.id
+            and m.marker_type_id = 'a0000000-0000-0000-0000-000000000012'
+        )
+    loop
+      perform public._create_trial_date_markers(r.id, r.space_id, r.created_by, null, r.end_date);
+    end loop;
+  end;
 
   -- A completed trial's data readouts (topline / interim / full data) happened
   -- by the time the trial finished, so they must read as confirmed, not as a
   -- future projection. Mark them actual and clamp any post-completion date to
-  -- the trial end. Data category only -- approval / launch / LOE legitimately
-  -- post-date completion and stay as-is.
+  -- the trial end (now the latest Trial End marker's event_date). Data category
+  -- only -- approval / launch / LOE legitimately post-date completion and stay
+  -- as-is.
   update public.markers m
   set projection = 'actual',
       event_date = case
-        when t.phase_end_date is not null and m.event_date > t.phase_end_date
-          then t.phase_end_date
+        when te.end_date is not null and m.event_date > te.end_date
+          then te.end_date
         else m.event_date
       end
   from public.marker_assignments ma
   join public.trials t on t.id = ma.trial_id
+  left join lateral (
+    select max(em.event_date) as end_date
+    from public.marker_assignments ema
+    join public.markers em on em.id = ema.marker_id
+    where ema.trial_id = t.id
+      and em.marker_type_id = 'a0000000-0000-0000-0000-000000000012'
+  ) te on true
   where ma.marker_id = m.id
     and t.space_id = '00000000-0000-0000-0000-0000000d0100'
     and lower(t.status) in ('completed', 'terminated', 'withdrawn')
@@ -209,6 +230,25 @@ begin
       select mt.id from public.marker_types mt
       where mt.category_id = 'c0000000-0000-0000-0000-000000000002'
         and mt.name <> 'Full Data'
+    );
+
+  -- _seed_demo_trials creates a generic "Trial Start" marker for every trial so
+  -- the marker-derived phase bar renders. A few trials also get a narratively
+  -- titled Trial Start ("... study initiated") from _seed_demo_markers; drop the
+  -- generic duplicate for those, keeping the richer narrative marker.
+  delete from public.markers m
+  using public.marker_assignments ma
+  where ma.marker_id = m.id
+    and m.space_id = '00000000-0000-0000-0000-0000000d0100'
+    and m.marker_type_id = 'a0000000-0000-0000-0000-000000000011'
+    and m.title = 'Trial Start'
+    and exists (
+      select 1
+      from public.marker_assignments ma2
+      join public.markers m2 on m2.id = ma2.marker_id
+      where ma2.trial_id = ma.trial_id
+        and m2.marker_type_id = 'a0000000-0000-0000-0000-000000000011'
+        and m2.id <> m.id
     );
 end
 $$;

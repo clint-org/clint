@@ -10,6 +10,7 @@ import {
   formatMarkerDate,
 } from './export-common.util';
 import type { Company } from '../models/company.model';
+import { TRIAL_START_MARKER_TYPE_ID, TRIAL_END_MARKER_TYPE_ID } from '../models/trial-phase-span';
 
 describe('computeLeftColumns', () => {
   it('includes only company/asset/trial when all toggles off', () => {
@@ -170,22 +171,10 @@ function companyWithMarkers(): Company[] {
           updated_by: null,
           trials: [
             {
-              id: 't1',
-              space_id: 's1',
-              created_by: 'u',
-              asset_id: 'a1',
-              name: 'SURPASS-2',
-              acronym: 'SURPASS-2',
-              identifier: 'NCT01',
-              status: null,
-              notes: null,
-              display_order: 0,
-              created_at: '2026-01-01',
-              updated_at: '2026-01-01',
-              updated_by: null,
-              phase_type: null,
-              phase_start_date: null,
-              phase_end_date: null,
+              id: 't1', space_id: 's1', created_by: 'u', asset_id: 'a1', name: 'SURPASS-2',
+              acronym: 'SURPASS-2', identifier: 'NCT01', status: null, notes: null,
+              display_order: 0, created_at: '2026-01-01', updated_at: '2026-01-01',
+              updated_by: null, phase_type: null,
               markers: [
                 {
                   id: 'm2',
@@ -286,22 +275,10 @@ describe('buildMarkerTableRows', () => {
             updated_by: null,
             trials: [
               {
-                id: 't1',
-                space_id: 's1',
-                created_by: 'u',
-                asset_id: 'a1',
-                name: 'TRIAL-1',
-                acronym: 'TRIAL-1',
-                identifier: null,
-                status: null,
-                notes: null,
-                display_order: 0,
-                created_at: '2026-01-01',
-                updated_at: '2026-01-01',
-                updated_by: null,
-                phase_type: null,
-                phase_start_date: null,
-                phase_end_date: null,
+                id: 't1', space_id: 's1', created_by: 'u', asset_id: 'a1', name: 'TRIAL-1',
+                acronym: 'TRIAL-1', identifier: null, status: null, notes: null,
+                display_order: 0, created_at: '2026-01-01', updated_at: '2026-01-01',
+                updated_by: null, phase_type: null,
                 markers: [
                   {
                     id: 'm1',
@@ -387,9 +364,21 @@ const fixtureCompanies = [
               { id: 'i2', indication_id: 'i2', indication_name: 'Overweight' },
             ],
             phase_type: 'P3',
-            phase_start_date: '2020-01-01',
-            phase_end_date: '2022-06-30',
             markers: [
+              {
+                id: 'ms1',
+                marker_type_id: TRIAL_START_MARKER_TYPE_ID,
+                event_date: '2020-01-01',
+                date_precision: 'exact',
+                end_date: null,
+              },
+              {
+                id: 'me1',
+                marker_type_id: TRIAL_END_MARKER_TYPE_ID,
+                event_date: '2022-06-30',
+                date_precision: 'exact',
+                end_date: null,
+              },
               {
                 id: 'm1',
                 event_date: '2021-06-15',
@@ -442,30 +431,8 @@ describe('flattenTrials', () => {
             mechanisms_of_action: [],
             routes_of_administration: [],
             trials: [
-              {
-                id: 't1',
-                name: 'Trial One',
-                acronym: null,
-                identifier: null,
-                notes: null,
-                trial_notes: [],
-                phase_type: null,
-                phase_start_date: null,
-                phase_end_date: null,
-                markers: [],
-              },
-              {
-                id: 't2',
-                name: 'Trial Two',
-                acronym: null,
-                identifier: null,
-                notes: null,
-                trial_notes: [],
-                phase_type: null,
-                phase_start_date: null,
-                phase_end_date: null,
-                markers: [],
-              },
+              { id: 't1', name: 'Trial One', acronym: null, identifier: null, notes: null, trial_notes: [], phase_type: null, markers: [] },
+              { id: 't2', name: 'Trial Two', acronym: null, identifier: null, notes: null, trial_notes: [], phase_type: null, markers: [] },
             ],
           },
           {
@@ -474,18 +441,7 @@ describe('flattenTrials', () => {
             mechanisms_of_action: [],
             routes_of_administration: [],
             trials: [
-              {
-                id: 't3',
-                name: 'Trial Three',
-                acronym: null,
-                identifier: null,
-                notes: null,
-                trial_notes: [],
-                phase_type: null,
-                phase_start_date: null,
-                phase_end_date: null,
-                markers: [],
-              },
+              { id: 't3', name: 'Trial Three', acronym: null, identifier: null, notes: null, trial_notes: [], phase_type: null, markers: [] },
             ],
           },
         ],
