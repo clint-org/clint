@@ -8,7 +8,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -43,6 +43,7 @@ import {
     Dialog,
     MessageModule,
     Tooltip,
+    RouterLink,
     MarkerCategoryFormComponent,
     ManagePageShellComponent,
     StatusTagComponent,
@@ -88,6 +89,11 @@ export class MarkerCategoryListComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.load();
+  }
+
+  protected markerTypesLink(): string[] {
+    const tenantId = this.route.snapshot.paramMap.get('tenantId')!;
+    return ['/t', tenantId, 's', this.spaceId, 'settings', 'marker-types'];
   }
 
   ngOnDestroy(): void {
