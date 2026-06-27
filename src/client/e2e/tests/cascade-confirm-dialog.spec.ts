@@ -113,7 +113,7 @@ test.describe('Cascade confirm dialog: company delete (count breakdown + typed g
   let taId: string;
   let trialId: string;
   const companyName = 'CascadeCo ' + Date.now();
-  const companiesUrl = () => `/t/${tenantId}/s/${spaceId}/manage/companies`;
+  const companiesUrl = () => `/t/${tenantId}/s/${spaceId}/profiles/companies`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Cascade Company Org');
@@ -202,7 +202,7 @@ test.describe('Cascade confirm dialog: asset (product) delete', () => {
   let companyId: string;
   let productId: string;
   const productName = 'CascadeAsset ' + Date.now();
-  const assetsUrl = () => `/t/${tenantId}/s/${spaceId}/manage/assets`;
+  const assetsUrl = () => `/t/${tenantId}/s/${spaceId}/profiles/assets`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Cascade Asset Org');
@@ -249,7 +249,7 @@ test.describe('Cascade confirm dialog: trial delete', () => {
   let tenantId: string;
   let spaceId: string;
   const trialName = 'CascadeTrial ' + Date.now();
-  const trialsUrl = () => `/t/${tenantId}/s/${spaceId}/manage/trials`;
+  const trialsUrl = () => `/t/${tenantId}/s/${spaceId}/profiles/trials`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Cascade Trial Org');
@@ -519,7 +519,7 @@ test.describe('Cascade confirm dialog: unnamed-item deletes (literal "delete")',
   });
 
   test('marker delete on trial detail requires literal "delete" then succeeds', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/trials/${trialId}`, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -545,7 +545,7 @@ test.describe('Cascade confirm dialog: unnamed-item deletes (literal "delete")',
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
     // Marker row is gone.
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/trials/${trialId}`, {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.locator('tr', { hasText: markerTitle })).toHaveCount(0, {
@@ -556,7 +556,7 @@ test.describe('Cascade confirm dialog: unnamed-item deletes (literal "delete")',
   });
 
   test('note delete on trial detail requires literal "delete" then succeeds', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/trials/${trialId}`, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -578,7 +578,7 @@ test.describe('Cascade confirm dialog: unnamed-item deletes (literal "delete")',
     await confirm.click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/trials/${trialId}`, {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.locator('li', { hasText: noteContent })).toHaveCount(0, {

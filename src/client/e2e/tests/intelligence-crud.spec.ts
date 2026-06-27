@@ -37,7 +37,7 @@ test.describe('Intelligence detail pages: route smoke', () => {
   });
 
   test('company detail page renders the empty intelligence state', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies/${companyId}`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/companies/${companyId}`, {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.getByRole('heading', { name: 'Smoke Co', level: 1 })).toBeVisible({
@@ -47,7 +47,7 @@ test.describe('Intelligence detail pages: route smoke', () => {
   });
 
   test('engagement detail page renders the empty intelligence state', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/engagement`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/engagement`, {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.getByRole('heading', { name: 'Engagement', level: 1 })).toBeVisible({
@@ -57,11 +57,11 @@ test.describe('Intelligence detail pages: route smoke', () => {
   });
 
   test('company list links navigate to the detail page', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/companies`, {
       waitUntil: 'domcontentloaded',
     });
     await page.getByRole('link', { name: 'Smoke Co' }).click();
-    await page.waitForURL(/\/manage\/companies\/[0-9a-f-]+$/, { timeout: 5000 });
+    await page.waitForURL(/\/profiles\/companies\/[0-9a-f-]+$/, { timeout: 5000 });
     await expect(page.getByRole('heading', { name: 'Smoke Co', level: 1 })).toBeVisible();
   });
 
