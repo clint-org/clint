@@ -97,7 +97,7 @@ export function mapDashboardCompanies(data: any[]): any[] {
       const allTrials = indicationTrials.length > 0 ? indicationTrials : (p.trials ?? []);
       return {
         ...p,
-        indications: p.indications ?? [],
+        indications: (p.indications ?? []).filter((ind: any) => !(ind.is_unspecified === true || ind.id == null)),
         trials: allTrials.map((t: any) => ({
           ...t,
           identifier: t.identifier ?? null,

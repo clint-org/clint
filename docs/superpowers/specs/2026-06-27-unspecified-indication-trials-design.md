@@ -175,6 +175,10 @@ visible when the column is shown. The **correctness** fix (the trial appearing
 at all) is independent of the column and always applies; only the nudge is
 column-gated.
 
+## Scope note: landscape strip inherits the same behavior
+
+Orphan trials appear in both the timeline grid and the landscape "At a glance" strip, because both surfaces call `get_dashboard_data` with null indication filters. When an indication filter is active, the Unspecified bucket is suppressed in both surfaces the same way: the RPC omits it whenever `p_indication_ids` is non-null.
+
 ## Testing
 
 - **SQL smoke (in the migration):** create a trial with no condition; assert

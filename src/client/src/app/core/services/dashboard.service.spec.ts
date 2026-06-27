@@ -290,5 +290,24 @@ describe('mapDashboardCompanies — unspecified node', () => {
       { id: 'ind1', indication_id: 'ind1', indication_name: 'Obesity' },
     ]);
   });
+
+  it('strips the synthetic node from the asset indications passthrough', () => {
+    // The RPC emits the synthetic node inside p.indications. A future consumer
+    // iterating asset.indications (e.g. track ind.id) must never see a null-keyed
+    // entry. Only real indications should survive the passthrough; orphan trials
+    // must still appear in the flat trials list with empty _indications.
+    const out = mapDashboardCompanies(data);
+    const asset = out[0].assets[0];
+
+    // Passthrough includes only real indications (id !== null, is_unspecified !== true).
+    expect(asset.indications).toHaveLength(1);
+    expect(asset.indications[0].id).toBe('ind1');
+
+    // Orphan trial is still present in the flat list.
+    expect(asset.trials.map((t: any) => t.id)).toContain('t2');
+    // Orphan trial carries empty _indications (no fake chip).
+    const orphan = asset.trials.find((t: any) => t.id === 't2');
+    expect(orphan._indications).toEqual([]);
+  });
   /* eslint-enable @typescript-eslint/no-explicit-any */
 });
