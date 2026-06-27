@@ -1239,14 +1239,24 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected async confirm(): Promise<void> {
     this.committing.set(true);
     this.commitError.set(null);
+    await this.doCommit(false);
+  }
 
+  protected async commitAllowingDuplicate(): Promise<void> {
+    this.committing.set(true);
+    this.duplicateBlocked.set(false);
+    this.commitError.set(null);
+    await this.doCommit(true);
+  }
+
+  private async doCommit(allowDuplicate: boolean): Promise<void> {
     const session = this.supabase.session();
     if (!session) {
       this.committing.set(false);
       return;
     }
 
-    const payload = this.buildCommitPayload();
+    const payload = this.buildCommitPayload(allowDuplicate);
 
     const { data, error } = await this.supabase.client.rpc('commit_source_import', {
       p_space_id: this.spaceId(),
@@ -1262,8 +1272,8 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       return;
     }
 
-    const result = data as { code?: string; existing_id?: string } | null;
-    if (result?.code === 'duplicate_source') {
+    const dupResult = data as { code?: string; existing_id?: string } | null;
+    if (dupResult?.code === 'duplicate_source') {
       this.committing.set(false);
       this.duplicateBlocked.set(true);
       this.commitError.set(
@@ -1273,75 +1283,10 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     }
 
     if (this.isNctImport()) {
-      const result = data as { created?: { trials?: string[] } } | null;
-      const createdTrialIds = result?.created?.trials ?? [];
+      const nctResult = data as { created?: { trials?: string[] } } | null;
+      const createdTrialIds = nctResult?.created?.trials ?? [];
       for (const trialId of createdTrialIds) {
         // fire-and-forget: sync runs in the background via the worker
-        this.changeEventService
-          .triggerSingleTrialSync(trialId)
-          .catch(Function.prototype as () => void);
-      }
-    }
-
-    this.committed.set(true);
-    this.committing.set(false);
-    this.sourceImportService.clearProposal();
-
-    const sid = this.spaceId();
-    this.rpcCache.invalidateTags([
-      `space:${sid}:dashboard`,
-      `space:${sid}:landing-stats`,
-      `space:${sid}:companies`,
-      `space:${sid}:products`,
-      `space:${sid}:trials`,
-      `space:${sid}:activity`,
-      `space:${sid}:events`,
-      `space:${sid}:tags`,
-      `space:${sid}:moa`,
-      `space:${sid}:roa`,
-    ]);
-
-    const title = this.proposal()?.source_title ?? 'source';
-    this.messages.add({
-      severity: 'success',
-      summary: `Committed ${this.selectedCount()} items from ${title}. View in timeline.`,
-      life: 5000,
-    });
-
-    void this.router.navigate(['/t', this.tenantId(), 's', this.spaceId()]);
-  }
-
-  protected async commitAllowingDuplicate(): Promise<void> {
-    this.committing.set(true);
-    this.duplicateBlocked.set(false);
-    this.commitError.set(null);
-
-    const session = this.supabase.session();
-    if (!session) {
-      this.committing.set(false);
-      return;
-    }
-
-    const payload = this.buildCommitPayload(true);
-
-    const { data, error } = await this.supabase.client.rpc('commit_source_import', {
-      p_space_id: this.spaceId(),
-      p_ai_call_id: this.aiCallId(),
-      p_source_document: payload.sourceDocument,
-      p_proposal: payload.proposal,
-      p_inventory_snapshot_hash: this.proposal()!.inventory_snapshot_hash,
-    });
-
-    if (error) {
-      this.committing.set(false);
-      this.commitError.set(error.message);
-      return;
-    }
-
-    if (this.isNctImport()) {
-      const result = data as { created?: { trials?: string[] } } | null;
-      const createdTrialIds = result?.created?.trials ?? [];
-      for (const trialId of createdTrialIds) {
         this.changeEventService
           .triggerSingleTrialSync(trialId)
           .catch(Function.prototype as () => void);
