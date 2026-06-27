@@ -116,6 +116,15 @@ const GROUPING_LABEL: Record<HeatmapGrouping, string> = {
             />
           </app-detail-panel-section>
         }
+
+        @if (companyIntelligenceRefs().length > 0) {
+          <app-detail-panel-section label="Company intelligence" [piMark]="true">
+            <app-pi-detail-section
+              [references]="companyIntelligenceRefs()"
+              (referenceClick)="onPiReferenceClick($event)"
+            />
+          </app-detail-panel-section>
+        }
       } @else {
         <app-detail-panel-empty-state prompt="Click a row to see details">
           <p class="mt-2 text-[13px] text-slate-700">
@@ -219,6 +228,14 @@ export class HeatmapDetailPanelComponent {
    */
   protected readonly piReferences = signal<PiReference[]>([]);
 
+  /**
+   * Company-level intelligence references for a company-grouped bubble.
+   * Populated only when `group_keys.company_id` is present (i.e. grouping=company).
+   * Each reference has entity_type='company' and entity_id=company_id so clicks
+   * navigate to the company's intelligence profile.
+   */
+  protected readonly companyIntelligenceRefs = signal<PiReference[]>([]);
+
   constructor() {
     // When the selected bubble (or its space) changes, load the real PI notes
     // for every PI-bearing asset in the group and aggregate them, deduped by
@@ -253,6 +270,41 @@ export class HeatmapDetailPanelComponent {
           this.piReferences.set([...byId.values()]);
         } catch {
           if (this.bubble() === b) this.piReferences.set([]);
+        }
+      })();
+    });
+
+    // When the bubble represents a company (group_keys.company_id present),
+    // also fetch company-level intelligence. This is separate from the per-asset
+    // PI above: a company may own briefs that are not tied to any single asset.
+    effect(() => {
+      const b = this.bubble();
+      const spaceId = this.spaceId();
+      this.companyIntelligenceRefs.set([]);
+      if (!b || !spaceId) return;
+      const companyId = b.group_keys['company_id'];
+      if (!companyId) return;
+      const companyName = b.group_keys['company_name'] ?? null;
+      void (async () => {
+        try {
+          const briefs = await this.intelligenceService.listIntelligenceForEntity(
+            spaceId,
+            'company',
+            companyId
+          );
+          if (this.bubble() !== b) return;
+          const refs: PiReference[] = briefs
+            .filter((br) => br.published !== null)
+            .map((br) => ({
+              id: br.published!.record.id,
+              entity_type: 'company' as IntelligenceEntityType,
+              entity_id: companyId,
+              entity_name: companyName,
+              headline: br.published!.record.headline,
+            }));
+          this.companyIntelligenceRefs.set(refs);
+        } catch {
+          if (this.bubble() === b) this.companyIntelligenceRefs.set([]);
         }
       })();
     });
