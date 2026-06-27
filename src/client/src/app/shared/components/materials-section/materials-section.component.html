@@ -39,8 +39,16 @@
     </div>
     }
 
-    <!-- Body: list -->
-    <div class="materials-section__list" aria-live="polite">
+    <!-- Body: list. On the sidebar cards (scrollList) the height is capped with
+         an internal scroll so a long list never pushes the pinned upload zone
+         off-screen; the filter row above and the drop zone below stay put.
+         Full-width hosts (engagement) leave it uncapped. -->
+    <div
+      class="materials-section__list"
+      [class.max-h-64]="scrollList()"
+      [class.overflow-y-auto]="scrollList()"
+      aria-live="polite"
+    >
       @if (loading()) {
         <app-loader class="px-4 py-3" [size]="18" label="Loading materials" />
       } @else if (error()) {

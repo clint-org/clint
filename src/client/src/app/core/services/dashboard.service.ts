@@ -77,13 +77,19 @@ export function mapDashboardCompanies(data: any[]): any[] {
         // The RPC emits the indication entity id as `id` and its name as
         // `name`. The indication filter matches on `_indications[].indication_id`,
         // so surface the entity id under that key (and the name) here.
-        const indicationRef = { id: ind.id, indication_id: ind.id, indication_name: ind.name };
+        // Synthetic "unspecified" nodes (is_unspecified === true or id === null)
+        // contribute their trials to the flat list but add no indication ref so
+        // no fake chip appears in the UI.
+        const isUnspecified = ind.is_unspecified === true || ind.id == null;
+        const indicationRef = isUnspecified
+          ? null
+          : { id: ind.id, indication_id: ind.id, indication_name: ind.name };
         for (const t of ind.trials ?? []) {
           const existing = byTrialId.get(t.id);
           if (existing) {
-            existing._indications.push(indicationRef);
+            if (indicationRef) existing._indications.push(indicationRef);
           } else {
-            byTrialId.set(t.id, { ...t, _indications: [indicationRef] });
+            byTrialId.set(t.id, { ...t, _indications: indicationRef ? [indicationRef] : [] });
           }
         }
       }
@@ -91,13 +97,11 @@ export function mapDashboardCompanies(data: any[]): any[] {
       const allTrials = indicationTrials.length > 0 ? indicationTrials : (p.trials ?? []);
       return {
         ...p,
-        indications: p.indications ?? [],
+        indications: (p.indications ?? []).filter((ind: any) => !(ind.is_unspecified === true || ind.id == null)),
         trials: allTrials.map((t: any) => ({
           ...t,
           identifier: t.identifier ?? null,
           phase_type: t.phase_data?.phase_type ?? null,
-          phase_start_date: t.phase_data?.phase_start_date ?? null,
-          phase_end_date: t.phase_data?.phase_end_date ?? null,
           markers: (t.markers ?? []).map((m: any) => ({
             ...m,
             marker_types: m.marker_type

@@ -43,6 +43,7 @@ import { RouteOfAdministrationService } from '../../core/services/route-of-admin
 import { TherapeuticAreaService } from '../../core/services/therapeutic-area.service';
 import { TrialService } from '../../core/services/trial.service';
 import { LandscapeStateService } from './landscape-state.service';
+import { deriveTrialPhaseSpan } from '../../core/models/trial-phase-span';
 
 interface SelectOption {
   label: string;
@@ -175,8 +176,9 @@ export class LandscapeFilterBarComponent implements OnInit {
     for (const company of this.state.rawData()?.companies ?? []) {
       for (const asset of company.assets ?? []) {
         for (const trial of asset.trials ?? []) {
-          consider(trial.phase_start_date);
-          consider(trial.phase_end_date);
+          const trialSpan = deriveTrialPhaseSpan(trial.markers ?? []);
+          consider(trialSpan.start);
+          consider(trialSpan.end);
           for (const marker of trial.markers ?? []) {
             consider(marker.event_date);
             consider(marker.end_date);

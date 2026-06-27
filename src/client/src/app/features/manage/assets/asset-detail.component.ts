@@ -38,12 +38,11 @@ import { PrimaryIntelligenceService } from '../../../core/services/primary-intel
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { Asset } from '../../../core/models/asset.model';
-import {
-  IntelligenceDetailBundle,
-  ReferencedInRow,
-} from '../../../core/models/primary-intelligence.model';
-import { buildEntityRouterLink } from '../../../shared/utils/intelligence-router-link';
+import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
+import { SectionCardComponent } from '../../../shared/components/section-card.component';
+import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
 import { AssetFormComponent } from './asset-form.component';
+import { TrialCreateDialogComponent } from '../trials/trial-create-dialog.component';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 
@@ -67,7 +66,10 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     PiMarkComponent,
     EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
+    SectionCardComponent,
+    ReferencedInPanelComponent,
     AssetFormComponent,
+    TrialCreateDialogComponent,
     LoaderComponent,
     SourceProvenanceLineComponent,
   ],
@@ -108,13 +110,24 @@ export class AssetDetailComponent implements OnDestroy {
   protected readonly purgeTargetId = signal<string | null>(null);
 
   readonly editingAsset = signal(false);
+  protected readonly creatingTrial = signal(false);
 
   private readonly topbarActionsEffect = effect(() => {
     const asset = this.asset();
     if (!asset || !this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([]);
       this.topbarState.overflowActions.set([]);
       return;
     }
+    // Primary action: add a trial for this asset (asset pre-locked in the dialog).
+    this.topbarState.actions.set([
+      {
+        label: 'Add trial',
+        icon: 'fa-solid fa-plus',
+        text: true,
+        callback: () => this.creatingTrial.set(true),
+      },
+    ]);
     this.topbarState.overflowActions.set(
       buildEntityActionMenu({
         canEdit: true,
@@ -127,6 +140,19 @@ export class AssetDetailComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.topbarState.clear();
+  }
+
+  protected onTrialCreated({ trialId }: { trialId: string }): void {
+    this.creatingTrial.set(false);
+    void this.router.navigate([
+      '/t',
+      this.tenantIdSig(),
+      's',
+      this.spaceIdSig(),
+      'manage',
+      'trials',
+      trialId,
+    ]);
   }
 
   private async deleteAsset(asset: Asset): Promise<void> {
@@ -169,17 +195,10 @@ export class AssetDetailComponent implements OnDestroy {
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
 
-  /** Router link to the anchor entity whose intelligence references this asset. */
-  protected referencedRouterLink(ref: ReferencedInRow): unknown[] {
-    return (
-      buildEntityRouterLink(
-        this.tenantIdSig(),
-        this.spaceIdSig(),
-        ref.entity_type,
-        ref.entity_id
-      ) ?? []
-    );
-  }
+  // Header count badges for the events / materials cards, fed by each panel's
+  // (loaded) output since those counts are fetched inside the child component.
+  protected readonly eventsCount = signal(0);
+  protected readonly materialsCount = signal(0);
 
   private readonly landscape = inject(LandscapeStateService);
 

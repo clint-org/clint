@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
@@ -38,12 +38,12 @@ import { PrimaryIntelligenceService } from '../../../core/services/primary-intel
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { Company } from '../../../core/models/company.model';
-import {
-  IntelligenceDetailBundle,
-  ReferencedInRow,
-} from '../../../core/models/primary-intelligence.model';
-import { buildEntityRouterLink } from '../../../shared/utils/intelligence-router-link';
+import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
+import { SectionCardComponent } from '../../../shared/components/section-card.component';
+import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
 import { CompanyFormComponent } from './company-form.component';
+import { AssetFormComponent } from '../assets/asset-form.component';
+import { Asset } from '../../../core/models/asset.model';
 import { buildFilterQueryParams } from '../../../shared/grids';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
@@ -51,12 +51,12 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
 @Component({
   selector: 'app-company-detail',
   imports: [
-    RouterLink,
     BrandLogoComponent,
     ConfirmDialogModule,
     Dialog,
     ToastModule,
     CompanyFormComponent,
+    AssetFormComponent,
     ManagePageShellComponent,
     IntelligenceBlockComponent,
     IntelligenceEmptyComponent,
@@ -65,6 +65,8 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     WithdrawIntelligenceDialogComponent,
     PurgeIntelligenceDialogComponent,
     PiMarkComponent,
+    SectionCardComponent,
+    ReferencedInPanelComponent,
     MaterialsSectionComponent,
     TimelineViewComponent,
     EntityMarkerDrawerComponent,
@@ -86,6 +88,7 @@ export class CompanyDetailComponent implements OnDestroy {
   protected spaceRole = inject(SpaceRoleService);
   private topbarState = inject(TopbarStateService);
   protected readonly editingCompany = signal(false);
+  protected readonly creatingAsset = signal(false);
 
   // Route paramMap as a signal so companyId reacts to in-place navigation
   // when clicking a LINKED company chip on a company detail page (same route
@@ -117,26 +120,29 @@ export class CompanyDetailComponent implements OnDestroy {
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
 
-  /** Router link to the anchor entity whose intelligence references this company. */
-  protected referencedRouterLink(ref: ReferencedInRow): unknown[] {
-    return (
-      buildEntityRouterLink(
-        this.tenantIdSig(),
-        this.spaceIdSig(),
-        ref.entity_type,
-        ref.entity_id
-      ) ?? []
-    );
-  }
+  // Header count badges for the events / materials cards, fed by each panel's
+  // (loaded) output since those counts are fetched inside the child component.
+  protected readonly eventsCount = signal(0);
+  protected readonly materialsCount = signal(0);
 
   // Populate the shared topbar overflow kebab (Edit details + Delete) so the
   // company can be managed from its own detail page, matching the grid row.
   private readonly overflowEffect = effect(() => {
     const company = this.company();
     if (!company || !this.spaceRole.canEdit()) {
+      this.topbarState.actions.set([]);
       this.topbarState.overflowActions.set([]);
       return;
     }
+    // Primary action: add an asset for this company (company pre-locked in the form).
+    this.topbarState.actions.set([
+      {
+        label: 'Add asset',
+        icon: 'fa-solid fa-plus',
+        text: true,
+        callback: () => this.creatingAsset.set(true),
+      },
+    ]);
     this.topbarState.overflowActions.set(
       buildEntityActionMenu({
         canEdit: true,
@@ -163,7 +169,22 @@ export class CompanyDetailComponent implements OnDestroy {
   });
 
   ngOnDestroy(): void {
+    this.topbarState.actions.set([]);
     this.topbarState.overflowActions.set([]);
+  }
+
+  protected onAssetCreated(asset: Asset): void {
+    this.creatingAsset.set(false);
+    this.messageService.add({ severity: 'success', summary: 'Asset created.', life: 3000 });
+    void this.router.navigate([
+      '/t',
+      this.tenantIdSig(),
+      's',
+      this.spaceIdSig(),
+      'manage',
+      'assets',
+      asset.id,
+    ]);
   }
 
   protected async onCompanyEdited(): Promise<void> {

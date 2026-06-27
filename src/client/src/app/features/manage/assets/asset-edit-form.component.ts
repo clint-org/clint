@@ -50,5 +50,9 @@ export class AssetEditFormComponent {
   // linked this asset to an existing record, whose details the import does not
   // change. MOA/ROA stay editable because the commit merges them into the match.
   readonly disabled = input<boolean>(false);
+  // Locks only the company select (leaving name / generic / MOA / ROA editable)
+  // when a new asset is created from a company's detail page, where the company
+  // is fixed to that page's company.
+  readonly companyLocked = input<boolean>(false);
   readonly nameBlur = output<void>();
 }

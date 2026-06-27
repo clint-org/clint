@@ -1004,8 +1004,6 @@ describe('buildLandscapeRead', () => {
                   updated_at: '',
                   updated_by: null,
                   phase_type: 'P3',
-                  phase_start_date: null,
-                  phase_end_date: null,
                   markers: [],
                   recent_changes_count: 4,
                   most_recent_change_type: null,

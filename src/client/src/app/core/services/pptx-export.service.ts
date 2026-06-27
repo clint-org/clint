@@ -25,6 +25,7 @@ import { drawMarkerGlyph } from './pptx-marker-glyph';
 import type { FillStyle, InnerMark, MarkerShape } from '../models/marker.model';
 import { PHASE_COLORS, PHASE_FALLBACK_COLOR, phaseShortLabel } from '../models/phase-colors';
 import { clintMarkSvgDataUri } from '../../shared/components/clint-mark';
+import { deriveTrialPhaseSpan } from '../models/trial-phase-span';
 
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;
@@ -622,9 +623,10 @@ export class PptxExportService {
     const barH = rowH * 0.45;
     const barY = rowY + (rowH - barH) / 2;
 
-    if (trial.phase_type && trial.phase_start_date) {
-      const startDate = trial.phase_start_date;
-      const endDate = trial.phase_end_date ?? startDate;
+    const phaseSpan = deriveTrialPhaseSpan(trial.markers ?? []);
+    if (trial.phase_type && phaseSpan.start) {
+      const startDate = phaseSpan.start;
+      const endDate = phaseSpan.end ?? startDate;
 
       const sx = this.timeline.dateToX(startDate, startYear, endYear, totalPx);
       const ex = this.timeline.dateToX(endDate, startYear, endYear, totalPx);
