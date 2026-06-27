@@ -21,7 +21,12 @@ import { TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
-import { EventCategory, EventDetail, FeedItem } from '../../core/models/event.model';
+import {
+  EventCategory,
+  EventCategoryDistribution,
+  EventDetail,
+  FeedItem,
+} from '../../core/models/event.model';
 import { FillStyle, MarkerCategory } from '../../core/models/marker.model';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { DetailPanelPillComponent } from '../../shared/components/detail-panel-pill.component';
@@ -125,6 +130,13 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   readonly feedItems = signal<FeedItem[]>([]);
   readonly eventCategories = signal<EventCategory[]>([]);
   readonly markerCategories = signal<MarkerCategory[]>([]);
+
+  // Overview aggregates over the FULL filtered set (not the loaded page), so
+  // the detail-pane distribution / recent / counts reflect every matching
+  // event rather than only what is on screen.
+  readonly overviewDistribution = signal<EventCategoryDistribution[]>([]);
+  readonly overviewRecent = signal<FeedItem[]>([]);
+  readonly overviewHighPriority = signal(0);
 
   // Server-side entity scope carried by the "See all" link from a detail page.
   readonly scope = signal<EntityScope | null>(null);
@@ -719,6 +731,9 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       if (seq !== this.fetchSeq) return; // a newer query superseded this one
       this.feedItems.set(feed.items);
       this.serverTotal.set(feed.total);
+      this.overviewDistribution.set(feed.distribution);
+      this.overviewRecent.set(feed.recent);
+      this.overviewHighPriority.set(feed.highPriorityCount);
     } catch (err) {
       if (seq !== this.fetchSeq) return;
       this.error.set(err instanceof Error ? err.message : 'Failed to load events.');
