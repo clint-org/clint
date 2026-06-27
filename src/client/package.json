@@ -18,6 +18,7 @@
     "docs:arch": "node scripts/gen-architecture.mjs",
     "grants:check": "node scripts/check-data-api-grants.mjs",
     "migrations:check-secrets": "node scripts/check-migration-secrets.mjs",
+    "migrations:check-redefs": "node scripts/check-migration-redefs.mjs",
     "og:image": "node scripts/og-image/render.mjs",
     "features:check": "node scripts/features-drift.mjs check",
     "features:stub": "node scripts/features-drift.mjs stub",
