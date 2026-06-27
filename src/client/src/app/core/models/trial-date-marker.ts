@@ -16,6 +16,7 @@
  *                     from analyst edits) only when metadata.source === 'ctgov'.
  */
 import type { Marker, Projection } from './marker.model';
+import { isApproximate, markerStartCaption } from './marker-date-precision';
 import { TRIAL_END_MARKER_TYPE_ID, TRIAL_START_MARKER_TYPE_ID } from './trial-phase-span';
 
 export const TRIAL_START_TITLE = 'Trial Start';
@@ -38,6 +39,20 @@ export function isCtgovOwnedMarker(
   marker: Pick<Marker, 'metadata'> | null | undefined,
 ): boolean {
   return marker?.metadata?.['source'] === 'ctgov';
+}
+
+/**
+ * The period caption (e.g. "~Q3 '26") when the marker's date is approximate
+ * (month/quarter/half/year), else null. The trial-edit dialog can only enter
+ * exact dates, so it renders this read-only label instead of a day-precise
+ * picker showing the stored midpoint -- which would overstate the precision.
+ * Precision is edited in the marker editor, which has the period controls.
+ */
+export function approxDateLabel(
+  marker: Pick<Marker, 'event_date' | 'date_precision'> | null | undefined,
+): string | null {
+  if (!marker || !marker.event_date || !isApproximate(marker.date_precision)) return null;
+  return markerStartCaption(marker.event_date, marker.date_precision);
 }
 
 /**

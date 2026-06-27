@@ -22,6 +22,7 @@ import { Marker } from '../../../core/models/marker.model';
 import {
   TRIAL_END_TITLE,
   TRIAL_START_TITLE,
+  approxDateLabel,
   isCtgovOwnedMarker,
   planTrialDateMarker,
   selectTrialEndMarker,
@@ -103,6 +104,13 @@ export class TrialEditDialogComponent {
   // (or absent) markers are editable.
   readonly phaseStartLocked = computed(() => isCtgovOwnedMarker(this.startMarker()));
   readonly phaseEndLocked = computed(() => isCtgovOwnedMarker(this.endMarker()));
+
+  // When the underlying marker is approximate (month/quarter/half/year) we cannot
+  // honestly show its midpoint date in a day-precise picker, so the field renders
+  // the period caption read-only (e.g. "~Q3 '26"). Precision is edited in the
+  // marker editor, which has the period controls. Null for exact / no marker.
+  readonly phaseStartApproxLabel = computed(() => approxDateLabel(this.startMarker()));
+  readonly phaseEndApproxLabel = computed(() => approxDateLabel(this.endMarker()));
 
   private readonly ALL_PHASE_OPTIONS: { id: string; name: string }[] = [
     { id: 'PRECLIN', name: 'Preclinical' },

@@ -135,19 +135,32 @@
         >
       }
     </span>
-    <p-datepicker
-      inputId="trial-form-phase-start"
-      [ngModel]="phaseStartDate()"
-      (ngModelChange)="setPhaseStartDate($event)"
-      name="phaseStart"
-      dateFormat="yy-mm-dd"
-      styleClass="w-full"
-      [disabled]="phaseStartLocked() || disabled()"
-      [showIcon]="true"
-      appendTo="body"
-      [pTooltip]="phaseStartLocked() ? 'Managed by ct.gov.' : ''"
-      tooltipPosition="top"
-    />
+    @if (phaseStartApproxLabel(); as approxLabel) {
+      <div
+        class="flex w-full items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+        [attr.aria-label]="'Phase start, approximate: ' + approxLabel"
+      >
+        <span class="font-mono tabular-nums">{{ approxLabel }}</span>
+        <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">approx</span>
+      </div>
+      <p class="mt-1 text-[11px] text-slate-500">
+        {{ phaseStartLocked() ? 'Managed by ct.gov.' : 'Approximate date. Edit precision in the marker editor.' }}
+      </p>
+    } @else {
+      <p-datepicker
+        inputId="trial-form-phase-start"
+        [ngModel]="phaseStartDate()"
+        (ngModelChange)="setPhaseStartDate($event)"
+        name="phaseStart"
+        dateFormat="yy-mm-dd"
+        styleClass="w-full"
+        [disabled]="phaseStartLocked() || disabled()"
+        [showIcon]="true"
+        appendTo="body"
+        [pTooltip]="phaseStartLocked() ? 'Managed by ct.gov.' : ''"
+        tooltipPosition="top"
+      />
+    }
   </app-form-field>
 
   <app-form-field label="Phase end" fieldId="trial-form-phase-end" spacing="">
@@ -159,18 +172,31 @@
         >
       }
     </span>
-    <p-datepicker
-      inputId="trial-form-phase-end"
-      [ngModel]="phaseEndDate()"
-      (ngModelChange)="setPhaseEndDate($event)"
-      name="phaseEnd"
-      dateFormat="yy-mm-dd"
-      styleClass="w-full"
-      [disabled]="phaseEndLocked() || disabled()"
-      [showIcon]="true"
-      appendTo="body"
-      [pTooltip]="phaseEndLocked() ? 'Managed by ct.gov.' : ''"
-      tooltipPosition="top"
-    />
+    @if (phaseEndApproxLabel(); as approxLabel) {
+      <div
+        class="flex w-full items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+        [attr.aria-label]="'Phase end, approximate: ' + approxLabel"
+      >
+        <span class="font-mono tabular-nums">{{ approxLabel }}</span>
+        <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">approx</span>
+      </div>
+      <p class="mt-1 text-[11px] text-slate-500">
+        {{ phaseEndLocked() ? 'Managed by ct.gov.' : 'Approximate date. Edit precision in the marker editor.' }}
+      </p>
+    } @else {
+      <p-datepicker
+        inputId="trial-form-phase-end"
+        [ngModel]="phaseEndDate()"
+        (ngModelChange)="setPhaseEndDate($event)"
+        name="phaseEnd"
+        dateFormat="yy-mm-dd"
+        styleClass="w-full"
+        [disabled]="phaseEndLocked() || disabled()"
+        [showIcon]="true"
+        appendTo="body"
+        [pTooltip]="phaseEndLocked() ? 'Managed by ct.gov.' : ''"
+        tooltipPosition="top"
+      />
+    }
   </app-form-field>
 </div>
