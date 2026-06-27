@@ -29,14 +29,14 @@
 ## File-structure map
 
 **New files**
-- `supabase/migrations/20260627120000_intelligence_anchors_schema.sql` — anchors table, PI restructure, indexes, RLS, trigger rescope, cleanup rewire (Task 1)
-- `supabase/migrations/20260627120100_intelligence_upsert_anchor_aware.sql` — upsert rewrite (Task 2)
-- `supabase/migrations/20260627120200_intelligence_lead_and_order_rpcs.sql` — set_intelligence_lead, reorder_intelligence (Task 3)
-- `supabase/migrations/20260627120300_list_intelligence_for_entity.sql` — per-entity brief list (Task 4)
-- `supabase/migrations/20260627120400_intelligence_detail_bundles_multi.sql` — detail RPC refactor (Task 5)
-- `supabase/migrations/20260627120500_intelligence_history_and_lifecycle_multi.sql` — history rescope + lifecycle (Task 6)
-- `supabase/migrations/20260627120600_intelligence_feed_and_landscape_multi.sql` — feed + landscape presence (Task 7)
-- `supabase/migrations/20260627120700_intelligence_seed_multi.sql` — seed rewrite (Task 8)
+- `supabase/migrations/20260627130000_intelligence_anchors_schema.sql` — anchors table, PI restructure, indexes, RLS, trigger rescope, cleanup rewire (Task 1)
+- `supabase/migrations/20260627130100_intelligence_upsert_anchor_aware.sql` — upsert rewrite (Task 2)
+- `supabase/migrations/20260627130200_intelligence_lead_and_order_rpcs.sql` — set_intelligence_lead, reorder_intelligence (Task 3)
+- `supabase/migrations/20260627130300_list_intelligence_for_entity.sql` — per-entity brief list (Task 4)
+- `supabase/migrations/20260627130400_intelligence_detail_bundles_multi.sql` — detail RPC refactor (Task 5)
+- `supabase/migrations/20260627130500_intelligence_history_and_lifecycle_multi.sql` — history rescope + lifecycle (Task 6)
+- `supabase/migrations/20260627130600_intelligence_feed_and_landscape_multi.sql` — feed + landscape presence (Task 7)
+- `supabase/migrations/20260627130700_intelligence_seed_multi.sql` — seed rewrite (Task 8)
 - `src/client/src/app/shared/components/intelligence-brief-list/intelligence-brief-list.component.{ts,html,spec.ts}` — collapsed-briefs presenter (Task 11)
 - `src/client/integration/tests/intelligence-multi-briefs.spec.ts` — integration coverage (Tasks 2-8 append here)
 - `src/client/e2e/intelligence-multi-briefs.spec.ts` — e2e (Task 15)
@@ -55,7 +55,7 @@
 ## Task 1: Schema foundation — anchors table + PI restructure
 
 **Files:**
-- Create: `supabase/migrations/20260627120000_intelligence_anchors_schema.sql`
+- Create: `supabase/migrations/20260627130000_intelligence_anchors_schema.sql`
 
 **Interfaces:**
 - Produces: table `public.primary_intelligence_anchors(id, space_id, entity_type, entity_id, is_lead, display_order, created_by, created_at, updated_at)`; column `public.primary_intelligence.anchor_id uuid NOT NULL`; columns `primary_intelligence.entity_type`/`entity_id` REMOVED; unique index `primary_intelligence_one_published_per_anchor (anchor_id) WHERE state='published'`; unique index `primary_intelligence_one_lead_per_entity` on anchors `(space_id, entity_type, entity_id) WHERE is_lead`.
@@ -63,7 +63,7 @@
 - [ ] **Step 1: Write the migration**
 
 ```sql
--- migration: 20260627120000_intelligence_anchors_schema
+-- migration: 20260627130000_intelligence_anchors_schema
 -- purpose: make an entity able to own MANY primary-intelligence briefs.
 --   introduce primary_intelligence_anchors (the "brief": entity binding +
 --   is_lead + display_order). primary_intelligence rows become version rows
@@ -269,7 +269,7 @@ Expected: reset completes (all migrations + seed run — note seed will fail unt
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260627120000_intelligence_anchors_schema.sql
+git add supabase/migrations/20260627130000_intelligence_anchors_schema.sql
 git commit -m "feat(db): primary_intelligence_anchors + re-key versioning to anchor_id"
 ```
 
@@ -278,7 +278,7 @@ git commit -m "feat(db): primary_intelligence_anchors + re-key versioning to anc
 ## Task 2: upsert_primary_intelligence becomes anchor-aware
 
 **Files:**
-- Create: `supabase/migrations/20260627120100_intelligence_upsert_anchor_aware.sql`
+- Create: `supabase/migrations/20260627130100_intelligence_upsert_anchor_aware.sql`
 - Test: `src/client/integration/tests/intelligence-multi-briefs.spec.ts`
 
 **Interfaces:**
@@ -400,7 +400,7 @@ Expected: PASS for the three cases.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260627120100_intelligence_upsert_anchor_aware.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
+git add supabase/migrations/20260627130100_intelligence_upsert_anchor_aware.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
 git commit -m "feat(db): anchor-aware upsert_primary_intelligence (many briefs per entity)"
 ```
 
@@ -409,7 +409,7 @@ git commit -m "feat(db): anchor-aware upsert_primary_intelligence (many briefs p
 ## Task 3: Lead + order RPCs
 
 **Files:**
-- Create: `supabase/migrations/20260627120200_intelligence_lead_and_order_rpcs.sql`
+- Create: `supabase/migrations/20260627130200_intelligence_lead_and_order_rpcs.sql`
 - Test: append to `intelligence-multi-briefs.spec.ts`
 
 **Interfaces:**
@@ -456,7 +456,7 @@ it('reorder_intelligence writes display_order and rejects a mismatched set', asy
 - [ ] **Step 3: Write the migration**
 
 ```sql
--- migration: 20260627120200_intelligence_lead_and_order_rpcs
+-- migration: 20260627130200_intelligence_lead_and_order_rpcs
 
 create or replace function public.set_intelligence_lead(p_anchor_id uuid)
 returns void
@@ -538,7 +538,7 @@ notify pgrst, 'reload schema';
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260627120200_intelligence_lead_and_order_rpcs.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
+git add supabase/migrations/20260627130200_intelligence_lead_and_order_rpcs.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
 git commit -m "feat(db): set_intelligence_lead + reorder_intelligence"
 ```
 
@@ -547,7 +547,7 @@ git commit -m "feat(db): set_intelligence_lead + reorder_intelligence"
 ## Task 4: list_intelligence_for_entity
 
 **Files:**
-- Create: `supabase/migrations/20260627120300_list_intelligence_for_entity.sql`
+- Create: `supabase/migrations/20260627130300_list_intelligence_for_entity.sql`
 - Test: append to `intelligence-multi-briefs.spec.ts`
 
 **Interfaces:**
@@ -576,7 +576,7 @@ it('list_intelligence_for_entity returns briefs lead-first; viewer sees only pub
 - [ ] **Step 3: Write the migration** (reuse `build_intelligence_payload` per anchor; it already returns `to_jsonb(record)`-shaped data)
 
 ```sql
--- migration: 20260627120300_list_intelligence_for_entity
+-- migration: 20260627130300_list_intelligence_for_entity
 create or replace function public.list_intelligence_for_entity(
   p_space_id uuid, p_entity_type text, p_entity_id uuid
 ) returns jsonb
@@ -634,7 +634,7 @@ notify pgrst, 'reload schema';
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260627120300_list_intelligence_for_entity.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
+git add supabase/migrations/20260627130300_list_intelligence_for_entity.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
 git commit -m "feat(db): list_intelligence_for_entity (brief drawer source)"
 ```
 
@@ -643,7 +643,7 @@ git commit -m "feat(db): list_intelligence_for_entity (brief drawer source)"
 ## Task 5: Detail bundle RPCs return briefs[]
 
 **Files:**
-- Create: `supabase/migrations/20260627120400_intelligence_detail_bundles_multi.sql`
+- Create: `supabase/migrations/20260627130400_intelligence_detail_bundles_multi.sql`
 - Test: append to `intelligence-multi-briefs.spec.ts`
 
 **Interfaces:**
@@ -684,7 +684,7 @@ Drop the vestigial `get_marker_detail_with_intelligence` (markers are not owners
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260627120400_intelligence_detail_bundles_multi.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
+git add supabase/migrations/20260627130400_intelligence_detail_bundles_multi.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
 git commit -m "feat(db): detail bundles return briefs[] instead of single published/draft"
 ```
 
@@ -693,7 +693,7 @@ git commit -m "feat(db): detail bundles return briefs[] instead of single publis
 ## Task 6: History rescope + lifecycle (auto-promote, anchor cleanup)
 
 **Files:**
-- Create: `supabase/migrations/20260627120500_intelligence_history_and_lifecycle_multi.sql`
+- Create: `supabase/migrations/20260627130500_intelligence_history_and_lifecycle_multi.sql`
 - Test: append to `intelligence-multi-briefs.spec.ts`
 
 **Interfaces:**
@@ -818,7 +818,7 @@ $$;
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260627120500_intelligence_history_and_lifecycle_multi.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
+git add supabase/migrations/20260627130500_intelligence_history_and_lifecycle_multi.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
 git commit -m "feat(db): per-anchor history + lead auto-promotion + anchor cleanup"
 ```
 
@@ -827,7 +827,7 @@ git commit -m "feat(db): per-anchor history + lead auto-promotion + anchor clean
 ## Task 7: Feed `is_lead` + landscape presence (multi-brief)
 
 **Files:**
-- Create: `supabase/migrations/20260627120600_intelligence_feed_and_landscape_multi.sql`
+- Create: `supabase/migrations/20260627130600_intelligence_feed_and_landscape_multi.sql`
 - Test: append to `intelligence-multi-briefs.spec.ts`
 
 **Interfaces:**
@@ -894,7 +894,7 @@ and add `'entity_type', a.entity_type, 'entity_id', a.entity_id, 'anchor_id', a.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260627120600_intelligence_feed_and_landscape_multi.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
+git add supabase/migrations/20260627130600_intelligence_feed_and_landscape_multi.sql src/client/integration/tests/intelligence-multi-briefs.spec.ts
 git commit -m "feat(db): feed is_lead + multi-anchor landscape presence flags"
 ```
 
@@ -903,7 +903,7 @@ git commit -m "feat(db): feed is_lead + multi-anchor landscape presence flags"
 ## Task 8: Seed rewrite + grants + feature manifest + RLS test
 
 **Files:**
-- Create: `supabase/migrations/20260627120700_intelligence_seed_multi.sql`
+- Create: `supabase/migrations/20260627130700_intelligence_seed_multi.sql`
 - Modify: `supabase/data-api-grants.json`, `docs/runbook/features/primary-intelligence.md`
 - Test: append RLS cases to `intelligence-multi-briefs.spec.ts`
 
@@ -949,7 +949,7 @@ Expected: grants:check PASS (no missing/excess), features:check PASS (no rpc-unm
 - [ ] **Step 7: Commit**
 
 ```bash
-git add supabase/migrations/20260627120700_intelligence_seed_multi.sql supabase/seed.sql supabase/data-api-grants.json docs/runbook/features/primary-intelligence.md src/client/integration/tests/intelligence-multi-briefs.spec.ts
+git add supabase/migrations/20260627130700_intelligence_seed_multi.sql supabase/seed.sql supabase/data-api-grants.json docs/runbook/features/primary-intelligence.md src/client/integration/tests/intelligence-multi-briefs.spec.ts
 git commit -m "feat(db): multi-brief seed + anchors grants + feature manifest + RLS test"
 ```
 
