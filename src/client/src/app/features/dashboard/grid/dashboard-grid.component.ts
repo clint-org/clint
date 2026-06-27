@@ -36,7 +36,6 @@ import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.comp
 import { GridHeaderComponent } from './grid-header.component';
 import { MarkerComponent } from './marker.component';
 import { PhaseBarComponent } from './phase-bar.component';
-import { RowNotesComponent } from './row-notes.component';
 
 export interface FlattenedTrial {
   companyName: string;
@@ -64,7 +63,6 @@ export interface FlattenedTrial {
     MarkerComponent,
     PhaseBarComponent,
     PiMarkComponent,
-    RowNotesComponent,
     TooltipModule,
   ],
   templateUrl: './dashboard-grid.component.html',
@@ -89,7 +87,6 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly hideMoaColumn = input<boolean>(false);
   readonly hideRoaColumn = input<boolean>(false);
   readonly hideIndicationColumn = input<boolean>(false);
-  readonly hideNotesColumn = input<boolean>(false);
 
   /**
    * Timeline-scoped density control (default on). When on, a trial that owns
@@ -108,8 +105,9 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly isScrolled = signal(false);
   readonly showMoaColumn = computed(() => this.landscapeState?.showMoaColumn() ?? true);
   readonly showRoaColumn = computed(() => this.landscapeState?.showRoaColumn() ?? true);
-  readonly showIndicationColumn = computed(() => this.landscapeState?.showIndicationColumn() ?? false);
-  readonly showNotesColumn = computed(() => this.landscapeState?.showNotesColumn() ?? true);
+  readonly showIndicationColumn = computed(
+    () => this.landscapeState?.showIndicationColumn() ?? false
+  );
 
   constructor() {
     // On load (and when the data/range changes) anchor the horizontal scroll on

@@ -1,0 +1,57 @@
+<p-multiselect
+  #ms
+  [inputId]="inputId()"
+  [options]="options()"
+  [ngModel]="value()"
+  (ngModelChange)="value.set($event ?? [])"
+  [ngModelOptions]="{ standalone: true }"
+  optionLabel="name"
+  optionValue="id"
+  [placeholder]="placeholder()"
+  [filter]="true"
+  filterBy="name"
+  [appendTo]="appendTo()"
+  [resetFilterOnHide]="true"
+  [showClear]="true"
+  [disabled]="disabled()"
+  [styleClass]="styleClass()"
+  [maxSelectedLabels]="maxSelectedLabels()"
+  [selectedItemsLabel]="selectedItemsLabel()"
+  (onFilter)="onFilter($event.filter)"
+>
+  <ng-template pTemplate="footer">
+    @let footer = controller.footer();
+    @if (footer.near.length > 0) {
+      <div class="border-t border-slate-200 px-3 py-2">
+        <p class="text-xs text-slate-500">Similar existing {{ entityLabel() }}:</p>
+        <ul class="mt-1 flex flex-col gap-0.5">
+          @for (suggestion of footer.near; track suggestion.id) {
+            <li>
+              <button
+                type="button"
+                class="w-full text-left text-sm text-brand-700 hover:underline focus-visible:underline"
+                (click)="onSelectExisting(suggestion)"
+              >
+                {{ suggestion.name }}
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+    @if (footer.showCreate) {
+      <div class="border-t border-slate-200 px-3 py-2">
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 text-left text-sm font-medium text-brand-700 hover:underline focus-visible:underline disabled:opacity-50"
+          [disabled]="controller.creating()"
+          [attr.aria-label]="'Create ' + entityLabel() + ' ' + footer.createLabel"
+          (click)="onCreate()"
+        >
+          <span aria-hidden="true" class="text-base leading-none">+</span>
+          <span>Create "{{ footer.createLabel }}"</span>
+        </button>
+      </div>
+    }
+  </ng-template>
+</p-multiselect>

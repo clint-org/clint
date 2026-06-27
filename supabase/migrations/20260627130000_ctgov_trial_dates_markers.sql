@@ -1012,7 +1012,6 @@ begin
                         'acronym', t.acronym,
                         'identifier', t.identifier,
                         'status', t.status,
-                        'notes', t.notes,
                         'display_order', t.display_order,
                         'asset_id', t.asset_id,
                         'recruitment_status', t.recruitment_status,
@@ -1072,18 +1071,6 @@ begin
                             and mk.space_id = p_space_id
                             and (p_start_year is null or extract(year from mk.event_date) >= p_start_year)
                             and (p_end_year   is null or extract(year from mk.event_date) <= p_end_year)
-                        ), '[]'::jsonb),
-                        'trial_notes', coalesce((
-                          select jsonb_agg(
-                            jsonb_build_object(
-                              'id', tn.id, 'content', tn.content,
-                              'created_at', tn.created_at, 'updated_at', tn.updated_at
-                            )
-                            order by tn.created_at
-                          )
-                          from public.trial_notes tn
-                          where tn.trial_id = t.id
-                            and tn.space_id = p_space_id
                         ), '[]'::jsonb)
                       ) as trial_obj
                     ) as trial_lateral

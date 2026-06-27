@@ -1,6 +1,6 @@
 -- ============================================================================
 -- CT.gov marker robustness: close the reassign-bypass + add create_marker
--- p_metadata (user-approved follow-ups to 20260626190000_ctgov_trial_dates_markers)
+-- p_metadata (user-approved follow-ups to 20260627130000_ctgov_trial_dates_markers)
 -- ============================================================================
 -- Spec: docs/specs/ctgov-trial-dates/spec.md
 --

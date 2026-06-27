@@ -11,11 +11,13 @@ import {
 import { Dialog } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
-import { MultiSelect } from 'primeng/multiselect';
 import { DatePicker } from 'primeng/datepicker';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
+
+import { TaxonomyMultiselectComponent } from '../shared/taxonomy-multiselect/taxonomy-multiselect.component';
+import type { CreateFn } from '../shared/taxonomy-multiselect/taxonomy-create-controller';
 
 import { TrialService } from '../../../core/services/trial.service';
 import { AssetService } from '../../../core/services/asset.service';
@@ -38,7 +40,7 @@ interface SelectOption {
     Dialog,
     InputTextModule,
     Select,
-    MultiSelect,
+    TaxonomyMultiselectComponent,
     DatePicker,
     Tooltip,
     FormsModule,
@@ -299,6 +301,25 @@ export class TrialCreateDialogComponent {
   protected onIndicationsChange(ids: string[] | null): void {
     this.indicationIds.set(ids ?? []);
   }
+
+  // Inline-create handler for the Indication multiselect: persist a name-only
+  // indication, register it in the option list, and surface failures as a toast.
+  // Re-throws so the multiselect keeps the typed text for retry.
+  protected readonly createIndication: CreateFn = async (name) => {
+    try {
+      const created = await this.indicationService.create(this.spaceId(), { name });
+      this.indications.update((list) => [...list, { id: created.id, name: created.name }]);
+      return created;
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not add indication',
+        detail: e instanceof Error ? e.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+      throw e;
+    }
+  };
 
   private async loadOptions(spaceId: string): Promise<void> {
     const [products, indications] = await Promise.all([

@@ -27,7 +27,6 @@ import { PHASE_COLORS, PHASE_FALLBACK_COLOR, phaseShortLabel } from '../models/p
 import { clintMarkSvgDataUri } from '../../shared/components/clint-mark';
 import { deriveTrialPhaseSpan } from '../models/trial-phase-span';
 
-
 const SLIDE_W = 13.33;
 const SLIDE_H = 7.5;
 const HEADER_Y = 0;
@@ -110,7 +109,15 @@ export class PptxExportService {
 
     // Slide 1: branded cover.
     const cover = pptx.addSlide();
-    this.renderCover(cover, appDisplayName, primaryColorHex, logoData, agencyName, agencyLogo, dateStr);
+    this.renderCover(
+      cover,
+      appDisplayName,
+      primaryColorHex,
+      logoData,
+      agencyName,
+      agencyLogo,
+      dateStr
+    );
     this.addFooter(cover, footer, 1, totalPages);
 
     // Slide 2: data slide.
@@ -122,7 +129,6 @@ export class PptxExportService {
       showMoa: options.showMoaColumn,
       showRoa: options.showRoaColumn,
       showIndication: options.showIndicationColumn,
-      showNotes: options.showNotesColumn,
     });
     const logoByCompany = await this.loadCompanyLogos(companies);
 
@@ -392,7 +398,6 @@ export class PptxExportService {
       roa: 'ROA',
       indication: 'Indication',
       trial: 'Trial',
-      notes: 'Notes',
     };
     for (const col of layout.columns) {
       slide.addText(labels[col.key], {
@@ -596,17 +601,6 @@ export class PptxExportService {
           shrinkText: true,
         }
       );
-
-      const notesCol = col('notes');
-      if (notesCol && row.hasNotes) {
-        slide.addShape('ellipse', {
-          x: notesCol.x + notesCol.width / 2 - 0.03,
-          y: y + rowH / 2 - 0.03,
-          w: 0.06,
-          h: 0.06,
-          fill: { color: '94a3b8' },
-        });
-      }
 
       this.renderPhaseBars(slide, row.trial, layout, y, rowH, startYear, endYear, fontSize);
       this.renderMarkers(slide, row.trial, layout, y, rowH, startYear, endYear, fontSize);
@@ -827,12 +821,38 @@ export class PptxExportService {
       const { px, py } = place(w);
       const cy = py + s / 2;
       if (st.kind === 'actual') {
-        slide.addShape('ellipse', { x: px, y: py, w: s, h: s, fill: { color: '64748b' }, line: { color: '64748b', width: 0.5 } });
+        slide.addShape('ellipse', {
+          x: px,
+          y: py,
+          w: s,
+          h: s,
+          fill: { color: '64748b' },
+          line: { color: '64748b', width: 0.5 },
+        });
       } else if (st.kind === 'projected') {
-        slide.addShape('ellipse', { x: px, y: py, w: s, h: s, line: { color: '64748b', width: 1 } });
+        slide.addShape('ellipse', {
+          x: px,
+          y: py,
+          w: s,
+          h: s,
+          line: { color: '64748b', width: 1 },
+        });
       } else {
-        slide.addShape('ellipse', { x: px, y: py, w: s, h: s, fill: { color: '64748b', transparency: 70 }, line: { color: '64748b', width: 0.5 } });
-        slide.addShape('line', { x: px - 0.01, y: cy, w: s + 0.02, h: 0, line: { color: '64748b', width: 1 } });
+        slide.addShape('ellipse', {
+          x: px,
+          y: py,
+          w: s,
+          h: s,
+          fill: { color: '64748b', transparency: 70 },
+          line: { color: '64748b', width: 0.5 },
+        });
+        slide.addShape('line', {
+          x: px - 0.01,
+          y: cy,
+          w: s + 0.02,
+          h: 0,
+          line: { color: '64748b', width: 1 },
+        });
       }
       label(st.name, px + s + 0.03, py, st.name.length * CHAR, false);
     }
@@ -863,5 +883,4 @@ export class PptxExportService {
       }
     }
   }
-
 }

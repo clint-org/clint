@@ -14,10 +14,9 @@ export interface ColumnVisibility {
   showMoa: boolean;
   showRoa: boolean;
   showIndication: boolean;
-  showNotes: boolean;
 }
 
-export type ColumnKey = 'company' | 'asset' | 'moa' | 'roa' | 'indication' | 'trial' | 'notes';
+export type ColumnKey = 'company' | 'asset' | 'moa' | 'roa' | 'indication' | 'trial';
 
 export interface ColumnDef {
   key: ColumnKey;
@@ -39,7 +38,6 @@ export interface ExportOptions {
   showMoaColumn: boolean;
   showRoaColumn: boolean;
   showIndicationColumn: boolean;
-  showNotesColumn: boolean;
   /** Workspace tenant for the export footer's "Prepared for" segment. */
   tenant?: { name: string; logoUrl: string | null } | null;
   /** Download filename; defaults to the generic dashboard name when omitted. */
@@ -55,7 +53,6 @@ export interface FlatRow {
   moa: string;
   roa: string;
   indications: string;
-  hasNotes: boolean;
   trial: Trial;
   isFirstInCompany: boolean;
   isFirstInAsset: boolean;
@@ -84,7 +81,6 @@ export function flattenTrials(companies: Company[]): FlatRow[] {
           moa,
           roa,
           indications,
-          hasNotes: !!(trial.notes || (trial.trial_notes?.length ?? 0) > 0),
           trial,
           isFirstInCompany,
           isFirstInAsset,
@@ -108,7 +104,6 @@ export interface TrialExportRow {
   phase: string;
   phaseStart: string | null;
   phaseEnd: string | null;
-  notes: string;
 }
 
 export function buildTrialExportRows(companies: Company[]): TrialExportRow[] {
@@ -125,7 +120,6 @@ export function buildTrialExportRows(companies: Company[]): TrialExportRow[] {
       phase: r.trial.phase_type ? phaseShortLabel(r.trial.phase_type) : '',
       phaseStart: span.start,
       phaseEnd: span.end,
-      notes: r.trial.notes ?? '',
     };
   });
 }
@@ -137,7 +131,6 @@ const COLUMN_WIDTHS: Record<ColumnKey, number> = {
   roa: 0.45,
   indication: 0.9,
   trial: 1.05,
-  notes: 0.35,
 };
 
 export function computeLeftColumns(v: ColumnVisibility): ColumnLayout {
@@ -146,7 +139,6 @@ export function computeLeftColumns(v: ColumnVisibility): ColumnLayout {
   if (v.showRoa) keys.push('roa');
   if (v.showIndication) keys.push('indication');
   keys.push('trial');
-  if (v.showNotes) keys.push('notes');
 
   const columns: ColumnDef[] = [];
   let x = 0;

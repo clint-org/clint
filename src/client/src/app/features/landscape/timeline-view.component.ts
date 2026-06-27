@@ -61,7 +61,6 @@ export class TimelineViewComponent {
   readonly hideMoaColumn = input<boolean>(false);
   readonly hideRoaColumn = input<boolean>(false);
   readonly hideIndicationColumn = input<boolean>(false);
-  readonly hideNotesColumn = input<boolean>(false);
   readonly hideLegend = input<boolean>(false);
   readonly legendVisible = input<boolean>(false);
   readonly columnsOnly = input<boolean>(false);
@@ -197,7 +196,6 @@ export class TimelineViewComponent {
       showMoaColumn: this.state.showMoaColumn(),
       showRoaColumn: this.state.showRoaColumn(),
       showIndicationColumn: this.state.showIndicationColumn(),
-      showNotesColumn: this.state.showNotesColumn(),
       tenant,
       filename: await this.exportFilename('pptx'),
     });
@@ -217,7 +215,6 @@ export class TimelineViewComponent {
         hideMoaColumn: this.hideMoaColumn(),
         hideRoaColumn: this.hideRoaColumn(),
         hideIndicationColumn: this.hideIndicationColumn(),
-        hideNotesColumn: this.hideNotesColumn(),
         spaceId: this.spaceId(),
         tenantName: tenant?.name ?? '',
         tenantLogoUrl: tenant?.logoUrl ?? null,

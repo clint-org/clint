@@ -24,7 +24,7 @@ export interface TrialExtraColumn {
  * Explicit export surface for the trials grid: every visible column (trial,
  * NCT ID, asset, company, status, markers, the per-space CT.gov columns) plus
  * the trial detail's row-model fields (acronym, phase + window, recruitment
- * status, study type, notes). The CT.gov extras resolve through the page's
+ * status, study type). The CT.gov extras resolve through the page's
  * already-loaded snapshot map (one batched fetch per space, no per-row calls).
  *
  * Detail fields that need a per-row fetch are intentionally excluded:
@@ -76,7 +76,6 @@ export function buildTrialExportColumns(
     { header: 'Recruitment status', value: (r) => r.trial.recruitment_status ?? '', width: 20 },
     { header: 'Study type', value: (r) => r.trial.study_type ?? '', width: 16 },
     { header: 'Markers', value: (r) => r.markerCount, width: 9 },
-    { header: 'Notes', value: (r) => r.trial.notes ?? '', width: 40 },
   ];
   for (const extra of extras) {
     columns.push({

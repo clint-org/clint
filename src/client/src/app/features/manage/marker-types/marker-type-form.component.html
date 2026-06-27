@@ -12,6 +12,7 @@
       spacing="sm:col-span-2"
     >
       <p-select
+        #categorySelect
         inputId="mt-category"
         [options]="categories()"
         [ngModel]="categoryId()"
@@ -19,14 +20,35 @@
         name="categoryId"
         optionLabel="name"
         optionValue="id"
-        placeholder="Select a category"
+        placeholder="Select or type to create a category"
         styleClass="w-full"
         class="mt-1"
+        [filter]="true"
+        filterBy="name"
+        [resetFilterOnHide]="true"
+        (onFilter)="onCategoryFilter($event.filter)"
         (onBlur)="categoryBlurred.set(true)"
         [attr.aria-required]="true"
         [attr.aria-invalid]="categoryInvalid()"
         [attr.aria-describedby]="categoryInvalid() ? 'mt-category-error' : null"
-      />
+      >
+        <ng-template pTemplate="footer">
+          @if (showCreateCategory()) {
+            <div class="border-t border-slate-200 px-3 py-2">
+              <button
+                type="button"
+                class="flex w-full items-center gap-2 text-left text-sm font-medium text-brand-700 hover:underline focus-visible:underline disabled:opacity-50"
+                [disabled]="creatingCategory()"
+                [attr.aria-label]="'Create category ' + createCategoryLabel()"
+                (click)="createCategoryFromFilter()"
+              >
+                <span aria-hidden="true" class="text-base leading-none">+</span>
+                <span>Create "{{ createCategoryLabel() }}"</span>
+              </button>
+            </div>
+          }
+        </ng-template>
+      </p-select>
     </app-form-field>
 
     <app-form-field

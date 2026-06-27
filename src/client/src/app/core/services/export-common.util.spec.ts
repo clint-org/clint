@@ -18,7 +18,6 @@ describe('computeLeftColumns', () => {
       showMoa: false,
       showRoa: false,
       showIndication: false,
-      showNotes: false,
     });
     expect(layout.columns.map((c) => c.key)).toEqual(['company', 'asset', 'trial']);
     expect(layout.labelColW).toBeCloseTo(2.9, 5);
@@ -29,12 +28,16 @@ describe('computeLeftColumns', () => {
       showMoa: true,
       showRoa: true,
       showIndication: true,
-      showNotes: true,
     });
     expect(layout.columns.map((c) => c.key)).toEqual([
-      'company', 'asset', 'moa', 'roa', 'indication', 'trial', 'notes',
+      'company',
+      'asset',
+      'moa',
+      'roa',
+      'indication',
+      'trial',
     ]);
-    expect(layout.labelColW).toBeCloseTo(5.4, 5);
+    expect(layout.labelColW).toBeCloseTo(5.05, 5);
   });
 
   it('places indication immediately before trial when only it is on', () => {
@@ -42,7 +45,6 @@ describe('computeLeftColumns', () => {
       showMoa: false,
       showRoa: false,
       showIndication: true,
-      showNotes: false,
     });
     expect(layout.columns.map((c) => c.key)).toEqual(['company', 'asset', 'indication', 'trial']);
   });
@@ -52,7 +54,6 @@ describe('computeLeftColumns', () => {
       showMoa: true,
       showRoa: false,
       showIndication: false,
-      showNotes: false,
     });
     expect(layout.columns.map((c) => c.key)).toEqual(['company', 'asset', 'moa', 'trial']);
     const company = layout.columns[0];
@@ -109,7 +110,11 @@ describe('buildLegendGroups', () => {
   it('groups by category, ordered by category display_order', () => {
     const groups = buildLegendGroups(allTypes);
     expect(groups.map((g) => g.label)).toEqual([
-      'Clinical Trial', 'Data', 'Regulatory', 'Approval', 'Loss of Exclusivity',
+      'Clinical Trial',
+      'Data',
+      'Regulatory',
+      'Approval',
+      'Loss of Exclusivity',
     ]);
   });
 
@@ -121,7 +126,11 @@ describe('buildLegendGroups', () => {
   it('carries shape, fill_style, inner_mark, and color through', () => {
     const groups = buildLegendGroups([fullType('Approval', 1, 'Approval', 4)]);
     expect(groups[0].items[0]).toMatchObject({
-      name: 'Approval', color: '#000000', shape: 'circle', fill_style: 'filled', inner_mark: 'none',
+      name: 'Approval',
+      color: '#000000',
+      shape: 'circle',
+      fill_style: 'filled',
+      inner_mark: 'none',
     });
   });
 
@@ -138,13 +147,28 @@ describe('buildLegendGroups', () => {
 function companyWithMarkers(): Company[] {
   return [
     {
-      id: 'c1', space_id: 's1', created_by: 'u', name: 'Eli Lilly', logo_url: null,
-      display_order: 0, created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+      id: 'c1',
+      space_id: 's1',
+      created_by: 'u',
+      name: 'Eli Lilly',
+      logo_url: null,
+      display_order: 0,
+      created_at: '2026-01-01',
+      updated_at: '2026-01-01',
+      updated_by: null,
       assets: [
         {
-          id: 'a1', space_id: 's1', created_by: 'u', company_id: 'c1', name: 'Mounjaro',
-          generic_name: null, logo_url: null, display_order: 0,
-          created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+          id: 'a1',
+          space_id: 's1',
+          created_by: 'u',
+          company_id: 'c1',
+          name: 'Mounjaro',
+          generic_name: null,
+          logo_url: null,
+          display_order: 0,
+          created_at: '2026-01-01',
+          updated_at: '2026-01-01',
+          updated_by: null,
           trials: [
             {
               id: 't1', space_id: 's1', created_by: 'u', asset_id: 'a1', name: 'SURPASS-2',
@@ -153,19 +177,41 @@ function companyWithMarkers(): Company[] {
               updated_by: null, phase_type: null,
               markers: [
                 {
-                  id: 'm2', space_id: 's1', created_by: 'u', marker_type_id: 'mt1',
-                  title: 'Approved by FDA', projection: 'actual', event_date: '2022-05-13',
-                  end_date: null, description: null, source_url: null, metadata: null,
-                  is_projected: false, no_longer_expected: false,
-                  created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+                  id: 'm2',
+                  space_id: 's1',
+                  created_by: 'u',
+                  marker_type_id: 'mt1',
+                  title: 'Approved by FDA',
+                  projection: 'actual',
+                  event_date: '2022-05-13',
+                  end_date: null,
+                  description: null,
+                  source_url: null,
+                  metadata: null,
+                  is_projected: false,
+                  no_longer_expected: false,
+                  created_at: '2026-01-01',
+                  updated_at: '2026-01-01',
+                  updated_by: null,
                   marker_types: { id: 'mt1', name: 'Approval' } as never,
                 },
                 {
-                  id: 'm1', space_id: 's1', created_by: 'u', marker_type_id: 'mt2',
-                  title: 'Topline expected', projection: 'company', event_date: '2021-10-01',
-                  end_date: null, description: null, source_url: null, metadata: null,
-                  is_projected: true, no_longer_expected: false,
-                  created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+                  id: 'm1',
+                  space_id: 's1',
+                  created_by: 'u',
+                  marker_type_id: 'mt2',
+                  title: 'Topline expected',
+                  projection: 'company',
+                  event_date: '2021-10-01',
+                  end_date: null,
+                  description: null,
+                  source_url: null,
+                  metadata: null,
+                  is_projected: true,
+                  no_longer_expected: false,
+                  created_at: '2026-01-01',
+                  updated_at: '2026-01-01',
+                  updated_by: null,
                   marker_types: { id: 'mt2', name: 'Topline Data' } as never,
                 },
               ],
@@ -205,13 +251,28 @@ describe('buildMarkerTableRows', () => {
     const longTitle = 'X'.repeat(100);
     const companies: Company[] = [
       {
-        id: 'c1', space_id: 's1', created_by: 'u', name: 'Pharma Co', logo_url: null,
-        display_order: 0, created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+        id: 'c1',
+        space_id: 's1',
+        created_by: 'u',
+        name: 'Pharma Co',
+        logo_url: null,
+        display_order: 0,
+        created_at: '2026-01-01',
+        updated_at: '2026-01-01',
+        updated_by: null,
         assets: [
           {
-            id: 'a1', space_id: 's1', created_by: 'u', company_id: 'c1', name: 'Drug-A',
-            generic_name: null, logo_url: null, display_order: 0,
-            created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+            id: 'a1',
+            space_id: 's1',
+            created_by: 'u',
+            company_id: 'c1',
+            name: 'Drug-A',
+            generic_name: null,
+            logo_url: null,
+            display_order: 0,
+            created_at: '2026-01-01',
+            updated_at: '2026-01-01',
+            updated_by: null,
             trials: [
               {
                 id: 't1', space_id: 's1', created_by: 'u', asset_id: 'a1', name: 'TRIAL-1',
@@ -220,11 +281,22 @@ describe('buildMarkerTableRows', () => {
                 updated_by: null, phase_type: null,
                 markers: [
                   {
-                    id: 'm1', space_id: 's1', created_by: 'u', marker_type_id: 'mt1',
-                    title: longTitle, projection: 'actual', event_date: '2024-01-01',
-                    end_date: null, description: null, source_url: null, metadata: null,
-                    is_projected: false, no_longer_expected: false,
-                    created_at: '2026-01-01', updated_at: '2026-01-01', updated_by: null,
+                    id: 'm1',
+                    space_id: 's1',
+                    created_by: 'u',
+                    marker_type_id: 'mt1',
+                    title: longTitle,
+                    projection: 'actual',
+                    event_date: '2024-01-01',
+                    end_date: null,
+                    description: null,
+                    source_url: null,
+                    metadata: null,
+                    is_projected: false,
+                    no_longer_expected: false,
+                    created_at: '2026-01-01',
+                    updated_at: '2026-01-01',
+                    updated_by: null,
                     marker_types: { id: 'mt1', name: 'Data readout' } as never,
                   },
                 ],
@@ -253,14 +325,14 @@ describe('paginate', () => {
 });
 
 describe('date formatting', () => {
-  it("formats a single date as Mon ‘99", () => {
-    expect(formatDateShort('2021-10-01')).toBe("Oct ‘21");
+  it('formats a single date as Mon ‘99', () => {
+    expect(formatDateShort('2021-10-01')).toBe('Oct ‘21');
   });
   it('formats a bounded range with an en-dash', () => {
-    expect(formatMarkerDate('2021-10-01', '2021-12-01')).toBe("Oct ‘21 – Dec ‘21");
+    expect(formatMarkerDate('2021-10-01', '2021-12-01')).toBe('Oct ‘21 – Dec ‘21');
   });
   it('formats a single event when end_date is null', () => {
-    expect(formatMarkerDate('2021-10-01', null)).toBe("Oct ‘21");
+    expect(formatMarkerDate('2021-10-01', null)).toBe('Oct ‘21');
   });
   it('formats a fuzzy point and an onwards marker honestly', () => {
     expect(formatMarkerDate('2026-11-15', null, 'quarter')).toBe("Q4 '26");
@@ -405,7 +477,6 @@ describe('buildTrialExportRows', () => {
       phase: 'PH 3',
       phaseStart: '2020-01-01',
       phaseEnd: '2022-06-30',
-      notes: 'Pivotal readout expected H2.',
     });
   });
 });

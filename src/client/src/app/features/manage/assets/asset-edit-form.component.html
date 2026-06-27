@@ -63,37 +63,27 @@
 }
 
 <app-form-field label="Mechanisms of Action" fieldId="asset-moas">
-  <p-multiselect
+  <app-taxonomy-multiselect
     inputId="asset-moas"
-    name="moas"
+    entityLabel="mechanism"
     [options]="moaOptions()"
-    [ngModel]="moaIds()"
-    (ngModelChange)="moaIds.set($event ?? [])"
-    optionLabel="name"
-    optionValue="id"
+    [(value)]="moaIds"
+    [createFn]="moaCreateFn()"
+    [disabled]="disabled()"
     placeholder="Select mechanisms"
-    [filter]="true"
-    [showClear]="true"
-    styleClass="w-full"
-    [maxSelectedLabels]="0"
     [selectedItemsLabel]="'MOA (' + moaIds().length + ')'"
   />
 </app-form-field>
 
 <app-form-field label="Routes of Administration" fieldId="asset-roas">
-  <p-multiselect
+  <app-taxonomy-multiselect
     inputId="asset-roas"
-    name="roas"
+    entityLabel="route"
     [options]="roaOptions()"
-    [ngModel]="roaIds()"
-    (ngModelChange)="roaIds.set($event ?? [])"
-    optionLabel="name"
-    optionValue="id"
+    [(value)]="roaIds"
+    [createFn]="roaCreateFn()"
+    [disabled]="disabled()"
     placeholder="Select routes"
-    [filter]="true"
-    [showClear]="true"
-    styleClass="w-full"
-    [maxSelectedLabels]="0"
     [selectedItemsLabel]="'ROA (' + roaIds().length + ')'"
   />
 </app-form-field>
