@@ -85,8 +85,17 @@
         [filter]="true"
         styleClass="w-full"
         appendTo="body"
+        [disabled]="assetLocked()"
         [attr.aria-required]="true"
+        [pTooltip]="assetLocked() ? 'Fixed to this asset.' : ''"
+        tooltipPosition="top"
       />
+      @if (assetLocked() && lockedAssetName()) {
+        <p class="mt-1 text-[11px] text-slate-500">
+          Trial will be added to <span class="font-medium">{{ lockedAssetName() }}</span
+          >.
+        </p>
+      }
     </app-form-field>
 
     <app-form-field label="Indication" fieldId="trial-indication">

@@ -43,7 +43,7 @@
     optionValue="id"
     placeholder="Select company"
     styleClass="w-full"
-    [disabled]="disabled()"
+    [disabled]="disabled() || companyLocked()"
     [attr.aria-required]="true"
   />
 </app-form-field>

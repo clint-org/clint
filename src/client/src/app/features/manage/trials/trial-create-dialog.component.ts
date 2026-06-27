@@ -61,6 +61,12 @@ export class TrialCreateDialogComponent {
   readonly visible = input<boolean>(false);
   readonly visibleChange = output<boolean>();
   readonly spaceId = input.required<string>();
+  /**
+   * When set, the asset is pre-selected and locked. Used when the dialog is
+   * opened from an asset's detail page so the new trial is bound to that asset
+   * without the user re-picking it.
+   */
+  readonly lockedAssetId = input<string | null>(null);
   readonly saved = output<{ trialId: string }>();
 
   // Form fields are signals because they participate in the isValid() computed
@@ -109,6 +115,16 @@ export class TrialCreateDialogComponent {
 
   readonly products = signal<SelectOption[]>([]);
   readonly indications = signal<SelectOption[]>([]);
+
+  /** True when opened from an asset page: the asset picker is fixed. */
+  protected readonly assetLocked = computed(() => !!this.lockedAssetId());
+
+  /** Display name for the locked asset, resolved from the loaded options. */
+  protected readonly lockedAssetName = computed(() => {
+    const id = this.lockedAssetId();
+    if (!id) return null;
+    return this.products().find((p) => p.id === id)?.name ?? null;
+  });
 
   readonly saving = signal(false);
 
@@ -178,12 +194,19 @@ export class TrialCreateDialogComponent {
         .catch(() => this.showPreclinical.set(false));
     });
 
-    // Reset form when the dialog is closed.
+    // When a locked asset is supplied, force the selection to it.
+    effect(() => {
+      const locked = this.lockedAssetId();
+      if (locked) this.assetId.set(locked);
+    });
+
+    // Reset form when the dialog is closed. The asset resets to the locked
+    // value (null when unlocked) so reopening from an asset page keeps it.
     effect(() => {
       if (!this.visible()) {
         this.name.set('');
         this.identifier.set(null);
-        this.assetId.set(null);
+        this.assetId.set(this.lockedAssetId());
         this.indicationIds.set([]);
         this.nctLookupState.set('idle');
         this.nctLookupAcronym.set(null);
