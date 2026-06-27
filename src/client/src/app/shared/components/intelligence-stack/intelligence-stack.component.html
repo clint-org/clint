@@ -78,7 +78,9 @@
         </button>
 
         <div class="flex shrink-0 items-center gap-2 text-xs text-slate-400">
-          <span class="hidden font-medium text-slate-600 sm:inline">{{ bylineFor(brief) }}</span>
+          @if (!lead) {
+            <span class="hidden font-medium text-slate-600 sm:inline">{{ bylineFor(brief) }}</span>
+          }
           <span class="tabular-nums">{{ updatedFor(brief) }}</span>
           @if (brief.version_count > 1) {
             <span
@@ -138,6 +140,28 @@
           role="region"
           [attr.aria-label]="'Details: ' + headlineFor(brief)"
         >
+          @if (lead && leadBylineName()) {
+            <div class="mb-4 flex items-center gap-2 text-xs text-slate-500">
+              @if (!canManage()) {
+                <app-brand-logo
+                  [url]="leadBylineLogoUrl()"
+                  [alt]="leadBylineName() + ' logo'"
+                  [width]="22"
+                  [height]="22"
+                  imgClass="h-[22px] w-[22px] shrink-0 rounded-sm object-contain"
+                >
+                  <span
+                    class="flex h-[22px] w-[22px] shrink-0 items-center justify-center bg-brand-700 font-mono text-[12px] font-bold italic leading-none text-white"
+                    aria-hidden="true"
+                  >{{ leadBylineInitial() }}</span>
+                </app-brand-logo>
+              }
+              <span class="font-medium text-slate-700">{{ leadBylineName() }}</span>
+            </div>
+            @if (leadContributorLine(); as contributors) {
+              <p class="mb-3 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400">Contributors: {{ contributors }}</p>
+            }
+          }
           @if (summaryHtml) {
             <div class="mb-4">
               <h4

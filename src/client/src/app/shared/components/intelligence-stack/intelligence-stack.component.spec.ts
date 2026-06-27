@@ -68,6 +68,16 @@ describe('IntelligenceStackComponent template contract', () => {
   });
 });
 
+describe('role-aware agency byline', () => {
+  it('renders the role-aware agency byline on the lead card', () => {
+    expect(tsSrc).toContain('agencyLogoFromBrand');
+    expect(tsSrc).toContain('leadBylineName');
+    expect(tsSrc).toContain('resolveOtherContributorsLine');
+    expect(htmlSrc).toContain('app-brand-logo');
+    expect(htmlSrc).toContain('leadBylineName()');
+  });
+});
+
 describe('lead-disabled pin logic', () => {
   // Mirror the component's canPinBrief rule as a pure check.
   function canPin(isLead: boolean, hasPublished: boolean): boolean {

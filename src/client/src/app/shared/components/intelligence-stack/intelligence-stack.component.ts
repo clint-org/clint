@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   effect,
+  inject,
   input,
   linkedSignal,
   output,
@@ -17,12 +18,16 @@ import { Tooltip } from 'primeng/tooltip';
 
 import {
   IntelligenceHistoryPayload,
+  IntelligencePayload,
   PrimaryIntelligenceBrief,
   PrimaryIntelligenceLink,
 } from '../../../core/models/primary-intelligence.model';
+import { BrandContextService } from '../../../core/services/brand-context.service';
 import { renderMarkdownInline } from '../../utils/markdown-render';
-import { resolveAuthorName } from '../../utils/intelligence-authors';
+import { resolveAuthorName, resolveOtherContributorsLine } from '../../utils/intelligence-authors';
 import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
+import { agencyLogoFromBrand } from '../../utils/agency-byline-logo';
+import { BrandLogoComponent } from '../brand-logo.component';
 import { IntelligenceHistoryPanelComponent } from '../intelligence-history-panel/intelligence-history-panel.component';
 import { computeReorder, leadFirst } from './reorder';
 
@@ -43,12 +48,15 @@ import { computeReorder, leadFirst } from './reorder';
     CdkDropList,
     CdkDrag,
     CdkDragHandle,
+    BrandLogoComponent,
     IntelligenceHistoryPanelComponent,
   ],
   templateUrl: './intelligence-stack.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IntelligenceStackComponent {
+  private readonly brand = inject(BrandContextService);
+
   readonly briefs = input<PrimaryIntelligenceBrief[]>([]);
   readonly canManage = input<boolean>(false);
   readonly canPurge = input<boolean>(false);
@@ -78,6 +86,43 @@ export class IntelligenceStackComponent {
   protected readonly leadAnchorId = computed<string | null>(
     () => this.ordered().find((b) => b.is_lead)?.anchor_id ?? this.ordered()[0]?.anchor_id ?? null,
   );
+
+  protected readonly leadPayload = computed<IntelligencePayload | null>(() => {
+    const id = this.leadAnchorId();
+    const lead = this.ordered().find((b) => b.anchor_id === id);
+    return lead ? (lead.published ?? lead.draft) : null;
+  });
+
+  protected readonly agencyName = computed(() => {
+    const b = this.brand.brand();
+    if (b.kind === 'tenant') return b.agency?.name ?? b.app_display_name;
+    return b.app_display_name;
+  });
+
+  protected readonly leadBylineName = computed(() => {
+    const p = this.leadPayload();
+    if (!p) return '';
+    if (this.canManage()) {
+      return resolveAuthorName(p.record.last_edited_by, p.authors, this.authorMap()) || this.agencyName();
+    }
+    return this.agencyName();
+  });
+
+  protected readonly leadBylineInitial = computed(() => {
+    const n = this.leadBylineName().trim();
+    return n ? n.charAt(0).toUpperCase() : '?';
+  });
+
+  protected readonly leadBylineLogoUrl = computed<string | null>(() =>
+    this.canManage() ? null : agencyLogoFromBrand(this.brand.brand()),
+  );
+
+  protected readonly leadContributorLine = computed<string | null>(() => {
+    if (!this.canManage()) return null;
+    const p = this.leadPayload();
+    if (!p) return null;
+    return resolveOtherContributorsLine(p.contributors, p.record.last_edited_by, p.authors, this.authorMap());
+  });
 
   /** Anchors the user has explicitly toggled (so default-open can be undone). */
   private readonly touchedIds = signal<ReadonlySet<string>>(new Set());
