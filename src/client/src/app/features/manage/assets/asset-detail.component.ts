@@ -410,6 +410,7 @@ export class AssetDetailComponent implements OnDestroy {
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
     await this.loadIntelligence();
+    this.histories.set({});
     this.messageService.add({
       severity: 'success',
       summary: 'Intelligence published.',

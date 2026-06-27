@@ -764,6 +764,7 @@ export class TrialDetailComponent implements OnDestroy {
   async onIntelligencePublished(): Promise<void> {
     this.intelligenceDrawerOpen.set(false);
     await this.loadIntelligence();
+    this.histories.set({});
     this.messageService.add({
       severity: 'success',
       summary: 'Intelligence published.',
