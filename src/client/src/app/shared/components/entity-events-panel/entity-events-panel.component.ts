@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -28,6 +29,10 @@ export class EntityEventsPanelComponent {
   readonly entityLevel = input.required<'trial' | 'product' | 'company'>();
   readonly entityId = input.required<string>();
   readonly limit = input<number>(20);
+
+  /** Emits the loaded event count after each fetch (0 on empty or error) so the
+   *  surrounding section-card can show it in the header badge. */
+  readonly loaded = output<number>();
 
   protected readonly rows = signal<EntityEventRow[]>([]);
   protected readonly loading = signal(false);
@@ -69,9 +74,11 @@ export class EntityEventsPanelComponent {
     try {
       const data = await this.service.fetch({ spaceId, entityLevel, entityId, limit });
       this.rows.set(data);
+      this.loaded.emit(data.length);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load events.');
       this.rows.set([]);
+      this.loaded.emit(0);
     } finally {
       this.loading.set(false);
     }

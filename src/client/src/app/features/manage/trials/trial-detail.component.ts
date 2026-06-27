@@ -31,11 +31,7 @@ import { MarkerService } from '../../../core/services/marker.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
-import {
-  IntelligenceDetailBundle,
-  ReferencedInRow,
-} from '../../../core/models/primary-intelligence.model';
-import { buildEntityRouterLink } from '../../../shared/utils/intelligence-router-link';
+import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
 import { ChangeEvent } from '../../../core/models/change-event.model';
 import {
   CTGOV_DETAIL_DEFAULT_PATHS,
@@ -44,6 +40,8 @@ import {
 
 import { MarkerFormComponent } from './marker-form.component';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
+import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.component';
+import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
@@ -86,6 +84,8 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     SourceProvenanceLineComponent,
     MarkerFormComponent,
     SectionCardComponent,
+    PiMarkComponent,
+    ReferencedInPanelComponent,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
@@ -283,17 +283,10 @@ export class TrialDetailComponent implements OnDestroy {
     () => this.route.snapshot.paramMap.get('tenantId') ?? this.findAncestorParam('tenantId')
   );
 
-  /** Router link to the anchor entity whose intelligence references this trial. */
-  protected referencedRouterLink(ref: ReferencedInRow): unknown[] {
-    return (
-      buildEntityRouterLink(
-        this.tenantIdSig(),
-        this.spaceIdSig(),
-        ref.entity_type,
-        ref.entity_id
-      ) ?? []
-    );
-  }
+  // Header count badges for the events / materials cards, fed by each panel's
+  // (loaded) output since those counts are fetched inside the child component.
+  protected readonly eventsCount = signal(0);
+  protected readonly materialsCount = signal(0);
 
   private readonly landscape = inject(LandscapeStateService);
 

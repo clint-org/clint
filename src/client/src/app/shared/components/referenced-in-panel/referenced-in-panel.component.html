@@ -1,0 +1,31 @@
+@if (rows().length === 0) {
+  <p class="px-4 py-3 text-xs italic text-slate-400">Not referenced by any intelligence yet.</p>
+} @else {
+  <ul class="divide-y divide-slate-100 px-4 py-1">
+    @for (ref of rows(); track ref.id) {
+      <li
+        class="group relative -mx-2 flex flex-wrap items-baseline gap-2 px-2 py-2 transition-colors hover:bg-slate-50"
+      >
+        <span
+          class="rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
+        >
+          {{ ref.entity_type }}
+        </span>
+        <a
+          [routerLink]="referencedRouterLink(ref)"
+          class="text-sm text-slate-800 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+        >
+          {{ ref.headline }}
+        </a>
+        @if (ref.relationship_type) {
+          <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+            {{ ref.relationship_type }}
+          </span>
+        }
+        @if (ref.gloss) {
+          <span class="text-xs text-slate-500">-- {{ ref.gloss }}</span>
+        }
+      </li>
+    }
+  </ul>
+}
