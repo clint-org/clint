@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { Brand } from '../../../core/models/brand.model';
+import { Brand } from '../../core/models/brand.model';
 import { agencyLogoFromBrand } from './agency-byline-logo';
 
 function brand(over: Partial<Brand>): Brand {

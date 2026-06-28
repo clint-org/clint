@@ -1,4 +1,4 @@
-import { Brand } from '../../../core/models/brand.model';
+import { Brand } from '../../core/models/brand.model';
 
 /**
  * The authoring agency's logo for an intelligence byline, or null when none is
