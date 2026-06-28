@@ -7,9 +7,9 @@ name: Monitor materials drain volume-guard
 # authorize a single over-cap run via the approve workflow. Detection signal for
 # the materials durability domain in docs/runbook/14-disaster-recovery.md.
 on:
-  # Cron disabled until WS1 Phase 6 deploys the migration (the r2_drain_control
-  # row) and the worker drain to the target environments; until then a scheduled
-  # run would query a table that does not exist yet. Re-enable as a Phase 6 step.
+  # The r2_drain_control row and worker drain are live on dev + prod, so this
+  # job is ready. Cron stays paused so the three materials crons activate
+  # together as the final step of the seed/prefix reconciliation work.
   # schedule:
   #   - cron: "0 8 * * *"
   workflow_dispatch:
