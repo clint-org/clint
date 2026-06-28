@@ -4,13 +4,16 @@ Your prep + practice package for the Wednesday call with **John (MD)**. Sam (lea
 
 **How to use this file**
 - These are **cue bullets, not a script.** Say them in your own words. The only things to memorize word-for-word are the **★ lines** — those are the ones that have to land exactly.
+- **You start talking at Part 2** (the Sam/timeline open). **Part 1 is the map in your head, not words you say** — it's the backbone so you always know where you're headed.
 - Read Part 1–4 until the *flow* is automatic. Don't recite; retrieve.
 - Parts 5–9 are reference for answering questions live.
 - **Part 10 is a role-play brief** — paste this whole file to Claude and tell it to run the mock demo from Part 10. Do several rounds, escalating difficulty.
 
 ---
 
-## Part 1 — The spine (one screen)
+## Part 1 — The spine (your mental map — NOT spoken)
+
+*This is the structure you hold in your head so the talk has a backbone. You never say it out loud. Your actual first words are Part 2.*
 
 **The throughline (★):**
 > ★ "The same asset that wins the client is the one that keeps them."
@@ -31,7 +34,7 @@ Your prep + practice package for the Wednesday call with **John (MD)**. Sam (lea
 
 ---
 
-## Part 2 — The open (origin-anchored)
+## Part 2 — The open (your actual first words: Sam + the timeline)
 
 Two pains, bottom-up (Sam's manual work) → top-down (everything's a stale PPT) → laddered up to John's world (differentiation + stickiness). Tell it as **your** observation — you're the outsider who saw it. That's your authority.
 
