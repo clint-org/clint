@@ -488,20 +488,59 @@ state**; the implementation plan sequences it. A likely ordering:
   by a pre-authenticated dev profile; if it lapses, code + local tests still
   complete and the visual report is staged to capture on return.
 
-## Open questions for the implementation plan
+## Resolved decisions
 
-- The exact `event_types` taxonomy: the merged set, each type's default
-  significance, and the marker visual for each timeline-eligible type (including
-  new commercial glyphs such as Distribution).
-- The numeric / enum significance scale and the altitude threshold values.
-- Collapse-state persistence (per user? per space? not persisted?).
-- Asset-row sort order in the comparison view (lead phase? earliest approval?).
-- Reshaping of the affected RPCs (`get_events_page_data`, `get_activity_feed`,
-  `list_primary_intelligence`, `create_marker` / event creation) and their RLS /
-  grants.
-- Audit / change-feed wiring for the unified `events` table (the `event_changes`
-  successor to `marker_changes`, and how analyst-asserted events vs detected
-  changes stay distinct in Activity).
+- **Multi-trial:** single anchor in v1 (asset lane covers asset-wide milestones);
+  true one-fact-many-places returns with the placement layer.
+- **Significance:** two tiers, high (catalyst by default) and low (feed-only);
+  stored as an int with one altitude threshold, surfaced high/low.
+- **Type significance defaults:** clinical / regulatory / approval / LOE /
+  commercial-milestone = high; leadership / financial / strategic = low. New
+  commercial glyphs added (e.g. Distribution); reuse existing where they exist.
+- **Altitude UX:** global selector (Trial default / Asset / Company) + per-row
+  expand/collapse; collapse state per-user in localStorage.
+- **Comparison sort:** asset/company rows by lead phase, then earliest approval.
+- **Company band:** quiet by default (only high-significance or pinned company
+  events).
+- **Naming:** table `events`, `event_types`, change log `event_changes`, RPCs
+  `create_event` / `update_event`; route `/activity` (was Events), `/intelligence`
+  stays; "Intelligence" sidebar group holds "Activity" + "Intelligence Feed."
+- **Intelligence feed:** briefs + events interleaved by recency with type filter
+  chips.
+- **Pin scope:** pin/hide global on the event in v1 (per-view with the placement
+  layer); owner/editor can pin.
+- **RLS / provenance:** events space-scoped, owner/editor write + viewer read;
+  provenance enum stays `actual / company / primary / stout`.
+- **Glossary:** authoritative glossary in `docs/runbook/features/`, linked from
+  help pages.
+- **seed-demo:** regenerated to the new model (clinical + commercial + leadership
+  events + briefs across two companies/assets); doubles as the QA fixture.
+
+## Merged forms, config, and downstream surfaces
+
+- **Merged Event form** (replaces the separate marker and event forms): type
+  picker across all categories, the fuzzy / range / ongoing date control,
+  provenance, significance, an anchor selector (space / company / asset / trial),
+  pin/hide, and source.
+- **Merged taxonomy config** (replaces marker-types + marker-categories +
+  event-categories admin): one `event_types` screen managing name, category,
+  default significance, and glyph + color.
+- **Intelligence marks stay visible** on every surface that shows them today
+  (company / asset / trial cells and landscape views); the rename must not drop
+  them.
+- **Bullseye / heatmap:** repoint phase derivation from markers to clinical
+  events; keep the intelligence marks. Business events do not plot here (no time
+  axis).
+- **Catalyst surfaces** (Next 90 days, hero catalyst band, catalyst lists): same
+  surfaces, broader content; they read Events-that-are-catalysts, so business
+  catalysts (distribution, launch) appear alongside clinical ones.
+
+## Rollout (staged to dev for visual testing)
+
+The build deploys to dev in **stages**, not one final merge, so each stage can be
+Chrome-tested on `dev.clintapp.com` before the next. A pre-authenticated dev
+profile is left available for the unattended screenshot pass. The full deck
+rework (`stout-intro.html`) is the **final** stage.
 
 ## Goals traceability
 
