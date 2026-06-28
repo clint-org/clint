@@ -108,7 +108,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
   for (const docId of createdSourceDocIds) {
-    await admin.from('markers').delete().eq('source_doc_id', docId);
     await admin.from('events').delete().eq('source_doc_id', docId);
     await admin.from('trials').delete().eq('source_doc_id', docId);
     await admin.from('assets').delete().eq('source_doc_id', docId);

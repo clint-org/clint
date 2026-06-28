@@ -40,7 +40,6 @@ afterAll(async () => {
   // Reverse order: source_documents FK on ai_calls, entities FK on source_documents.
   // Delete entities that reference source docs first.
   for (const docId of createdSourceDocIds) {
-    await admin.from('markers').delete().eq('source_doc_id', docId);
     await admin.from('events').delete().eq('source_doc_id', docId);
     await admin.from('trials').delete().eq('source_doc_id', docId);
     await admin.from('assets').delete().eq('source_doc_id', docId);
@@ -423,6 +422,7 @@ describe('commit_source_import', () => {
     return {
       source_kind: 'text',
       source_text: `Integration test content ${uniqueSuffix()}`,
+      source_url: `https://example.com/import-${uniqueSuffix()}`,
       text_hash: textHash ?? `hash-${uniqueSuffix()}`,
       source_title: 'Test Document',
       fetch_outcome: 'paste',
@@ -528,6 +528,9 @@ describe('commit_source_import', () => {
     expect(created.companies.length).toBe(1);
     expect(created.assets.length).toBe(1);
     expect(created.trials.length).toBe(1);
+    // Post event-model cutover both blocks emit unified events: created.markers
+    // holds the markers-block (trial-anchored) event id, created.events the
+    // events-block (company-anchored) event id.
     expect(created.markers.length).toBe(1);
     expect(created.events.length).toBe(1);
 
@@ -554,19 +557,35 @@ describe('commit_source_import', () => {
       .single();
     expect(trial!.source_doc_id).toBe(docId);
 
+    // Markers-block event: provenance + trial anchor (the proposal marker
+    // carried a resolvable trial_ref).
     const { data: marker } = await admin
-      .from('markers')
-      .select('source_doc_id')
+      .from('events')
+      .select('source_doc_id, anchor_type')
       .eq('id', created.markers[0])
       .single();
     expect(marker!.source_doc_id).toBe(docId);
+    expect(marker!.anchor_type).toBe('trial');
 
+    // Events-block event: provenance + company anchor.
     const { data: event } = await admin
       .from('events')
-      .select('source_doc_id')
+      .select('source_doc_id, anchor_type')
       .eq('id', created.events[0])
       .single();
     expect(event!.source_doc_id).toBe(docId);
+    expect(event!.anchor_type).toBe('company');
+
+    // Source citation path: the imported document's source_url lands as one
+    // event_sources row on each created event (via create_event p_sources).
+    for (const eventId of [created.markers[0], created.events[0]]) {
+      const { data: srcRows } = await admin
+        .from('event_sources')
+        .select('url')
+        .eq('event_id', eventId);
+      expect(srcRows, `event ${eventId} must have a source citation`).toHaveLength(1);
+      expect(srcRows![0].url).toBe(sourceDoc.source_url);
+    }
 
     // Verify source_documents row.
     const { data: srcDoc } = await admin
@@ -801,20 +820,23 @@ describe('commit_source_import', () => {
     expect(created2.markers).not.toContain(existingMarkerId);
     expect(created2.events).not.toContain(existingEventId);
 
-    // DB check: no duplicate marker row.
+    // DB check: no duplicate markers-block event row.
     const { count: markerCount } = await admin
-      .from('markers')
+      .from('events')
       .select('*', { count: 'exact', head: true })
       .eq('id', existingMarkerId);
     expect(markerCount).toBe(1);
 
-    // Regression guard: the genuinely new marker was created with the correct title.
+    // Regression guard: the genuinely new markers-block event was created with
+    // the correct title. It carries no trial_ref, so it falls back to a
+    // space-level anchor rather than being lost.
     const { data: newMarkerRow } = await admin
-      .from('markers')
-      .select('title')
+      .from('events')
+      .select('title, anchor_type')
       .eq('id', created2.markers[0])
       .single();
     expect(newMarkerRow!.title).toBe(newMarkerTitle);
+    expect(newMarkerRow!.anchor_type).toBe('space');
   });
 });
 

@@ -4,15 +4,19 @@
  * Exercises the full SNAPSHOT -> MATCH -> COMMIT chain:
  *
  *   1. First commit_source_import: creates a trial + 3 markers + 2 events.
- *   2. get_space_inventory_snapshot: reads back the marker/event ids from
- *      the live snapshot (not from the commit result directly -- this mimics
- *      the AI extraction validator flow).
+ *      Post event-model cutover the proposal's markers block emits trial-anchored
+ *      EVENTS and the events block emits anchored EVENTS; both land in
+ *      public.events. The commit return envelope keeps the markers/events keys
+ *      (frozen contract): created.markers now holds the markers-block event ids.
+ *   2. get_space_inventory_snapshot: reads back the marker/event ids from the
+ *      live snapshot's unified `events` array (not from the commit result
+ *      directly -- this mimics the AI extraction validator flow).
  *   3. Second commit_source_import: 3 markers and 1 event carry
  *      match:{kind:'existing', id} resolved from the snapshot; 1 new marker
  *      and 1 new event serve as regression guards.
  *   4. Assertions: skipped contains the 3 matched marker ids and the 1 matched
- *      event id; created contains only the new ones; the DB row count for the
- *      trial's markers increased by exactly 1.
+ *      event id; created contains only the new ones; the matched event rows are
+ *      not duplicated (still exactly 1 row each in public.events).
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -45,8 +49,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
   for (const docId of createdSourceDocIds) {
-    await admin.from('marker_assignments').delete().eq('marker_id', docId); // no-op: marker_id is uuid, not doc
-    await admin.from('markers').delete().eq('source_doc_id', docId);
     await admin.from('events').delete().eq('source_doc_id', docId);
     await admin.from('trials').delete().eq('source_doc_id', docId);
     await admin.from('assets').delete().eq('source_doc_id', docId);
@@ -210,10 +212,12 @@ describe('re-import is idempotent for markers and events', () => {
       const firstCommitEventIds = created1.events as string[];
 
       // ------------------------------------------------------------------
-      // Step 2: call get_space_inventory_snapshot and read the marker/event
-      // instances it now returns. Use THESE ids for the second proposal --
-      // this is the key difference: we resolve ids from the snapshot exactly
-      // as the AI extraction validator would, not from the commit result.
+      // Step 2: call get_space_inventory_snapshot and read the event instances
+      // it now returns. Post event-model cutover the snapshot exposes a single
+      // unified `events` array -- both the markers-block (trial-anchored) and
+      // events-block (company-anchored) events land there. Use THESE ids for
+      // the second proposal: we resolve ids from the snapshot exactly as the AI
+      // extraction validator would, not from the commit result.
       // ------------------------------------------------------------------
       const snapR2 = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
         p_space_id: p.org.spaceId,
@@ -221,21 +225,19 @@ describe('re-import is idempotent for markers and events', () => {
       const snap2 = expectOk(snapR2) as Record<string, unknown>;
       const snapHash2 = snap2.hash as string;
 
-      const snapMarkers = snap2['markers'] as Array<Record<string, unknown>>;
       const snapEvents = snap2['events'] as Array<Record<string, unknown>>;
-
-      expect(Array.isArray(snapMarkers)).toBe(true);
       expect(Array.isArray(snapEvents)).toBe(true);
 
-      // Every marker from the first commit must appear in the snapshot.
+      // Every markers-block event from the first commit must appear in the
+      // snapshot's unified events array.
       const snappedMarkerIds = firstCommitMarkerIds.map((id) => {
-        const found = snapMarkers.find((m) => m['id'] === id);
-        expect(found, `marker ${id} must appear in snapshot`).toBeTruthy();
+        const found = snapEvents.find((m) => m['id'] === id);
+        expect(found, `markers-block event ${id} must appear in snapshot`).toBeTruthy();
         return found!['id'] as string;
       });
       expect(snappedMarkerIds).toHaveLength(3);
 
-      // At least 1 event from the first commit must appear in the snapshot.
+      // At least 1 events-block event from the first commit must appear too.
       const firstEventInSnapshot = snapEvents.find((e) => e['id'] === firstCommitEventIds[0]);
       expect(firstEventInSnapshot, 'first event must appear in snapshot').toBeTruthy();
       const matchedEventId = firstEventInSnapshot!['id'] as string;
@@ -369,23 +371,25 @@ describe('re-import is idempotent for markers and events', () => {
       expect(created2.events).toHaveLength(1);
       expect(created2.events).not.toContain(matchedEventId);
 
-      // DB-level: the matched marker ids each still have exactly 1 row (no
-      // duplicate was inserted).
+      // DB-level: the matched markers-block events each still have exactly 1
+      // row (no duplicate was inserted) and are trial-anchored.
       for (const id of snappedMarkerIds) {
         const { count } = await admin
-          .from('markers')
+          .from('events')
           .select('*', { count: 'exact', head: true })
           .eq('id', id);
-        expect(count, `marker ${id} must have exactly 1 DB row`).toBe(1);
+        expect(count, `markers-block event ${id} must have exactly 1 DB row`).toBe(1);
       }
 
-      // DB-level: the new marker was created with the correct title.
+      // DB-level: the new markers-block event was created with the correct
+      // title and is trial-anchored (it carried a resolvable trial_ref).
       const { data: newMarkerRow } = await admin
-        .from('markers')
-        .select('title')
+        .from('events')
+        .select('title, anchor_type')
         .eq('id', created2.markers[0])
         .single();
       expect(newMarkerRow!.title).toBe(newMarkerTitle);
+      expect(newMarkerRow!.anchor_type).toBe('trial');
 
       // DB-level: the matched event still has exactly 1 row.
       const { count: eventCount } = await admin
@@ -394,13 +398,15 @@ describe('re-import is idempotent for markers and events', () => {
         .eq('id', matchedEventId);
       expect(eventCount, 'matched event must have exactly 1 DB row').toBe(1);
 
-      // DB-level: the new event was created with the correct title.
+      // DB-level: the new events-block event was created with the correct
+      // title and is company-anchored (anchor level company, ref 0).
       const { data: newEventRow } = await admin
         .from('events')
-        .select('title')
+        .select('title, anchor_type')
         .eq('id', created2.events[0])
         .single();
       expect(newEventRow!.title).toBe(newEventTitle);
+      expect(newEventRow!.anchor_type).toBe('company');
     },
     120_000,
   );
