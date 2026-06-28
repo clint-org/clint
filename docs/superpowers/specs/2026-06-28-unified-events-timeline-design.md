@@ -331,9 +331,10 @@ exists, which is why that level is in v1 (there is no roll-down).
 
 | Surface | Shows |
 | --- | --- |
-| **Intelligence feed** (`/intelligence`) | Briefs + events, recency-ordered, filterable. The one curated stream. |
+| **Intelligence feed** (`/intelligence`) | Briefs + events, **recency-descending** ("what's the latest"). The one curated stream. |
+| **Future Events** (was Future Catalysts) | Events only, **future-date ascending** ("what's coming, soonest first"). A scannable planning table; distinct job from the feed (different direction + form). |
 | **Timeline** | Events at three row levels: trial-anchored on trial rows, asset-anchored on asset lanes, company-anchored on the company band. Phase bars derived from clinical events. Per-level visibility toggles + Compare preset. |
-| **Activity** (renamed from Events page) | Detected record changes (CT.gov diffs, event edit history). High-volume, low-signal. |
+| **Activity** (renamed from Events page) | Detected record changes only (CT.gov diffs, event edit history). High-volume, low-signal. No briefs, no analyst-authored events. |
 | **Profile pages** | Per-entity events + the entity's intelligence; trial pages keep an Activity (detected changes) card. |
 
 ## Testing and verification
@@ -544,8 +545,10 @@ state**; the implementation plan sequences it. A likely ordering:
   (company / asset / trial cells and landscape views); the rename must not drop
   them.
 - **Bullseye / heatmap:** repoint phase derivation from markers to clinical
-  events; keep the intelligence marks. Business events do not plot here (no time
-  axis).
+  events; keep the intelligence marks. Business events do not plot on the charts
+  (no time axis), but the **detail panel shows two short lists, "Recent events"
+  and "Upcoming events,"** for the selected asset (the recent list is the rename
+  of today's "Recent markers"; the upcoming list is new and symmetric).
 - **Timeline-event surfaces** (Next 90 days, hero event band, event lists): same
   surfaces, broader content; they read high-significance events, so business
   events (distribution, launch) appear alongside clinical ones.
