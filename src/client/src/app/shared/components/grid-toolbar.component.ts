@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -95,8 +95,29 @@ import type { GridState } from '../grids/filter-types';
         <ng-content select="[gridToolbarEnd]" />
       </div>
 
-      @if (state().activeFilters().length > 0) {
+      @if (state().activeFilters().length > 0 || leadingChip()) {
         <div class="mt-2 flex flex-wrap items-center gap-2" role="list" aria-label="Active filters">
+          <!-- Optional leading chip for a filter that lives outside the grid's
+               own filter state (e.g. the events page's hierarchical entity
+               scope). Same affordance as the column chips so there is one
+               mental model for "what is narrowing this list". -->
+          @if (leadingChip(); as lc) {
+            <span
+              role="listitem"
+              class="inline-flex items-center gap-1.5 border border-slate-200 border-l-[3px] border-l-brand-600 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-800"
+            >
+              <span class="text-slate-500">{{ lc.header }}:</span>
+              <span>{{ lc.label }}</span>
+              <button
+                type="button"
+                class="-mr-0.5 ml-0.5 rounded text-slate-400 hover:text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                [attr.aria-label]="'Remove ' + lc.header + ' ' + lc.label + ' filter'"
+                (click)="leadingChipRemove.emit()"
+              >
+                <i class="fa-solid fa-xmark text-[10px]"></i>
+              </button>
+            </span>
+          }
           @for (chip of state().activeFilters(); track chip.field) {
             <span
               role="listitem"
@@ -124,6 +145,14 @@ export class GridToolbarComponent {
   readonly state = input.required<GridState<any>>();
   readonly searchPlaceholder = input<string>('Search...');
   readonly searchAlignment = input<'start' | 'end'>('start');
+
+  /**
+   * Optional chip for a filter applied outside the grid's own filter state
+   * (e.g. an entity scope carried in the URL). Rendered first in the chip row
+   * with the same look as the column chips; its `×` emits `leadingChipRemove`.
+   */
+  readonly leadingChip = input<{ header: string; label: string } | null>(null);
+  readonly leadingChipRemove = output<void>();
 
   protected readonly clearLabel = computed(() => {
     const n = this.state().activeFilters().length;
