@@ -18,9 +18,12 @@ describe('asset detail: add trial', () => {
   const html = read('assets/asset-detail.component.html');
 
   it('publishes an "Add trial" primary action only when the user can edit', () => {
-    expect(ts).toContain("label: 'Add trial'");
-    // Gated: the action set is cleared in the no-edit branch.
-    expect(ts).toMatch(/if \(!asset \|\| !this\.spaceRole\.canEdit\(\)\) \{[\s\S]*actions\.set\(\[\]\)/);
+    // Button lives in the content-area section-header, not the topbar.
+    expect(html).toContain('label="Add trial"');
+    // Gated by canEdit in the template.
+    expect(html).toContain('@if (spaceRole.canEdit())');
+    // Button is in the named actions slot of app-section-header.
+    expect(html).toMatch(/<div actions>[\s\S]*label="Add trial"/);
   });
 
   it('hosts the trial dialog with this asset locked', () => {
@@ -39,10 +42,12 @@ describe('company detail: add asset', () => {
   const html = read('companies/company-detail.component.html');
 
   it('publishes an "Add asset" primary action only when the user can edit', () => {
-    expect(ts).toContain("label: 'Add asset'");
-    expect(ts).toMatch(
-      /if \(!company \|\| !this\.spaceRole\.canEdit\(\)\) \{[\s\S]*actions\.set\(\[\]\)/
-    );
+    // Button lives in the content-area section-header, not the topbar.
+    expect(html).toContain('label="Add asset"');
+    // Gated by canEdit in the template.
+    expect(html).toContain('@if (spaceRole.canEdit())');
+    // Button is in the named actions slot of app-section-header.
+    expect(html).toMatch(/<div actions>[\s\S]*label="Add asset"/);
   });
 
   it('hosts the asset form with this company locked', () => {
@@ -55,7 +60,4 @@ describe('company detail: add asset', () => {
     expect(ts).toMatch(/'profiles',\s*'assets',\s*asset\.id/);
   });
 
-  it('clears the primary action on destroy', () => {
-    expect(ts).toMatch(/ngOnDestroy\(\): void \{[\s\S]*actions\.set\(\[\]\)/);
-  });
 });
