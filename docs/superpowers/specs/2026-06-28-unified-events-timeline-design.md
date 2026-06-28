@@ -66,7 +66,7 @@ flowchart TB
   A -- "analyst asserts" --> E
   E -- "feed view" --> FEED["Intelligence feed"]
   I -- "feed view" --> FEED
-  E -- "timeline view (when significant + dated + anchored)" --> TL["Timeline (as a Catalyst)"]
+  E -- "timeline view (when significant + dated + anchored)" --> TL["Timeline (as a Marker)"]
 ```
 
 - **Event** = something that happened in the *world* (Lilly shipped to
@@ -84,16 +84,16 @@ flowchart TB
 | --- | --- |
 | **Intelligence** (a *brief* / *entry*) | The authored analytical read. |
 | **Event** | A dated fact about an entity. The merge of today's events + markers. |
-| **Catalyst** | An Event currently rendered on a timeline. A runtime lens, **not** a stored type. ("Catalyst event" split into noun + role.) |
-| **Marker** | The glyph that draws a catalyst (shape + fill + color + inner mark). Pure rendering. |
+| **Marker** | The glyph that draws an event on the timeline (shape + fill + color + inner mark). Pure rendering. |
 | **Activity** | System-detected record changes (CT.gov diffs, edit history). |
 
 Why **Event** over the alternatives: "Signal" is intrinsically wrong (it
 connotes an inferred indicator; a confirmed approval is a fact, not a signal).
 "Development" collides with *drug development* (the R&D process, `development_status`)
 in this domain. "Event" is the accurate, terse, industry-standard word (Bloomberg,
-Citeline, Evaluate) and maps onto how analysts already speak ("catalyst event"),
-making the Event -> Catalyst -> Marker trio self-explaining.
+Citeline, Evaluate). The glyph that draws an event on the timeline is a Marker,
+and significance (high/low) decides which events get one, so there is no third
+term to learn. "Catalyst" is retired; everything is an Event.
 
 ## The Event entity
 
@@ -144,7 +144,7 @@ showsOnTimeline(event, row) =
 effectiveVisibility(e) =
       e.visibility == 'pinned' ? true
     : e.visibility == 'hidden' ? false
-    : significance(e) == 'high'         // high = catalyst, low = feed-only
+    : significance(e) == 'high'         // high = shown on timeline, low = feed-only
 ```
 
 An event renders on exactly one row: the row of the entity it is anchored to. The
@@ -163,20 +163,20 @@ The **phase bar derivation is unchanged in spirit**: today it reads Trial Start 
 Trial End / PCD markers off a trial; tomorrow it reads the clinical-type *events*
 anchored to that trial. Same logic, different source table.
 
-## Catalyst lens and significance
+## Timeline markers and significance
 
-- **Catalyst** is the runtime answer to "does `showsOnTimeline` return true here?"
-  It is not a column.
-- **Marker** is the visual primitive chosen by the event's type.
-- **Significance** is the gate between feed-only and catalyst. It comes from the
-  event's type by default, with a per-row override.
+- **Marker** is the visual primitive that draws an event on the timeline, chosen
+  by the event's type. Whether an event gets one is the runtime answer to "does
+  `showsOnTimeline` return true here?"; it is not a stored column.
+- **Significance** is the gate between feed-only and shown-on-the-timeline. It
+  comes from the event's type by default, with a per-row override.
 
 | Event | Type / category | Default significance | Result |
 | --- | --- | --- | --- |
-| "Zepbound topline data, ~Q3 '25" | Topline Data / Clinical | high | Catalyst on the trial row |
-| "Lilly ships Zepbound to distributors, ~Q1 '24" | Distribution / Commercial | high | Catalyst on the asset lane |
+| "Zepbound topline data, ~Q3 '25" | Topline Data / Clinical | high | Marker on the trial row |
+| "Lilly ships Zepbound to distributors, ~Q1 '24" | Distribution / Commercial | high | Marker on the asset lane |
 | "Lilly CEO comments on supply, Jan '24" | Leadership | low | Feed-only, no glyph |
-| (analyst pins the CEO comment) | Leadership, `visibility = pinned` | overridden | Catalyst in that view |
+| (analyst pins the CEO comment) | Leadership, `visibility = pinned` | overridden | Marker in that view |
 
 A leadership change is simply a low-significance Event that never gets a glyph
 unless someone pins it. No subtype, no separate table, no inescapable rule.
@@ -228,7 +228,7 @@ only to trials (36px rows, single lane, phase bar at y=8, markers at y=4-22).
 ### Three row levels, toggled like the existing dimension filters
 
 Because there is **no roll-up** (each event renders only on its anchor's row), the
-hierarchy is just three kinds of rows, each carrying its own catalysts:
+hierarchy is just three kinds of rows, each carrying its own events:
 
 - **Company band** lane (company-anchored events: leadership, financial, M&A).
 - **Asset lane** (asset-anchored events: approval, launch, LOE, distribution),
@@ -238,7 +238,7 @@ hierarchy is just three kinds of rows, each carrying its own catalysts:
 "Which levels are visible" is therefore a set of **visibility toggles**, exactly
 like the existing MOA / ROA / Indication toggles, not a separate "altitude" mode.
 Three toggles: **Company events**, **Asset events**, **Trials**. Each row always
-shows only its own anchored catalysts; the toggles only show or hide whole levels.
+shows only its own anchored events; the toggles only show or hide whole levels.
 
 The useful views are toggle states, with a one-click **Compare** preset:
 
@@ -253,8 +253,8 @@ flowchart LR
   end
   subgraph compare["Compare preset: Assets on, Trials off"]
     direction TB
-    AR1["Zepbound (Lilly): asset-anchored catalysts"]
-    AR2["Wegovy (Novo): asset-anchored catalysts"]
+    AR1["Zepbound (Lilly): asset-anchored events"]
+    AR2["Wegovy (Novo): asset-anchored events"]
     AR1 --- AR2
   end
   today -- "Compare preset" --> compare
@@ -271,7 +271,7 @@ flowchart LR
   page. This drops the mode state machine and reuses the existing toggle control.
 
 Consequence to design around: with Trials off, the asset row shows the asset's own
-catalysts plus the lead-phase chip, but not individual trial readouts. Anchoring
+events plus the lead-phase chip, but not individual trial readouts. Anchoring
 is the lever: a milestone that should appear at a level is anchored to that entity
 (approval / launch / LOE are genuinely asset-level, so they land there naturally).
 A company-anchored event has no timeline home unless the Company events lane
@@ -291,7 +291,7 @@ exists, which is why that level is in v1 (there is no roll-down).
 - **Three row levels (company / asset / trial) with per-level visibility toggles**
   plus a one-click Compare preset: the comparison view, reached directly in
   v1. Includes the company band (a group-header lane hosting company-anchored
-  catalysts) in the asset/trial views.
+  events) in the asset/trial views.
 - **Updating the data-producing paths that write markers/events today**, so they
   emit the unified Event model: the **`/seed-demo`** seed/demo data, and the **AI
   import / extraction** pipeline (`commit_source_import` and the extract worker)
@@ -302,7 +302,7 @@ exists, which is why that level is in v1 (there is no roll-down).
   full suite and the drift gates stay green. This is in scope, not cleanup.
 - **Updating user-facing reference material**: the in-app help pages, the runbook
   feature docs, and a single authoritative nomenclature/glossary, to the Event /
-  Catalyst / Marker / Intelligence / Activity model.
+  Event / Marker / Intelligence / Activity model.
 - **Updating the internal demo deck** `src/client/public/internal/stout-intro.html`
   (copy + screenshots) for next week's demo.
 
@@ -321,18 +321,18 @@ exists, which is why that level is in v1 (there is no roll-down).
 1. **Default view = Trials on** (today's grid). The Compare preset (Assets on,
    Trials off) is one click away. Row visibility uses per-level toggles, not an
    altitude mode; no per-entity expand in v1.
-2. **Asset row with Trials off = lead-phase chip + catalysts.** No aggregate phase
+2. **Asset row with Trials off = lead-phase chip + events.** No aggregate phase
    bar. Phase detail returns when Trials are toggled on.
 3. **No roll-up.** Each event renders only on its anchor's row. With Trials off an
-   asset row shows its asset-anchored catalysts plus the lead-phase chip; trial
-   catalysts return when Trials are on. Toggles only show/hide whole levels.
+   asset row shows its asset-anchored events plus the lead-phase chip; trial
+   events return when Trials are on. Toggles only show/hide whole levels.
 
 ## Surfaces after the change
 
 | Surface | Shows |
 | --- | --- |
 | **Intelligence feed** (`/intelligence`) | Briefs + events, recency-ordered, filterable. The one curated stream. |
-| **Timeline** | Catalysts at three row levels: trial-anchored on trial rows, asset-anchored on asset lanes, company-anchored on the company band. Phase bars derived from clinical events. Per-level visibility toggles + Compare preset. |
+| **Timeline** | Events at three row levels: trial-anchored on trial rows, asset-anchored on asset lanes, company-anchored on the company band. Phase bars derived from clinical events. Per-level visibility toggles + Compare preset. |
 | **Activity** (renamed from Events page) | Detected record changes (CT.gov diffs, event edit history). High-volume, low-signal. |
 | **Profile pages** | Per-entity events + the entity's intelligence; trial pages keep an Activity (detected changes) card. |
 
@@ -366,19 +366,19 @@ testing is a first-class deliverable, not a trailing phase. Two rules:
 
 | # | Scenario | Expected | Layers |
 | --- | --- | --- | --- |
-| 1 | Clinical event (Topline Data) anchored to a trial | Catalyst glyph on the trial row; also in the Intelligence feed | unit + e2e |
-| 2 | High-significance commercial event (Distribution) anchored to an asset | Catalyst on the asset lane; in the feed | e2e |
+| 1 | Clinical event (Topline Data) anchored to a trial | Marker glyph on the trial row; also in the Intelligence feed | unit + e2e |
+| 2 | High-significance commercial event (Distribution) anchored to an asset | Marker on the asset lane; in the feed | e2e |
 | 3 | Low-significance leadership event anchored to a company | Feed only, no glyph; after pin, glyph on the company band | unit + e2e |
 | 4 | Fuzzy projected event (~Q4 2026), `projection = primary` | Period label + projected styling on the timeline | unit + e2e |
 | 5 | An event is edited | Change appears in Activity; does NOT appear in the Intelligence feed | integration + e2e |
 | 6 | An Intelligence brief that cites an event | Brief in the Intelligence feed; citation resolves | integration + e2e |
 | 7 | Default view (Trials on) | Trial rows + phase bars render exactly as today (regression) | e2e |
-| 8 | Compare preset (Assets on, Trials off) | Asset row shows lead-phase chip + asset-anchored catalysts only; trial catalysts hidden until Trials toggled on | unit + e2e |
+| 8 | Compare preset (Assets on, Trials off) | Asset row shows lead-phase chip + asset-anchored events only; trial events hidden until Trials toggled on | unit + e2e |
 | 9 | Asset expanded | Asset lane + nested trial rows at full significance | e2e |
 | 10 | Comparison view | Two asset rows stacked; approval-to-distribution gap is visible | e2e (visual) |
 | 11 | Phase-bar derivation post-merge | Bar derives from clinical events (regression) | unit + integration |
-| 12 | `visibility = hidden` on a high-significance event | Not a catalyst on any row level | unit |
-| 13 | Company events lane | Company band/rows render company-anchored catalysts only; no phase chip | unit + e2e |
+| 12 | `visibility = hidden` on a high-significance event | Not shown on the timeline at any row level | unit |
+| 13 | Company events lane | Company band/rows render company-anchored events only; no phase chip | unit + e2e |
 | 14 | Company band in asset/trial view | A pinned company-level event renders on the company group-header band | e2e |
 
 ### Fixture
@@ -430,11 +430,11 @@ optional for v1.
 **Consumers (read markers/events):**
 
 - Timeline: dashboard grid, phase-bar, marker component, row-level lane rendering + visibility toggles.
-- Catalyst model + catalyst detail.
+- Event model + event detail (rename: Catalyst model / catalyst-detail / get_catalyst_detail / catalyst-table / catalysts-export / the /catalysts route all become event*).
 - Activity: `get_activity_feed`, the what-changed widget, the trial Activity card.
 - Intelligence feed + `primary_intelligence_links` (a marker is a link target today).
 - Landscape views (bullseye, heatmap) that read phase from markers.
-- Engagement-landing widgets (hero catalyst band, next 90 days).
+- Engagement-landing widgets (hero event band, next 90 days).
 - Export (PNG / pptx) of the timeline.
 
 **Change log:** `marker_changes` -> the Event change log; the analyst-source rows
@@ -453,7 +453,7 @@ regenerate the runbook auto-gen blocks.
   new page.
 - **Runbook** (`docs/runbook/features/`): the markers, events, and primary
   intelligence feature docs, plus a single authoritative **glossary** defining
-  Event / Catalyst / Marker / Intelligence / Activity and their relationships, so
+  Event / Marker / Intelligence / Activity and their relationships, so
   the definitions have one home and the help pages and deck can point at it.
 - **Internal demo deck** (`src/client/public/internal/stout-intro.html`): update
   copy to the new vocabulary and refresh screenshots. Edit the deployed copy in
@@ -489,7 +489,7 @@ state**; the implementation plan sequences it. A likely ordering:
 ## Risks and mitigations
 
 - **Sparse collapsed rows.** With no roll-up, a collapsed row shows only its own
-  catalysts. Mitigated by the lead-phase chip (clinical maturity) and by anchoring
+  events. Mitigated by the lead-phase chip (clinical maturity) and by anchoring
   the competitively important milestones (approval, launch, LOE, distribution) at
   the asset level where they belong, so they appear on the asset row naturally.
 - **Lossy asset phase representation.** Accepted: lead-phase chip, not a bar;
@@ -505,7 +505,7 @@ state**; the implementation plan sequences it. A likely ordering:
 
 - **Multi-trial:** single anchor in v1 (asset lane covers asset-wide milestones);
   true one-fact-many-places returns with the placement layer.
-- **Significance:** two tiers, high (catalyst by default) and low (feed-only);
+- **Significance:** two tiers, high (shown on the timeline by default) and low (feed-only);
   stored as an int with one threshold, surfaced high/low.
 - **Type significance defaults:** clinical / regulatory / approval / LOE /
   commercial-milestone = high; leadership / financial / strategic = low. New
@@ -546,9 +546,9 @@ state**; the implementation plan sequences it. A likely ordering:
 - **Bullseye / heatmap:** repoint phase derivation from markers to clinical
   events; keep the intelligence marks. Business events do not plot here (no time
   axis).
-- **Catalyst surfaces** (Next 90 days, hero catalyst band, catalyst lists): same
-  surfaces, broader content; they read Events-that-are-catalysts, so business
-  catalysts (distribution, launch) appear alongside clinical ones.
+- **Timeline-event surfaces** (Next 90 days, hero event band, event lists): same
+  surfaces, broader content; they read high-significance events, so business
+  events (distribution, launch) appear alongside clinical ones.
 
 ## Rollout (staged to dev for visual testing)
 
@@ -580,6 +580,6 @@ is lost, with a one-line rationale and the seam each one builds on:
 
 | Goal | Served by |
 | --- | --- |
-| **A, business facts on the timeline** | Event entity + asset lane; "shipped to distributors" renders as a commercial catalyst on the asset lane. |
+| **A, business facts on the timeline** | Event entity + asset lane; "shipped to distributors" renders as a commercial event (marker) on the asset lane. |
 | **B, measure / compare durations** | v1: Compare preset (Assets on, Trials off), gaps read in stacked rows. Later: the drawn duration measure, then span objects on placements for normalized overlay. |
 | **C, scenario templates / overlays** | Later: the placement table the v1 seam is designed for; same fact placed on other lanes with shifted dates. |
