@@ -103,7 +103,7 @@ One table, merging the marker date model with the event anchoring model:
 event
   id, space_id
   type_id            -> event_types (category + default significance + marker visual)
-  title, description, source_url
+  title, description
   event_date, date_precision, end_date, end_date_precision, is_ongoing   (marker date model)
   projection         actual | company | primary | stout                  (provenance)
   significance       null = inherit from type, or an explicit override
@@ -112,6 +112,17 @@ event
   visibility         null = use default | pinned | hidden                 (manual override)
   no_longer_expected, metadata, source_doc_id
   created_by, created_at, updated_by, updated_at                          (audit, server-side)
+```
+
+There is **no `source_url` column** on the event. Sources are modeled separately
+(see "Event sources" below).
+
+```text
+event_sources                                                            (attached citations)
+  id, event_id   -> events(id) on delete cascade
+  url            not null
+  label          null
+  sort_order, created_at                                                 (deterministic ordering)
 ```
 
 Notes:
@@ -129,6 +140,50 @@ Notes:
   many-to-many data to preserve (greenfield), so this is a clean forward choice;
   multi-placement returns via the placement table (see the seam), not as a
   property of the fact.
+
+## Event sources (the "A-derived" sources model -- locked)
+
+Sources are three orthogonal things, not one column. This was decided during
+Stage 3 brainstorming and pulled FORWARD into the cutover (producers and readers
+must reflect it now, or they get built twice). Only the multi-source authoring
+control in the merged form stays in Stage 3.
+
+1. **Attached citations -> `event_sources` (the single source of truth).** An
+   event has zero or more labeled citations (press release, SEC filing, earnings
+   transcript) added by an analyst or by AI import. They live in an
+   `event_sources` side table (`event_id` FK -> `events(id) on delete cascade`,
+   `url not null`, `label null`, plus `sort_order`/`created_at` for deterministic
+   ordering). There is **no `events.source_url` column** -- it is dropped. Where a
+   compact row needs a single "primary" link, take the first `event_sources` row
+   by `(sort_order, created_at)`.
+
+2. **CT.gov registry link -> DERIVED, never stored.** The registry link is the
+   per-trial NCT page `https://clinicaltrials.gov/study/<trial.identifier>`. It is
+   identical for every clinical event on a trial, so storing it per-event (in a
+   column OR an `event_sources` row) is pure duplication. The CT.gov producer
+   writes **zero** source rows. Readers derive the link from the anchor trial's
+   `identifier` at render time and show it ALONGSIDE (not inside) the
+   `event_sources` citation list. The `'https://clinicaltrials.gov/study/' || nct`
+   format has ONE home: a SQL helper plus a TS util mirror; every prior hardcoded
+   copy is repointed to it.
+
+3. **Ingest provenance -> `source_doc_id` (unchanged).** The AI-ingest provenance
+   line (which uploaded document an event was extracted from) is orthogonal to
+   citations and stays exactly as-is.
+
+**RPC surface.** `create_event` accepts an optional `p_sources jsonb` array of
+`{url, label}` and writes the `event_sources` rows atomically in the same
+SECURITY DEFINER transaction (producers and import never inline-insert sources --
+per the shared-RPC and atomic-multi-row-write rules). `update_event_sources` is
+the single edit path, repointed onto the new `events` table (the Stage 3 merged
+form consumes it). `event_sources` is space-scoped through its parent event: RLS
+SELECT = `has_space_access`, write = owner/editor, viewer read-only; the firewall
+(viewer-deny / non-member-deny / sibling-no-leak) is proven the same way the
+events firewall was.
+
+**Out of scope here:** `event_links` (event-to-event) and `event_threads` remain a
+separate, still-open Stage 3 decision -- not added, assumed, or dropped by this
+work.
 
 ## Derived timeline membership (no stored flag)
 

@@ -300,9 +300,77 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 
 ---
 
+## Phase S: Sources model (A-derived) -- folded into the cutover
+
+> ADDED 2026-06-28 mid-cutover (locked with the user). The "A-derived" sources model
+> (see the parent spec "Event sources" section) is pulled forward from Stage 3 because
+> the producers (C3-C5) and the already-shipped read RPCs (A/B) must reflect it now or
+> they get built twice. Only the merged-form multi-source authoring UI stays in Stage 3.
+>
+> **Locked model:** (1) `event_sources` side table (FK -> events, cascade) = the single
+> source of truth for attached citations; (2) `events.source_url` is DROPPED; (3) the
+> CT.gov registry link is DERIVED (`https://clinicaltrials.gov/study/<nct>`), never
+> stored, via ONE SQL helper + a TS util mirror; (4) `source_doc_id` is unchanged.
+> `event_links` / `event_threads` are explicitly NOT touched here (open Stage 3).
+>
+> **Verified current state (2026-06-28):** `event_sources`/`event_links`/`event_threads`
+> tables do NOT exist (Stage 1 dropped the old events feature); orphaned
+> `update_event_sources(uuid,text[],text[])` + `update_event_links` functions remain
+> (broken). `events.source_url` + `source_doc_id` exist. So S1 CREATES `event_sources`
+> (not repoint). source_url read/write surface (psql `pg_get_functiondef ~* 'source_url'`):
+> read RPCs `_dashboard_anchor_events`, `get_events_page_data`, `get_catalyst_detail`,
+> `get_key_catalysts`; producers `_seed_ctgov_marker_upsert`, `_seed_ctgov_markers`,
+> `_seed_demo_markers`, `commit_source_import`, `create_event`, `update_event`; plus
+> `get_source_document` (that one is source_doc, leave it). Hardcoded registry literal in
+> SQL: `_seed_ctgov_markers`, `_seed_demo_markers`, `get_events_page_data`.
+>
+> **Execution order (this folds into Phase C):** S1 (foundation) -> S2 (read RPCs) ->
+> S3 (frontend readers + the C2 marker-write surface) -> C3 -> C4 -> C5 -> S4 (fixture) ->
+> S5 (drop source_url) -> C6 (backtest incl. sources) -> S6 (docs). source_url stays live
+> until S5 so the transition is additive; drop it only once every reader/producer is off it.
+
+### Task S1: event_sources foundation (table + RLS + grants + registry helper + create_event sources param + update_event_sources)
+
+**Files:** new migration(s) `supabase/migrations/<ts>_event_sources_foundation.sql`; `supabase/data-api-grants.json`; TS util `src/client/src/app/shared/utils/ctgov-registry-url.ts` (+ spec); the matching grant matrix row.
+
+- Create `event_sources(id uuid pk, event_id uuid not null references events(id) on delete cascade, url text not null, label text, sort_order int not null default 0, created_at timestamptz not null default now())` + index on `(event_id, sort_order, created_at)`. Enable RLS; policies: SELECT `has_space_access((select space_id from events where id = event_id))`, INSERT/UPDATE/DELETE `has_space_access(..., array['owner','editor'])`. Model on the events policies. Add to `data-api-grants.json` (starts dark; authenticated gets the right verbs, anon none) so `grants:check` passes.
+- SQL helper `public.event_registry_url(p_identifier text) returns text` -> `'https://clinicaltrials.gov/study/' || p_identifier` when identifier is non-empty, else null. TS mirror `ctgovRegistryUrl(identifier)` with a unit spec (trial w/ NCT -> URL; empty/null -> null). This is the ONE home for the format.
+- `create_event`: add a trailing `p_sources jsonb default null` (array of `{url,label}`); after the event insert, insert the `event_sources` rows atomically in the same tx (deterministic `sort_order` by array index). DROP+CREATE (adding a param changes identity); re-grant EXECUTE to the roles it currently holds (capture with `has_function_privilege`); redefine from the LIVE body. Do NOT remove `p_source_url` yet (S5 does that) -- keep it accepted but the column write stays until S5; simplest is to keep inserting source_url for now and let S5 remove both the param and column together. (Your call: either keep p_source_url passthrough until S5, or have S1 already stop writing it -- but the column is NOT dropped until S5.)
+- `update_event_sources(p_event_id, p_urls text[], p_labels text[])`: redefine to target the new `event_sources` table (replace-all semantics: delete existing rows for the event, insert the new set with sort_order by index), guarded by `has_space_access(owner/editor)`. Keep the url[]/label[] contract.
+- In-file smoke (self-cleaning): insert an event via create_event with two sources, assert two event_sources rows ordered, update_event_sources to one, assert one; firewall-adjacent checks where practical. End with `notify pgrst, 'reload schema';`.
+- Tests: unit (the TS registry-url util); integration paired here or in C6 (event_sources CRUD via create_event + update_event_sources, RLS firewall: viewer-deny / non-member-deny / sibling-no-leak).
+
+### Task S2: read RPCs return sources[] + derived registry link (off source_url)
+
+**Files:** new migration repointing `_dashboard_anchor_events`, `get_events_page_data`, `get_catalyst_detail`, `get_key_catalysts` (redefine each from LIVE body).
+
+- Each RPC that emitted `source_url` now emits a `sources` array (from `event_sources`, ordered) AND a derived `registry_url` (via `event_registry_url(trial.identifier)` when `anchor_type='trial'` and the trial has an NCT identifier), kept SEPARATE from the citations list. The detail panel already renders a `d.sources[]` list -- match that shape. Replace the hardcoded registry literal in `get_events_page_data` with the helper. Preserve all other output keys. In-file smoke + `notify pgrst`. Integration coverage folds into C6 (readers return sources[] + link against the QA fixture).
+
+### Task S3: frontend readers + the C2 marker-write surface consume the sources model
+
+**Files:** find via `grep -rln "source_url\|clinicaltrials.gov/study" src/client/src/app` (≈30 files; the live ones: `event.service`, `trial.service`/`mapEventToMarker`, `event-detail-panel`, `marker-detail-content`, `catalyst-row-tooltip`, `marker.component.html`, `trial-detail.component.html`, `marker-form.component`, `marker.service`, `source-provenance`).
+
+- Read consumers render the `sources[]` citation list + the derived registry link (reuse the existing `d.sources[]` shape + the `ctgovRegistryUrl` util; do not jam the registry link into the citation list).
+- **The C2 marker write surface** (`marker.service.ts` `create`/`update`, `marker-form.component`): the form's single "Source URL" field becomes ONE `event_sources` citation -- `create` passes `p_sources: source_url ? [{url, label:null}] : null` to `create_event` (instead of `p_source_url`); edits go through `update_event_sources`. This supersedes the C2 source_url write path.
+- Tests per touched unit (primary-source selection rule; the util; the mapped write payload).
+
+### Task S4: extend seed_events_model_qa for sources
+
+- Add to the QA fixture: one business/analyst event (e.g. the Distribution) with TWO labeled `event_sources` (asserts multi-source), and confirm the clinical trial-anchored events have ZERO source rows but a DERIVABLE registry link (asserts the derived path). Update the fixture integration spec assertions (counts per anchor unchanged; new source-count + derived-link assertions). This keeps the backtest authoritative.
+
+### Task S5: DROP events.source_url
+
+- After S2/S3/C3/C4/C5 are off the column: new migration drops `events.source_url`, and removes the now-dead `p_source_url` param from `create_event`/`update_event` (DROP+CREATE, re-grant, redefine from LIVE). In-file smoke asserts the column is gone and create_event still works with sources. `notify pgrst`. Verify nothing in `pg_get_functiondef ~* 'source_url'` remains except `get_source_document` (source_doc, unrelated).
+
+### Task S6: docs -- sources model
+
+- Update the runbook events feature doc + the authoritative glossary entry for "Event" (event_sources = attached citations; CT.gov registry link = derived; source_doc_id = ingest provenance), and any help page that described marker/event sourcing. Regen auto-gen blocks via `npm run docs:arch` if schema-touching. Fold the visual evidence (multi-citation business event + derived Registry link on a clinical event) into E4's all-14-rows artifact.
+
+---
+
 ## Phase C: Producers (Stage 4 -- the write paths)
 
-> These functions WRITE markers today. They must emit unified events via the Stage 1 `create_event` RPC (per the shared-RPC rule: no inline event inserts). `_seed_demo_markers` is large (104 marker references); budget it as its own task.
+> These functions WRITE markers today. They must emit unified events. `_seed_demo_markers` is large (104 marker references); budget it as its own task. **Sources behavior (Phase S):** C3 writes NO source rows (registry link derived); C4 attaches AI proposal URLs as `event_sources` via `create_event(p_sources)`; C5 gives a couple of business/analyst demo events MULTIPLE labeled sources (clinical events get none).
 
 ### Task C1: Marker trigger + change-log functions -- retire or repoint
 
@@ -335,7 +403,7 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 **Files:**
 - Create: `supabase/migrations/<ts>_ctgov_sync_emits_events.sql`
 
-**Functions:** `_create_trial_date_markers`, `_seed_ctgov_marker_upsert`, `_seed_ctgov_markers`, and `create_trial` (calls `_create_trial_date_markers`). These derive Trial Start / PCD / Trial End markers from CT.gov dates. Repoint to emit clinical `events` (anchored to the trial) via `create_event`, keyed by event_type. Preserve the UPSERT-by-(trial, event_type, field) drift behavior from the ctgov-trial-dates spec.
+**Functions:** `_create_trial_date_markers`, `_seed_ctgov_marker_upsert`, `_seed_ctgov_markers`, and `create_trial` (calls `_create_trial_date_markers`). These derive Trial Start / PCD / Trial End markers from CT.gov dates. Repoint to emit clinical `events` (anchored to the trial), keyed by event_type. Preserve the UPSERT-by-(trial, event_type, field) drift behavior from the ctgov-trial-dates spec. **NOTE (resolved during execution): a faithful INLINE repoint, NOT `create_event`** -- create_event enforces `has_space_access(owner/editor)` on `auth.uid()` (null for the anon sync), is insert-only (cannot do the 3-branch upsert), has no metadata param (the drift keys on `metadata.source='ctgov'`), and would force `created_by=null`. The `_set_created_by` trigger's `coalesce(auth.uid(), new.created_by)` lets an inline insert keep `created_by=p_created_by`. System UUIDs are identical (marker_type_id == event_type_id), so the retarget is mechanical. **Sources (Phase S):** the ctgov producer writes ZERO `event_sources` rows and sets NO `source_url` (registry link is derived by readers); drop the source_url handling + the hardcoded `clinicaltrials.gov/study` literal from these functions.
 
 - [ ] **Step 1:** Capture the four live bodies; identify the marker_type_id -> event_type_id mapping for Trial Start/PCD/Trial End.
 - [ ] **Step 2:** Redefine to insert/upsert `events` (anchor_type='trial') instead of markers + assignments; `create_trial` calls the new helper.
@@ -348,7 +416,7 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 **Files:**
 - Create: `supabase/migrations/<ts>_commit_source_import_emits_events.sql`
 
-**Reference:** `commit_source_import` creates markers (and events) on separate paths today. Collapse onto `create_event` (no inline inserts -- the shared-RPC rule, see the `commit_source_import skipping create_trial` lesson). Map the proposal's marker entries to events anchored per the proposal's target entity.
+**Reference:** `commit_source_import` creates markers (and events) on separate paths today. Collapse onto `create_event` (no inline inserts -- the shared-RPC rule, see the `commit_source_import skipping create_trial` lesson). Map the proposal's marker entries to events anchored per the proposal's target entity. **Sources (Phase S):** when the proposal carries source URLs, attach them as `event_sources` by passing `p_sources` to `create_event` (atomic, no inline `event_sources` inserts).
 
 - [ ] **Step 1:** Capture the live body; locate its marker-insert block.
 - [ ] **Step 2:** Replace the marker-insert block with `create_event` calls; remove the marker_assignments writes.
@@ -361,7 +429,7 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 **Files:**
 - Create: `supabase/migrations/<ts>_seed_demo_emits_events.sql`
 
-**Functions:** `_seed_demo_markers` (104 refs -- the bulk), `_seed_demo_activity_variety`, `_seed_demo_recent_activity`, `_seed_demo_trials`, `_seed_demo_primary_intelligence` (link target entity_type), `seed_demo_data`. Rewrite `_seed_demo_markers` to emit the same demo timeline as events (clinical + commercial + leadership + a brief), spanning the new surfaces per the spec's "demo/seed data must produce Events". This is the largest single task; the existing `supabase/seed.sql` event block (Stage 2b/2c) is the reference shape for `create_event` calls.
+**Functions:** `_seed_demo_markers` (104 refs -- the bulk), `_seed_demo_activity_variety`, `_seed_demo_recent_activity`, `_seed_demo_trials`, `_seed_demo_primary_intelligence` (link target entity_type), `seed_demo_data`. Rewrite `_seed_demo_markers` to emit the same demo timeline as events (clinical + commercial + leadership + a brief), spanning the new surfaces per the spec's "demo/seed data must produce Events". This is the largest single task; the existing `supabase/seed.sql` event block (Stage 2b/2c) is the reference shape. **Sources (Phase S):** give a couple of business/analyst demo events MULTIPLE labeled `event_sources` (e.g. a Distribution event with a press release + an earnings transcript) so the multi-source path has demo coverage; clinical events get none (derived link). Drop the hardcoded registry literal from `_seed_demo_markers`.
 
 - [ ] **Step 1:** Capture `_seed_demo_markers` live body; inventory the marker set it produces (types, dates, trials).
 - [ ] **Step 2:** Rewrite it to `create_event` calls producing the equivalent event set (anchored to trials/assets/companies); repoint `_seed_demo_activity_variety` / `_seed_demo_recent_activity` to events; `_seed_demo_primary_intelligence` link entity_type 'marker'->'event'.
@@ -374,10 +442,11 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 **Files:**
 - Create: `src/client/integration/event-producers.integration.spec.ts`
 
-**Backtest target:** Acceptance Matrix rows 5, 6, 11 (integration).
+**Backtest target:** Acceptance Matrix rows 5, 6, 11 (integration). **Plus the Phase S sources hardening** (rows 1-2 detail reads): producers emit the right `event_sources` rows (AI import attaches sources; CT.gov attaches none, link derived); the read RPCs return `sources[]` + derived `registry_url` with the right shape against `seed_events_model_qa`; `event_sources` RLS firewall (viewer-deny / non-member-deny / sibling-no-leak).
 
 - [ ] **Step 1:** Integration: `seed_demo_data(<fresh space>)` and `seed_events_model_qa` both produce events (not markers); `get_dashboard_data` renders them. Edit an event via `update_event` -> the change appears in Activity (`get_activity_feed`) and does NOT appear in the Intelligence feed (row 5). An Intelligence brief citing an event resolves its citation (row 6). A CT.gov re-sync updates clinical events in place with no duplicates (drift behavior).
 - [ ] **Step 2: Regression (row 11):** clinical events from the producers derive the phase bar identically to the pre-cutover markers on the same fixture.
+- [ ] **Step 2b (Phase S):** the QA-fixture multi-source business event returns its two `event_sources` (ordered); a clinical trial-anchored event returns ZERO source rows but a non-null derived `registry_url`; `event_sources` firewall rows pass.
 - [ ] **Step 3:** Run the import dedup + ctgov integration specs -> green.
 - [ ] **Step 4:** Record pass/fail per matrix row in the plan's "Phase C backtest results" note.
 - [ ] **Step 5: Commit** `git commit -m "test(events): Phase C producer + Activity backtest"`
