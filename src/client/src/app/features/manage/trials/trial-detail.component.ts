@@ -5,7 +5,6 @@ import {
   computed,
   effect,
   inject,
-  OnDestroy,
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -66,8 +65,8 @@ import { TrialEditDialogComponent } from './trial-edit-dialog.component';
 import { fetchIndicationsSafe } from './trial-indications';
 import { ctgovRemovedChip } from './ctgov-removed-chip';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
-import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { TimelineViewComponent } from '../../landscape/timeline-view.component';
 import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
@@ -108,12 +107,13 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     TimelineViewComponent,
     EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
+    SectionHeaderComponent,
   ],
   providers: [LandscapeStateService],
   templateUrl: './trial-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TrialDetailComponent implements OnDestroy {
+export class TrialDetailComponent {
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';
   }
@@ -131,36 +131,23 @@ export class TrialDetailComponent implements OnDestroy {
   private readonly changeEventService = inject(ChangeEventService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
-  private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
 
   // Stable menu-item references per marker id, keyed with a prefix
   // (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
 
-  private readonly trialEffect = effect(() => {
-    const t = this.trial();
-    this.topbarState.entityTitle.set(t?.name ?? '');
-    this.topbarState.entityContext.set(t?.identifier ?? '');
-  });
-
-  private readonly topbarActionsEffect = effect(() => {
-    // Edit details (opens trial-edit-dialog) and Delete share the topbar
-    // overflow kebab, matching the grid-row idiom. Inline per-field editing
-    // is still the planned future state.
+  // Entity overflow menu (Edit details / Delete), rendered in the content
+  // section-header instead of the topbar. Empty for viewers.
+  protected readonly entityMenu = computed<MenuItem[]>(() => {
     const trial = this.trial();
-    if (!trial || !this.spaceRole.canEdit()) {
-      this.topbarState.overflowActions.set([]);
-      return;
-    }
-    this.topbarState.overflowActions.set(
-      buildEntityActionMenu({
-        canEdit: true,
-        editLabel: 'Edit details',
-        onEdit: () => this.editingTrial.set(true),
-        onDelete: () => void this.deleteTrial(trial),
-      })
-    );
+    if (!trial || !this.spaceRole.canEdit()) return [];
+    return buildEntityActionMenu({
+      canEdit: true,
+      editLabel: 'Edit details',
+      onEdit: () => this.editingTrial.set(true),
+      onDelete: () => void this.deleteTrial(trial),
+    });
   });
 
   private async deleteTrial(trial: Trial): Promise<void> {
@@ -770,10 +757,6 @@ export class TrialDetailComponent implements OnDestroy {
       summary: 'Intelligence published.',
       life: 3000,
     });
-  }
-
-  ngOnDestroy(): void {
-    this.topbarState.clear();
   }
 
   goBack(): void {
