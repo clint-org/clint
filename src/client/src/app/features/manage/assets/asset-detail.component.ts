@@ -40,7 +40,6 @@ import {
   IntelligenceHistoryPayload,
 } from '../../../core/models/primary-intelligence.model';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
-import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
 import { AssetFormComponent } from './asset-form.component';
@@ -70,7 +69,6 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     EntityEventsPanelComponent,
     RowActionsComponent,
     SectionCardComponent,
-    SectionHeaderComponent,
     ReferencedInPanelComponent,
     AssetFormComponent,
     TrialCreateDialogComponent,

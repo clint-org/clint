@@ -18,12 +18,12 @@ describe('asset detail: add trial', () => {
   const html = read('assets/asset-detail.component.html');
 
   it('publishes an "Add trial" primary action only when the user can edit', () => {
-    // Button lives in the content-area section-header, not the topbar.
+    // Button lives in the white-card detail header, not the topbar.
     expect(html).toContain('label="Add trial"');
     // Gated by canEdit in the template.
     expect(html).toContain('@if (spaceRole.canEdit())');
-    // Button is in the named actions slot of app-section-header.
-    expect(html).toMatch(/<div actions>[\s\S]*label="Add trial"/);
+    // Button is inside the right-aligned actions cluster.
+    expect(html).toMatch(/shrink-0 items-center gap-2[\s\S]*label="Add trial"/);
   });
 
   it('hosts the trial dialog with this asset locked', () => {
@@ -42,12 +42,12 @@ describe('company detail: add asset', () => {
   const html = read('companies/company-detail.component.html');
 
   it('publishes an "Add asset" primary action only when the user can edit', () => {
-    // Button lives in the content-area section-header, not the topbar.
+    // Button lives in the white-card detail header, not the topbar.
     expect(html).toContain('label="Add asset"');
     // Gated by canEdit in the template.
     expect(html).toContain('@if (spaceRole.canEdit())');
-    // Button is in the named actions slot of app-section-header.
-    expect(html).toMatch(/<div actions>[\s\S]*label="Add asset"/);
+    // Button is inside the right-aligned actions cluster.
+    expect(html).toMatch(/shrink-0 items-center gap-2[\s\S]*label="Add asset"/);
   });
 
   it('hosts the asset form with this company locked', () => {

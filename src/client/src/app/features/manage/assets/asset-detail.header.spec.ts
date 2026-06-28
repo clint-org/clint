@@ -7,13 +7,12 @@ describe('asset detail: header + actions in content', () => {
   const ts = readFileSync(join(__dirname, 'asset-detail.component.ts'), 'utf8');
   const html = readFileSync(join(__dirname, 'asset-detail.component.html'), 'utf8');
 
-  it('uses the detail-variant section-header', () => {
-    expect(html).toContain('app-section-header');
-    expect(html).toContain('variant="detail"');
+  it('renders a white-card detail header instead of the section-header component', () => {
+    expect(html).toContain('border border-slate-200 bg-white');
+    expect(html).not.toContain('app-section-header');
   });
 
-  it('keeps the company crumb link in the eyebrow slot', () => {
-    expect(html).toContain('eyebrow');
+  it('keeps the company crumb link in the eyebrow row', () => {
     expect(html).toContain("'companies'");
   });
 

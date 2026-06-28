@@ -6,43 +6,49 @@
     <div class="flex justify-center px-4 py-8"><app-loader [size]="28" /></div>
   } @else if (company()) {
     @let c = company()!;
-    <app-section-header variant="detail" class="mb-4 block">
-      <div eyebrow class="font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-500">
-        <span class="text-slate-400">Company</span>
-        @if ((c.assets?.length ?? 0) > 0) {
-          <span class="tabular-nums text-slate-500">
-            &middot; {{ c.assets?.length }} {{ c.assets?.length === 1 ? 'asset' : 'assets' }}
-          </span>
-        }
-      </div>
-      <div title class="flex items-center gap-3">
-        @if (c.logo_url) {
-          <app-brand-logo
-            [url]="c.logo_url"
-            [alt]="c.name + ' logo'"
-            [width]="128"
-            [height]="24"
-            imgClass="h-6 w-auto max-w-[8rem] object-contain"
-          />
-        }
-        <h1 class="text-lg font-bold tracking-[-0.01em] text-slate-900">{{ c.name }}</h1>
-      </div>
-      <div actions>
+    <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div
+            class="mb-1.5 flex items-center gap-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-500"
+          >
+            <span class="text-slate-400">Company</span>
+            @if ((c.assets?.length ?? 0) > 0) {
+              <span class="tabular-nums text-slate-500">
+                &middot; {{ c.assets?.length }} {{ c.assets?.length === 1 ? 'asset' : 'assets' }}
+              </span>
+            }
+          </div>
+          <div class="flex items-center gap-3">
+            @if (c.logo_url) {
+              <app-brand-logo
+                [url]="c.logo_url"
+                [alt]="c.name + ' logo'"
+                [width]="128"
+                [height]="24"
+                imgClass="h-6 w-auto max-w-[8rem] object-contain"
+              />
+            }
+            <h1 class="text-lg font-bold tracking-[-0.01em] text-slate-900">{{ c.name }}</h1>
+          </div>
+        </div>
         @if (spaceRole.canEdit()) {
-          <p-button
-            label="Add asset"
-            icon="fa-solid fa-plus"
-            size="small"
-            [text]="true"
-            (onClick)="creatingAsset.set(true)"
-          />
-          <app-row-actions [items]="entityMenu()" ariaLabel="Company actions" />
+          <div class="flex shrink-0 items-center gap-2">
+            <p-button
+              label="Add asset"
+              icon="fa-solid fa-plus"
+              size="small"
+              [text]="true"
+              (onClick)="creatingAsset.set(true)"
+            />
+            <app-row-actions [items]="entityMenu()" ariaLabel="Company actions" />
+          </div>
         }
       </div>
-    </app-section-header>
-    <div class="mt-1.5 mb-4">
-      <app-source-provenance-line [sourceDocId]="c.source_doc_id" [canView]="spaceRole.canEdit()" />
-    </div>
+      <div class="mt-1.5">
+        <app-source-provenance-line [sourceDocId]="c.source_doc_id" [canView]="spaceRole.canEdit()" />
+      </div>
+    </header>
 
     <!-- Timeline (full width above the two-column record + rail). -->
     <section id="timeline" class="mb-4 bg-white border border-slate-200">

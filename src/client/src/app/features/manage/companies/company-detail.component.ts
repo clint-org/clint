@@ -34,7 +34,6 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 import { CompanyService } from '../../../core/services/company.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
-import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { Company } from '../../../core/models/company.model';
 import {
@@ -69,7 +68,6 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     PiMarkComponent,
     RowActionsComponent,
     SectionCardComponent,
-    SectionHeaderComponent,
     ReferencedInPanelComponent,
     MaterialsSectionComponent,
     TimelineViewComponent,

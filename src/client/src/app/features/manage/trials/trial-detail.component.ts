@@ -66,7 +66,6 @@ import { fetchIndicationsSafe } from './trial-indications';
 import { ctgovRemovedChip } from './ctgov-removed-chip';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
-import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import { TimelineViewComponent } from '../../landscape/timeline-view.component';
 import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
@@ -107,7 +106,6 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     TimelineViewComponent,
     EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
-    SectionHeaderComponent,
   ],
   providers: [LandscapeStateService],
   templateUrl: './trial-detail.component.html',
