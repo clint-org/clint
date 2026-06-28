@@ -112,7 +112,7 @@ jobs:
               '',
               `Run: ${runUrl}`,
               '',
-              'Divergence classes: dangling (row, no object), orphan (object, no row), mirror_gap (in R2, not yet in B2).',
+              'Job fails on dangling (a real upload lost its file) or mirror_gap (in R2, not yet in B2: backup behind). Orphans (object, no DB row) are reported below but do not fail the job. Sample materials (is_sample) are excluded from the dangling check.',
               '',
               '### prod',
               '```json',
