@@ -196,16 +196,19 @@ If a step after `register_material` (steps 4-7) throws, the upload flow's catch 
   role: editor
   status: active
 - id: materials-r2-cleanup-queue
-  summary: Append-only queue that fires on every materials row deletion (direct delete, space cascade, tenant cascade, company / product / trial cascade). A cloudflare worker drains the queue once a day at 07:00 UTC (same fire as the CT.gov sync) via worker-secret-gated SECURITY DEFINER RPCs and removes the matching R2 object. Stuck rows surface for ops review once attempt_count hits 5. Orphaned objects clear within 24 hours.
+  summary: Append-only queue that fires on every materials row deletion (direct delete, space cascade, tenant cascade, company / product / trial cascade). A cloudflare worker drains the queue once a day at 07:00 UTC (same fire as the CT.gov sync) via worker-secret-gated SECURITY DEFINER RPCs and removes the matching R2 object. The drain is lock-aware (WS1). A delete that R2 refuses because the object is still under its 7-day bucket lock is rescheduled via mark_r2_delete_deferred without burning an attempt, and a deny-by-default volume guard (r2_drain_gate over r2_drain_control) refuses to run when an anomalous number of brand-new deletes are queued, deleting nothing and pausing for operator approval. Stuck rows surface for ops review once attempt_count hits 5. Orphaned objects clear within 24 hours.
   routes: []
   rpcs:
     - _enqueue_r2_delete
     - claim_pending_r2_deletes
     - mark_r2_delete_succeeded
     - mark_r2_delete_failed
+    - mark_r2_delete_deferred
+    - r2_drain_gate
     - _verify_r2_drain_worker_secret
   tables:
     - r2_pending_deletes
+    - r2_drain_control
     - materials
   related:
     - materials-delete
