@@ -574,28 +574,32 @@ export class AppShellComponent implements OnInit {
       case 'intelligence':
         return [
           {
-            label: 'Engagement',
-            value: 'profiles/engagement',
-            active: route === 'profiles/engagement',
-            icon: NAV_ICONS['engagement'],
-          },
-          {
             label: 'Intelligence Feed',
             value: 'intelligence',
             active: route === 'intelligence',
             icon: NAV_ICONS['intelligence-feed'],
+          },
+          ...(this.hasEngagement()
+            ? [
+                {
+                  label: 'Engagement',
+                  value: 'profiles/engagement',
+                  active: route === 'profiles/engagement',
+                  icon: NAV_ICONS['engagement'],
+                },
+              ]
+            : []),
+          {
+            label: 'Events',
+            value: 'events',
+            active: route === 'events',
+            icon: NAV_ICONS['events'],
           },
           {
             label: 'Materials',
             value: 'materials',
             active: route === 'materials',
             icon: NAV_ICONS['materials'],
-          },
-          {
-            label: 'Events',
-            value: 'events',
-            active: route === 'events',
-            icon: NAV_ICONS['events'],
           },
         ];
       case 'profiles':
