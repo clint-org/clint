@@ -147,27 +147,16 @@ export function resolveTypedConfirmationValue(opts: ConfirmDeleteOptions): strin
 /**
  * Human-readable label for a count-breakdown key. Sentence-case, with
  * underscores replaced by spaces, and a few cascade-safety-specific keys
- * hand-tuned for clarity. The two marker keys disambiguate the asymmetric
- * marker-orphan cleanup path: `markers_removed_entirely` is the count of
- * markers whose every assignment lives inside the deletion scope (so the
- * orphan trigger removes them); `markers_unlinked_only` is the count of
- * markers that survive in the space because they still have assignments
- * to other entities outside the scope.
+ * hand-tuned for clarity. Keys emitted by the current preview RPCs include
+ * `events`, `trials`, `products` (rendered as "Assets"),
+ * `primary_intelligence`, and `primary_intelligence_links`.
  */
 export function humanizeCountKey(key: string): string {
   switch (key) {
-    case 'markers_removed_entirely':
-      return 'Markers removed entirely';
-    case 'markers_unlinked_only':
-      return 'Markers unlinked only';
     case 'primary_intelligence':
       return 'Intelligence reads';
     case 'primary_intelligence_links':
       return 'Intelligence links';
-    case 'marker_assignments':
-      return 'Marker assignments';
-    case 'marker_notifications':
-      return 'Marker notifications';
     case 'products':
       // The data-model key stays 'products'; the user-facing noun is 'asset'.
       return 'Assets';

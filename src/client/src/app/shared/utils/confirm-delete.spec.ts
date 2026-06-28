@@ -28,16 +28,8 @@ afterEach(() => {
 });
 
 describe('humanizeCountKey', () => {
-  it('returns the marker_assignments key as "Marker assignments"', () => {
-    expect(humanizeCountKey('marker_assignments')).toBe('Marker assignments');
-  });
-
-  it('renders markers_removed_entirely with the explicit label', () => {
-    expect(humanizeCountKey('markers_removed_entirely')).toBe('Markers removed entirely');
-  });
-
-  it('renders markers_unlinked_only with the explicit label', () => {
-    expect(humanizeCountKey('markers_unlinked_only')).toBe('Markers unlinked only');
+  it('renders events key as "Events" (regression lock: events count from RPCs)', () => {
+    expect(humanizeCountKey('events')).toBe('Events');
   });
 
   it('renders primary_intelligence as "Intelligence reads"', () => {
@@ -104,15 +96,11 @@ describe('formatCountBreakdown', () => {
     expect(rows.map((r) => r.key)).toEqual(['trials']);
   });
 
-  it('renders both marker keys when both are positive', () => {
-    const counts: DeleteCountBreakdown = {
-      markers_removed_entirely: 123,
-      markers_unlinked_only: 1724,
-    };
-    const rows = formatCountBreakdown(counts);
+  it('renders events row with label "Events" and correct value', () => {
+    const rows = formatCountBreakdown({ events: 3, trials: 1 });
     expect(rows).toEqual([
-      { key: 'markers_removed_entirely', label: 'Markers removed entirely', value: 123 },
-      { key: 'markers_unlinked_only', label: 'Markers unlinked only', value: 1724 },
+      { key: 'events', label: 'Events', value: 3 },
+      { key: 'trials', label: 'Trials', value: 1 },
     ]);
   });
 
