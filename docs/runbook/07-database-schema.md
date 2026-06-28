@@ -111,6 +111,7 @@ erDiagram
   AUDIT_EVENTS { }
   CTGOV_SYNC_RUNS { }
   PLATFORM_ADMINS { }
+  R2_DRAIN_CONTROL { }
   R2_PENDING_DELETES { }
   RETIRED_HOSTNAMES { }
   USER_REDACTIONS { }
@@ -735,6 +736,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `change_event_annotations`
 - `palette_pinned`
 - `palette_recents`
+- `r2_drain_control`
 - `r2_pending_deletes`
 - `source_documents`
 - `trial_assets`
@@ -983,6 +985,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260618190000_restore_preclinical_guard_bullseye_assets.sql`
 - `20260623120000_seed_demo_event_thread.sql`
 - `20260623130000_fix_detected_date_moved_title.sql`
+- `20260623173536_r2_drain_volume_guard.sql`
 - `20260624100000_rpc_tenant_owner_update_ai_config_enabled_only.sql`
 - `20260624100100_rpc_platform_admin_update_ai_config.sql`
 - `20260624100200_rpc_get_tenant_ai_status.sql`
@@ -1039,4 +1042,7 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260627170000_inventory_snapshot_marker_event_instances.sql`
 - `20260627180000_fix_get_dashboard_data_unspecified_clobber.sql`
 - `20260627190000_rpc_source_duplicate_check.sql`
+- `20260627200000_events_rpc_category_name_filter.sql`
+- `20260627210000_landscape_multilevel_intelligence.sql`
+- `20260627220000_events_overview_full_set_aggregates.sql`
 <!-- /AUTO-GEN:DRIFT -->
