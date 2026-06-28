@@ -16,14 +16,24 @@ export function failsOn(summary) {
   return summary.dangling.length > 0 || summary.mirror_gap.length > 0;
 }
 
+// Parse `aws s3api ... --query 'Contents[].Key' --output json` into a Set.
+// Must use JSON, not text: an object key can contain spaces (e.g.
+// "another pdf.pdf") or parens, and splitting text output on whitespace would
+// mangle such keys into false danglers and orphans. Empty buckets yield the
+// JSON literal `null`. Exported for unit testing.
+export function parseS3Keys(jsonText) {
+  const keys = JSON.parse(jsonText) || [];
+  return new Set(keys.filter(Boolean));
+}
+
 function s3Keys(bucket, endpoint, accessKeyId, secretAccessKey) {
   const out = execFileSync(
     'aws',
     ['s3api', 'list-objects-v2', '--bucket', bucket, '--endpoint-url', endpoint,
-     '--query', 'Contents[].Key', '--output', 'text'],
+     '--query', 'Contents[].Key', '--output', 'json'],
     { env: { ...process.env, AWS_ACCESS_KEY_ID: accessKeyId, AWS_SECRET_ACCESS_KEY: secretAccessKey }, encoding: 'utf8' }
   );
-  return new Set(out.split(/\s+/).filter(Boolean));
+  return parseS3Keys(out);
 }
 
 function dbPaths(poolerUrl) {

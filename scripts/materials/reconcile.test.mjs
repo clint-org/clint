@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { diff, failsOn } from './reconcile.mjs';
+import { diff, failsOn, parseS3Keys } from './reconcile.mjs';
 
 test('a key in db but not r2 is dangling', () => {
   const r = diff(new Set(['a']), new Set(), new Set());
@@ -39,4 +39,15 @@ test('failsOn: orphan alone does not fail the job', () => {
 
 test('failsOn: all-clear does not fail', () => {
   assert.equal(failsOn({ dangling: [], orphan: [], mirror_gap: [] }), false);
+});
+
+test('parseS3Keys: preserves keys containing spaces and parens', () => {
+  const s = parseS3Keys('["a/b/another pdf.pdf", "c/d/report (9).pptx"]');
+  assert.equal(s.size, 2);
+  assert.ok(s.has('a/b/another pdf.pdf'));
+  assert.ok(s.has('c/d/report (9).pptx'));
+});
+
+test('parseS3Keys: an empty bucket (null) yields an empty set', () => {
+  assert.equal(parseS3Keys('null').size, 0);
 });
