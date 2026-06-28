@@ -6,10 +6,8 @@
     <div class="flex justify-center px-4 py-8"><app-loader [size]="28" /></div>
   } @else if (asset()) {
     @let p = asset()!;
-    <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
-      <div
-        class="mb-1.5 flex items-center gap-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-500"
-      >
+    <app-section-header variant="detail" class="mb-4 block">
+      <div eyebrow class="font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-500">
         @if (p.companies; as co) {
           <a
             [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'profiles', 'companies', co.id]"
@@ -30,7 +28,7 @@
         }
         <span class="text-slate-400">Asset</span>
       </div>
-      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <div title class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         @if (p.logo_url) {
           <app-brand-logo
             [url]="p.logo_url"
@@ -59,13 +57,25 @@
           >
         }
       </div>
-      <div class="mt-1.5">
-        <app-source-provenance-line
-          [sourceDocId]="p.source_doc_id"
-          [canView]="spaceRole.canEdit()"
-        />
+      <div actions>
+        @if (spaceRole.canEdit()) {
+          <p-button
+            label="Add trial"
+            icon="fa-solid fa-plus"
+            size="small"
+            [text]="true"
+            (onClick)="creatingTrial.set(true)"
+          />
+          <app-row-actions [items]="entityMenu()" ariaLabel="Asset actions" />
+        }
       </div>
-    </header>
+    </app-section-header>
+    <div class="mt-1.5 mb-4">
+      <app-source-provenance-line
+        [sourceDocId]="p.source_doc_id"
+        [canView]="spaceRole.canEdit()"
+      />
+    </div>
 
     <!-- Timeline (full width above the two-column record + rail). -->
     <section id="timeline" class="mb-4 bg-white border border-slate-200">
