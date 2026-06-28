@@ -21,7 +21,7 @@ import { deriveTrialPhaseSpan, TrialPhaseSpan } from '../../../core/models/trial
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { markerPeriodLabel, markerStartCaption } from '../../../core/models/marker-date-precision';
 import { MARKER_ICON_SIZE } from '../../../shared/utils/grid-constants';
-import { computeInitialScrollLeft } from './initial-scroll';
+import { computeInitialScrollLeft, hasScrolledAwayFromAnchor } from './initial-scroll';
 import {
   CaptionInterval,
   estimateCaptionWidthPx,
@@ -79,6 +79,13 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   private scrollListener: (() => void) | null = null;
   private scrollRafId: number | null = null;
   private readonly scrollContainerEl = signal<HTMLElement | null>(null);
+  /**
+   * Horizontal scroll position the timeline was anchored to on load (and on every
+   * re-anchor when the data/range/zoom changes). The company column collapses based
+   * on how far the user has scrolled *away* from this baseline in either direction,
+   * so it stays expanded on load even though the view auto-anchors to "today".
+   */
+  private baselineScrollLeft: number | null = null;
 
   readonly companies = input.required<Company[]>();
   readonly zoomLevel = input.required<ZoomLevel>();
@@ -136,6 +143,10 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
           viewportWidth: Math.max(0, el.clientWidth - frozenWidth),
           contentWidth,
         });
+        // Re-baseline so the column reads as "not scrolled" at the anchored
+        // position, then collapses once the user scrolls away from it.
+        this.baselineScrollLeft = el.scrollLeft;
+        this.isScrolled.set(false);
       });
     });
   }
@@ -329,7 +340,10 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
       this.scrollListener = () => {
         if (this.scrollRafId !== null) return;
         this.scrollRafId = requestAnimationFrame(() => {
-          this.isScrolled.set(scrollEl.scrollLeft > 50);
+          // Collapse once the user scrolls a few pixels away from the load
+          // anchor in either direction; stay expanded at (and back at) the anchor.
+          const base = this.baselineScrollLeft ?? 0;
+          this.isScrolled.set(hasScrolledAwayFromAnchor(scrollEl.scrollLeft, base));
           this.scrollRafId = null;
         });
       };

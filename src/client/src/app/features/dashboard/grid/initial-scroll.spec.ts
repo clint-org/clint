@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeInitialScrollLeft } from './initial-scroll';
+import { computeInitialScrollLeft, hasScrolledAwayFromAnchor } from './initial-scroll';
 
 // Viewport of 900px over a 5000px-wide timeline unless stated otherwise.
 const VW = 900;
@@ -63,5 +63,29 @@ describe('computeInitialScrollLeft', () => {
       contentWidth: 500,
     });
     expect(target).toBe(0);
+  });
+});
+
+describe('hasScrolledAwayFromAnchor', () => {
+  it('stays expanded exactly at the load anchor', () => {
+    expect(hasScrolledAwayFromAnchor(5000, 5000)).toBe(false);
+  });
+
+  it('stays expanded within a few pixels of the anchor in either direction', () => {
+    expect(hasScrolledAwayFromAnchor(5010, 5000)).toBe(false);
+    expect(hasScrolledAwayFromAnchor(4990, 5000)).toBe(false);
+  });
+
+  it('collapses once scrolled past the threshold to the right', () => {
+    expect(hasScrolledAwayFromAnchor(5040, 5000)).toBe(true);
+  });
+
+  it('collapses once scrolled past the threshold to the left', () => {
+    expect(hasScrolledAwayFromAnchor(4960, 5000)).toBe(true);
+  });
+
+  it('honors a custom threshold', () => {
+    expect(hasScrolledAwayFromAnchor(5100, 5000, 200)).toBe(false);
+    expect(hasScrolledAwayFromAnchor(5300, 5000, 200)).toBe(true);
   });
 });

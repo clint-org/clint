@@ -124,12 +124,13 @@
             <!-- Company column (hidden below lg, collapses to logo on scroll) -->
             @if (!hideCompanyColumn()) {
               <div
-                class="hidden lg:flex items-center transition-all duration-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700"
+                class="group relative hidden lg:flex items-center transition-all duration-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700"
                 [class.w-36]="!isScrolled()"
                 [class.px-3]="!isScrolled()"
                 [class.gap-1.5]="!isScrolled()"
                 [class.w-10]="isScrolled()"
                 [class.justify-center]="isScrolled()"
+                [class.gap-1]="isScrolled()"
                 [class.truncate]="!isScrolled()"
                 [title]="row.companyName"
                 role="button"
@@ -170,6 +171,23 @@
                           <app-pi-mark [size]="9" class="shrink-0" />
                           <span class="truncate">{{ row.companyIntelligenceHeadline }}</span>
                         </span>
+                      }
+                    </div>
+                  } @else {
+                    <!-- Collapsed to logo: keep the same intelligence mark visible -->
+                    @if (row.companyHasIntelligence) {
+                      <app-pi-mark [size]="10" class="shrink-0" />
+                    }
+                    <!-- ...and reveal the company name on hover -->
+                    <div
+                      class="pointer-events-none absolute left-full top-1/2 z-30 ml-1 hidden -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-md border border-slate-200 bg-white px-2 py-1 shadow-lg group-hover:flex"
+                    >
+                      <span
+                        class="font-bold text-[11px] uppercase tracking-wider text-slate-700"
+                        >{{ row.companyName }}</span
+                      >
+                      @if (row.companyHasIntelligence) {
+                        <app-pi-mark [size]="10" class="shrink-0" />
                       }
                     </div>
                   }
