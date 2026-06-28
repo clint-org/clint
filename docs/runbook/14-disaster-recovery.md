@@ -129,9 +129,16 @@ every prod deploy), and the daily off-site bundle in R2 or B2. RPO ~24h, RTO ~1h
   present, object gone) shows a download link that 404s, which is worse than an
   honest empty state; reconciliation now catches that case (below).
 - Detection: a weekly reconciliation job compares `public.materials` to the live
-  R2 listing and the B2 mirror, and opens a GitHub issue on any divergence
-  (dangling pointer: a row with no R2 object; orphan object: an R2 object with no
-  row; mirror gap: an R2 object missing from B2). The lock-aware drain also carries
+  R2 listing and the B2 mirror. It classifies three divergences: dangling pointer
+  (a row with no R2 object), orphan object (an R2 object with no row), and mirror
+  gap (an R2 object missing from B2). Severity is tiered: a dangling pointer (a
+  real upload that lost its file) or a mirror gap (the off-cloud copy has fallen
+  behind) fail the job and open a GitHub issue; an orphan is reported in the run
+  summary but does not fail the job, since it is wasted storage rather than data
+  loss. Materials flagged `is_sample` (intentionally-fileless seed, demo, and
+  playground rows, which never have a backing object) are excluded from the
+  dangling check so they do not produce a standing weekly false alarm. The
+  lock-aware drain also carries
   a deny-by-default volume guard that refuses to run and opens a
   `materials-drain-paused` issue when an anomalous number of brand-new deletes are
   queued, so a runaway enqueue is surfaced before any byte is purged.
