@@ -71,17 +71,17 @@ describe('hasScrolledAwayFromAnchor', () => {
     expect(hasScrolledAwayFromAnchor(5000, 5000)).toBe(false);
   });
 
-  it('stays expanded within a few pixels of the anchor in either direction', () => {
-    expect(hasScrolledAwayFromAnchor(5010, 5000)).toBe(false);
-    expect(hasScrolledAwayFromAnchor(4990, 5000)).toBe(false);
+  it('stays expanded within a small nudge of the anchor in either direction', () => {
+    expect(hasScrolledAwayFromAnchor(5100, 5000)).toBe(false);
+    expect(hasScrolledAwayFromAnchor(4900, 5000)).toBe(false);
   });
 
   it('collapses once scrolled past the threshold to the right', () => {
-    expect(hasScrolledAwayFromAnchor(5040, 5000)).toBe(true);
+    expect(hasScrolledAwayFromAnchor(5200, 5000)).toBe(true);
   });
 
   it('collapses once scrolled past the threshold to the left', () => {
-    expect(hasScrolledAwayFromAnchor(4960, 5000)).toBe(true);
+    expect(hasScrolledAwayFromAnchor(4800, 5000)).toBe(true);
   });
 
   it('honors a custom threshold', () => {

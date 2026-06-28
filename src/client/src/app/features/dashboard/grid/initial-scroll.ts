@@ -37,15 +37,15 @@ export function computeInitialScrollLeft(input: InitialScrollInput): number {
 
 /**
  * Pixels the user must scroll away from the load anchor before the company
- * column collapses from full name to logo-only. Kept small so the collapse
- * feels immediate on the first deliberate scroll.
+ * column collapses from full name to logo-only. Sized so small wheel or
+ * trackpad nudges don't collapse it, while a clear deliberate scroll does.
  */
-export const COLLAPSE_SCROLL_THRESHOLD_PX = 24;
+export const COLLAPSE_SCROLL_THRESHOLD_PX = 150;
 
 /**
  * Whether the horizontal scroll has moved far enough from its load anchor (in
  * either direction) to collapse the company column. The column stays expanded
- * at — and back at — the anchor, so the view loads with company names visible
+ * at the anchor (and back at it), so the view loads with company names visible
  * even though it auto-anchors to "today".
  */
 export function hasScrolledAwayFromAnchor(

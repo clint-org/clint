@@ -195,9 +195,11 @@
         </div>
       }
 
-      @if (asset.intelligence_count > 0) {
+      @if (asset.intelligence_count > 0 || companyIntelligenceRefs().length > 0) {
         <app-detail-panel-section
-          [label]="'Intelligence (' + asset.intelligence_count + ')'"
+          [label]="
+            'Intelligence (' + (asset.intelligence_count + companyIntelligenceRefs().length) + ')'
+          "
           [piMark]="true"
         >
           @if (intelligenceReferences().length > 0) {

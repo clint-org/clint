@@ -1,0 +1,292 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList } from '@angular/cdk/drag-drop';
+import { ButtonModule } from 'primeng/button';
+import { Menu } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
+import { Tooltip } from 'primeng/tooltip';
+
+import {
+  IntelligenceHistoryPayload,
+  IntelligencePayload,
+  PrimaryIntelligenceBrief,
+  PrimaryIntelligenceLink,
+} from '../../../core/models/primary-intelligence.model';
+import { BrandContextService } from '../../../core/services/brand-context.service';
+import { renderMarkdownInline } from '../../utils/markdown-render';
+import { resolveAuthorName, resolveOtherContributorsLine } from '../../utils/intelligence-authors';
+import { buildEntityRouterLink } from '../../utils/intelligence-router-link';
+import { agencyLogoFromBrand } from '../../utils/agency-byline-logo';
+import { BrandLogoComponent } from '../brand-logo.component';
+import { IntelligenceHistoryPanelComponent } from '../intelligence-history-panel/intelligence-history-panel.component';
+import { computeReorder, leadFirst } from './reorder';
+
+/**
+ * Unified vertical stack of intelligence briefs for an entity detail page.
+ * The lead brief is the first card (badged, expanded by default, drag-locked);
+ * the rest collapse and expand in place. Each card owns its version history,
+ * rendered inline via the existing history panel and lazily requested on first
+ * open. Purely presentational: all data arrives via inputs, all actions emit.
+ */
+@Component({
+  selector: 'app-intelligence-stack',
+  imports: [
+    ButtonModule,
+    Menu,
+    Tooltip,
+    RouterLink,
+    CdkDropList,
+    CdkDrag,
+    CdkDragHandle,
+    BrandLogoComponent,
+    IntelligenceHistoryPanelComponent,
+  ],
+  templateUrl: './intelligence-stack.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class IntelligenceStackComponent {
+  private readonly brand = inject(BrandContextService);
+
+  readonly briefs = input<PrimaryIntelligenceBrief[]>([]);
+  readonly canManage = input<boolean>(false);
+  readonly canPurge = input<boolean>(false);
+  readonly authorMap = input<Record<string, string>>({});
+  readonly tenantId = input<string | null>(null);
+  readonly spaceId = input<string | null>(null);
+  readonly histories = input<Record<string, IntelligenceHistoryPayload>>({});
+
+  readonly edit = output<string>();
+  readonly pin = output<string>();
+  readonly reorderTo = output<string[]>();
+  readonly requestHistory = output<string>();
+  readonly withdraw = output<{ anchorId: string; id: string; headline: string }>();
+  readonly purgeVersion = output<{ id: string; confirmation: string }>();
+  readonly purgeEntry = output<{ id: string; confirmation: string }>();
+  readonly discardDraft = output<string>();
+
+  /** Local mutable copy for optimistic drag reorder; resets on new input. */
+  protected readonly ordered = linkedSignal(() => leadFirst(this.briefs()));
+
+  /** Which cards are expanded. Lead (index 0) is expanded by default. */
+  protected readonly expandedIds = signal<ReadonlySet<string>>(new Set());
+
+  /** Anchors with a history request emitted but not yet fulfilled (an in-flight guard). */
+  private readonly inFlight = new Set<string>();
+
+  protected readonly leadAnchorId = computed<string | null>(
+    () => this.ordered().find((b) => b.is_lead)?.anchor_id ?? this.ordered()[0]?.anchor_id ?? null,
+  );
+
+  protected readonly leadPayload = computed<IntelligencePayload | null>(() => {
+    const id = this.leadAnchorId();
+    const lead = this.ordered().find((b) => b.anchor_id === id);
+    return lead ? (lead.published ?? lead.draft) : null;
+  });
+
+  protected readonly agencyName = computed(() => {
+    const b = this.brand.brand();
+    if (b.kind === 'tenant') return b.agency?.name ?? b.app_display_name;
+    return b.app_display_name;
+  });
+
+  protected readonly leadBylineName = computed(() => {
+    const p = this.leadPayload();
+    if (!p) return '';
+    if (this.canManage()) {
+      return resolveAuthorName(p.record.last_edited_by, p.authors, this.authorMap()) || this.agencyName();
+    }
+    return this.agencyName();
+  });
+
+  protected readonly leadBylineInitial = computed(() => {
+    const n = this.leadBylineName().trim();
+    return n ? n.charAt(0).toUpperCase() : '?';
+  });
+
+  protected readonly leadBylineLogoUrl = computed<string | null>(() =>
+    this.canManage() ? null : agencyLogoFromBrand(this.brand.brand()),
+  );
+
+  protected readonly leadContributorLine = computed<string | null>(() => {
+    if (!this.canManage()) return null;
+    const p = this.leadPayload();
+    if (!p) return null;
+    return resolveOtherContributorsLine(p.contributors, p.record.last_edited_by, p.authors, this.authorMap());
+  });
+
+  /** Anchors the user has explicitly toggled (so default-open can be undone). */
+  private readonly touchedIds = signal<ReadonlySet<string>>(new Set());
+
+  /** The set of anchor ids whose cards are currently expanded (lead is open by default until toggled). */
+  protected readonly expandedAnchorIds = computed<ReadonlySet<string>>(() => {
+    const ids = new Set(this.expandedIds());
+    const leadId = this.leadAnchorId();
+    if (leadId && !this.touchedIds().has(leadId)) ids.add(leadId);
+    return ids;
+  });
+
+  constructor() {
+    // Lazily request history for every expanded card that lacks it, and re-request
+    // after the parent clears its histories cache on a mutation. One reconciling
+    // effect so a cleared cache can never strand an open card on the loading state.
+    effect(() => {
+      const hist = this.histories();
+      for (const id of [...this.inFlight]) {
+        if (hist[id]) this.inFlight.delete(id);
+      }
+      for (const id of this.expandedAnchorIds()) {
+        if (!hist[id] && !this.inFlight.has(id)) {
+          this.inFlight.add(id);
+          this.requestHistory.emit(id);
+        }
+      }
+    });
+  }
+
+  protected isLead(brief: PrimaryIntelligenceBrief): boolean {
+    return brief.anchor_id === this.leadAnchorId();
+  }
+
+  protected isExpanded(anchorId: string): boolean {
+    return this.expandedAnchorIds().has(anchorId);
+  }
+
+  protected toggleExpand(anchorId: string): void {
+    const currentlyExpanded = this.isExpanded(anchorId);
+    this.touchedIds.update((s) => new Set(s).add(anchorId));
+    this.expandedIds.update((current) => {
+      const next = new Set(current);
+      if (currentlyExpanded) next.delete(anchorId);
+      else next.add(anchorId);
+      return next;
+    });
+    if (currentlyExpanded) this.inFlight.delete(anchorId);
+  }
+
+  protected onDrop(event: CdkDragDrop<PrimaryIntelligenceBrief[]>): void {
+    const ids = computeReorder(this.ordered(), event.previousIndex, event.currentIndex);
+    const byId = new Map(this.ordered().map((b) => [b.anchor_id, b]));
+    this.ordered.set(ids.map((id) => byId.get(id)!).filter(Boolean));
+    this.reorderTo.emit(ids);
+  }
+
+  protected canPinBrief(brief: PrimaryIntelligenceBrief): boolean {
+    return !this.isLead(brief) && !!brief.published;
+  }
+
+  protected onPinClick(anchorId: string): void {
+    this.pin.emit(anchorId);
+  }
+
+  protected onEditClick(anchorId: string): void {
+    this.edit.emit(anchorId);
+  }
+
+  /** Build the overflow menu for one brief. */
+  protected menuFor(brief: PrimaryIntelligenceBrief): MenuItem[] {
+    const items: MenuItem[] = [
+      { label: 'Edit entry', command: () => this.edit.emit(brief.anchor_id) },
+    ];
+    if (brief.draft) {
+      items.push({
+        label: 'Discard draft',
+        command: () => this.discardDraft.emit(brief.anchor_id),
+      });
+    }
+    const published = brief.published?.record;
+    if (published) {
+      items.push({
+        label: 'Withdraw',
+        command: () =>
+          this.withdraw.emit({
+            anchorId: brief.anchor_id,
+            id: published.id,
+            headline: published.headline,
+          }),
+      });
+    }
+    if (this.canPurge() && published) {
+      items.push({ separator: true });
+      items.push({
+        label: 'Purge entry',
+        styleClass: 'text-red-700',
+        command: () => this.purgeEntry.emit({ id: published.id, confirmation: published.headline }),
+      });
+    }
+    return items;
+  }
+
+  protected headlineFor(brief: PrimaryIntelligenceBrief): string {
+    return (brief.published ?? brief.draft)?.record.headline ?? '';
+  }
+
+  protected bylineFor(brief: PrimaryIntelligenceBrief): string {
+    const payload = brief.published ?? brief.draft ?? null;
+    if (!payload) return '';
+    return resolveAuthorName(payload.record.last_edited_by, payload.authors, this.authorMap());
+  }
+
+  protected updatedFor(brief: PrimaryIntelligenceBrief): string {
+    return formatDate(brief.updated_at);
+  }
+
+  protected draftPendingFor(brief: PrimaryIntelligenceBrief): boolean {
+    return !!brief.published && !!brief.draft;
+  }
+
+  protected summaryHtmlFor(brief: PrimaryIntelligenceBrief): string {
+    return renderMarkdownInline((brief.published ?? brief.draft)?.record.summary_md ?? '');
+  }
+
+  protected implicationsHtmlFor(brief: PrimaryIntelligenceBrief): string {
+    return renderMarkdownInline((brief.published ?? brief.draft)?.record.implications_md ?? '');
+  }
+
+  protected linkedGroupsFor(
+    brief: PrimaryIntelligenceBrief,
+  ): { relationship: string; items: PrimaryIntelligenceLink[] }[] {
+    const links = (brief.published ?? brief.draft)?.links ?? [];
+    const groups = new Map<string, PrimaryIntelligenceLink[]>();
+    for (const l of links) {
+      const key = l.relationship_type || 'Linked';
+      const arr = groups.get(key) ?? [];
+      arr.push(l);
+      groups.set(key, arr);
+    }
+    return Array.from(groups.entries()).map(([relationship, items]) => ({ relationship, items }));
+  }
+
+  protected linkLabelFor(link: PrimaryIntelligenceLink): string {
+    return link.entity_name?.trim()
+      ? link.entity_name
+      : `${link.entity_type} ${link.entity_id.slice(0, 8)}`;
+  }
+
+  protected linkRouteFor(
+    link: PrimaryIntelligenceLink,
+  ): { commands: unknown[]; queryParams?: Record<string, string> } | null {
+    const commands = buildEntityRouterLink(
+      this.tenantId(),
+      this.spaceId(),
+      link.entity_type,
+      link.entity_id,
+    );
+    return commands ? { commands } : null;
+  }
+}
+
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}

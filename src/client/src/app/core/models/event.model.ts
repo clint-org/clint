@@ -40,6 +40,34 @@ export type EventPriority = 'high' | 'low';
 
 export type EntityLevel = 'space' | 'company' | 'product' | 'trial';
 
+/**
+ * One category bucket of the events overview distribution, aggregated by
+ * get_events_page_data over the FULL filtered set (not just the loaded page).
+ * Marker fields carry a representative marker's glyph so the share bar can be
+ * drawn for marker categories; they are null for event / detected categories.
+ */
+export interface EventCategoryDistribution {
+  name: string;
+  count: number;
+  marker_type_shape: MarkerShape | null;
+  marker_type_color: string | null;
+  marker_type_inner_mark: InnerMark | null;
+  category_color: string | null;
+}
+
+/**
+ * Full response of get_events_page_data: the page of `items`, plus overview
+ * aggregates computed server-side over the entire filtered set so the overview
+ * pane is accurate regardless of how many rows are loaded.
+ */
+export interface EventsPageData {
+  items: FeedItem[];
+  total: number;
+  highPriorityCount: number;
+  distribution: EventCategoryDistribution[];
+  recent: FeedItem[];
+}
+
 export interface AppEvent {
   id: string;
   space_id: string;
