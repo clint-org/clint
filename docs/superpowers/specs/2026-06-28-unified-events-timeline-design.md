@@ -136,16 +136,20 @@ The feed and the timeline are two queries over the same rows. Whether an event
 renders on a given entity's timeline is a function, never a stored property:
 
 ```
-showsOnTimeline(event, timelineEntity) =
-      hasResolvableDate(event)                 // event_date exists; fuzzy is fine
-  AND anchorResolvesTo(event, timelineEntity)  // direct match or roll-up
+showsOnTimeline(event, row) =
+      hasResolvableDate(event)          // event_date exists; fuzzy is fine
+  AND event.anchor == row.entity        // direct match only; no roll-up, no roll-down
   AND effectiveVisibility(event)
 
 effectiveVisibility(e) =
       e.visibility == 'pinned' ? true
     : e.visibility == 'hidden' ? false
-    : defaultSignificance(e) >= ALTITUDE_THRESHOLD   // from type, gated by altitude
+    : significance(e) == 'high'         // high = catalyst, low = feed-only
 ```
+
+An event renders on exactly one altitude: the row of the entity it is anchored
+to. The altitude control does not move events between rows; it only collapses or
+hides descendant rows.
 
 - **Intelligence feed** (space): every event, ordered by recency, any
   significance, interleaved with briefs.
@@ -224,19 +228,28 @@ only to trials (36px rows, single lane, phase bar at y=8, markers at y=4-22).
 ### The altitude model
 
 Rows can render at trial, asset, or company altitude (all three in v1). The same
-`events` table and resolver feed all altitudes; **altitude is just a significance
-threshold plus anchor roll-up**, which is what makes this tractable rather than a
+`events` table and resolver feed all altitudes. **Each event renders on exactly
+one row: the row of the entity it is anchored to. There is no roll-up and no
+roll-down.** The altitude control only collapses or hides descendant rows; it
+never moves an event between rows. This is what makes it tractable rather than a
 phase-aggregation rewrite. Company altitude is the same mechanism one level up,
-and is in fact simpler: a company has no phase, so a company row is just catalysts
-on a lane (no lead-phase chip). It is also necessary, not optional: roll-*down* is
-out of scope (a company event does not cascade onto its asset/trial rows), so a
-company-anchored event has **no timeline home unless a company track exists**.
+and is in fact simpler: a company has no phase, so a company row is just its
+company-anchored catalysts on a lane (no lead-phase chip). It is also necessary,
+not optional: because there is no roll-down, a company-anchored event has **no
+timeline home unless a company track exists**.
+
+Consequence to design around: a collapsed asset row shows the asset's own
+catalysts (approval, launch, LOE, distribution) plus the lead-phase chip for
+clinical maturity, but not individual trial readouts, which live on the trial
+rows and appear on expand. Anchoring is therefore the lever: a milestone that
+should appear at a given altitude is anchored to that entity (approval/launch/LOE
+are genuinely asset-level, so they land on the asset row naturally).
 
 ```mermaid
 flowchart TB
   subgraph collapsed["Asset altitude (collapsed): the comparison view"]
-    AR1["Zepbound (Lilly): lead-phase chip + headline catalysts on one lane"]
-    AR2["Wegovy (Novo): lead-phase chip + headline catalysts on one lane"]
+    AR1["Zepbound (Lilly): lead-phase chip + asset-anchored catalysts only"]
+    AR2["Wegovy (Novo): lead-phase chip + asset-anchored catalysts only"]
   end
   subgraph expanded["Asset expanded: today's detail"]
     AL["Zepbound asset lane (asset-anchored catalysts)"]
@@ -250,18 +263,17 @@ flowchart TB
 
 - **Trial altitude** is today's view and stays the **default**.
 - **Asset altitude (collapsed)** is the comparison view: each asset is one row,
-  a lead-phase chip plus its headline catalysts (asset-anchored events always;
-  child-trial events only above the altitude threshold), rows stacked so gaps
-  read at a glance.
+  a lead-phase chip plus its **asset-anchored catalysts only** (trial catalysts
+  stay on the trial rows), rows stacked so gaps read at a glance.
 - **Expanded asset** = the asset lane (asset-anchored catalysts) above its nested
-  trial rows (today's view, full significance).
+  trial rows (today's view; the trial rows show their own trial-anchored events).
 - **No aggregate phase bar** at asset altitude. Aggregating concurrent trials at
   different phases into one bar is lossy and discards the indication dimension, so
   we show a compact lead-phase chip and put phase detail one expand away.
-- **Company altitude** collapses each company to one row: company-anchored
-  catalysts plus rolled-up headline catalysts from its assets and trials (two
-  roll-up levels, gated harder by the threshold). No phase chip. This is the
-  company-vs-company cadence comparison.
+- **Company altitude** collapses each company to one row showing its
+  **company-anchored catalysts only** (leadership, financial, M&A). No phase chip.
+  Expand a company to reveal its asset rows; expand an asset to reveal its trials.
+  This is the company-vs-company cadence comparison.
 - **Company band.** When viewing at asset or trial altitude, a thin company band
   sits at the top of each company group to host company-anchored catalysts (for
   example a pinned leadership event), so company-level events are visible without
@@ -313,9 +325,9 @@ flowchart TB
    comparison view is one click from today's view.
 2. **Collapsed asset phase representation = lead-phase chip + catalysts.** No
    aggregate phase bar. Phase detail lives one expand away on the trial rows.
-3. **Roll-up onto a collapsed asset row** = asset-anchored events always; child
-   trial events only above the altitude significance threshold. Full detail on
-   expand.
+3. **No roll-up.** Each event renders only on its anchor's row. A collapsed asset
+   row shows its asset-anchored catalysts plus the lead-phase chip; trial
+   catalysts appear on expand. Altitude only collapses/hides descendant rows.
 
 ## Surfaces after the change
 
@@ -341,8 +353,8 @@ testing is a first-class deliverable, not a trailing phase. Two rules:
 ### Three layers
 
 - **Unit (Vitest, `npm run test:units`):** the pure logic. `showsOnTimeline`,
-  `effectiveVisibility`, significance defaulting + override, altitude threshold
-  gating, anchor roll-up, phase-bar derivation from clinical events,
+  `effectiveVisibility`, significance defaulting + override, anchor-to-row
+  matching (no roll-up), phase-bar derivation from clinical events,
   fuzzy-date / range rendering math, the placement resolver (inline v1).
 - **Integration (local Supabase, service-role):** the `events` table +
   `event_types`, event create / edit RPCs, the `seed-demo` path producing the new
@@ -363,12 +375,12 @@ testing is a first-class deliverable, not a trailing phase. Two rules:
 | 5 | An event is edited | Change appears in Activity; does NOT appear in the Intelligence feed | integration + e2e |
 | 6 | An Intelligence brief that cites an event | Brief in the Intelligence feed; citation resolves | integration + e2e |
 | 7 | Trial altitude (default) | Trial rows + phase bars render exactly as today (regression) | e2e |
-| 8 | Asset altitude (collapsed) | Asset row shows lead-phase chip + headline catalysts; sub-threshold child events are hidden | unit (roll-up) + e2e |
+| 8 | Asset altitude (collapsed) | Asset row shows lead-phase chip + asset-anchored catalysts only; trial catalysts are not shown until expand | unit + e2e |
 | 9 | Asset expanded | Asset lane + nested trial rows at full significance | e2e |
 | 10 | Comparison view | Two asset rows stacked; approval-to-distribution gap is visible | e2e (visual) |
 | 11 | Phase-bar derivation post-merge | Bar derives from clinical events (regression) | unit + integration |
 | 12 | `visibility = hidden` on a high-significance event | Not a catalyst on any altitude | unit |
-| 13 | Company altitude | Company rows render company-anchored catalysts + rolled-up headline catalysts; no phase chip | unit (roll-up) + e2e |
+| 13 | Company altitude | Company rows render company-anchored catalysts only; no phase chip; expand reveals asset rows | unit + e2e |
 | 14 | Company band in asset/trial view | A pinned company-level event renders on the company group-header band | e2e |
 
 ### Fixture
@@ -479,9 +491,10 @@ state**; the implementation plan sequences it. A likely ordering:
 
 ## Risks and mitigations
 
-- **Roll-up density at asset / company altitude.** Mitigated by significance
-  gating (only headline catalysts collapse upward, harder at company level) and
-  expand-for-detail.
+- **Sparse collapsed rows.** With no roll-up, a collapsed row shows only its own
+  catalysts. Mitigated by the lead-phase chip (clinical maturity) and by anchoring
+  the competitively important milestones (approval, launch, LOE, distribution) at
+  the asset level where they belong, so they appear on the asset row naturally.
 - **Lossy asset phase representation.** Accepted: lead-phase chip, not a bar;
   detail one expand away. Company rows carry no phase at all.
 - **Breadth of the rename.** The blast radius is wide (producers, consumers,
@@ -496,7 +509,7 @@ state**; the implementation plan sequences it. A likely ordering:
 - **Multi-trial:** single anchor in v1 (asset lane covers asset-wide milestones);
   true one-fact-many-places returns with the placement layer.
 - **Significance:** two tiers, high (catalyst by default) and low (feed-only);
-  stored as an int with one altitude threshold, surfaced high/low.
+  stored as an int with one threshold, surfaced high/low.
 - **Type significance defaults:** clinical / regulatory / approval / LOE /
   commercial-milestone = high; leadership / financial / strategic = low. New
   commercial glyphs added (e.g. Distribution); reuse existing where they exist.
