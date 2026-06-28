@@ -57,45 +57,25 @@
       "authenticated": ["select", "insert"],
       "justification": "seed: _seed_demo_indications (SECURITY INVOKER) inserts demo conditions, and its condition_indication_map insert needs select because that table's RLS with-check subquery reads conditions as the calling role. App reads flow through RPCs; e2e fixtures use the service-role key."
     },
-    "event_categories": {
+    "event_changes": {
       "authenticated": ["select"],
-      "justification": "client: event-category.service lists categories for the events feature. Category management writes are RPC or service-role fixtures (entity-name-uniqueness.spec uses the admin client)."
+      "justification": "client: Activity surface reads the change log; writes only via the events trigger."
     },
-    "event_links": {
-      "authenticated": ["select", "insert"],
-      "justification": "select: get_event_detail is SECURITY INVOKER and reads event links as the caller. insert: event.service inserts event-to-event links when creating an event."
+    "event_type_categories": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: taxonomy admin manage surface (Stage 3); selects embed categories. RLS restricts writes to owners/editors."
     },
-    "event_sources": {
-      "authenticated": ["select", "insert"],
-      "justification": "select: get_event_detail is SECURITY INVOKER and reads source rows as the caller. insert: event.service inserts source rows when creating an event."
-    },
-    "event_threads": {
-      "authenticated": ["select", "insert", "delete"],
-      "justification": "client: event-thread.service list/create/delete threads directly."
+    "event_types": {
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: event-type.service manage surface (Stage 3) full CRUD; selects embed event_types into events. RLS restricts writes to owners/editors."
     },
     "events": {
       "authenticated": ["select", "insert", "update", "delete"],
-      "justification": "client: event.service select/update/delete; integration: role-access.spec contributor and space_owner insert expect ok, reader select expects rows, entity-audit-columns.spec contributor insert/update."
+      "justification": "client: event.service CRUD via PostgREST; writes also through create_event/update_event RPCs; RLS restricts writes to space owners/editors."
     },
     "indications": {
       "authenticated": ["select", "insert", "update", "delete"],
       "justification": "client: indication.service and therapeutic-area.service full CRUD; seed: _seed_demo_indications (SECURITY INVOKER) inserts demo indications."
-    },
-    "marker_assignments": {
-      "authenticated": ["select", "delete"],
-      "justification": "client: marker.service reads assignments for cache invalidation and trial detail embeds them via TRIAL_SELECT; integration: marker-edit-flow.spec contributor direct delete expects ok (orphan-cleanup contract). Assignment writes go through the update_marker_assignments SECURITY DEFINER RPC; the only direct authenticated insert test expects 42501."
-    },
-    "marker_categories": {
-      "authenticated": ["select", "insert", "update", "delete"],
-      "justification": "client: marker-category.service full CRUD (manage surface: create/rename/reorder/delete) plus inline create from the marker-type form; marker-type and trial selects embed marker_categories. RLS restricts writes to space owners/editors."
-    },
-    "marker_types": {
-      "authenticated": ["select", "insert", "update", "delete"],
-      "justification": "client: marker-type.service full CRUD (manage surface); trial and marker selects embed marker_types."
-    },
-    "markers": {
-      "authenticated": ["select", "insert", "update", "delete"],
-      "justification": "client: marker.service update/delete/getById (select embeds marker_types); integration: entity-audit-columns.spec contributor insert/update with returning .select(). Creation in the app goes through create_marker RPC but the audit-columns contract inserts directly."
     },
     "material_links": {
       "authenticated": ["select"],
