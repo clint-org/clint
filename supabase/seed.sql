@@ -73,6 +73,8 @@ declare
   et_approval     uuid := 'a0000000-0000-0000-0000-000000000035';
   et_launch       uuid := 'a0000000-0000-0000-0000-000000000036';
   et_distribution uuid := 'a0000000-0000-0000-0000-000000000040';
+  et_strategic    uuid := 'a0000000-0000-0000-0000-000000000070';
+  et_leadership   uuid := 'a0000000-0000-0000-0000-000000000050';
   v_existing int;
 begin
   select count(*) into v_existing from public.companies where space_id = v_space;
@@ -123,6 +125,28 @@ begin
     v_space, et_distribution, 'Projected vials to pens switch', date '2026-10-01', 'asset', v_asset,
     'primary',                 -- projection
     'quarter'                  -- date_precision
+  );
+
+  -- Eli Lilly (company-anchored). Strategic/Leadership types default to low
+  -- significance (feed-only). The manufacturing expansion is pinned, so it
+  -- surfaces a glyph on the company band; the leadership change stays feed-only,
+  -- exercising effectiveVisibility (pinned -> show, low + unpinned -> hidden).
+  perform public.create_event(
+    v_space, et_strategic, 'Lilly $9B Indiana API manufacturing expansion', date '2024-04-01', 'company', v_company,
+    'actual',                  -- projection
+    'month',                   -- date_precision
+    null,                      -- end_date
+    'exact',                   -- end_date_precision
+    false,                     -- is_ongoing
+    null,                      -- description
+    null,                      -- source_url
+    null,                      -- significance (falls to type default 'low')
+    'pinned'                   -- visibility: promoted onto the timeline
+  );
+  perform public.create_event(
+    v_space, et_leadership, 'New Chief Commercial Officer named', date '2024-02-01', 'company', v_company,
+    'actual',                  -- projection
+    'month'                    -- date_precision
   );
 
   reset role;
