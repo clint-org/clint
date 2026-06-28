@@ -82,31 +82,30 @@ function makeService(client: ClientStub, cache: CacheStub): MarkerService {
   return runInInjectionContext(injector, () => new MarkerService());
 }
 
-describe('MarkerService.update', () => {
-  it('invalidates the catalyst detail tag for the updated marker', async () => {
-    const updateQb = makeQueryBuilder({ id: 'marker-1', space_id: 'space-1' });
-    const assignmentsQb = makeQueryBuilder([{ trial_id: 'trial-1' }]);
-    const from = vi.fn().mockReturnValueOnce(assignmentsQb).mockReturnValueOnce(updateQb);
-    const invalidateTags = vi.fn();
-    const service = makeService(
-      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
-      { get: vi.fn(), invalidateTags }
-    );
+/** A raw events-table row with its event type nested, as Supabase returns it. */
+function eventRow(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: 'marker-1',
+    space_id: 'space-1',
+    anchor_type: 'trial',
+    anchor_id: 'trial-1',
+    event_type_id: 'type-1',
+    title: 'Topline readout',
+    event_types: {
+      id: 'type-1',
+      name: 'Data Readout',
+      event_type_categories: { id: 'cat-1', name: 'Clinical Data' },
+    },
+    ...overrides,
+  };
+}
 
-    await service.update('marker-1', { type_id: 'type-x' });
-
-    expect(invalidateTags).toHaveBeenCalledTimes(1);
-    expect(invalidateTags.mock.calls[0][0]).toContain('catalyst:marker-1:detail');
-  });
-});
-
-describe('MarkerService.updateAssignments', () => {
-  it('delegates to update_marker_assignments RPC and invalidates affected tags', async () => {
-    const markerQb = makeQueryBuilder({ space_id: 'space-1' });
-    const oldRowsQb = makeQueryBuilder([{ trial_id: 'trial-old' }]);
-    const from = vi.fn().mockReturnValueOnce(markerQb).mockReturnValueOnce(oldRowsQb);
+describe('MarkerService.create', () => {
+  it('inserts a single-anchor trial event via create_event and returns the getById read', async () => {
+    const getByIdQb = makeQueryBuilder(eventRow());
+    const from = vi.fn().mockReturnValueOnce(getByIdQb);
     const rpc = vi.fn().mockReturnValue({
-      throwOnError: vi.fn().mockResolvedValue({ data: null, error: null }),
+      throwOnError: vi.fn().mockResolvedValue({ data: 'marker-1', error: null }),
     });
     const invalidateTags = vi.fn();
     const service = makeService(
@@ -114,31 +113,110 @@ describe('MarkerService.updateAssignments', () => {
       { get: vi.fn(), invalidateTags }
     );
 
-    await service.updateAssignments('marker-1', ['trial-new']);
+    const created = await service.create(
+      'space-1',
+      {
+        marker_type_id: 'type-1',
+        title: 'Topline readout',
+        projection: 'actual',
+        event_date: '2026-07-01',
+      },
+      'trial-1'
+    );
 
-    expect(rpc).toHaveBeenCalledWith('update_marker_assignments', {
-      p_marker_id: 'marker-1',
-      p_trial_ids: ['trial-new'],
+    expect(rpc).toHaveBeenCalledTimes(1);
+    const [fnName, params] = rpc.mock.calls[0];
+    expect(fnName).toBe('create_event');
+    expect(params).toMatchObject({
+      p_space_id: 'space-1',
+      p_event_type_id: 'type-1',
+      p_title: 'Topline readout',
+      p_event_date: '2026-07-01',
+      p_anchor_type: 'trial',
+      p_anchor_id: 'trial-1',
+      p_projection: 'actual',
     });
-    expect(invalidateTags).toHaveBeenCalledTimes(1);
-    const tags = invalidateTags.mock.calls[0][0] as string[];
-    expect(tags).toContain('catalyst:marker-1:detail');
-    // Both previous and new trial caches get invalidated.
-    expect(tags).toContain('trial:trial-old:detail');
-    expect(tags).toContain('trial:trial-new:detail');
+    // No metadata supplied -> no follow-up events update, only the getById read.
+    expect(from).toHaveBeenCalledTimes(1);
+    expect(from).toHaveBeenCalledWith('events');
+    // Returned value is the mapped getById row (event_type_id -> marker_type_id).
+    expect(created.marker_type_id).toBe('type-1');
+    // Trial-detail cache invalidated for the single anchor.
+    expect(invalidateTags.mock.calls[0][0]).toContain('trial:trial-1:detail');
+  });
+
+  it('writes metadata with a follow-up events update when supplied', async () => {
+    const metadataQb = makeQueryBuilder(null);
+    const getByIdQb = makeQueryBuilder(eventRow());
+    const from = vi.fn().mockReturnValueOnce(metadataQb).mockReturnValueOnce(getByIdQb);
+    const rpc = vi.fn().mockReturnValue({
+      throwOnError: vi.fn().mockResolvedValue({ data: 'marker-1', error: null }),
+    });
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from, rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    await service.create(
+      'space-1',
+      {
+        marker_type_id: 'type-1',
+        title: 'FDA Submission',
+        projection: 'actual',
+        event_date: '2026-07-01',
+        metadata: { pathway: 'priority' },
+      },
+      'trial-1'
+    );
+
+    expect(from).toHaveBeenCalledTimes(2);
+    expect(metadataQb.update).toHaveBeenCalledWith({ metadata: { pathway: 'priority' } });
+    expect(metadataQb.eq).toHaveBeenCalledWith('id', 'marker-1');
+  });
+});
+
+describe('MarkerService.update', () => {
+  it('updates the events row inline and renames marker_type_id to event_type_id', async () => {
+    const updateQb = makeQueryBuilder(eventRow({ id: 'marker-1', space_id: 'space-1' }));
+    const from = vi.fn().mockReturnValueOnce(updateQb);
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    await service.update('marker-1', { marker_type_id: 'type-2', event_date: '2026-08-01' });
+
+    expect(from).toHaveBeenCalledWith('events');
+    const mapped = updateQb.update.mock.calls[0][0] as Record<string, unknown>;
+    expect(mapped).toEqual({ event_type_id: 'type-2', event_date: '2026-08-01' });
+    expect(mapped['marker_type_id']).toBeUndefined();
+    expect(invalidateTags.mock.calls[0][0]).toContain('catalyst:marker-1:detail');
+  });
+
+  it('passes through scalar changes and invalidates the anchor trial cache', async () => {
+    const updateQb = makeQueryBuilder(eventRow({ id: 'marker-1', anchor_id: 'trial-9' }));
+    const from = vi.fn().mockReturnValueOnce(updateQb);
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    await service.update('marker-1', { event_date: '2026-09-01', projection: 'company' });
+
+    const mapped = updateQb.update.mock.calls[0][0] as Record<string, unknown>;
+    expect(mapped).toEqual({ event_date: '2026-09-01', projection: 'company' });
+    expect(invalidateTags.mock.calls[0][0]).toContain('trial:trial-9:detail');
   });
 });
 
 describe('MarkerService.delete', () => {
-  it('invalidates the catalyst detail tag for the deleted marker', async () => {
-    const markerQb = makeQueryBuilder({ space_id: 'space-1' });
-    const assignmentsQb = makeQueryBuilder([{ trial_id: 'trial-1' }]);
+  it('deletes the events row and invalidates the catalyst + anchor tags', async () => {
+    const readQb = makeQueryBuilder({ space_id: 'space-1', anchor_id: 'trial-1' });
     const deleteQb = makeQueryBuilder(null);
-    const from = vi
-      .fn()
-      .mockReturnValueOnce(markerQb)
-      .mockReturnValueOnce(assignmentsQb)
-      .mockReturnValueOnce(deleteQb);
+    const from = vi.fn().mockReturnValueOnce(readQb).mockReturnValueOnce(deleteQb);
     const invalidateTags = vi.fn();
     const service = makeService(
       { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
@@ -147,7 +225,28 @@ describe('MarkerService.delete', () => {
 
     await service.delete('marker-1');
 
-    expect(invalidateTags).toHaveBeenCalledTimes(1);
-    expect(invalidateTags.mock.calls[0][0]).toContain('catalyst:marker-1:detail');
+    expect(from).toHaveBeenCalledWith('events');
+    expect(deleteQb.delete).toHaveBeenCalledTimes(1);
+    const tags = invalidateTags.mock.calls[0][0] as string[];
+    expect(tags).toContain('catalyst:marker-1:detail');
+    expect(tags).toContain('trial:trial-1:detail');
+  });
+});
+
+describe('MarkerService.getById', () => {
+  it('reads from events and maps event_type_id to marker_type_id', async () => {
+    const getByIdQb = makeQueryBuilder(eventRow());
+    const from = vi.fn().mockReturnValueOnce(getByIdQb);
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+
+    const marker = await service.getById('marker-1');
+
+    expect(from).toHaveBeenCalledWith('events');
+    expect(getByIdQb.select).toHaveBeenCalledWith('*, event_types(*, event_type_categories(*))');
+    expect(marker?.marker_type_id).toBe('type-1');
+    expect(marker?.marker_types?.marker_categories?.name).toBe('Clinical Data');
   });
 });

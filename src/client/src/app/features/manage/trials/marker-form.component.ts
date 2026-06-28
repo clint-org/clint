@@ -13,7 +13,6 @@ import { FormsModule } from '@angular/forms';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
 import { Select } from 'primeng/select';
-import { MultiSelect } from 'primeng/multiselect';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
@@ -46,7 +45,7 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-marker-form',
   standalone: true,
-  imports: [FormsModule, InputText, Textarea, Select, MultiSelect, ButtonModule, MessageModule],
+  imports: [FormsModule, InputText, Textarea, Select, ButtonModule, MessageModule],
   template: `
     <form (ngSubmit)="onSubmit()" class="space-y-4" aria-label="Marker form">
       @if (ctgovLocked()) {
@@ -383,25 +382,23 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
         <!-- Trial Assignment -->
         <div class="sm:col-span-2">
           <label for="marker-trials" class="block text-sm font-medium text-slate-700">
-            Assign to Trials <span aria-hidden="true" class="text-red-600">*</span>
+            Assign to Trial <span aria-hidden="true" class="text-red-600">*</span>
           </label>
-          <p-multiselect
+          <p-select
             inputId="marker-trials"
             [options]="trialOptions()"
-            [ngModel]="selectedTrialIds()"
-            (ngModelChange)="selectedTrialIds.set($event ?? [])"
-            name="selectedTrialIds"
+            [ngModel]="selectedTrialId()"
+            (ngModelChange)="selectedTrialId.set($event ?? '')"
+            name="selectedTrialId"
             optionLabel="label"
             optionValue="id"
-            placeholder="Select trials"
+            placeholder="Select trial"
             [filter]="true"
             filterBy="label,identifier,companyName,assetName,briefTitle"
             styleClass="w-full"
             class="mt-1"
             aria-required="true"
             appendTo="body"
-            [maxSelectedLabels]="0"
-            [selectedItemsLabel]="'Trial (' + selectedTrialIds().length + ')'"
             [disabled]="ctgovLocked()"
           >
             <ng-template let-opt pTemplate="item">
@@ -420,10 +417,10 @@ const MARKER_FIELD_LABELS: Record<string, string> = {
                 </span>
               </div>
             </ng-template>
-          </p-multiselect>
-          @if (selectedTrialIds().length === 0) {
+          </p-select>
+          @if (!selectedTrialId()) {
             <p class="mt-1 text-xs text-slate-500">
-              At least one trial. Markers always belong to a trial timeline.
+              Markers always belong to a trial timeline.
             </p>
           }
         </div>
@@ -531,7 +528,7 @@ export class MarkerFormComponent implements OnInit {
   readonly description = signal('');
   readonly sourceUrl = signal('');
   readonly regulatoryPathway = signal('');
-  readonly selectedTrialIds = signal<string[]>([]);
+  readonly selectedTrialId = signal<string>('');
 
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
@@ -603,7 +600,7 @@ export class MarkerFormComponent implements OnInit {
       !!this.markerTypeId() &&
       this.title().trim().length > 0 &&
       !!this.effectiveEventDate() &&
-      this.selectedTrialIds().length > 0 &&
+      !!this.selectedTrialId() &&
       (this.extent() !== 'until' || (!!this.effectiveEndDate() && this.rangeValid())),
   );
 
@@ -663,16 +660,20 @@ export class MarkerFormComponent implements OnInit {
         (existing.metadata as Record<string, string> | null)?.['pathway'] ?? '',
       );
 
-      // Pre-populate selected trials from existing assignments
-      if (existing.marker_assignments) {
-        this.selectedTrialIds.set(existing.marker_assignments.map((a) => a.trial_id));
+      // Under the events model each marker has exactly one trial anchor.
+      // Prefill it from the marker's own anchor; the route trial is the
+      // fallback below. Read defensively: anchor_id rides through the Marker
+      // shape via ...rest in mapEventToMarker but is not a declared field.
+      const anchorId = (existing as unknown as { anchor_id?: string | null }).anchor_id;
+      if (anchorId) {
+        this.selectedTrialId.set(anchorId);
       }
     }
 
-    // Pre-select trial from route context if provided
+    // Pre-select trial from route context when no anchor was prefilled.
     const routeTrialId = this.trialId();
-    if (routeTrialId && !this.selectedTrialIds().includes(routeTrialId)) {
-      this.selectedTrialIds.update((ids) => [...ids, routeTrialId]);
+    if (routeTrialId && !this.selectedTrialId()) {
+      this.selectedTrialId.set(routeTrialId);
     }
   }
 
@@ -758,8 +759,8 @@ export class MarkerFormComponent implements OnInit {
 
   protected readonly showCtgovAutoMarkerHint = computed(() => {
     const typeId = this.markerTypeId();
-    const selectedIds = this.selectedTrialIds();
-    if (!typeId || selectedIds.length === 0) return false;
+    const selectedId = this.selectedTrialId();
+    if (!typeId || !selectedId) return false;
     const selectedType = this.markerTypes().find((t) => t.id === typeId);
     if (!selectedType) return false;
     const autoTypeName =
@@ -767,8 +768,8 @@ export class MarkerFormComponent implements OnInit {
       selectedType.name === 'Primary Completion Date (PCD)' ||
       selectedType.name === 'Trial End';
     if (!autoTypeName) return false;
-    const selectedTrials = this.trials().filter((t) => selectedIds.includes(t.id));
-    return selectedTrials.some((t) => !!t.identifier);
+    const selectedTrial = this.trials().find((t) => t.id === selectedId);
+    return !!selectedTrial?.identifier;
   });
 
   async onSubmit(): Promise<void> {
@@ -799,16 +800,14 @@ export class MarkerFormComponent implements OnInit {
       metadata,
     };
 
-    const trialIds = this.selectedTrialIds();
-
     try {
       const existing = this.marker();
 
       if (existing) {
+        // Re-anchoring to a different trial on edit is deferred to Stage 3.
         await this.markerService.update(existing.id, payload);
-        await this.markerService.updateAssignments(existing.id, trialIds);
       } else {
-        await this.markerService.create(spaceId, payload, trialIds);
+        await this.markerService.create(spaceId, payload, this.selectedTrialId());
       }
 
       this.saved.emit();

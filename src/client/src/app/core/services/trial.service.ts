@@ -1,43 +1,21 @@
 import { inject, Injectable } from '@angular/core';
 
-import { Marker } from '../models/marker.model';
+import { EVENTS_SELECT, mapEventToMarker } from '../models/event-to-marker';
 import { Trial } from '../models/trial.model';
 import { DeleteCountBreakdown } from '../../shared/utils/confirm-delete';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
+
+// Re-exported so existing importers (and the service's own spec) keep a stable
+// path; the canonical definitions live in core/models/event-to-marker.
+export { EVENTS_SELECT, mapEventToMarker } from '../models/event-to-marker';
 
 export const TRIAL_SELECT = `
   *,
   assets!trials_asset_id_fkey(id, name, companies(id, name, logo_url))
 `;
 
-const EVENTS_SELECT = `*, event_types(*, event_type_categories(*))`;
-
 const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
-
-/**
- * Maps a raw events-table row to the Marker interface shape.
- * The only renames are:
- *   event_type_id  -> marker_type_id
- *   event_types    -> marker_types (with event_type_categories -> marker_categories inside)
- * All other column names are already 1:1 with Marker fields.
- * Exported as a pure function so it can be unit-tested without Supabase.
- */
-export function mapEventToMarker(event: Record<string, unknown>): Marker {
-  const { event_type_id, event_types, ...rest } = event;
-  const eventTypes = (event_types ?? null) as Record<string, unknown> | null;
-  return {
-    ...rest,
-    marker_type_id: event_type_id,
-    marker_types: eventTypes
-      ? {
-          ...eventTypes,
-          marker_categories:
-            (eventTypes['event_type_categories'] as Record<string, unknown> | null) ?? null,
-        }
-      : null,
-  } as unknown as Marker;
-}
 
 /** Attach a pre-fetched events array to a trial row as trial.markers[]. */
 function normalizeTrial(raw: Record<string, unknown>, events: Record<string, unknown>[]): Trial {
