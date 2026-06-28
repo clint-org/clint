@@ -266,6 +266,19 @@ flowchart TB
   carrying briefs + events.
 - **Asset rows with a collapse toggle and altitude-driven significance**: the
   collapse/comparison view, reached directly in v1.
+- **Updating the data-producing paths that write markers/events today**, so they
+  emit the unified Event model: the **`/seed-demo`** seed/demo data, and the **AI
+  import / extraction** pipeline (`commit_source_import` and the extract worker)
+  which currently creates markers and events separately.
+- **Migrating the existing test suites** (unit / integration / e2e) that
+  reference markers, `marker_assignments`, `marker_types`, the `events` table,
+  `primary_intelligence`, the affected RPCs, or the renamed routes/labels, so the
+  full suite and the drift gates stay green. This is in scope, not cleanup.
+- **Updating user-facing reference material**: the in-app help pages, the runbook
+  feature docs, and a single authoritative nomenclature/glossary, to the Event /
+  Catalyst / Marker / Intelligence / Activity model.
+- **Updating the internal demo deck** `src/client/public/internal/stout-intro.html`
+  (copy + screenshots) for next week's demo.
 
 **Deferred (behind the seam):**
 
@@ -293,6 +306,133 @@ flowchart TB
 | **Timeline** | Catalysts (trial-anchored on trial rows; asset-anchored on asset lanes), phase bars derived from clinical events. Altitude toggle. |
 | **Activity** (renamed from Events page) | Detected record changes (CT.gov diffs, event edit history). High-volume, low-signal. |
 | **Profile pages** | Per-entity events + the entity's intelligence; trial pages keep an Activity (detected changes) card. |
+
+## Testing and verification
+
+Because this replaces a load-bearing part of the system late in the cycle,
+testing is a first-class deliverable, not a trailing phase. Two rules:
+
+1. Tests are paired with each behavior-bearing task, written with (ideally
+   before) the implementation. There is no separate "tests" phase at the end.
+2. The build is not "done" until the acceptance matrix below is green at all
+   three layers, the **full pre-existing suite and the drift gates are also
+   green** (the merge/rename will break many existing specs; migrating them is in
+   scope), and the timeline surfaces are visually confirmed with screenshots.
+
+### Three layers
+
+- **Unit (Vitest, `npm run test:units`):** the pure logic. `showsOnTimeline`,
+  `effectiveVisibility`, significance defaulting + override, altitude threshold
+  gating, anchor roll-up, phase-bar derivation from clinical events,
+  fuzzy-date / range rendering math, the placement resolver (inline v1).
+- **Integration (local Supabase, service-role):** the `events` table +
+  `event_types`, the backfill from markers + events, event create / edit RPCs,
+  RLS / grants, the Activity wiring (event change goes to Activity, not the
+  Intelligence feed), and the feed RPCs (Intelligence feed = briefs + events).
+- **E2E + visual (Playwright + Chrome MCP against cloud dev, `dev.clintapp.com`):**
+  each surface rendered and screenshotted on the deployed dev environment. Unit
+  and integration stay local / CI; only the visual-confirmation layer targets dev.
+
+### Acceptance matrix (behaviors to prove)
+
+| # | Scenario | Expected | Layers |
+| --- | --- | --- | --- |
+| 1 | Clinical event (Topline Data) anchored to a trial | Catalyst glyph on the trial row; also in the Intelligence feed | unit + e2e |
+| 2 | High-significance commercial event (Distribution) anchored to an asset | Catalyst on the asset lane; in the feed | e2e |
+| 3 | Low-significance leadership event anchored to a company | Feed only, no glyph; after pin, glyph on the company band | unit + e2e |
+| 4 | Fuzzy projected event (~Q4 2026), `projection = primary` | Period label + projected styling on the timeline | unit + e2e |
+| 5 | An event is edited | Change appears in Activity; does NOT appear in the Intelligence feed | integration + e2e |
+| 6 | An Intelligence brief that cites an event | Brief in the Intelligence feed; citation resolves | integration + e2e |
+| 7 | Trial altitude (default) | Trial rows + phase bars render exactly as today (regression) | e2e |
+| 8 | Asset altitude (collapsed) | Asset row shows lead-phase chip + headline catalysts; sub-threshold child events are hidden | unit (roll-up) + e2e |
+| 9 | Asset expanded | Asset lane + nested trial rows at full significance | e2e |
+| 10 | Comparison view | Two asset rows stacked; approval-to-distribution gap is visible | e2e (visual) |
+| 11 | Phase-bar derivation post-merge | Bar derives from clinical events (regression) | unit + integration |
+| 12 | `visibility = hidden` on a high-significance event | Not a catalyst on any altitude | unit |
+
+(If company altitude is pulled into v1, add: company altitude renders company
+rows with company-anchored catalysts.)
+
+### Fixture
+
+A deterministic seed (an "Events model QA" space) carrying every matrix
+scenario: a trial with clinical events; an asset with an approval and a
+high-significance commercial (distribution) event; a company with a
+low-significance leadership event; a fuzzy-dated projected event; an Intelligence
+brief citing an event; and a second company / asset so the comparison view has
+two stacked rows. The same fixture seeds local (for unit/integration) and a dev
+QA space (for visual confirmation), so screenshots are stable across runs.
+
+### Visual confirmation artifact
+
+Deploy to cloud dev, then drive `dev.clintapp.com` with Chrome MCP / Playwright,
+capture a screenshot per scenario at each altitude (trial / asset collapsed /
+asset expanded / comparison stack), and produce a verification report
+(screenshots + pass/fail per matrix row) for review when you return.
+
+### Known harness constraints (designed around)
+
+- Pre-push e2e is flaky on cold start; CI is canonical. Verify the real suites,
+  push with `--no-verify` if the hook flakes.
+- The local Supabase DB is shared across worktrees; apply schema via `db reset`
+  and run integration specs in isolation so a parallel reset cannot wipe
+  functions mid-run.
+- Cloud-dev visual confirmation must clear Cloudflare Turnstile and use an
+  authenticated session: chrome-channel + automation-flag fingerprint, plus a
+  persistent profile logged into dev once. Google OAuth cannot be automated and
+  +aliases are rejected, so a pre-authenticated dev profile is a prerequisite for
+  the unattended run.
+
+## Blast radius (the execution checklist)
+
+Every path that writes or reads markers/events today has to move to the Event
+model. This inventory is the checklist for the unattended build; nothing here is
+optional for v1.
+
+**Producers (write markers/events):**
+
+- `create_marker` and analyst manual creation -> a unified Event create RPC.
+- CT.gov sync (`_seed_ctgov_markers`, `_sync_ctgov_trial`) -> emit clinical Events.
+- **AI import / extraction**: `commit_source_import` and the extract worker, which
+  today create markers and events on separate paths, collapse onto the Event
+  create path (per the shared-RPC rule, no inline inserts).
+- **`/seed-demo` and `supabase/seed.sql`**: demo/seed data must produce Events
+  spanning the new surfaces (clinical + commercial + leadership + a brief).
+
+**Consumers (read markers/events):**
+
+- Timeline: dashboard grid, phase-bar, marker component, altitude rendering.
+- Catalyst model + catalyst detail.
+- Activity: `get_activity_feed`, the what-changed widget, the trial Activity card.
+- Intelligence feed + `primary_intelligence_links` (a marker is a link target today).
+- Landscape views (bullseye, heatmap) that read phase from markers.
+- Engagement-landing widgets (hero catalyst band, next 90 days).
+- Export (PNG / pptx) of the timeline.
+
+**Change log:** `marker_changes` -> the Event change log; the analyst-source rows
+of `trial_change_events` keep flowing to Activity.
+
+**Drift gates:** `features:check` (map new/renamed RPCs to capabilities),
+`migrations:check-redefs`, `grants:check` (new tables start dark; add matrix rows
++ in-migration grants), the Supabase advisors, and `npm run docs:arch` to
+regenerate the runbook auto-gen blocks.
+
+**Docs and demo (in scope):**
+
+- **In-app help pages** (`src/client/src/app/features/help/`): markers-help,
+  phases-help, and any FAQ describing markers / events / primary intelligence move
+  to the new vocabulary. Extend the `runbook-review-guard` `helpRules` map for any
+  new page.
+- **Runbook** (`docs/runbook/features/`): the markers, events, and primary
+  intelligence feature docs, plus a single authoritative **glossary** defining
+  Event / Catalyst / Marker / Intelligence / Activity and their relationships, so
+  the definitions have one home and the help pages and deck can point at it.
+- **Internal demo deck** (`src/client/public/internal/stout-intro.html`): update
+  copy to the new vocabulary and refresh screenshots. Edit the deployed copy in
+  `src/client/public/internal/` directly (no `docs/notes` duplicate). Caveat:
+  because the feature is verified on cloud dev (not prod), deck screenshots of the
+  new timeline / altitude come from dev, so the deck previews functionality not
+  yet in prod for next week's demo.
 
 ## Data migration and sequencing
 
