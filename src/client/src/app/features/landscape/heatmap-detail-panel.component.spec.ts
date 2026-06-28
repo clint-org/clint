@@ -119,7 +119,7 @@ describe('heatmap detail panel PI aggregation', () => {
 describe('heatmap detail panel PI section wiring', () => {
   it('renders the shared PiDetailSection with the count label', () => {
     expect(src).toContain('<app-pi-detail-section');
-    expect(src).toContain('[references]="piReferences()"');
+    expect(src).toContain('[references]="allPiReferences()"');
     expect(src).toContain('[countLabel]="piCountLabel()"');
     expect(src).toContain('assets have intelligence');
     expect(src).toContain('PiDetailSectionComponent');
