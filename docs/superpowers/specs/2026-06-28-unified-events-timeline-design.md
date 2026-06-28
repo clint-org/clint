@@ -302,6 +302,9 @@ flowchart TB
 - Time-normalized overlay (aligning assets at "approval = t0") and first-class
   span objects. v1 comparison is "collapse to asset altitude and read the gaps in
   stacked rows," not a normalized overlay.
+- The drawn duration measure (a bracket + computed interval label between two
+  events on a row, e.g. approval to distribution). v1 stacked rows already make
+  same-axis gaps visually comparable; the measure annotation is a later add.
 - Scenario templates / overlays (C).
 
 ## Locked decisions
@@ -541,6 +544,25 @@ The build deploys to dev in **stages**, not one final merge, so each stage can b
 Chrome-tested on `dev.clintapp.com` before the next. A pre-authenticated dev
 profile is left available for the unattended screenshot pass. The full deck
 rework (`stout-intro.html`) is the **final** stage.
+
+## Deferred follow-ups (log at end of implementation)
+
+These are consciously out of v1. The final implementation step writes this list
+to a follow-ups note (`docs/notes/event-model-deferred-followups.md`) so nothing
+is lost, with a one-line rationale and the seam each one builds on:
+
+- **Placement table** (`event_placements`): the one-fact-many-places layer the v1
+  resolver is designed for.
+- **True multi-trial / subset-of-trials anchoring** (rides on placement; v1 is
+  single anchor + asset lane).
+- **Per-view pinning** (rides on placement; v1 pin/hide is global on the event).
+- **Drawn duration measure** (bracket + computed interval label between two events
+  on a row, e.g. approval to distribution).
+- **Time-normalized overlay** (align assets at "approval = t0" and superimpose).
+- **First-class span objects** (stored, queryable durations comparable across
+  assets and scenarios).
+- **Scenario templates / overlays** (goal C): a reusable set of typed placements
+  with relative offsets stamped onto any asset.
 
 ## Goals traceability
 
