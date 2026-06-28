@@ -14,4 +14,8 @@ export interface Company {
   // created by an AI import. Null for manually created entities.
   source_doc_id: string | null;
   assets?: Asset[];
+  // company owns published primary intelligence; intelligence_headline carries the
+  // lead brief's headline (fallback most-recent published). See landscape multilevel intel.
+  has_intelligence?: boolean;
+  intelligence_headline?: string | null;
 }

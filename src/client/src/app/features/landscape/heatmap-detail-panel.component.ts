@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { Tooltip } from 'primeng/tooltip';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
 import {
   HeatmapBubble,
@@ -14,7 +22,11 @@ import {
   CompetitorRaceGroup,
   DetailPanelCompetitorRaceComponent,
 } from '../../shared/components/detail-panel-competitor-race.component';
-import { PiReference } from '../../core/models/primary-intelligence.model';
+import {
+  IntelligenceEntityType,
+  PiReference,
+} from '../../core/models/primary-intelligence.model';
+import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
@@ -28,20 +40,6 @@ const GROUPING_LABEL: Record<HeatmapGrouping, string> = {
   roa: 'ROA group',
 };
 
-/**
- * Bullseye destination per heatmap grouping. Mirrors
- * `heatmap-view.bullseyeSegment()`. The `moa+indication` row
- * intentionally drops MOA and lands on Indication; the tooltip names
- * the resolved dimension so the user can predict the navigation.
- */
-const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
-  moa: 'mechanism of action',
-  indication: 'indication',
-  'moa+indication': 'indication',
-  company: 'company',
-  roa: 'route of administration',
-};
-
 @Component({
   selector: 'app-heatmap-detail-panel',
   imports: [
@@ -50,7 +48,6 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
     DetailPanelSectionComponent,
     DetailPanelShellComponent,
     PiDetailSectionComponent,
-    Tooltip,
   ],
   template: `
     <app-detail-panel-shell
@@ -110,10 +107,10 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
           </app-detail-panel-section>
         }
 
-        @if (piReferences().length > 0) {
+        @if (allPiReferences().length > 0) {
           <app-detail-panel-section label="Primary intelligence" [piMark]="true">
             <app-pi-detail-section
-              [references]="piReferences()"
+              [references]="allPiReferences()"
               [countLabel]="piCountLabel()"
               (referenceClick)="onPiReferenceClick($event)"
             />
@@ -128,21 +125,6 @@ const BULLSEYE_TARGET_LABEL: Record<HeatmapGrouping, string> = {
             {{ totalBubbles() === 1 ? 'group' : 'groups' }} in the matrix
           </p>
         </app-detail-panel-empty-state>
-      }
-
-      @if (bubble()) {
-        <div footer class="border-t border-slate-100 px-5 py-3">
-          <button
-            type="button"
-            class="inline-flex w-full items-center justify-center gap-1.5 rounded-sm border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            [pTooltip]="openInBullseyeTooltip()"
-            tooltipPosition="top"
-            (click)="openInBullseye.emit()"
-          >
-            Open in bullseye
-            <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
-          </button>
-        </div>
       }
     </app-detail-panel-shell>
   `,
@@ -160,15 +142,11 @@ export class HeatmapDetailPanelComponent {
   readonly spaceId = input<string | null>(null);
 
   readonly clearSelection = output<void>();
-  readonly openAsset = output<string>();
-  readonly openInBullseye = output<void>();
+  /** Routes to the PI-bearing entity's profile (where its intelligence lives). */
+  readonly openIntelligence = output<{ entityType: IntelligenceEntityType; entityId: string }>();
 
   readonly headerLabel = computed(() =>
     this.bubble() ? GROUPING_LABEL[this.grouping()] : 'Heatmap · overview'
-  );
-
-  readonly openInBullseyeTooltip = computed(
-    () => `Open in Bullseye, grouped by ${BULLSEYE_TARGET_LABEL[this.grouping()]}`
   );
 
   readonly fullLabel = computed(() => {
@@ -230,18 +208,108 @@ export class HeatmapDetailPanelComponent {
     return [...byCompany.values()];
   });
 
-  /** PI-bearing assets in this group, mapped to the shared reference shape. */
-  protected readonly piReferences = computed<PiReference[]>(() =>
-    (this.bubble()?.products ?? [])
-      .filter((p) => p.has_intelligence)
-      .map((p) => ({
-        id: p.id,
-        entity_type: 'product' as const,
-        entity_id: p.id,
-        entity_name: p.name,
-        headline: p.name,
-      }))
-  );
+  private readonly intelligenceService = inject(PrimaryIntelligenceService);
+
+  /**
+   * Real PI references for the group's PI-bearing assets. Each reference carries
+   * the true entity (a trial, the asset, or a company) the intelligence is
+   * attached to, so a click routes to the page that actually holds the PI --
+   * not always the asset. Populated by the fetch effect below; empty until the
+   * per-asset notes resolve.
+   */
+  protected readonly piReferences = signal<PiReference[]>([]);
+
+  /**
+   * Company-level intelligence references for a company-grouped bubble.
+   * Populated only when `group_keys.company_id` is present (i.e. grouping=company).
+   * Each reference has entity_type='company' and entity_id=company_id so clicks
+   * navigate to the company's intelligence profile.
+   */
+  protected readonly companyIntelligenceRefs = signal<PiReference[]>([]);
+
+  /**
+   * Per-asset/trial PI notes plus any company-level briefs, in one list.
+   * Company briefs carry entity_type 'company' so they render with a "Company"
+   * tag in the same section rather than a separate one.
+   */
+  protected readonly allPiReferences = computed<PiReference[]>(() => [
+    ...this.piReferences(),
+    ...this.companyIntelligenceRefs(),
+  ]);
+
+  constructor() {
+    // When the selected bubble (or its space) changes, load the real PI notes
+    // for every PI-bearing asset in the group and aggregate them, deduped by
+    // PI id. Mirrors the bullseye panel, which fetches the same notes per
+    // selected asset; here we fan out across the group's assets. A bubble-
+    // identity guard discards a stale response if the selection moved on.
+    effect(() => {
+      const b = this.bubble();
+      const spaceId = this.spaceId();
+      this.piReferences.set([]);
+      if (!b || !spaceId) return;
+      const assetIds = b.products.filter((p) => p.has_intelligence).map((p) => p.id);
+      if (assetIds.length === 0) return;
+      void (async () => {
+        try {
+          const perAsset = await Promise.all(
+            assetIds.map((id) => this.intelligenceService.getIntelligenceNotesForAsset(spaceId, id))
+          );
+          if (this.bubble() !== b) return;
+          const byId = new Map<string, PiReference>();
+          for (const notes of perAsset) {
+            for (const n of notes) {
+              byId.set(n.id, {
+                id: n.id,
+                entity_type: n.entity_type,
+                entity_id: n.entity_id,
+                entity_name: n.entity_name,
+                headline: n.headline,
+              });
+            }
+          }
+          this.piReferences.set([...byId.values()]);
+        } catch {
+          if (this.bubble() === b) this.piReferences.set([]);
+        }
+      })();
+    });
+
+    // When the bubble represents a company (group_keys.company_id present),
+    // also fetch company-level intelligence. This is separate from the per-asset
+    // PI above: a company may own briefs that are not tied to any single asset.
+    effect(() => {
+      const b = this.bubble();
+      const spaceId = this.spaceId();
+      this.companyIntelligenceRefs.set([]);
+      if (!b || !spaceId) return;
+      const companyId = b.group_keys['company_id'];
+      if (!companyId) return;
+      const companyName = b.group_keys['company_name'] ?? null;
+      void (async () => {
+        try {
+          const briefs = await this.intelligenceService.listIntelligenceForEntity(
+            spaceId,
+            'company',
+            companyId
+          );
+          if (this.bubble() !== b) return;
+          const refs: PiReference[] = briefs
+            .filter((br) => br.published !== null)
+            .map((br) => ({
+              id: br.published!.record.id,
+              entity_type: 'company' as IntelligenceEntityType,
+              entity_id: companyId,
+              entity_name: companyName,
+              headline: br.published!.record.headline,
+            }));
+          this.companyIntelligenceRefs.set(refs);
+        } catch {
+          if (this.bubble() === b) this.companyIntelligenceRefs.set([]);
+        }
+      })();
+    });
+  }
 
   /** "N of M assets have intelligence" summary for the PI section. */
   protected readonly piCountLabel = computed<string | null>(() => {
@@ -253,7 +321,10 @@ export class HeatmapDetailPanelComponent {
   });
 
   protected onPiReferenceClick(ref: PiReference): void {
-    this.openAsset.emit(ref.entity_id);
+    this.openIntelligence.emit({
+      entityType: ref.entity_type as IntelligenceEntityType,
+      entityId: ref.entity_id,
+    });
   }
 
   protected phaseColor(phase: RingPhase): string {

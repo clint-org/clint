@@ -499,7 +499,7 @@ export class EventFormComponent implements OnInit {
       dateTo: null,
       entityLevel: null,
       entityId: null,
-      categoryIds: [],
+      categoryNames: [],
       tags: [],
       priority: null,
       sourceType: 'event',

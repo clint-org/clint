@@ -107,10 +107,13 @@ const baseFilters = {
   dateTo: null,
   entityLevel: null,
   entityId: null,
-  categoryIds: [],
+  categoryNames: [],
   tags: [],
   priority: null,
   sourceType: null,
+  search: null,
+  sortField: null,
+  sortDir: null,
 };
 
 describe('EventService.getEventsPageData', () => {
@@ -127,6 +130,78 @@ describe('EventService.getEventsPageData', () => {
     expect(rpcName).toBe('get_events_page_data');
     expect(params).toMatchObject({ spaceId: 'space-1' });
     expect(opts.tags).toEqual(['space:space-1:events']);
+  });
+
+  it('maps category names to p_category_names (never the uuid p_category_ids)', async () => {
+    // Run the real fetch closure so we assert the actual RPC params.
+    const get = vi.fn((_name, _params, opts) => opts.fetch());
+    const rpc = vi.fn().mockReturnValue(makeRpcResult({ items: [], total: 0 }));
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get, invalidateTags: vi.fn() }
+    );
+
+    await service.getEventsPageData('space-1', {
+      ...baseFilters,
+      categoryNames: ['Regulatory', 'Catalyst lifecycle'],
+    });
+
+    const [, params] = rpc.mock.calls[0];
+    expect(params.p_category_names).toEqual(['Regulatory', 'Catalyst lifecycle']);
+    expect(params).not.toHaveProperty('p_category_ids');
+  });
+
+  it('sends null p_category_names when no category filter is set', async () => {
+    const get = vi.fn((_name, _params, opts) => opts.fetch());
+    const rpc = vi.fn().mockReturnValue(makeRpcResult({ items: [], total: 0 }));
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get, invalidateTags: vi.fn() }
+    );
+
+    await service.getEventsPageData('space-1', baseFilters);
+
+    const [, params] = rpc.mock.calls[0];
+    expect(params.p_category_names).toBeNull();
+  });
+
+  it('maps the server overview aggregates (snake_case) onto the result', async () => {
+    const get = vi.fn((_name, _params, opts) => opts.fetch());
+    const rpc = vi.fn().mockReturnValue(
+      makeRpcResult({
+        items: [{ id: 'e1' }],
+        total: 27,
+        high_priority_count: 4,
+        distribution: [{ name: 'Approval', count: 27 }],
+        recent: [{ id: 'r1' }],
+      })
+    );
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get, invalidateTags: vi.fn() }
+    );
+
+    const result = await service.getEventsPageData('space-1', baseFilters);
+
+    expect(result.total).toBe(27);
+    expect(result.highPriorityCount).toBe(4);
+    expect(result.distribution).toEqual([{ name: 'Approval', count: 27 }]);
+    expect(result.recent).toEqual([{ id: 'r1' }]);
+  });
+
+  it('defaults the overview aggregates when the RPC omits them', async () => {
+    const get = vi.fn((_name, _params, opts) => opts.fetch());
+    const rpc = vi.fn().mockReturnValue(makeRpcResult({ items: [], total: 0 }));
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get, invalidateTags: vi.fn() }
+    );
+
+    const result = await service.getEventsPageData('space-1', baseFilters);
+
+    expect(result.highPriorityCount).toBe(0);
+    expect(result.distribution).toEqual([]);
+    expect(result.recent).toEqual([]);
   });
 });
 

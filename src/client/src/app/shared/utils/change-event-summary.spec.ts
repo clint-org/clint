@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ChangeEvent } from '../../core/models/change-event.model';
-import { summaryFor, summarySegmentsFor } from './change-event-summary';
+import type { FeedItem } from '../../core/models/event.model';
+import {
+  feedItemToChangeEvent,
+  flattenSummarySegments,
+  summaryFor,
+  summarySegmentsFor,
+} from './change-event-summary';
 
 function baseEvent(overrides: Partial<ChangeEvent>): ChangeEvent {
   return {
@@ -341,5 +347,82 @@ describe('trial_withdrawn and trial_restored summaries', () => {
     const text = joinText(result.segments);
     expect(text).toBe('Restored to CT.gov');
     expect(text).not.toContain('undefined');
+  });
+});
+
+function detectedFeedItem(overrides: Partial<FeedItem>): FeedItem {
+  return {
+    source_type: 'detected',
+    id: 'ce-1',
+    title: 'Marker Added',
+    feed_ts: '2026-06-27T15:35:00Z',
+    event_date: '2025-09-15',
+    category_name: 'Catalyst lifecycle',
+    category_id: null,
+    priority: null,
+    entity_level: 'trial',
+    entity_name: 'VANQUISH-1',
+    entity_id: 'trial-1',
+    company_name: 'Viking Therapeutics',
+    company_id: 'co-1',
+    asset_id: 'asset-1',
+    asset_name: 'VK2735',
+    trial_id: 'trial-1',
+    trial_name: 'VANQUISH-1',
+    tags: [],
+    has_thread: false,
+    thread_id: null,
+    description: null,
+    source_url: null,
+    change_event_type: 'marker_added',
+    change_payload: {},
+    change_source: 'ctgov',
+    has_annotation: false,
+    observed_at: null,
+    company_logo_url: null,
+    is_projected: null,
+    marker_type_shape: null,
+    marker_type_color: null,
+    marker_type_inner_mark: null,
+    category_color: null,
+    ...overrides,
+  };
+}
+
+describe('feedItemToChangeEvent', () => {
+  it('reads marker context out of the change payload so marker_added composes a real title', () => {
+    const item = detectedFeedItem({
+      change_payload: {
+        marker_title: 'FDA Accepts VK2735 NDA for Review',
+        marker_type_name: 'Acceptance',
+        event_date: '2025-09-15',
+      },
+    });
+    const summary = flattenSummarySegments(summarySegmentsFor(feedItemToChangeEvent(item)).segments);
+    // The raw row title was the generic "Marker Added"; the composed summary
+    // surfaces the actual marker that was added.
+    expect(item.title).toBe('Marker Added');
+    expect(summary).toContain('Marker added: FDA Accepts VK2735 NDA for Review');
+    expect(summary).toContain('Acceptance');
+  });
+
+  it('falls back to a bare "Marker added" when the payload carries no marker title', () => {
+    const summary = flattenSummarySegments(
+      summarySegmentsFor(feedItemToChangeEvent(detectedFeedItem({}))).segments,
+    );
+    expect(summary).toBe('Marker added');
+  });
+});
+
+describe('flattenSummarySegments', () => {
+  it('joins segment text and renders the arrow segment as an arrow glyph', () => {
+    expect(
+      flattenSummarySegments([
+        { kind: 'plain', text: 'Status: ' },
+        { kind: 'old', text: 'Recruiting' },
+        { kind: 'arrow' },
+        { kind: 'new', text: 'Completed' },
+      ]),
+    ).toBe('Status: Recruiting→Completed');
   });
 });

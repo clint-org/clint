@@ -27,7 +27,7 @@ function dateRange(f: FilterValue | undefined): { from: string | null; to: strin
  * search + entity scope + space id to the server query. Keeping this pure and
  * unit-tested lets the component's reactive effect stay a thin shell. Mirrors
  * the column wiring in events-page.component: source_type/priority are single
- * selects, category_name is a multi-id select, feed_ts is a date range, and
+ * selects, category_name is a multi-name select, feed_ts is a date range, and
  * the global search collapses empty strings to null.
  */
 export function buildServerQuery(
@@ -36,7 +36,7 @@ export function buildServerQuery(
   gridPage: { first: number; rows: number },
   search: string,
   scope: EntityScope | null,
-  spaceId: string,
+  spaceId: string
 ): ServerQuery {
   const sourceVals = selectValues(gridFilters['source_type']);
   const priorityVals = selectValues(gridFilters['priority']);
@@ -51,7 +51,7 @@ export function buildServerQuery(
       dateTo: to,
       entityLevel: scope?.entityLevel ?? null,
       entityId: scope?.entityId ?? null,
-      categoryIds: categoryVals.map((v) => String(v)),
+      categoryNames: categoryVals.map((v) => String(v)),
       tags: [],
       priority: (priorityVals[0] as EventPriority | undefined) ?? null,
       sourceType: (sourceVals[0] as EventsPageFilters['sourceType'] | undefined) ?? null,

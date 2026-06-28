@@ -1,6 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 
-import { AppEvent, EventDetail, EventsPageFilters, FeedItem } from '../models/event.model';
+import {
+  AppEvent,
+  EventCategoryDistribution,
+  EventDetail,
+  EventsPageData,
+  EventsPageFilters,
+  FeedItem,
+} from '../models/event.model';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -16,7 +23,7 @@ export class EventService {
     filters: EventsPageFilters,
     limit = 50,
     offset = 0
-  ): Promise<{ items: FeedItem[]; total: number }> {
+  ): Promise<EventsPageData> {
     return this.cache.get(
       'get_events_page_data',
       { spaceId, filters, limit, offset },
@@ -31,7 +38,7 @@ export class EventService {
               p_date_to: filters.dateTo,
               p_entity_level: filters.entityLevel,
               p_entity_id: filters.entityId,
-              p_category_ids: filters.categoryIds.length > 0 ? filters.categoryIds : null,
+              p_category_names: filters.categoryNames.length > 0 ? filters.categoryNames : null,
               p_tags: filters.tags.length > 0 ? filters.tags : null,
               p_priority: filters.priority,
               p_source_type: filters.sourceType,
@@ -42,8 +49,22 @@ export class EventService {
               p_sort_dir: filters.sortDir ?? 'desc',
             })
             .throwOnError();
-          const result = data as { items: FeedItem[]; total: number } | null;
-          return { items: result?.items ?? [], total: result?.total ?? 0 };
+          // The overview aggregates (distribution / high_priority_count /
+          // recent) summarize the full filtered set; total mirrors that count.
+          const result = data as {
+            items: FeedItem[];
+            total: number;
+            high_priority_count: number;
+            distribution: EventCategoryDistribution[];
+            recent: FeedItem[];
+          } | null;
+          return {
+            items: result?.items ?? [],
+            total: result?.total ?? 0,
+            highPriorityCount: result?.high_priority_count ?? 0,
+            distribution: result?.distribution ?? [],
+            recent: result?.recent ?? [],
+          };
         },
       }
     );
