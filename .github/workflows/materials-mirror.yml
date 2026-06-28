@@ -4,8 +4,11 @@ name: Mirror materials buckets
 # off-cloud copy. Detection signal for the materials durability domain in
 # docs/runbook/14-disaster-recovery.md.
 on:
-  schedule:
-    - cron: "30 9 * * *"
+  # Cron disabled until WS1 Phase 6 provisions the B2 buckets and the
+  # R2_MATERIALS_*/B2_MATERIALS_* secrets; until then a scheduled run would only
+  # fail and open noise issues. Re-enable this cron as the last Phase 6 step.
+  # schedule:
+  #   - cron: "30 9 * * *"
   workflow_dispatch:
 
 permissions:
