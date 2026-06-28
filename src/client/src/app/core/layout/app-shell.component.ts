@@ -494,10 +494,6 @@ export class AppShellComponent implements OnInit {
   readonly pageType = computed<PageType>(() => {
     const route = this.activeSpaceRoute();
     if (!this.spaceId()) return 'blank';
-    // Trial detail (check before profiles)
-    if (route.match(/^profiles\/trials\/[^/]+$/)) {
-      return 'detail';
-    }
     // Tab-based sections: landscape (incl. engagement-landing home), intelligence, profiles
     if (
       route === '' ||
@@ -648,12 +644,8 @@ export class AppShellComponent implements OnInit {
     return titleMap[route] ?? this.topbarState.title();
   });
 
-  // Detail page metadata
-  readonly topbarBackLabel = computed(() => {
-    const route = this.activeSpaceRoute();
-    if (route.match(/^profiles\/trials\/[^/]+$/)) return 'Trials';
-    return '';
-  });
+  // Detail page metadata (no detail-topbar routes currently defined)
+  readonly topbarBackLabel = computed(() => '');
 
   constructor() {
     // Keep the space picker in sync. The list is reloaded both on tenant
@@ -815,10 +807,7 @@ export class AppShellComponent implements OnInit {
   }
 
   onBackClick(): void {
-    const route = this.activeSpaceRoute();
-    if (route.match(/^profiles\/trials\/[^/]+$/)) {
-      this.navigateToSpaceRoute('profiles/trials');
-    }
+    // No detail-topbar routes currently defined; handler retained for future use.
   }
 
   // --- Tenant / Space ---
