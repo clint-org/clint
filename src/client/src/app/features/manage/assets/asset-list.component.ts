@@ -2,9 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
-  OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
@@ -29,8 +27,8 @@ import { HighlightPipe } from '../../../shared/pipes/highlight.pipe';
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
-import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import {
   ExportButtonComponent,
   type ExportAction,
@@ -63,11 +61,12 @@ interface AssetRow {
     TableSkeletonBodyComponent,
     HighlightPipe,
     ExportButtonComponent,
+    SectionHeaderComponent,
   ],
   templateUrl: './asset-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AssetListComponent implements OnInit, OnDestroy {
+export class AssetListComponent implements OnInit {
   readonly assets = signal<Asset[]>([]);
   readonly companies = signal<Company[]>([]);
   readonly trialCounts = signal<Record<string, number>>({});
@@ -83,25 +82,9 @@ export class AssetListComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
-  private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
   private readonly excel = inject(GridExcelExportService);
   private readonly exportNaming = inject(ExportNamingService);
-
-  private readonly topbarActionsEffect = effect(() => {
-    if (this.spaceRole.canEdit()) {
-      this.topbarState.actions.set([
-        {
-          label: 'Add asset',
-          icon: 'fa-solid fa-plus',
-          text: true,
-          callback: () => this.openCreateModal(),
-        },
-      ]);
-    } else {
-      this.topbarState.actions.set([]);
-    }
-  });
 
   spaceId = '';
   tenantId = '';
@@ -155,10 +138,6 @@ export class AssetListComponent implements OnInit, OnDestroy {
     },
   ];
 
-  private readonly countEffect = effect(() => {
-    this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
-  });
-
   async ngOnInit(): Promise<void> {
     this.spaceId = this.route.snapshot.paramMap.get('spaceId')!;
     this.tenantId = this.route.snapshot.paramMap.get('tenantId')!;
@@ -175,10 +154,6 @@ export class AssetListComponent implements OnInit, OnDestroy {
         this.grid.onGlobalSearchInput(target.name);
       }
     }
-  }
-
-  ngOnDestroy(): void {
-    this.topbarState.clear();
   }
 
   rowMenu(row: AssetRow): MenuItem[] {

@@ -4,12 +4,12 @@ import {
   computed,
   effect,
   inject,
-  OnDestroy,
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
@@ -34,13 +34,13 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 import { AssetService } from '../../../core/services/asset.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
-import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { Asset } from '../../../core/models/asset.model';
 import {
   IntelligenceDetailBundle,
   IntelligenceHistoryPayload,
 } from '../../../core/models/primary-intelligence.model';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
+import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
 import { AssetFormComponent } from './asset-form.component';
 import { TrialCreateDialogComponent } from '../trials/trial-create-dialog.component';
@@ -51,6 +51,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
   selector: 'app-asset-detail',
   imports: [
     BrandLogoComponent,
+    ButtonModule,
     RouterLink,
     ConfirmDialogModule,
     Dialog,
@@ -66,6 +67,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     PiMarkComponent,
     EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
+    RowActionsComponent,
     SectionCardComponent,
     ReferencedInPanelComponent,
     AssetFormComponent,
@@ -77,7 +79,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
   templateUrl: './asset-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AssetDetailComponent implements OnDestroy {
+export class AssetDetailComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private assetService = inject(AssetService);
@@ -85,7 +87,6 @@ export class AssetDetailComponent implements OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
-  private readonly topbarState = inject(TopbarStateService);
 
   // Route paramMap as a signal so assetId reacts to in-place navigation
   // when clicking a LINKED product chip on an asset detail page (same route
@@ -117,35 +118,18 @@ export class AssetDetailComponent implements OnDestroy {
   readonly editingAsset = signal(false);
   protected readonly creatingTrial = signal(false);
 
-  private readonly topbarActionsEffect = effect(() => {
+  // Entity overflow menu (Edit details / Delete), rendered in the content
+  // section-header instead of the topbar. Empty for viewers.
+  protected readonly entityMenu = computed<MenuItem[]>(() => {
     const asset = this.asset();
-    if (!asset || !this.spaceRole.canEdit()) {
-      this.topbarState.actions.set([]);
-      this.topbarState.overflowActions.set([]);
-      return;
-    }
-    // Primary action: add a trial for this asset (asset pre-locked in the dialog).
-    this.topbarState.actions.set([
-      {
-        label: 'Add trial',
-        icon: 'fa-solid fa-plus',
-        text: true,
-        callback: () => this.creatingTrial.set(true),
-      },
-    ]);
-    this.topbarState.overflowActions.set(
-      buildEntityActionMenu({
-        canEdit: true,
-        editLabel: 'Edit details',
-        onEdit: () => this.editingAsset.set(true),
-        onDelete: () => void this.deleteAsset(asset),
-      })
-    );
+    if (!asset || !this.spaceRole.canEdit()) return [];
+    return buildEntityActionMenu({
+      canEdit: true,
+      editLabel: 'Edit details',
+      onEdit: () => this.editingAsset.set(true),
+      onDelete: () => void this.deleteAsset(asset),
+    });
   });
-
-  ngOnDestroy(): void {
-    this.topbarState.clear();
-  }
 
   protected onTrialCreated({ trialId }: { trialId: string }): void {
     this.creatingTrial.set(false);

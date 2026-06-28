@@ -2,9 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
-  OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
@@ -38,7 +36,6 @@ import { HighlightPipe } from '../../../shared/pipes/highlight.pipe';
 import { createGridState } from '../../../shared/grids';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
-import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import {
   ExportButtonComponent,
@@ -47,6 +44,7 @@ import {
 import { GridExcelExportService } from '../../../shared/export/grid-excel-export.service';
 import { ExportNamingService } from '../../../shared/export/export-naming.service';
 import { buildTrialExportColumns } from './trials-export.util';
+import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 
 interface TrialRow {
   readonly trial: Trial;
@@ -74,11 +72,12 @@ interface TrialRow {
     TableSkeletonBodyComponent,
     HighlightPipe,
     ExportButtonComponent,
+    SectionHeaderComponent,
   ],
   templateUrl: './trial-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TrialListComponent implements OnInit, OnDestroy {
+export class TrialListComponent implements OnInit {
   /**
    * Read the current value from a native `<input>` change/input event.
    * Used inside `p-column-filter` ng-templates to avoid `$any($event.target).value`
@@ -95,29 +94,9 @@ export class TrialListComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
-  private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
   private readonly excel = inject(GridExcelExportService);
   private readonly exportNaming = inject(ExportNamingService);
-
-  // Surface "Add trial" only for space owners/editors. Effect re-runs when
-  // canEdit() flips (initial role fetch resolves, or navigation between
-  // spaces). Clears the action when the user lacks edit permission so the
-  // topbar reflects current capability.
-  private readonly topbarActionsEffect = effect(() => {
-    if (this.spaceRole.canEdit()) {
-      this.topbarState.actions.set([
-        {
-          label: 'Add trial',
-          icon: 'fa-solid fa-plus',
-          text: true,
-          callback: () => this.openCreateModal(),
-        },
-      ]);
-    } else {
-      this.topbarState.actions.set([]);
-    }
-  });
 
   readonly spaceId = signal('');
   readonly tenantId = signal('');
@@ -240,18 +219,10 @@ export class TrialListComponent implements OnInit, OnDestroy {
     },
   ];
 
-  private readonly countEffect = effect(() => {
-    this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
-  });
-
   async ngOnInit(): Promise<void> {
     this.spaceId.set(this.route.snapshot.paramMap.get('spaceId')!);
     this.tenantId.set(this.route.snapshot.paramMap.get('tenantId')!);
     await this.loadData();
-  }
-
-  ngOnDestroy(): void {
-    this.topbarState.clear();
   }
 
   rowMenu(row: TrialRow): MenuItem[] {

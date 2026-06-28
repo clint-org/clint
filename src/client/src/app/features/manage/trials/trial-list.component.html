@@ -1,4 +1,22 @@
 <app-manage-page-shell>
+  <app-section-header
+    label="Trials"
+    [detail]="grid.totalRecords() ? grid.totalRecords().toString() : ''"
+    class="mb-3 block"
+  >
+    <div actions>
+      @if (spaceRole.canEdit()) {
+        <p-button
+          label="Add trial"
+          icon="fa-solid fa-plus"
+          size="small"
+          [text]="true"
+          (onClick)="openCreateModal()"
+        />
+      }
+    </div>
+  </app-section-header>
+
   @if (error()) {
     <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
   }
