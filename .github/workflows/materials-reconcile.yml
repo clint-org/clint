@@ -5,15 +5,12 @@ name: Reconcile materials inventory
 # no row), and mirror_gap (in R2, not yet in B2). Detection signal for the
 # materials durability domain in docs/runbook/14-disaster-recovery.md.
 on:
-  # Cron paused until the seed/prefix reconciliation lands. Prod has 304
-  # finalized seed materials across 4 demo spaces whose file_paths carry a
-  # legacy materials/ prefix the live upload path never produces (canonical key
-  # is <space>/<material>/<file>), and they have no backing R2 objects -- so a
-  # scheduled reconcile would open a divergence issue every week dominated by
-  # 304 false danglers. Secrets are wired (per-env, bucket-scoped). Re-enable
-  # once the seed data is consistent and this job runs clean.
-  # schedule:
-  #   - cron: "0 8 * * 1"
+  # Weekly three-way reconciliation (DB pointers vs R2 vs B2). Activated
+  # 2026-06-28 after the sample-aware reconciliation landed: is_sample seed/demo
+  # rows are excluded from the dangling check, and the job ran clean on dev and
+  # prod. Severity is tiered (dangling + mirror_gap fail; orphan informational).
+  schedule:
+    - cron: "0 8 * * 1"
   workflow_dispatch:
 
 permissions:
