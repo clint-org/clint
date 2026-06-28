@@ -125,9 +125,10 @@ Notes:
   timeline-eligible types) a marker visual. Clinical / Regulatory / Approval /
   LOE / Commercial milestone types default to high significance; Leadership /
   Financial / Strategic default to low.
-- **Single anchor in v1** (matches today's events). Today's `marker_assignments`
-  many-to-many is a deliberate v1 simplification; multi-placement returns via the
-  placement table (see the seam) rather than as a property of the fact.
+- **Single anchor in v1.** An event has one anchor. There is no legacy
+  many-to-many data to preserve (greenfield), so this is a clean forward choice;
+  multi-placement returns via the placement table (see the seam), not as a
+  property of the fact.
 
 ## Derived timeline membership (no stored flag)
 
@@ -271,8 +272,9 @@ flowchart TB
 
 **In scope:**
 
-- The Event entity: merge `events` + `markers`, marker date model, provenance,
-  significance, pin/hide.
+- The unified Event schema (replacing today's `markers` + `events`), with the
+  marker date model, provenance, significance, pin/hide. Greenfield: created
+  fresh, no backfill.
 - Derived timeline membership through the placement resolver indirection.
 - Terminology / IA cleanup: **Primary Intelligence -> Intelligence**; the
   **Events page -> Activity** (detected changes); a single **Intelligence feed**
@@ -340,8 +342,8 @@ testing is a first-class deliverable, not a trailing phase. Two rules:
   gating, anchor roll-up, phase-bar derivation from clinical events,
   fuzzy-date / range rendering math, the placement resolver (inline v1).
 - **Integration (local Supabase, service-role):** the `events` table +
-  `event_types`, the backfill from markers + events, event create / edit RPCs,
-  RLS / grants, the Activity wiring (event change goes to Activity, not the
+  `event_types`, event create / edit RPCs, the `seed-demo` path producing the new
+  model, RLS / grants, the Activity wiring (event change goes to Activity, not the
   Intelligence feed), and the feed RPCs (Intelligence feed = briefs + events).
 - **E2E + visual (Playwright + Chrome MCP against cloud dev, `dev.clintapp.com`):**
   each surface rendered and screenshotted on the deployed dev environment. Unit
@@ -447,32 +449,44 @@ regenerate the runbook auto-gen blocks.
   new timeline / altitude come from dev, so the deck previews functionality not
   yet in prod for next week's demo.
 
-## Data migration and sequencing
+## Schema replacement and sequencing (greenfield: no backfill)
 
-This v1 is three large efforts: a data-model merge (events + markers -> events),
-a terminology / IA overhaul, and a timeline altitude rewrite. This design
-describes the **end state**. The implementation plan must **sequence** it so it
-lands safely rather than as one big-bang migration. A likely ordering:
+This is a greenfield project, so there is **no data backfill and no data to
+preserve**. The migration drops the old `markers` / `marker_assignments` /
+`events` tables and creates the unified `events` + `event_types` schema fresh;
+`seed-demo` produces the new data. Testing uses a new space seeded via
+`seed-demo`, not migrated data. This removes the riskiest class of work (backfill
+correctness) entirely.
 
-1. Introduce the unified `events` table and `event_types`; backfill from
-   `markers` + `events`; keep phase-bar derivation reading the new table.
-2. Repoint the resolver and timeline rendering at the new table (trial altitude
-   unchanged), with the membership function replacing `marker_assignments`.
-3. Terminology / IA: rename Primary Intelligence -> Intelligence, Events page ->
+This v1 is still two large efforts: the unified Event model + timeline altitude
+rewrite, and the terminology / IA overhaul. This design describes the **end
+state**; the implementation plan sequences it. A likely ordering:
+
+1. Create the unified `events` table and `event_types` (drop the old tables);
+   point phase-bar derivation at the new table from the start.
+2. Build the resolver and timeline rendering on the new table (trial altitude
+   first), with the derived-membership function as the only path (no
+   `marker_assignments`).
+3. Terminology / IA: Primary Intelligence -> Intelligence, Events page ->
    Activity, merge the Intelligence feed.
-4. Asset lanes, collapse toggle, altitude-gated significance.
+4. Asset and company lanes, the company band, the collapse toggle, altitude-gated
+   significance.
+5. Repoint the producers (`seed-demo`, CT.gov sync, AI import) at the Event
+   create path.
 
 ## Risks and mitigations
 
-- **Big-bang migration risk.** Mitigated by the sequencing above and by keeping
-  phase-bar derivation behavior identical through the cutover.
-- **Roll-up density at asset altitude.** Mitigated by significance gating (only
-  headline catalysts collapse upward) and expand-for-detail.
-- **Loss of marker many-to-many.** Single anchor in v1 is a conscious
-  simplification; multi-placement returns via the placement table, not as a fact
-  property.
+- **Roll-up density at asset / company altitude.** Mitigated by significance
+  gating (only headline catalysts collapse upward, harder at company level) and
+  expand-for-detail.
 - **Lossy asset phase representation.** Accepted: lead-phase chip, not a bar;
-  detail one expand away.
+  detail one expand away. Company rows carry no phase at all.
+- **Breadth of the rename.** The blast radius is wide (producers, consumers,
+  change log, docs, deck). Mitigated by the blast-radius checklist and by the
+  full pre-existing suite + drift gates being part of the "done" bar.
+- **Unattended dev verification depends on an authenticated session.** Mitigated
+  by a pre-authenticated dev profile; if it lapses, code + local tests still
+  complete and the visual report is staged to capture on return.
 
 ## Open questions for the implementation plan
 
