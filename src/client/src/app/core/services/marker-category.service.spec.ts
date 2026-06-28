@@ -151,3 +151,46 @@ describe('MarkerCategoryService.delete', () => {
     expect(invalidateTags).toHaveBeenCalledWith(['markers:types']);
   });
 });
+
+// Source-contract tests: verify the service reads/writes event_type_categories,
+// not the dropped marker_categories table.
+describe('MarkerCategoryService -- source table contract', () => {
+  it('list queries event_type_categories', async () => {
+    const listQb = makeQueryBuilder([]);
+    const from = vi.fn().mockReturnValue(listQb);
+    // Pass the fetch callback straight through so the from() call executes.
+    const get = vi.fn().mockImplementation(
+      (_key: unknown, _params: unknown, opts: { fetch: () => Promise<unknown> }) => opts.fetch()
+    );
+    const service = makeService({ from }, { get, invalidateTags: vi.fn() });
+
+    await service.list('space-1');
+
+    expect(from).toHaveBeenCalledWith('event_type_categories');
+    expect(from).not.toHaveBeenCalledWith('marker_categories');
+  });
+
+  it('create queries event_type_categories for both the max-order lookup and the insert', async () => {
+    const maxQb = makeQueryBuilder([{ display_order: 2 }]);
+    const insertQb = makeQueryBuilder({ id: 'cat-x', display_order: 3 });
+    const from = vi.fn().mockReturnValueOnce(maxQb).mockReturnValueOnce(insertQb);
+    const service = makeService({ from }, { get: vi.fn(), invalidateTags: vi.fn() });
+
+    await service.create('space-1', 'Regulatory');
+
+    const tableNames = from.mock.calls.map((c: unknown[]) => c[0]);
+    expect(tableNames).toEqual(['event_type_categories', 'event_type_categories']);
+    expect(tableNames).not.toContain('marker_categories');
+  });
+
+  it('delete queries event_type_categories', async () => {
+    const delQb = makeQueryBuilder(null);
+    const from = vi.fn().mockReturnValue(delQb);
+    const service = makeService({ from }, { get: vi.fn(), invalidateTags: vi.fn() });
+
+    await service.delete('cat-1');
+
+    expect(from).toHaveBeenCalledWith('event_type_categories');
+    expect(from).not.toHaveBeenCalledWith('marker_categories');
+  });
+});
