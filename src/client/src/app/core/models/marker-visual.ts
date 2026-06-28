@@ -72,6 +72,12 @@ export const GLYPH_RATIOS = {
   flagBannerH: 0.45,
   /** Triangle vertices (x1,y1,x2,y2,x3,y3). */
   trianglePoints: [0.15, 0.1, 0.9, 0.5, 0.15, 0.9] as const,
+  /**
+   * Flat-top hexagon vertices (x1,y1..x6,y6), clockwise from the left corner.
+   * Horizontal radius 0.46, vertical radius 0.40 (regular hexagon proportions),
+   * matching the visual weight of the diamond.
+   */
+  hexagonPoints: [0.04, 0.5, 0.27, 0.1, 0.73, 0.1, 0.96, 0.5, 0.73, 0.9, 0.27, 0.9] as const,
   /** Diamond 'check' polyline points (x1,y1,x2,y2,x3,y3). */
   checkPoints: [0.32, 0.5, 0.45, 0.65, 0.68, 0.38] as const,
 } as const;

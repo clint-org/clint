@@ -33,6 +33,9 @@ interface PersistedLandscapeState {
   showMoaColumn: boolean;
   showRoaColumn: boolean;
   showIndicationColumn: boolean;
+  showCompanyEvents: boolean;
+  showAssetEvents: boolean;
+  showTrials: boolean;
 }
 
 const STORAGE_PREFIX = 'landscape-state:';
@@ -94,6 +97,14 @@ export class LandscapeStateService {
   // the COLUMNS control in the insight strip.
   readonly showIndicationColumn = signal(false);
 
+  // ─── Row visibility (timeline grid) ──────────────────────────────────
+  // Per-level row toggles for the timeline grid: whether company-anchored
+  // events, asset-anchored events, and trial rows each render. Persisted
+  // alongside the column toggles and mirrored by the row-visibility control.
+  readonly showCompanyEvents = signal(true);
+  readonly showAssetEvents = signal(true);
+  readonly showTrials = signal(true);
+
   // ─── Shared detail panel ─────────────────────────────────────────────
   readonly selectedMarkerId = signal<string | null>(null);
   readonly selectedDetail = signal<CatalystDetail | null>(null);
@@ -148,6 +159,9 @@ export class LandscapeStateService {
       showMoaColumn: this.showMoaColumn(),
       showRoaColumn: this.showRoaColumn(),
       showIndicationColumn: this.showIndicationColumn(),
+      showCompanyEvents: this.showCompanyEvents(),
+      showAssetEvents: this.showAssetEvents(),
+      showTrials: this.showTrials(),
     };
     if (!this.storageKey || this.disablePersistence) return;
     try {
@@ -200,6 +214,16 @@ export class LandscapeStateService {
   /** Reload the dataset (e.g. after data mutation). */
   async reload(): Promise<void> {
     await this.loadData();
+  }
+
+  /**
+   * Apply the "Compare" view preset: show asset-anchored events and hide
+   * trials so several assets stack side by side for comparison. Company-event
+   * visibility is left as-is so the user's banner choice is preserved.
+   */
+  applyComparePreset(): void {
+    this.showAssetEvents.set(true);
+    this.showTrials.set(false);
   }
 
   /**
@@ -313,6 +337,11 @@ export class LandscapeStateService {
       if (typeof saved.showRoaColumn === 'boolean') this.showRoaColumn.set(saved.showRoaColumn);
       if (typeof saved.showIndicationColumn === 'boolean')
         this.showIndicationColumn.set(saved.showIndicationColumn);
+      if (typeof saved.showCompanyEvents === 'boolean')
+        this.showCompanyEvents.set(saved.showCompanyEvents);
+      if (typeof saved.showAssetEvents === 'boolean')
+        this.showAssetEvents.set(saved.showAssetEvents);
+      if (typeof saved.showTrials === 'boolean') this.showTrials.set(saved.showTrials);
     } catch {
       // Corrupt data -- ignore and start fresh.
     }

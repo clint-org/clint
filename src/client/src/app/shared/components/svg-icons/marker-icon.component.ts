@@ -5,6 +5,7 @@ import { FillStyle, InnerMark, MarkerShape } from '../../../core/models/marker.m
 import { CircleIconComponent } from './circle-icon.component';
 import { DiamondIconComponent } from './diamond-icon.component';
 import { FlagIconComponent } from './flag-icon.component';
+import { HexagonIconComponent } from './hexagon-icon.component';
 import { NleOverlayComponent } from './nle-overlay.component';
 import { SquareIconComponent } from './square-icon.component';
 import { TriangleIconComponent } from './triangle-icon.component';
@@ -22,6 +23,7 @@ import { TriangleIconComponent } from './triangle-icon.component';
     CircleIconComponent,
     DiamondIconComponent,
     FlagIconComponent,
+    HexagonIconComponent,
     NleOverlayComponent,
     SquareIconComponent,
     TriangleIconComponent,
@@ -82,6 +84,15 @@ import { TriangleIconComponent } from './triangle-icon.component';
             @case ('square') {
               <g
                 app-square-icon
+                [size]="size()"
+                [color]="color()"
+                [fillStyle]="fillStyle()"
+                [innerMark]="innerMark()"
+              />
+            }
+            @case ('hexagon') {
+              <g
+                app-hexagon-icon
                 [size]="size()"
                 [color]="color()"
                 [fillStyle]="fillStyle()"

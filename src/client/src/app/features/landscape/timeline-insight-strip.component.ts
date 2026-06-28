@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Checkbox } from 'primeng/checkbox';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { Company } from '../../core/models/company.model';
 import { buildLandscapeRead, fromCompanies } from './competitive-read/index';
@@ -10,7 +11,7 @@ import { LandscapeStateService } from './landscape-state.service';
 
 @Component({
   selector: 'app-timeline-insight-strip',
-  imports: [Checkbox, FormsModule, CompetitiveReadStripComponent],
+  imports: [Checkbox, FormsModule, TooltipModule, CompetitiveReadStripComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
@@ -123,6 +124,55 @@ import { LandscapeStateService } from './landscape-state.service';
             />
             <label for="strip-col-indication" class="cursor-pointer">Indication</label>
           </div>
+        </div>
+      </div>
+
+      <div class="w-px self-stretch bg-slate-200"></div>
+
+      <div class="flex flex-col gap-1 flex-shrink-0">
+        <span class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
+          >ROWS</span
+        >
+        <div class="flex items-center gap-2.5 pt-px">
+          <div class="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer select-none">
+            <p-checkbox
+              [ngModel]="state.showCompanyEvents()"
+              (ngModelChange)="state.showCompanyEvents.set($event)"
+              [binary]="true"
+              inputId="strip-row-company"
+              size="small"
+            />
+            <label for="strip-row-company" class="cursor-pointer">Company</label>
+          </div>
+          <div class="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer select-none">
+            <p-checkbox
+              [ngModel]="state.showAssetEvents()"
+              (ngModelChange)="state.showAssetEvents.set($event)"
+              [binary]="true"
+              inputId="strip-row-asset"
+              size="small"
+            />
+            <label for="strip-row-asset" class="cursor-pointer">Asset</label>
+          </div>
+          <div class="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer select-none">
+            <p-checkbox
+              [ngModel]="state.showTrials()"
+              (ngModelChange)="state.showTrials.set($event)"
+              [binary]="true"
+              inputId="strip-row-trials"
+              size="small"
+            />
+            <label for="strip-row-trials" class="cursor-pointer">Trials</label>
+          </div>
+          <button
+            type="button"
+            class="ml-1 rounded border border-slate-300 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-600 transition-colors hover:border-brand-400 hover:text-brand-700"
+            (click)="state.applyComparePreset()"
+            pTooltip="Stack assets and hide trials to compare maturity and gaps"
+            tooltipPosition="top"
+          >
+            Compare
+          </button>
         </div>
       </div>
     </div>

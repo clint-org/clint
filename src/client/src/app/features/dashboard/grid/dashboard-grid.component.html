@@ -139,18 +139,76 @@
         }
 
         <!-- Row labels -->
-        @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
+        @for (row of gridRows(); track rowKey(row); let idx = $index) {
           <div
             class="flex border-l-2 border-slate-200"
             [class.border-b-2]="row.isLastInCompany"
             [class.border-b]="!row.isLastInCompany"
             [class.border-slate-300]="row.isLastInCompany"
-            [class.bg-white]="idx % 2 === 0"
-            [class.bg-slate-50]="idx % 2 !== 0"
+            [class.bg-slate-100]="row.kind === 'company'"
+            [class.bg-white]="row.kind === 'asset' || (row.kind === 'trial' && idx % 2 === 0)"
+            [class.bg-slate-50]="row.kind === 'trial' && idx % 2 !== 0"
             [class.border-l-brand-500]="row.isFirstInCompany"
             [class.border-l-transparent]="!row.isFirstInCompany"
             [style.height.px]="36"
           >
+            @switch (row.kind) {
+              @case ('company') {
+                <!-- Company band: group-header lane hosting company-anchored events -->
+                <div
+                  class="flex items-center gap-1.5 px-3 cursor-pointer hover:bg-brand-50/40"
+                  role="button"
+                  tabindex="0"
+                  [title]="row.companyName"
+                  (click)="onCompanyClick(row.companyId)"
+                  (keydown.enter)="onCompanyClick(row.companyId)"
+                  (keydown.space)="onCompanyClick(row.companyId)"
+                >
+                  @if (row.companyLogoUrl) {
+                    <app-brand-logo
+                      [url]="row.companyLogoUrl"
+                      [alt]="row.companyName"
+                      [width]="18"
+                      [height]="18"
+                      imgClass="h-[18px] w-[18px] rounded object-contain flex-none"
+                    />
+                  }
+                  <span
+                    class="font-bold text-[11px] uppercase tracking-wider text-slate-700 truncate"
+                    >{{ row.companyName }}</span
+                  >
+                  @if (row.companyHasIntelligence) {
+                    <app-pi-mark [size]="10" class="shrink-0" />
+                  }
+                </div>
+              }
+              @case ('asset') {
+                <!-- Asset lane: asset-anchored events + lead-phase chip when Trials are off -->
+                <div
+                  class="flex items-center gap-2 pl-6 pr-3 cursor-pointer hover:bg-brand-50/40"
+                  role="button"
+                  tabindex="0"
+                  [title]="row.assetName"
+                  (click)="onAssetClick(row.assetId)"
+                  (keydown.enter)="onAssetClick(row.assetId)"
+                  (keydown.space)="onAssetClick(row.assetId)"
+                >
+                  <span class="text-sm text-slate-600 font-medium truncate">{{
+                    row.assetName
+                  }}</span>
+                  @if (row.assetHasIntelligence) {
+                    <app-pi-mark [size]="10" class="shrink-0" />
+                  }
+                  @if (!showTrials() && row.leadPhase) {
+                    <span
+                      class="ml-1 inline-block shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
+                      [style.background-color]="phaseChipColor(row.leadPhase)"
+                      >{{ phaseChipLabel(row.leadPhase) }}</span
+                    >
+                  }
+                </div>
+              }
+              @case ('trial') {
             <!-- Company column (hidden below lg, collapses to logo on scroll) -->
             @if (!hideCompanyColumn()) {
               <div
@@ -415,6 +473,8 @@
                 </div>
               </div>
             }
+              }
+            }
           </div>
         }
       </div>
@@ -430,17 +490,18 @@
 
         <!-- Trial rows -->
         <div [style.width.px]="totalWidth()">
-          @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
+          @for (row of gridRows(); track rowKey(row); let idx = $index) {
             <div
               class="relative border-slate-200"
               [class.border-b-2]="row.isLastInCompany"
               [class.border-b]="!row.isLastInCompany"
               [class.border-slate-300]="row.isLastInCompany"
-              [class.bg-white]="idx % 2 === 0"
-              [class.bg-slate-50]="idx % 2 !== 0"
+              [class.bg-slate-100]="row.kind === 'company'"
+              [class.bg-white]="row.kind === 'asset' || (row.kind === 'trial' && idx % 2 === 0)"
+              [class.bg-slate-50]="row.kind === 'trial' && idx % 2 !== 0"
               [style.height.px]="36"
             >
-              <!-- Vertical grid lines -->
+              <!-- Vertical grid lines (common to every row level) -->
               @for (col of columns(); track col.label) {
                 <div
                   class="absolute top-0 bottom-0 border-l border-slate-100"
@@ -456,30 +517,6 @@
                 }
               }
 
-              <!-- Phase bar (SVG overlay) -->
-              @if (row.trial.phase_type && row.phaseSpan.start) {
-                <svg
-                  class="absolute top-0 left-0"
-                  [attr.width]="totalWidth()"
-                  [attr.height]="36"
-                  aria-hidden="true"
-                >
-                  <g
-                    app-phase-bar
-                    [phaseType]="row.trial.phase_type"
-                    [startDate]="row.phaseSpan.start"
-                    [endDate]="row.phaseSpan.end"
-                    [startPrecision]="row.phaseSpan.startPrecision"
-                    [endPrecision]="row.phaseSpan.endPrecision"
-                    [startYear]="startYear()"
-                    [endYear]="endYear()"
-                    [totalWidth]="totalWidth()"
-                    [withdrawn]="!!row.trial.ctgov_withdrawn_at"
-                    (phaseClick)="onPhaseClick(row.trial)"
-                  />
-                </svg>
-              }
-
               <!-- Today reference line (subtle, behind markers) -->
               @if (todayMarkerX() !== null) {
                 <div
@@ -489,25 +526,88 @@
                 ></div>
               }
 
-              <!-- Markers (absolute positioned) -->
-              @if (row.trial.markers && row.trial.markers.length > 0) {
-                @for (marker of row.trial.markers; track marker.id) {
-                  @if (isMarkerInWindow(marker)) {
-                    <app-marker
-                      [marker]="marker"
-                      [startYear]="startYear()"
-                      [endYear]="endYear()"
-                      [totalWidth]="totalWidth()"
-                      [showDateLabel]="dateLabelVisible(row.trial.id, marker.id)"
-                      [showEndLabel]="endLabelVisible(row.trial.id, marker.id)"
-                      [trialName]="row.trial.acronym ?? row.trial.name"
-                      [trialPhase]="row.trial.phase_type ?? ''"
-                      [recruitmentStatus]="row.trial.recruitment_status ?? ''"
-                      [companyName]="row.companyName"
-                      [companyLogoUrl]="row.companyLogoUrl"
-                      [assetName]="row.assetName"
-                      (markerClick)="onMarkerClick($event)"
-                    />
+              @switch (row.kind) {
+                @case ('trial') {
+                  <!-- Phase bar (SVG overlay) -->
+                  @if (row.trial.phase_type && row.phaseSpan.start) {
+                    <svg
+                      class="absolute top-0 left-0"
+                      [attr.width]="totalWidth()"
+                      [attr.height]="36"
+                      aria-hidden="true"
+                    >
+                      <g
+                        app-phase-bar
+                        [phaseType]="row.trial.phase_type"
+                        [startDate]="row.phaseSpan.start"
+                        [endDate]="row.phaseSpan.end"
+                        [startPrecision]="row.phaseSpan.startPrecision"
+                        [endPrecision]="row.phaseSpan.endPrecision"
+                        [startYear]="startYear()"
+                        [endYear]="endYear()"
+                        [totalWidth]="totalWidth()"
+                        [withdrawn]="!!row.trial.ctgov_withdrawn_at"
+                        (phaseClick)="onPhaseClick(row.trial)"
+                      />
+                    </svg>
+                  }
+
+                  <!-- Trial-anchored markers (absolute positioned) -->
+                  @if (row.trial.markers && row.trial.markers.length > 0) {
+                    @for (marker of row.trial.markers; track marker.id) {
+                      @if (isMarkerInWindow(marker)) {
+                        <app-marker
+                          [marker]="marker"
+                          [startYear]="startYear()"
+                          [endYear]="endYear()"
+                          [totalWidth]="totalWidth()"
+                          [showDateLabel]="dateLabelVisible(row.trial.id, marker.id)"
+                          [showEndLabel]="endLabelVisible(row.trial.id, marker.id)"
+                          [trialName]="row.trial.acronym ?? row.trial.name"
+                          [trialPhase]="row.trial.phase_type ?? ''"
+                          [recruitmentStatus]="row.trial.recruitment_status ?? ''"
+                          [companyName]="row.companyName"
+                          [companyLogoUrl]="row.companyLogoUrl"
+                          [assetName]="row.assetName"
+                          (markerClick)="onMarkerClick($event)"
+                        />
+                      }
+                    }
+                  }
+                }
+                @case ('asset') {
+                  <!-- Asset-anchored events on the asset lane -->
+                  @for (event of row.events; track event.id) {
+                    @if (isMarkerInWindow(event)) {
+                      <app-marker
+                        [marker]="event"
+                        [startYear]="startYear()"
+                        [endYear]="endYear()"
+                        [totalWidth]="totalWidth()"
+                        [trialName]="row.assetName"
+                        [companyName]="row.companyName"
+                        [companyLogoUrl]="row.companyLogoUrl"
+                        [assetName]="row.assetName"
+                        (markerClick)="onMarkerClick($event)"
+                      />
+                    }
+                  }
+                }
+                @case ('company') {
+                  <!-- Company-anchored events on the company band -->
+                  @for (event of row.events; track event.id) {
+                    @if (isMarkerInWindow(event)) {
+                      <app-marker
+                        [marker]="event"
+                        [startYear]="startYear()"
+                        [endYear]="endYear()"
+                        [totalWidth]="totalWidth()"
+                        [trialName]="row.companyName"
+                        [companyName]="row.companyName"
+                        [companyLogoUrl]="row.companyLogoUrl"
+                        (markerClick)="onMarkerClick($event)"
+                      />
+                    }
                   }
                 }
               }

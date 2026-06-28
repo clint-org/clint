@@ -13,7 +13,14 @@ export interface MarkerCategory {
   updated_at: string;
 }
 
-export type MarkerShape = 'circle' | 'diamond' | 'flag' | 'triangle' | 'square' | 'dashed-line';
+export type MarkerShape =
+  | 'circle'
+  | 'diamond'
+  | 'flag'
+  | 'triangle'
+  | 'square'
+  | 'hexagon'
+  | 'dashed-line';
 export type FillStyle = 'outline' | 'filled';
 export type InnerMark = 'dot' | 'dash' | 'check' | 'x' | 'none';
 
@@ -30,6 +37,7 @@ export interface MarkerType {
   is_system: boolean;
   display_order: number;
   created_at: string;
+  default_significance?: 'high' | 'low' | null;
   marker_categories?: MarkerCategory;
 }
 
@@ -52,6 +60,8 @@ export interface Marker {
   metadata: Record<string, unknown> | null;
   is_projected: boolean;
   no_longer_expected: boolean;
+  significance?: 'high' | 'low' | null;
+  visibility?: 'pinned' | 'hidden' | null;
   created_at: string;
   updated_at: string;
   updated_by: string | null;

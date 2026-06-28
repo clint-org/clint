@@ -165,6 +165,58 @@ describe('LandscapeStateService marker references', () => {
   });
 });
 
+/**
+ * Row-level visibility toggles for the timeline grid (showCompanyEvents,
+ * showAssetEvents, showTrials) plus the Compare preset. Mirroring the rest of
+ * this spec, these are asserted by source contract: the service builds a
+ * persistence effect() in a field initializer, which needs the zoneless
+ * ChangeDetectionScheduler not available in this plain-node runner, so the
+ * service cannot be instantiated here.
+ */
+describe('LandscapeStateService row-visibility toggles', () => {
+  it('defaults all three row toggles to true', () => {
+    expect(stateSrc).toContain('showCompanyEvents = signal(true)');
+    expect(stateSrc).toContain('showAssetEvents = signal(true)');
+    expect(stateSrc).toContain('showTrials = signal(true)');
+  });
+
+  it('declares the three keys on PersistedLandscapeState', () => {
+    const ifaceStart = stateSrc.indexOf('interface PersistedLandscapeState');
+    const ifaceBody = stateSrc.slice(ifaceStart, stateSrc.indexOf('}', ifaceStart));
+    expect(ifaceBody).toContain('showCompanyEvents: boolean;');
+    expect(ifaceBody).toContain('showAssetEvents: boolean;');
+    expect(ifaceBody).toContain('showTrials: boolean;');
+  });
+
+  it('serializes the three toggles in the persistence effect', () => {
+    expect(stateSrc).toContain('showCompanyEvents: this.showCompanyEvents()');
+    expect(stateSrc).toContain('showAssetEvents: this.showAssetEvents()');
+    expect(stateSrc).toContain('showTrials: this.showTrials()');
+  });
+
+  it('restores the three toggles from persisted state, guarding on boolean (default true kept on absence)', () => {
+    const restoreStart = stateSrc.indexOf('private restorePersistedState');
+    const restoreBody = stateSrc.slice(restoreStart, stateSrc.indexOf('// ─── Pure', restoreStart));
+    expect(restoreBody).toContain(
+      "if (typeof saved.showCompanyEvents === 'boolean')"
+    );
+    expect(restoreBody).toContain('this.showCompanyEvents.set(saved.showCompanyEvents)');
+    expect(restoreBody).toContain("if (typeof saved.showAssetEvents === 'boolean')");
+    expect(restoreBody).toContain('this.showAssetEvents.set(saved.showAssetEvents)');
+    expect(restoreBody).toContain("if (typeof saved.showTrials === 'boolean')");
+    expect(restoreBody).toContain('this.showTrials.set(saved.showTrials)');
+  });
+
+  it('applyComparePreset sets showAssetEvents true and showTrials false, leaving showCompanyEvents untouched', () => {
+    expect(LandscapeStateService.prototype.applyComparePreset).toBeTypeOf('function');
+    const presetStart = stateSrc.indexOf('applyComparePreset(): void');
+    const presetBody = stateSrc.slice(presetStart, stateSrc.indexOf('}', presetStart));
+    expect(presetBody).toContain('this.showAssetEvents.set(true)');
+    expect(presetBody).toContain('this.showTrials.set(false)');
+    expect(presetBody).not.toContain('this.showCompanyEvents.set');
+  });
+});
+
 describe('LandscapeStateService.init', () => {
   it('exposes an init method that accepts an optional opts arg', () => {
     expect(typeof LandscapeStateService.prototype.init).toBe('function');

@@ -14,6 +14,13 @@ import {
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { Marker } from '../../../core/models/marker.model';
+import { effectiveVisibility } from '../../../core/models/marker-visibility';
+import {
+  PHASE_COLORS,
+  PHASE_FALLBACK_COLOR,
+  phaseOrder,
+  phaseShortLabel,
+} from '../../../core/models/phase-colors';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
 import { deriveTrialPhaseSpan, TrialPhaseSpan } from '../../../core/models/trial-phase-span';
@@ -55,6 +62,62 @@ export interface FlattenedTrial {
   companyIntelligenceHeadline: string | null;
   assetHasIntelligence: boolean;
   assetIntelligenceHeadline: string | null;
+}
+
+/**
+ * The timeline grid renders three row levels (company band, asset lane, trial
+ * rows) as one ordered list. Each row carries only the events anchored to its
+ * own entity (no roll-up); the per-level visibility toggles add or drop whole
+ * levels. `events` on the band/lane rows is pre-filtered to effectively-visible
+ * events (pinned, or high significance) -- feed-only events never get a glyph.
+ */
+export interface CompanyBandRow {
+  kind: 'company';
+  companyId: string;
+  companyName: string;
+  companyLogoUrl: string | null;
+  companyHasIntelligence: boolean;
+  companyIntelligenceHeadline: string | null;
+  events: Marker[];
+  isFirstInCompany: boolean;
+  isLastInCompany: boolean;
+}
+
+export interface AssetLaneRow {
+  kind: 'asset';
+  companyId: string;
+  companyName: string;
+  companyLogoUrl: string | null;
+  assetId: string;
+  assetName: string;
+  assetLogoUrl: string | null;
+  assetHasIntelligence: boolean;
+  assetIntelligenceHeadline: string | null;
+  events: Marker[];
+  /** Highest phase across the asset's trials; shown as a chip when Trials are off. */
+  leadPhase: string | null;
+  isFirstInCompany: boolean;
+  isLastInCompany: boolean;
+}
+
+export type TrialGridRow = FlattenedTrial & { kind: 'trial' };
+
+export type GridRow = CompanyBandRow | AssetLaneRow | TrialGridRow;
+
+/** Highest clinical phase across an asset's trials, by phase rank. Null when none. */
+export function assetLeadPhase(trials: Trial[]): string | null {
+  let best: string | null = null;
+  let bestRank = -Infinity;
+  for (const t of trials) {
+    const phase = t.phase_type;
+    if (!phase) continue;
+    const rank = phaseOrder(phase);
+    if (rank > bestRank) {
+      bestRank = rank;
+      best = phase;
+    }
+  }
+  return best;
 }
 
 @Component({
@@ -116,6 +179,13 @@ export class DashboardGridComponent implements AfterViewInit {
     () => this.landscapeState?.showIndicationColumn() ?? false
   );
 
+  // Per-level row visibility (company band / asset lane / trial rows). Default
+  // all on; the Compare preset sets Trials off. Optional service fallback keeps
+  // the embedded/export grids (no LandscapeStateService) at the default view.
+  readonly showCompanyEvents = computed(() => this.landscapeState?.showCompanyEvents() ?? true);
+  readonly showAssetEvents = computed(() => this.landscapeState?.showAssetEvents() ?? true);
+  readonly showTrials = computed(() => this.landscapeState?.showTrials() ?? true);
+
   constructor() {
     // On load (and when the data/range changes) anchor the horizontal scroll on
     // "today" so the user lands on current and upcoming activity rather than the
@@ -163,15 +233,16 @@ export class DashboardGridComponent implements AfterViewInit {
     return x >= 0 && x <= this.totalWidth() ? x : null;
   });
 
-  /** Pixel x-position of the latest marker event across all trials. */
+  /** Pixel x-position of the latest event across all rendered rows. */
   private readonly lastEventX = computed<number | null>(() => {
-    const trials = this.flattenedTrials();
-    if (trials.length === 0) return null;
+    const rows = this.gridRows();
+    if (rows.length === 0) return null;
 
     let latestMs = -Infinity;
-    for (const row of trials) {
-      for (const marker of row.trial.markers ?? []) {
-        const t = new Date(marker.event_date).getTime();
+    for (const row of rows) {
+      const events = row.kind === 'trial' ? (row.trial.markers ?? []) : row.events;
+      for (const event of events) {
+        const t = new Date(event.event_date).getTime();
         if (t > latestMs) latestMs = t;
       }
     }
@@ -182,48 +253,125 @@ export class DashboardGridComponent implements AfterViewInit {
     return this.timeline.dateToX(dateStr, this.startYear(), this.endYear(), this.totalWidth());
   });
 
-  readonly flattenedTrials = computed<FlattenedTrial[]>(() => {
-    const rows: FlattenedTrial[] = [];
+  /**
+   * The ordered render list across all three row levels. For each company: an
+   * optional company band (only when it owns effectively-visible company events
+   * and the toggle is on), then each asset's lane (when the toggle is on and the
+   * lane carries events or the lead-phase chip is needed), then the asset's
+   * trial rows (when the Trials toggle is on). isFirstInCompany marks the first
+   * rendered row of a company (the brand accent); isLastInCompany marks the last
+   * (the heavy divider).
+   */
+  readonly gridRows = computed<GridRow[]>(() => {
+    const rows: GridRow[] = [];
+    const showCompany = this.showCompanyEvents();
+    const showAsset = this.showAssetEvents();
+    const showTrials = this.showTrials();
+
     for (const company of this.companies()) {
+      const companyStartLen = rows.length;
       let isFirstInCompany = true;
-      const assets = company.assets ?? [];
-      for (const asset of assets) {
-        let isFirstInAsset = true;
+
+      const companyEvents = (company.events ?? []).filter((e) => effectiveVisibility(e));
+      if (showCompany && companyEvents.length > 0) {
+        rows.push({
+          kind: 'company',
+          companyId: company.id,
+          companyName: company.name,
+          companyLogoUrl: company.logo_url ?? null,
+          companyHasIntelligence: company.has_intelligence ?? false,
+          companyIntelligenceHeadline: company.intelligence_headline ?? null,
+          events: companyEvents,
+          isFirstInCompany,
+          isLastInCompany: false,
+        });
+        isFirstInCompany = false;
+      }
+
+      for (const asset of company.assets ?? []) {
         const trials = asset.trials ?? [];
-        for (const trial of trials) {
+        const assetEvents = (asset.events ?? []).filter((e) => effectiveVisibility(e));
+        if (showAsset && (assetEvents.length > 0 || !showTrials)) {
           rows.push({
-            companyName: company.name,
+            kind: 'asset',
             companyId: company.id,
+            companyName: company.name,
             companyLogoUrl: company.logo_url ?? null,
-            assetName: asset.name,
             assetId: asset.id,
+            assetName: asset.name,
             assetLogoUrl: asset.logo_url ?? null,
-            assetMoas: asset.mechanisms_of_action ?? [],
-            assetRoas: asset.routes_of_administration ?? [],
-            trialIndications: (trial._indications ?? []).map((i) => ({
-              id: i.indication_id,
-              name: i.indication_name,
-            })),
-            trial,
-            phaseSpan: deriveTrialPhaseSpan(trial.markers ?? []),
-            isFirstInCompany,
-            isFirstInAsset,
-            isLastInCompany: false,
-            companyHasIntelligence: company.has_intelligence ?? false,
-            companyIntelligenceHeadline: company.intelligence_headline ?? null,
             assetHasIntelligence: asset.has_intelligence ?? false,
             assetIntelligenceHeadline: asset.intelligence_headline ?? null,
+            events: assetEvents,
+            leadPhase: assetLeadPhase(trials),
+            isFirstInCompany,
+            isLastInCompany: false,
           });
           isFirstInCompany = false;
-          isFirstInAsset = false;
+        }
+
+        if (showTrials) {
+          let isFirstInAsset = true;
+          for (const trial of trials) {
+            rows.push({
+              kind: 'trial',
+              companyName: company.name,
+              companyId: company.id,
+              companyLogoUrl: company.logo_url ?? null,
+              assetName: asset.name,
+              assetId: asset.id,
+              assetLogoUrl: asset.logo_url ?? null,
+              assetMoas: asset.mechanisms_of_action ?? [],
+              assetRoas: asset.routes_of_administration ?? [],
+              trialIndications: (trial._indications ?? []).map((i) => ({
+                id: i.indication_id,
+                name: i.indication_name,
+              })),
+              trial,
+              phaseSpan: deriveTrialPhaseSpan(trial.markers ?? []),
+              isFirstInCompany,
+              isFirstInAsset,
+              isLastInCompany: false,
+              companyHasIntelligence: company.has_intelligence ?? false,
+              companyIntelligenceHeadline: company.intelligence_headline ?? null,
+              assetHasIntelligence: asset.has_intelligence ?? false,
+              assetIntelligenceHeadline: asset.intelligence_headline ?? null,
+            });
+            isFirstInCompany = false;
+            isFirstInAsset = false;
+          }
         }
       }
-      if (rows.length > 0) {
+
+      if (rows.length > companyStartLen) {
         rows[rows.length - 1].isLastInCompany = true;
       }
     }
     return rows;
   });
+
+  /** Trial rows only -- backs the caption-layout and scroll computeds. */
+  readonly flattenedTrials = computed<TrialGridRow[]>(() =>
+    this.gridRows().filter((r): r is TrialGridRow => r.kind === 'trial')
+  );
+
+  /** Stable @for key across the three row kinds. */
+  protected rowKey(row: GridRow): string {
+    return row.kind === 'trial'
+      ? `t:${row.trial.id}`
+      : row.kind === 'asset'
+        ? `a:${row.assetId}`
+        : `c:${row.companyId}`;
+  }
+
+  /** Lead-phase chip color/label for an asset lane (Compare view). */
+  protected phaseChipColor(phase: string): string {
+    return PHASE_COLORS[phase] ?? PHASE_FALLBACK_COLOR;
+  }
+
+  protected phaseChipLabel(phase: string): string {
+    return phaseShortLabel(phase);
+  }
 
   /**
    * Start captions are centered on the icon; two whose centers are closer than

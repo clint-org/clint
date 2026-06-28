@@ -218,6 +218,60 @@ describe('mapDashboardCompanies', () => {
     expect(out[0].assets[0].intelligence_headline).toBe('Asset headline');
   });
 
+  it('normalizes company and asset events the same way as trial markers', () => {
+    const out = mapDashboardCompanies([
+      {
+        id: 'c1',
+        name: 'Novo',
+        events: [
+          {
+            id: 'ev-co',
+            marker_type_id: 'mt-commercial',
+            significance: 'high',
+            visibility: null,
+            marker_type: {
+              id: 'mt-commercial',
+              name: 'Commercial / Distribution',
+              category_id: 'cat1',
+              category_name: 'Commercial',
+              default_significance: 'high',
+            },
+          },
+        ],
+        assets: [
+          {
+            id: 'a1',
+            name: 'Sema',
+            indications: [],
+            trials: [],
+            events: [
+              {
+                id: 'ev-as',
+                marker_type_id: 'mt-deal',
+                significance: 'low',
+                visibility: 'pinned',
+                marker_type: { id: 'mt-deal', name: 'Deal', category_id: 'cat2', category_name: 'BD' },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    // Company event: flat marker_type -> nested marker_types, category synthesized.
+    const coEvent = out[0].events[0];
+    expect(coEvent.marker_types.name).toBe('Commercial / Distribution');
+    expect(coEvent.marker_types.marker_categories).toEqual({ id: 'cat1', name: 'Commercial' });
+    // Top-level significance / visibility survive the spread.
+    expect(coEvent.significance).toBe('high');
+    expect(coEvent.visibility).toBeNull();
+
+    // Asset event: same normalization, pinned visibility preserved.
+    const asEvent = out[0].assets[0].events[0];
+    expect(asEvent.marker_types.name).toBe('Deal');
+    expect(asEvent.visibility).toBe('pinned');
+  });
+
   it('threads has_intelligence and intelligence_headline from the RPC onto the trial', () => {
     const raw = [
       {
