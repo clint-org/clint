@@ -1,4 +1,18 @@
 <app-manage-page-shell>
+  <app-section-header label="Assets" [detail]="grid.totalRecords().toString()" class="mb-3 block">
+    <div actions>
+      @if (spaceRole.canEdit()) {
+        <p-button
+          label="Add asset"
+          icon="fa-solid fa-plus"
+          size="small"
+          [text]="true"
+          (onClick)="openCreateModal()"
+        />
+      }
+    </div>
+  </app-section-header>
+
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search assets...">
     <app-export-button gridToolbarEnd [actions]="exportActions" />
   </app-grid-toolbar>
