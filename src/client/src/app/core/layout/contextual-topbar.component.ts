@@ -16,6 +16,7 @@ import { Menu } from 'primeng/menu';
 import { Tooltip } from 'primeng/tooltip';
 import { TopbarAction } from '../services/topbar-state.service';
 import { PaletteHotkeyService } from '../services/palette-hotkey.service';
+import { BrandContextService } from '../services/brand-context.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { RowActionsComponent } from '../../shared/components/row-actions.component';
 import {
@@ -34,7 +35,14 @@ export interface TopbarTab {
 @Component({
   selector: 'app-contextual-topbar',
   standalone: true,
-  imports: [ButtonModule, Menu, NgOptimizedImage, Tooltip, RowActionsComponent, ExportButtonComponent],
+  imports: [
+    ButtonModule,
+    Menu,
+    NgOptimizedImage,
+    Tooltip,
+    RowActionsComponent,
+    ExportButtonComponent,
+  ],
   template: `
     <div class="topbar" role="banner">
       <!-- Tenant/Space breadcrumb -->
@@ -193,13 +201,17 @@ export interface TopbarTab {
                 </button>
               }
               <div class="dropdown-footer">
-                <button
-                  type="button"
-                  class="dropdown-item dropdown-item--footer"
-                  (click)="onSpaceSettingsClick()"
-                >
-                  <i class="fa-solid fa-gear text-[10px]"></i> Space settings
-                </button>
+                <!-- Space settings acts on the current space; only offer it once
+                     one is selected, otherwise it points at nothing. -->
+                @if (currentSpaceId()) {
+                  <button
+                    type="button"
+                    class="dropdown-item dropdown-item--footer"
+                    (click)="onSpaceSettingsClick()"
+                  >
+                    <i class="fa-solid fa-gear text-[10px]"></i> Space settings
+                  </button>
+                }
                 <button
                   type="button"
                   class="dropdown-item dropdown-item--footer"
@@ -246,24 +258,6 @@ export interface TopbarTab {
                     }
                     {{ tab.label }}
                   </button>
-                  @if (tab.value === 'timeline' && timelineHintVisible()) {
-                    <div
-                      class="topbar-hint"
-                      role="status"
-                      aria-live="polite"
-                      aria-label="Onboarding hint"
-                    >
-                      <p class="topbar-hint__copy">Your timeline is now under the Timeline tab.</p>
-                      <button
-                        type="button"
-                        class="topbar-hint__dismiss"
-                        (click)="onTimelineHintDismiss()"
-                        aria-label="Dismiss"
-                      >
-                        Got it
-                      </button>
-                    </div>
-                  }
                 </div>
               }
             </div>
@@ -315,7 +309,12 @@ export interface TopbarTab {
               [outlined]="action.outlined ?? false"
               [text]="action.text ?? false"
               size="small"
-              [pt]="{ root: { 'aria-haspopup': 'menu', 'aria-expanded': openActionMenu() === action.label } }"
+              [pt]="{
+                root: {
+                  'aria-haspopup': 'menu',
+                  'aria-expanded': openActionMenu() === action.label,
+                },
+              }"
               (onClick)="actionMenu.toggle($event)"
             />
             <p-menu
@@ -346,6 +345,24 @@ export interface TopbarTab {
         }
         <ng-content select="[topbar-actions]" />
       </div>
+
+      <!-- Persistent agency attribution colophon -->
+      @if (agencyBrand(); as ag) {
+        <div class="topbar-credit" aria-label="Intelligence provider">
+          <span class="topbar-credit__label">Intelligence by</span>
+          @if (ag.logo_url) {
+            <img
+              [ngSrc]="ag.logo_url"
+              [alt]="ag.name"
+              width="140"
+              height="28"
+              class="topbar-credit__logo"
+            />
+          } @else {
+            <span class="topbar-credit__name">{{ ag.name }}</span>
+          }
+        </div>
+      }
     </div>
   `,
   styles: [
@@ -644,70 +661,10 @@ export interface TopbarTab {
         outline-offset: 2px;
       }
 
-      /* Onboarding tooltip pinned to a topbar tab. Renders below the tab,
-         pointing up. Dismissed via the inline button or by clicking the
-         tab itself. Aria-live so screen readers announce it once. */
       .topbar-tab-wrap {
         position: relative;
         display: inline-flex;
         align-items: center;
-      }
-
-      .topbar-hint {
-        position: absolute;
-        top: calc(100% + 6px);
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 40;
-        background: #0f172a;
-        color: white;
-        padding: 8px 10px 8px 12px;
-        border-radius: 4px;
-        box-shadow: 0 6px 18px -8px rgba(15, 23, 42, 0.4);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        white-space: nowrap;
-      }
-
-      .topbar-hint::before {
-        content: '';
-        position: absolute;
-        top: -5px;
-        left: 50%;
-        transform: translateX(-50%) rotate(45deg);
-        width: 10px;
-        height: 10px;
-        background: #0f172a;
-      }
-
-      .topbar-hint__copy {
-        margin: 0;
-        font-size: 11px;
-        font-weight: 500;
-        line-height: 1.4;
-      }
-
-      .topbar-hint__dismiss {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        color: var(--brand-300, #5eead4);
-        background: none;
-        border: none;
-        padding: 2px 4px;
-        cursor: pointer;
-        text-transform: uppercase;
-      }
-
-      .topbar-hint__dismiss:hover {
-        color: white;
-      }
-
-      .topbar-hint__dismiss:focus-visible {
-        outline: 2px solid var(--brand-600);
-        outline-offset: 2px;
-        border-radius: 2px;
       }
 
       .topbar-list-icon {
@@ -775,6 +732,48 @@ export interface TopbarTab {
         font-size: 11px;
         color: #94a3b8;
         margin-left: 6px;
+      }
+
+      /* ---- Agency colophon ---- */
+
+      .topbar-credit {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-left: 16px;
+        padding-left: 16px;
+        border-left: 1px solid #e2e8f0;
+      }
+
+      .topbar-credit__label {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        white-space: nowrap;
+      }
+
+      .topbar-credit__logo {
+        height: 15px;
+        max-width: 104px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      .topbar-credit__name {
+        font-size: 11px;
+        font-weight: 600;
+        color: #475569;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 767px) {
+        .topbar-credit {
+          display: none;
+        }
       }
 
       :host ::ng-deep .topbar-actions .p-button {
@@ -898,6 +897,10 @@ export class ContextualTopbarComponent {
 
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly paletteHotkey = inject(PaletteHotkeyService);
+  private readonly brand = inject(BrandContextService);
+
+  /** Agency attribution shown as a persistent colophon on the right of the bar. */
+  protected readonly agencyBrand = this.brand.agency;
 
   readonly paletteShortcut = computed(() => {
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';

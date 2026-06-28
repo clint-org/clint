@@ -1,0 +1,32 @@
+<form (ngSubmit)="onSubmit()" class="space-y-4">
+  @if (error()) {
+    <p-message severity="error" [closable]="false">{{ error() }}</p-message>
+  }
+
+  <app-form-field
+    label="Category name"
+    fieldId="mc-name"
+    [required]="true"
+    [error]="nameInvalid() ? 'Category name is required.' : null"
+  >
+    <input
+      pInputText
+      id="mc-name"
+      class="w-full mt-1"
+      [ngModel]="name()"
+      (ngModelChange)="name.set($event)"
+      name="name"
+      required
+      placeholder="e.g. Manufacturing, Intellectual property"
+      (blur)="nameBlurred.set(true)"
+      [attr.aria-required]="true"
+      [attr.aria-invalid]="nameInvalid()"
+    />
+  </app-form-field>
+
+  <app-form-actions
+    [submitLabel]="'Save category'"
+    [loading]="saving()"
+    (cancelled)="cancelled.emit()"
+  />
+</form>

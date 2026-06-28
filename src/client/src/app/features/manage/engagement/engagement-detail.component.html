@@ -3,55 +3,52 @@
 
 <app-manage-page-shell [narrow]="true">
   @if (loading()) {
-    <div class="px-4 py-8 text-sm text-slate-500">Loading...</div>
+    <div class="flex justify-center px-4 py-8"><app-loader [size]="28" /></div>
   } @else {
-    <header class="mb-4 border border-slate-200 bg-white px-5 py-3.5">
-      <h1 class="font-mono text-[13px] font-bold uppercase tracking-[0.1em] text-slate-900">
-        Engagement
-      </h1>
-      <p class="mt-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-400">
-        Space-level primary intelligence
-      </p>
-    </header>
+    <app-section-header label="Engagement" detail="Primary intelligence for the whole space" />
 
     @if (hasIntelligence()) {
-      <app-intelligence-block
-        [published]="intelligence()?.published ?? null"
-        [draft]="intelligence()?.draft ?? null"
-        [agencyView]="spaceRole.isAgencyMember()"
+      <h2
+        class="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-slate-700"
+      >
+        Intelligence ({{ intelligence()?.briefs?.length ?? 0 }})
+      </h2>
+      <app-intelligence-stack
+        [briefs]="intelligence()?.briefs ?? []"
+        [canManage]="spaceRole.canAuthorIntelligence()"
+        [canPurge]="spaceRole.canPurgeIntelligence()"
+        [authorMap]="intelligence()?.authors ?? {}"
         [tenantId]="tenantIdSig()"
         [spaceId]="spaceIdSig()"
-        (edit)="onIntelligenceEdit()"
-        (discardDraft)="onIntelligenceDelete()"
-        (withdraw)="withdrawDialogOpen.set(true)"
-        (purge)="
-          onPurgeRequested(
-            {
-              id: historyHost.payload().current?.id ?? '',
-              headline: historyHost.payload().current?.headline ?? ''
-            },
-            false
-          )
-        "
+        [histories]="histories()"
+        (edit)="openBriefInDrawer($event)"
+        (pin)="onBriefPin($event)"
+        (reorderTo)="onBriefReorder($event)"
+        (requestHistory)="onRequestHistory($event)"
+        (withdraw)="onWithdrawRequested($event)"
+        (discardDraft)="onDiscardDraft($event)"
+        (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
+        (purgeEntry)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
       />
+      @if (spaceRole.canAuthorIntelligence()) {
+        <div class="mt-2 flex justify-end">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-600 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            (click)="openDrawerForNewBrief()"
+          >
+            <i class="fa-solid fa-plus text-[10px]" aria-hidden="true"></i>
+            Add entry
+          </button>
+        </div>
+      }
     } @else {
       <app-intelligence-empty
-        [canEdit]="spaceRole.isAgencyMember()"
-        entityLabel="engagement"
-        (add)="onIntelligenceEdit()"
+        [canEdit]="spaceRole.canAuthorIntelligence()"
+        entityLabel="space"
+        (add)="openDrawerForNewBrief()"
       />
     }
-    <app-intelligence-history-panel
-      [payload]="historyHost.payload()"
-      [currentUserCanEdit]="spaceRole.isAgencyMember()"
-      (withdraw)="withdrawDialogOpen.set(true)"
-      (purgeVersion)="
-        onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)
-      "
-      (purgeAnchor)="
-        onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)
-      "
-    />
     <app-withdraw-intelligence-dialog
       [visible]="withdrawDialogOpen()"
       (cancelled)="withdrawDialogOpen.set(false)"
@@ -65,16 +62,28 @@
       (confirmed)="onPurgeConfirmed($event)"
     />
 
-    <section class="materials-section mb-4 border border-slate-200 bg-white" aria-label="Engagement materials">
-      <header class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-5 py-2.5">
-        <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Materials</h2>
+    <section
+      class="materials-section mb-4 border border-slate-200 bg-white"
+      aria-label="Space materials"
+    >
+      <header
+        class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-5 py-2.5"
+      >
+        <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+          Materials
+        </h2>
       </header>
-      <app-materials-section entityType="space" [entityId]="spaceIdSig()" [spaceId]="spaceIdSig()" />
+      <app-materials-section
+        entityType="space"
+        [entityId]="spaceIdSig()"
+        [spaceId]="spaceIdSig()"
+      />
     </section>
 
     @if (spaceIdSig()) {
       <app-intelligence-drawer
         [visible]="drawerOpen()"
+        [anchorId]="drawerAnchorId()"
         [spaceId]="spaceIdSig()"
         entityType="space"
         [entityId]="spaceIdSig()"

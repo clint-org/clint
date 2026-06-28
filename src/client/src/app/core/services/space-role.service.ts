@@ -44,12 +44,27 @@ export class SpaceRoleService {
 
   /**
    * Whether the current user is an agency member of the active space's tenant
-   * (the `is_agency_member_of_space` gate). Primary intelligence is the
-   * agency's deliverable: only agency members can author/publish it, so its
-   * write affordances gate on this, NOT on `canEdit()` (a space editor can
-   * edit trial data but cannot publish intelligence). (Persona fix P1.3b.)
+   * (the `is_agency_member_of_space` gate). Retained as one input to the
+   * intelligence-authoring computeds below.
    */
   readonly isAgencyMember = this._isAgencyMember.asReadonly();
+
+  /**
+   * Who may author primary intelligence: space editors and
+   * owners, plus agency members. Mirrors the server gate on
+   * upsert/withdraw/delete_primary_intelligence
+   * (has_space_access(owner/editor) OR is_agency_member_of_space). Space
+   * editors are part of the engagement team and can draft/publish/withdraw.
+   */
+  readonly canAuthorIntelligence = computed(() => this.canEdit() || this.isAgencyMember());
+
+  /**
+   * Who may PURGE primary intelligence (hard-delete, history and all): space
+   * owners and agency members only -- editors are excluded. Mirrors the
+   * server gate on purge_primary_intelligence
+   * (has_space_access(owner) OR is_agency_member_of_space).
+   */
+  readonly canPurgeIntelligence = computed(() => this.isOwner() || this.isAgencyMember());
 
   constructor() {
     this.router.events

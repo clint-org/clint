@@ -276,6 +276,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `agency_members` | yes | 4 |
 | `ai_calls` | yes | 2 |
 | `ai_config` | yes | 3 |
+| `ai_model_pricing` | yes | 4 |
 | `asset_indications` | yes | 4 |
 | `asset_mechanisms_of_action` | yes | 3 |
 | `asset_routes_of_administration` | yes | 3 |
@@ -304,6 +305,7 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `palette_recents` | yes | 1 |
 | `platform_admins` | yes | 0 |
 | `primary_intelligence` | yes | 4 |
+| `primary_intelligence_anchors` | yes | 4 |
 | `primary_intelligence_links` | yes | 4 |
 | `r2_pending_deletes` | yes | 0 |
 | `retired_hostnames` | yes | 1 |

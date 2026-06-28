@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { Tooltip } from 'primeng/tooltip';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 
-type Section = 'landscape' | 'intelligence' | 'manage' | 'settings';
+type Section = 'landscape' | 'intelligence' | 'profiles' | 'settings' | 'reference';
 
 interface NavSection {
   id: Section;
@@ -241,7 +241,8 @@ export class IconRailComponent {
   readonly allSections: NavSection[] = [
     { id: 'landscape', label: 'Landscape' },
     { id: 'intelligence', label: 'Intelligence' },
-    { id: 'manage', label: 'Manage' },
+    { id: 'profiles', label: 'Profiles' },
+    { id: 'reference', label: 'Reference' },
     { id: 'settings', label: 'Settings' },
   ];
 

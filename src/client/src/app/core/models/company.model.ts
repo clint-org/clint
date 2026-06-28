@@ -10,5 +10,12 @@ export interface Company {
   created_at: string;
   updated_at: string;
   updated_by: string | null;
+  // Import provenance: the source_documents row this entity landed from when
+  // created by an AI import. Null for manually created entities.
+  source_doc_id: string | null;
   assets?: Asset[];
+  // company owns published primary intelligence; intelligence_headline carries the
+  // lead brief's headline (fallback most-recent published). See landscape multilevel intel.
+  has_intelligence?: boolean;
+  intelligence_headline?: string | null;
 }

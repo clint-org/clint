@@ -41,13 +41,16 @@ export const importGuard: CanActivateFn = async (route: ActivatedRouteSnapshot) 
     return router.createUrlTree(['/t', tenantId, 's', spaceId]);
   }
 
-  const { data } = await supabase.client
-    .from('ai_config')
-    .select('ai_enabled')
-    .eq('tenant_id', tenantId)
-    .maybeSingle();
+  // Read via the SECURITY DEFINER RPC, not a direct ai_config select: the table's
+  // RLS is platform-admin-only (cost caps are Clint's concern), so a direct read
+  // returns nothing for space editors/viewers and wrongly blocks them. The RPC
+  // surfaces ai_enabled to any user with access to the tenant.
+  const { data } = await supabase.client.rpc('get_tenant_ai_status', {
+    p_tenant_id: tenantId,
+  });
+  const aiEnabled = (data as { ai_enabled?: boolean } | null)?.ai_enabled === true;
 
-  if (!data || data.ai_enabled !== true) {
+  if (!aiEnabled) {
     messages.add({
       severity: 'warn',
       summary: 'AI-assisted import is not enabled for this organization.',

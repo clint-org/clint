@@ -3,61 +3,80 @@
 
 <app-manage-page-shell [narrow]="true">
   @if (loading()) {
-    <div class="px-4 py-8 text-sm text-slate-500">Loading...</div>
+    <div class="flex justify-center px-4 py-8"><app-loader [size]="28" /></div>
   } @else if (asset()) {
     @let p = asset()!;
     <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
-      <div
-        class="mb-1.5 flex items-center gap-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-500"
-      >
-        @if (p.companies; as co) {
-          <a
-            [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'manage', 'companies', co.id]"
-            class="inline-flex items-center gap-1.5 text-slate-700 hover:text-brand-700 hover:underline"
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div
+            class="mb-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-500"
           >
-            @if (co.logo_url) {
+            @if (p.companies; as co) {
+              <a
+                [routerLink]="['/t', tenantIdSig(), 's', spaceIdSig(), 'profiles', 'companies', co.id]"
+                class="inline-flex items-center gap-1.5 text-slate-700 hover:text-brand-700 hover:underline"
+              >
+                @if (co.logo_url) {
+                  <app-brand-logo
+                    [url]="co.logo_url"
+                    [alt]="co.name + ' logo'"
+                    [width]="48"
+                    [height]="12"
+                    imgClass="h-3 w-auto max-w-[3rem] object-contain"
+                  />
+                }
+                {{ co.name }}
+              </a>
+              <span class="text-slate-300" aria-hidden="true">/</span>
+            }
+            <span class="text-slate-400">Asset</span>
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            @if (p.logo_url) {
               <app-brand-logo
-                [url]="co.logo_url"
-                [alt]="co.name + ' logo'"
-                [width]="48"
-                [height]="12"
-                imgClass="h-3 w-auto max-w-[3rem] object-contain"
+                [url]="p.logo_url"
+                [alt]="p.name + ' logo'"
+                [width]="128"
+                [height]="24"
+                imgClass="h-6 w-auto max-w-[8rem] self-center object-contain"
               />
             }
-            {{ co.name }}
-          </a>
-          <span class="text-slate-300" aria-hidden="true">/</span>
+            <h1 class="text-lg font-bold tracking-[-0.01em] text-slate-900">
+              {{ p.name }}
+            </h1>
+            @if (p.generic_name) {
+              <span class="text-[13px] italic text-slate-500">{{ p.generic_name }}</span>
+            }
+            @for (moa of p.mechanisms_of_action ?? []; track moa.id) {
+              <span
+                class="self-center border border-slate-200 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase tracking-[0.06em] text-slate-700"
+                >{{ moa.name }}</span
+              >
+            }
+            @for (roa of p.routes_of_administration ?? []; track roa.id) {
+              <span
+                class="self-center border border-slate-200 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase tracking-[0.06em] text-slate-700"
+                >{{ roa.abbreviation || roa.name }}</span
+              >
+            }
+          </div>
+        </div>
+        @if (spaceRole.canEdit()) {
+          <div class="flex shrink-0 items-center gap-2">
+            <p-button
+              label="Add trial"
+              icon="fa-solid fa-plus"
+              size="small"
+              [text]="true"
+              (onClick)="creatingTrial.set(true)"
+            />
+            <app-row-actions [items]="entityMenu()" ariaLabel="Asset actions" />
+          </div>
         }
-        <span class="text-slate-400">Asset</span>
       </div>
-      <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        @if (p.logo_url) {
-          <app-brand-logo
-            [url]="p.logo_url"
-            [alt]="p.name + ' logo'"
-            [width]="128"
-            [height]="24"
-            imgClass="h-6 w-auto max-w-[8rem] self-center object-contain"
-          />
-        }
-        <h1 class="text-lg font-bold tracking-[-0.01em] text-slate-900">
-          {{ p.name }}
-        </h1>
-        @if (p.generic_name) {
-          <span class="text-[13px] italic text-slate-500">{{ p.generic_name }}</span>
-        }
-        @for (moa of p.mechanisms_of_action ?? []; track moa.id) {
-          <span
-            class="self-center border border-slate-200 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase tracking-[0.06em] text-slate-700"
-            >{{ moa.name }}</span
-          >
-        }
-        @for (roa of p.routes_of_administration ?? []; track roa.id) {
-          <span
-            class="self-center border border-slate-200 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase tracking-[0.06em] text-slate-700"
-            >{{ roa.abbreviation || roa.name }}</span
-          >
-        }
+      <div class="mt-1.5">
+        <app-source-provenance-line [sourceDocId]="p.source_doc_id" [canView]="spaceRole.canEdit()" />
       </div>
     </header>
 
@@ -87,42 +106,50 @@
     </section>
 
     <div class="flex flex-col items-start gap-4 lg:flex-row">
-      <!-- Main column: the read as a document. -->
+      <!-- Main column: the intelligence as a document. -->
       <div class="min-w-0 flex-1">
         @if (hasIntelligence()) {
-          <app-intelligence-block
-            [published]="intelligence()?.published ?? null"
-            [draft]="intelligence()?.draft ?? null"
-            [agencyView]="spaceRole.isAgencyMember()"
+          <h2
+            class="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-slate-700"
+          >
+            Intelligence ({{ intelligence()?.briefs?.length ?? 0 }})
+          </h2>
+          <app-intelligence-stack
+            [briefs]="intelligence()?.briefs ?? []"
+            [canManage]="spaceRole.canAuthorIntelligence()"
+            [canPurge]="spaceRole.canPurgeIntelligence()"
+            [authorMap]="intelligence()?.authors ?? {}"
             [tenantId]="tenantIdSig()"
             [spaceId]="spaceIdSig()"
-            (edit)="onIntelligenceEdit()"
-            (discardDraft)="onIntelligenceDelete()"
-            (withdraw)="withdrawDialogOpen.set(true)"
-            (purge)="
-              onPurgeRequested(
-                {
-                  id: historyHost.payload().current?.id ?? '',
-                  headline: historyHost.payload().current?.headline ?? '',
-                },
-                false
-              )
-            "
+            [histories]="histories()"
+            (edit)="openBriefInDrawer($event)"
+            (pin)="onBriefPin($event)"
+            (reorderTo)="onBriefReorder($event)"
+            (requestHistory)="onRequestHistory($event)"
+            (withdraw)="onWithdrawRequested($event)"
+            (discardDraft)="onDiscardDraft($event)"
+            (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
+            (purgeEntry)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
           />
+          @if (spaceRole.canAuthorIntelligence()) {
+            <div class="mt-2 flex justify-end">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-600 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                (click)="openDrawerForNewBrief()"
+              >
+                <i class="fa-solid fa-plus text-[10px]" aria-hidden="true"></i>
+                Add entry
+              </button>
+            </div>
+          }
         } @else {
           <app-intelligence-empty
-            [canEdit]="spaceRole.isAgencyMember()"
+            [canEdit]="spaceRole.canAuthorIntelligence()"
             entityLabel="asset"
-            (add)="onIntelligenceEdit()"
+            (add)="openDrawerForNewBrief()"
           />
         }
-        <app-intelligence-history-panel
-          [payload]="historyHost.payload()"
-          [currentUserCanEdit]="spaceRole.isAgencyMember()"
-          (withdraw)="withdrawDialogOpen.set(true)"
-          (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
-          (purgeAnchor)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
-        />
         <app-withdraw-intelligence-dialog
           [visible]="withdrawDialogOpen()"
           (cancelled)="withdrawDialogOpen.set(false)"
@@ -139,82 +166,64 @@
 
       <!-- Rail: everything referential (events, referenced-in, materials). -->
       <div class="w-full flex-none lg:w-80">
-        <section class="mb-4 border border-slate-200 bg-white" aria-label="Change events">
-          <header
-            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
-          >
-            <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-              Events
-            </h2>
-          </header>
+        <app-section-card
+          title="Events"
+          description="External intelligence scoped to this asset."
+          [count]="eventsCount()"
+          countNoun="event"
+          [flush]="true"
+          [scrollBody]="true"
+        >
           @if (asset(); as a) {
             <app-entity-events-panel
               [spaceId]="spaceIdSig()"
               [tenantId]="tenantIdSig()"
               entityLevel="product"
               [entityId]="a.id"
+              (loaded)="eventsCount.set($event)"
             />
           }
-        </section>
+        </app-section-card>
 
-        <section
-          class="mb-4 border border-slate-200 bg-white"
-          aria-label="Reads referencing this asset"
+        <app-section-card
+          title="Referenced in"
+          description="Intelligence entries that cite this asset."
+          [count]="(intelligence()?.referenced_in ?? []).length"
+          countNoun="entry"
+          countNounPlural="entries"
+          [flush]="true"
+          [scrollBody]="true"
         >
-          <header
-            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
-          >
-            <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-              Referenced in
-            </h2>
-            <span class="font-mono text-[10px] tabular-nums text-slate-400">
-              {{ (intelligence()?.referenced_in ?? []).length }}
-              {{ (intelligence()?.referenced_in ?? []).length === 1 ? 'read' : 'reads' }}
-            </span>
-          </header>
-          <div class="px-4 py-3">
-            @if ((intelligence()?.referenced_in ?? []).length === 0) {
-              <p class="text-xs italic text-slate-400">Not referenced by any read yet.</p>
-            } @else {
-              <ul class="divide-y divide-slate-100">
-                @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
-                  <li class="flex flex-wrap items-baseline gap-2 py-2">
-                    <span
-                      class="rounded-sm border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
-                    >
-                      {{ ref.entity_type }}
-                    </span>
-                    <span class="text-sm text-slate-800">{{ ref.headline }}</span>
-                  </li>
-                }
-              </ul>
-            }
-          </div>
-        </section>
+          <app-pi-mark icon [size]="12" />
+          <app-referenced-in-panel
+            [rows]="intelligence()?.referenced_in ?? []"
+            [tenantId]="tenantIdSig()"
+            [spaceId]="spaceIdSig()"
+          />
+        </app-section-card>
 
-        <section
-          class="materials-section mb-4 border border-slate-200 bg-white"
-          aria-label="Engagement materials"
+        <app-section-card
+          title="Materials"
+          description="Files and decks attached to this asset."
+          [count]="materialsCount()"
+          countNoun="material"
+          [flush]="true"
         >
-          <header
-            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
-          >
-            <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-              Materials
-            </h2>
-          </header>
           <app-materials-section
             entityType="product"
             [entityId]="assetId()"
             [spaceId]="spaceIdSig()"
+            [scrollList]="true"
+            (loaded)="materialsCount.set($event)"
           />
-        </section>
+        </app-section-card>
       </div>
     </div>
 
     @if (spaceIdSig()) {
       <app-intelligence-drawer
         [visible]="drawerOpen()"
+        [anchorId]="drawerAnchorId()"
         [spaceId]="spaceIdSig()"
         entityType="product"
         [entityId]="assetId()"
@@ -237,6 +246,13 @@
         />
       }
     </p-dialog>
+    <app-trial-create-dialog
+      [visible]="creatingTrial()"
+      (visibleChange)="creatingTrial.set($event)"
+      [spaceId]="spaceIdSig()"
+      [lockedAssetId]="p.id"
+      (saved)="onTrialCreated($event)"
+    />
   } @else {
     <div class="px-4 py-8 text-sm text-slate-500">Asset not found.</div>
   }

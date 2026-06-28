@@ -1,7 +1,7 @@
 /**
  * Single source of truth for the Clint triple-C mark geometry. Consumed by
- * ClintLogoComponent, LoaderComponent, MarkWatermarkComponent,
- * IntelligenceBadgeComponent, the marketing landing, the boot splash (copied
+ * ClintLogoComponent, LoaderComponent, IntelligenceBadgeComponent, the
+ * marketing landing, the boot splash (copied
  * inline in index.html by necessity), and the PPTX export footer.
  * Spec: docs/superpowers/specs/2026-06-11-clint-loader-and-brand-presence-design.md
  */

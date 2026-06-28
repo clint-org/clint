@@ -26,6 +26,7 @@ import { PrimaryIntelligenceService } from '../../../core/services/primary-intel
 import { isPermissionDenied } from '../../../core/util/db-error';
 import { ProseMirrorEditorComponent } from '../prose-mirror-editor/prose-mirror-editor.component';
 import { LinkedEntitiesPickerComponent } from '../linked-entities-picker/linked-entities-picker.component';
+import { LoaderComponent } from '../loader/loader.component';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -37,7 +38,6 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
  */
 @Component({
   selector: 'app-intelligence-drawer',
-  standalone: true,
   imports: [
     FormsModule,
     ButtonModule,
@@ -46,6 +46,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
     Dialog,
     ProseMirrorEditorComponent,
     LinkedEntitiesPickerComponent,
+    LoaderComponent,
   ],
   template: `
     <p-drawer
@@ -60,7 +61,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
       (onHide)="closed.emit()"
     >
       @if (loading()) {
-        <p class="px-2 py-4 text-sm text-slate-500">Loading...</p>
+        <app-loader class="px-2 py-4" [size]="24" label="Loading" />
       } @else {
         <div class="space-y-5 px-1">
           <div>
@@ -77,7 +78,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
               [ngModel]="headline()"
               (ngModelChange)="headline.set($event); markDirty()"
               (blur)="autoSave()"
-              placeholder="One-line read"
+              placeholder="One-line headline"
               class="!w-full"
             />
           </div>
@@ -225,6 +226,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
   private messageService = inject(MessageService);
 
   readonly visible = input<boolean>(false);
+  readonly anchorId = input<string | null>(null);
   readonly spaceId = input.required<string>();
   readonly entityType = input.required<IntelligenceEntityType>();
   readonly entityId = input.required<string>();
@@ -380,8 +382,15 @@ export class IntelligenceDrawerComponent implements OnDestroy {
   }
 
   private applyBundle(bundle: IntelligenceDetailBundle | null): void {
-    const draft = bundle?.draft ?? null;
-    const pub = bundle?.published ?? null;
+    const aid = this.anchorId();
+    // For new-brief mode (anchorId null) show a blank form; never seed from
+    // an existing brief so the author starts fresh.
+    const brief =
+      aid != null
+        ? (bundle?.briefs.find((b) => b.anchor_id === aid) ?? null)
+        : null;
+    const draft = brief?.draft ?? null;
+    const pub = brief?.published ?? null;
     const source = draft ?? pub;
 
     this.hasPublishedVersion.set(pub !== null);
@@ -430,6 +439,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
     this.saveState.set('saving');
     const input: UpsertIntelligenceInput = {
       id: this.currentId(),
+      anchor_id: this.anchorId(),
       space_id: this.spaceId(),
       entity_type: this.entityType(),
       entity_id: this.entityId(),
@@ -463,7 +473,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
         severity: 'error',
         summary: isPermission ? 'Not allowed to publish intelligence' : 'Save failed',
         detail: isPermission
-          ? 'Primary intelligence is the agency deliverable. Ask an agency member of this engagement to publish it.'
+          ? 'Primary intelligence is the agency deliverable. Ask an agency member of this space to publish it.'
           : error instanceof Error
             ? error.message
             : 'Unknown error',

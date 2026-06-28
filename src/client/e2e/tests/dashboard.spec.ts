@@ -77,7 +77,7 @@ test.describe('Dashboard', () => {
 
     if (await trialButton.isVisible()) {
       await trialButton.click();
-      await expect(page).toHaveURL(/\/manage\/trials\/[^/]+/, { timeout: 10000 });
+      await expect(page).toHaveURL(/\/profiles\/trials\/[^/]+/, { timeout: 10000 });
 
       await page.goto(`/t/${tenantId}/s/${spaceId}/timeline`, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('app-dashboard-grid', { timeout: 30000 });

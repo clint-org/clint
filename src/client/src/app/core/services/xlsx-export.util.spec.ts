@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Company } from '../models/company.model';
 import { buildXlsxWorkbook } from './xlsx-export.util';
+import { TRIAL_START_MARKER_TYPE_ID, TRIAL_END_MARKER_TYPE_ID } from '../models/trial-phase-span';
 
 const fixtureCompanies = [
   {
@@ -22,10 +23,23 @@ const fixtureCompanies = [
             identifier: 'NCT00000001',
             notes: 'Pivotal readout expected H2.',
             trial_notes: [],
+            _indications: [{ id: 'i1', indication_id: 'i1', indication_name: 'Obesity' }],
             phase_type: 'P3',
-            phase_start_date: '2020-01-01',
-            phase_end_date: '2022-06-30',
             markers: [
+              {
+                id: 'ms1',
+                marker_type_id: TRIAL_START_MARKER_TYPE_ID,
+                event_date: '2020-01-01',
+                date_precision: 'exact',
+                end_date: null,
+              },
+              {
+                id: 'me1',
+                marker_type_id: TRIAL_END_MARKER_TYPE_ID,
+                event_date: '2022-06-30',
+                date_precision: 'exact',
+                end_date: null,
+              },
               {
                 id: 'm1',
                 event_date: '2021-06-15',
@@ -68,12 +82,14 @@ describe('buildXlsxWorkbook', () => {
     const sheet = wb.getWorksheet('Trials')!;
     expect(sheet.getCell('A1').value).toBe('Company');
     expect(sheet.getCell('A2').value).toBe('Acme Pharma');
-    expect(sheet.getCell('E2').value).toBe('ACME-1');
-    expect(sheet.getCell('G2').value).toBe('PH 3');
-    const start = sheet.getCell('H2').value;
+    // Columns: A Company, B Asset, C MOA, D ROA, E Indication, F Trial, G NCT,
+    // H Phase, I Phase Start, J Phase End.
+    expect(sheet.getCell('E2').value).toBe('Obesity');
+    expect(sheet.getCell('F2').value).toBe('ACME-1');
+    expect(sheet.getCell('H2').value).toBe('PH 3');
+    const start = sheet.getCell('I2').value;
     expect(start).toBeInstanceOf(Date);
     expect((start as Date).getUTCFullYear()).toBe(2020);
-    expect(sheet.getCell('J2').value).toBe('Pivotal readout expected H2.');
   });
 
   it('writes marker rows with honest date labels and a readable NLE status', () => {
@@ -125,7 +141,9 @@ describe('buildXlsxWorkbook', () => {
                 ...fixtureCompanies[0].assets![0].trials![0],
                 markers: [
                   {
-                    ...fixtureCompanies[0].assets![0].trials![0].markers![0],
+                    // markers![2] is the data readout marker (index 0 and 1 are
+                    // Trial Start and Trial End system markers).
+                    ...fixtureCompanies[0].assets![0].trials![0].markers![2],
                     title: longTitle,
                   },
                 ],

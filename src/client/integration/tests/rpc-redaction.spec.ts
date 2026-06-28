@@ -46,6 +46,7 @@ let spaceId: string;
 let markerId: string;
 let materialId: string;
 let piId: string;
+let piAnchorId: string;
 
 /**
  * Resolve a global (space_id is null) marker_type that we can attach the
@@ -86,6 +87,7 @@ beforeAll(async () => {
   markerId = randomUUID();
   materialId = randomUUID();
   piId = randomUUID();
+  piAnchorId = randomUUID();
 
   const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
   try {
@@ -176,11 +178,23 @@ beforeAll(async () => {
       ],
     );
 
+    // primary_intelligence binds to its entity through a primary_intelligence_anchors
+    // row now (entity_type/entity_id moved off the PI table in 20260627130000);
+    // create the anchor first, then the PI row that references it. The redaction
+    // sweep only cares that the PI row is authored by the target, so anchor it to
+    // the scratch space (entity_type 'marker' is not a valid anchor entity type).
+    await pg.query(
+      `insert into public.primary_intelligence_anchors
+         (id, space_id, entity_type, entity_id, is_lead)
+       values ($1, $2, 'space', $2, true)`,
+      [piAnchorId, spaceId],
+    );
+
     await pg.query(
       `insert into public.primary_intelligence
-         (id, space_id, entity_type, entity_id, state, headline, last_edited_by)
-       values ($1, $2, 'marker', $3, 'draft', 'redact-spec pi', $4)`,
-      [piId, spaceId, markerId, targetUserId],
+         (id, space_id, anchor_id, state, headline, last_edited_by)
+       values ($1, $2, $3, 'draft', 'redact-spec pi', $4)`,
+      [piId, spaceId, piAnchorId, targetUserId],
     );
 
     // ---- seed an audit_events row attributed to the target with both pii
@@ -234,6 +248,7 @@ afterAll(async () => {
     // primary_intelligence and markers go first so trigger inserts have a
     // valid parent space until the parent is deleted last.
     await pg.query(`delete from public.primary_intelligence where id = $1`, [piId]);
+    await pg.query(`delete from public.primary_intelligence_anchors where id = $1`, [piAnchorId]);
     await pg.query(`delete from public.materials where id = $1`, [materialId]);
     await pg.query(`delete from public.markers where id = $1`, [markerId]);
     await pg.query(`delete from public.space_members where space_id = $1`, [spaceId]);

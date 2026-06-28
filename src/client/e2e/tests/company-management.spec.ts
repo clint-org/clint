@@ -17,7 +17,7 @@ test.describe('Company Management CRUD', () => {
   let page: Page;
   let tenantId: string;
   let spaceId: string;
-  const companiesUrl = () => `/t/${tenantId}/s/${spaceId}/manage/companies`;
+  const companiesUrl = () => `/t/${tenantId}/s/${spaceId}/profiles/companies`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Company CRUD Org');

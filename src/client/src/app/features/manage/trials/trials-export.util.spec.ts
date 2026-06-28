@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Trial } from '../../../core/models/trial.model';
 import { buildTrialExportColumns, type TrialExportRow } from './trials-export.util';
 import { buildExportSheet } from '../../../shared/export/grid-sheet.util';
+import { TRIAL_START_MARKER_TYPE_ID, TRIAL_END_MARKER_TYPE_ID } from '../../../core/models/trial-phase-span';
 
 function fixture(overrides: Partial<Trial> = {}): TrialExportRow {
   return {
@@ -16,8 +17,10 @@ function fixture(overrides: Partial<Trial> = {}): TrialExportRow {
       status: 'Active',
       notes: 'Pivotal HFpEF readout expected H2.',
       phase_type: 'P3',
-      phase_start_date: '2022-01-01',
-      phase_end_date: '2026-12-31',
+      markers: [
+        { id: 'ms1', marker_type_id: TRIAL_START_MARKER_TYPE_ID, event_date: '2022-01-01', date_precision: 'exact', end_date: null },
+        { id: 'me1', marker_type_id: TRIAL_END_MARKER_TYPE_ID, event_date: '2026-12-31', date_precision: 'exact', end_date: null },
+      ],
       recruitment_status: 'RECRUITING',
       study_type: 'INTERVENTIONAL',
       display_order: 0,
@@ -34,7 +37,11 @@ function fixture(overrides: Partial<Trial> = {}): TrialExportRow {
 
 describe('buildTrialExportColumns', () => {
   it('carries the visible columns plus detail fields with date cells', () => {
-    const spec = buildExportSheet('Trials', buildTrialExportColumns([], () => ''), [fixture()]);
+    const spec = buildExportSheet(
+      'Trials',
+      buildTrialExportColumns([], () => ''),
+      [fixture()]
+    );
     expect(spec.columns.map((c) => c.header)).toEqual([
       'Trial',
       'Acronym',
@@ -48,7 +55,6 @@ describe('buildTrialExportColumns', () => {
       'Recruitment status',
       'Study type',
       'Markers',
-      'Notes',
     ]);
     const row = spec.rows[0];
     expect(row['c1']).toBe('DELIVER');
@@ -58,7 +64,6 @@ describe('buildTrialExportColumns', () => {
     expect(row['c8']).toEqual(new Date(Date.UTC(2026, 11, 31)));
     expect(row['c9']).toBe('RECRUITING');
     expect(row['c11']).toBe(2);
-    expect(row['c12']).toBe('Pivotal HFpEF readout expected H2.');
   });
 
   it('appends per-space CT.gov columns resolved through the snapshot lookup', () => {
@@ -68,7 +73,7 @@ describe('buildTrialExportColumns', () => {
     );
     const spec = buildExportSheet('Trials', columns, [fixture()]);
     expect(spec.columns.at(-1)!.header).toBe('Brief title');
-    expect(spec.rows[0]['c13']).toBe('t1:briefTitle');
+    expect(spec.rows[0]['c12']).toBe('t1:briefTitle');
   });
 
   it('collapses absent optional fields to empty cells', () => {
@@ -81,8 +86,7 @@ describe('buildTrialExportColumns', () => {
           identifier: null,
           status: null,
           phase_type: null,
-          phase_start_date: null,
-          phase_end_date: null,
+          markers: [],
           recruitment_status: null,
           study_type: null,
           notes: null,
@@ -90,7 +94,7 @@ describe('buildTrialExportColumns', () => {
       ]
     );
     const row = spec.rows[0];
-    for (const key of ['c1', 'c2', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10', 'c12']) {
+    for (const key of ['c1', 'c2', 'c5', 'c6', 'c7', 'c8', 'c9', 'c10']) {
       expect(row[key]).toBe('');
     }
   });

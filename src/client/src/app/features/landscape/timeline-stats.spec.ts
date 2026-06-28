@@ -18,7 +18,7 @@ function makeCompany(
         id: `${name}-t${i}-${j}`, space_id: 'sp', created_by: 'u', asset_id: `a${i}`,
         name: `Trial ${j}`, identifier: null, status: null, notes: null,
         display_order: 0, created_at: '', updated_at: '', updated_by: null,
-        phase_type: t.phase_type ?? null, phase_start_date: null, phase_end_date: null,
+        phase_type: t.phase_type ?? null,
         markers: (t.markers ?? []).map((m, k) => ({
           id: `m${k}`, space_id: 'sp', marker_type_id: '', title: '',
           projection: 'projected' as const, event_date: m.event_date, end_date: null,
@@ -58,7 +58,7 @@ describe('computeTimelineStats', () => {
         id: 'shared-trial', space_id: 'sp', created_by: 'u', asset_id: assetId,
         name: 'SYNERGY', identifier: null, status: null, notes: null,
         display_order: 0, created_at: '', updated_at: '', updated_by: null,
-        phase_type: 'P3', phase_start_date: null, phase_end_date: null,
+        phase_type: 'P3',
         markers: [{
           id: 'shared-marker', space_id: 'sp', marker_type_id: '', title: '',
           projection: 'projected' as const, event_date: '2026-02-01', end_date: null,

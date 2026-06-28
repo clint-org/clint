@@ -18,8 +18,6 @@ function makeTrial(overrides: Partial<Trial> = {}): Trial {
     updated_at: '2026-01-01',
     updated_by: null,
     phase_type: null,
-    phase_start_date: null,
-    phase_end_date: null,
     assets: { id: 'a1', name: 'Tirzepatide', companies: { id: 'c1', name: 'Lilly' } },
     ...overrides,
   };

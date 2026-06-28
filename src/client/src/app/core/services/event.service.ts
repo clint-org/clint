@@ -1,6 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 
-import { AppEvent, EventDetail, EventsPageFilters, FeedItem } from '../models/event.model';
+import {
+  AppEvent,
+  EventCategoryDistribution,
+  EventDetail,
+  EventsPageData,
+  EventsPageFilters,
+  FeedItem,
+} from '../models/event.model';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -16,7 +23,7 @@ export class EventService {
     filters: EventsPageFilters,
     limit = 50,
     offset = 0
-  ): Promise<{ items: FeedItem[]; total: number }> {
+  ): Promise<EventsPageData> {
     return this.cache.get(
       'get_events_page_data',
       { spaceId, filters, limit, offset },
@@ -31,7 +38,7 @@ export class EventService {
               p_date_to: filters.dateTo,
               p_entity_level: filters.entityLevel,
               p_entity_id: filters.entityId,
-              p_category_ids: filters.categoryIds.length > 0 ? filters.categoryIds : null,
+              p_category_names: filters.categoryNames.length > 0 ? filters.categoryNames : null,
               p_tags: filters.tags.length > 0 ? filters.tags : null,
               p_priority: filters.priority,
               p_source_type: filters.sourceType,
@@ -42,8 +49,22 @@ export class EventService {
               p_sort_dir: filters.sortDir ?? 'desc',
             })
             .throwOnError();
-          const result = data as { items: FeedItem[]; total: number } | null;
-          return { items: result?.items ?? [], total: result?.total ?? 0 };
+          // The overview aggregates (distribution / high_priority_count /
+          // recent) summarize the full filtered set; total mirrors that count.
+          const result = data as {
+            items: FeedItem[];
+            total: number;
+            high_priority_count: number;
+            distribution: EventCategoryDistribution[];
+            recent: FeedItem[];
+          } | null;
+          return {
+            items: result?.items ?? [],
+            total: result?.total ?? 0,
+            highPriorityCount: result?.high_priority_count ?? 0,
+            distribution: result?.distribution ?? [],
+            recent: result?.recent ?? [],
+          };
         },
       }
     );
@@ -190,6 +211,24 @@ export class EventService {
       .throwOnError();
 
     this.cache.invalidateTags([`event:${eventId}:detail`]);
+  }
+
+  /**
+   * Next 1-based ordering position for a thread: the highest existing
+   * `thread_order` plus one (1 for an empty thread). Used when an event joins a
+   * thread so it sorts last. `thread_order` is a small `int` ordinal, not a
+   * timestamp -- never assign `Date.now()`, which overflows the column.
+   */
+  async nextThreadOrder(threadId: string): Promise<number> {
+    const { data } = await this.supabase.client
+      .from('events')
+      .select('thread_order')
+      .eq('thread_id', threadId)
+      .order('thread_order', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .throwOnError();
+    const rows = (data as { thread_order: number | null }[] | null) ?? [];
+    return (rows[0]?.thread_order ?? 0) + 1;
   }
 
   async delete(id: string): Promise<void> {

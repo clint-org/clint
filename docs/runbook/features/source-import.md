@@ -17,11 +17,16 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - ai_call_open
     - ai_call_preflight
     - ai_call_close
+    - ai_resolve_model
+    - ai_estimate_cost_cents
     - get_space_inventory_snapshot
+    - source_duplicate_check
     - _verify_extract_source_worker_secret
   tables:
     - ai_calls
     - ai_config
+    - ai_model_pricing
+    - source_documents
   related:
     - source-import-commit
   user_facing: false
@@ -98,11 +103,11 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   status: active
 
 - id: source-import-page
-  summary: Full-page import shell with three tabs (NCT list, From URL, From text). Replaces the former dialog. Includes an AI status panel that checks quotas, rate limits, and Anthropic service health on load. Disables submit when AI is unavailable. Reachable from the engagement toolbar, manage section, command palette, and empty-space auto-redirect.
+  summary: Full-page import shell with three tabs (NCT list, From URL, From text). Replaces the former dialog. Includes an AI status panel that checks the tenant's daily token-budget usage and Anthropic service health on load (via get_tenant_ai_status; owners see a usage percentage, non-owners only the enabled flag). Disables submit when AI is unavailable. Reachable from the engagement toolbar, manage section, command palette, and empty-space auto-redirect.
   routes:
     - /t/:tenantId/s/:spaceId/import
   rpcs:
-    - ai_import_status
+    - get_tenant_ai_status
   tables:
     - ai_config
     - ai_calls
@@ -128,14 +133,18 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   status: deprecated
 
 - id: ai-admin-toggle
-  summary: Platform-admin RPC to toggle ai_enabled per tenant with required reason. Tier 1 audited.
+  summary: Platform-admin controls on /super-admin/ai-usage. Toggle ai_enabled per tenant, set the model, token cap, and per-user rate limits (platform_admin_update_ai_config), edit the per-model price catalog (platform_admin_upsert_ai_model_pricing), and read the usage rollup with failure log (get_ai_usage_rollup). All mutations are Tier 1 audited with a required reason.
   routes:
     - /super-admin/ai-usage
   rpcs:
     - platform_admin_set_ai_enabled
+    - platform_admin_update_ai_config
+    - platform_admin_upsert_ai_model_pricing
     - get_ai_usage_rollup
+    - get_ai_call_detail
   tables:
     - ai_config
+    - ai_model_pricing
     - audit_events
   related:
     - super-admin-shell
@@ -144,7 +153,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   status: active
 
 - id: ai-tenant-config
-  summary: Tenant-owner RPC to update the tenant's AI configuration (model, daily cap, rate limits) for their own tenant, separate from the platform-admin enable/disable toggle.
+  summary: Tenant-owner on/off switch for their own tenant's AI (tenant_owner_update_ai_config, enabled-only). Model, token cap, and rate limits are platform-admin controlled and not editable by owners; the settings page shows owners a read-only usage percentage via get_tenant_ai_status.
   routes:
     - /t/:tenantId/settings
   rpcs:
@@ -156,13 +165,28 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
   user_facing: true
   role: owner
   status: active
+
+- id: import-provenance-visibility
+  summary: Read-only provenance drill for space curators. get_source_document returns the source_documents row an AI-imported entity landed from (raw ingested text, title, URL, fetch outcome), plus the importer email (joined from auth.users in the definer context) and the linked ai_call model/outcome. Gated to space owners and editors via has_space_access; viewers and non-members get 42501; platform admin keeps the support read bypass. Surfaced as a quiet "IMPORTED FROM ..." line on the trial/asset/company detail pages and the marker/event detail panels, which opens a read-only source drawer. Keeps source_documents itself agency-only; this RPC is the single tenant-side read path. get_catalyst_detail and get_event_detail also return source_doc_id so the line can render on those surfaces.
+  routes: []
+  rpcs:
+    - get_source_document
+  tables:
+    - source_documents
+    - ai_calls
+  related:
+    - source-import-commit
+  user_facing: true
+  role: editor
+  status: active
 ```
 
 ## New tables
 
 | Table | Purpose | RLS |
 |---|---|---|
-| `ai_config` | Tenant-level AI settings (model, caps, rates, enabled flag) | Tenant owner + platform admin |
+| `ai_config` | Tenant-level AI settings (model, `daily_token_cap`, per-user rate limits, enabled flag) | Platform admin only (direct table); owners reach it through SECURITY DEFINER RPCs |
+| `ai_model_pricing` | Per-model price catalog (`input_cents_per_mtok`, `output_cents_per_mtok`, family, status, `superseded_by`). Source of truth for the model chooser and server-side cost estimation. | Any authenticated user SELECT; platform admin INSERT/UPDATE/DELETE |
 | `source_documents` | One row per imported source (URL, pasted text, or NCT batch). `source_kind` CHECK allows `'url'`, `'text'`, `'nct'`. | Agency members of space + platform admin SELECT; RPC-only write |
 | `ai_calls` | Every LLM call regardless of outcome | Agency SELECT; RPC-only write; platform admin DELETE |
 | `trial_assets` | Many-to-many between trials and assets; source of truth for the set of assets a trial tests. `is_primary` marks the headline member, mirrored into `trials.asset_id` by a sync trigger. Written via `set_trial_assets` (RPC) and the trial-insert bootstrap trigger. | Agency members of space via parent trial; RPC-only write |
@@ -201,7 +225,10 @@ Env bindings: `ANTHROPIC_API_KEY`, `EXTRACT_SOURCE_WORKER_SECRET` (both via `wra
 
 | RPC | Purpose |
 |---|---|
-| `ai_import_status(p_tenant_id)` | Lightweight pre-check: returns `ai_enabled`, `daily_cap_cents`, `spent_today_cents`, `rate_used_hour`, `rate_limit_hour`. Callable by any authenticated user. STABLE, SECURITY DEFINER. |
+| `get_tenant_ai_status(p_tenant_id)` | Owner-safe status read for the import page and tenant settings. Returns `ai_enabled` to anyone with tenant access; owners/platform admins also get `daily_usage_pct` (rolling-24h token usage as a percentage) plus per-user rate limits. Never returns the token cap or any dollar amount. STABLE, SECURITY DEFINER. Replaces the removed cents-based `ai_import_status`. |
+| `ai_resolve_model(p_requested)` / `ai_estimate_cost_cents(p_model, p_prompt_tokens, p_completion_tokens)` | Server-side helpers. `ai_resolve_model` validates a requested model against the active catalog and falls back to sonnet/newest-active; `ai_estimate_cost_cents` prices token counts against `ai_model_pricing` (per million tokens). Used by `ai_call_open`/`ai_call_close` so cost is snapshotted authoritatively per call. |
+| `platform_admin_update_ai_config(p_tenant_id, p_reason, ...)` | Platform-admin patch of model, `daily_token_cap`, and rate limits. Validates the model against the active catalog. Tier 1 audited. |
+| `platform_admin_upsert_ai_model_pricing(p_model_id, p_reason, ...)` | Platform-admin insert/update of a catalog price. Price changes affect future calls only; historical `ai_calls.cost_estimate_cents` stays snapshotted. Tier 1 audited. |
 
 ## Angular components
 
@@ -210,8 +237,8 @@ Env bindings: `ANTHROPIC_API_KEY`, `EXTRACT_SOURCE_WORKER_SECRET` (both via `wra
 | `ImportPageComponent` | `features/source-import/` | Full-page import shell with 3 tabs (NCT, URL, Text) and AI status panel. Route: `/import`. |
 | `NctInputComponent` | `features/source-import/nct-input/` | NCT paste area with live parsing, dedup, duplicate detection, progress, error handling. |
 | `ImportFromSourceDialogComponent` | `features/source-import/` | [DEPRECATED] Former two-mode dialog. Replaced by `ImportPageComponent`. |
-| `ReviewPageComponent` | `features/source-import/` | Review page as a grouped grid (PrimeNG TreeTable): company > asset > trial nesting with column-aligned scanning. Calm-by-default rows (new carries no badge; `existing` gets a quiet slate tag); amber flag chips only on rows needing review per the taxonomy below. Per-row chevron expands an inline detail panel (CT.gov candidate picker, fuzzy-match override, missing-asset blocker, inline field edits incl. indication). The per-entity edit dialog (`ReviewEditDialogComponent`) locks identity fields when the Match control links the entity to an existing record, because `commit_source_import` links existing matches by id and discards their proposal fields: assets disable name/generic-name/company (MOA/ROA stay editable since the commit merges those into the matched asset), companies disable name/website, trials disable every field, and an inline note explains the link. Toolbar filter (All / Needs review / New) collapses to flagged rows keeping parent context. Trials whose `asset_ref` does not resolve to an asset (e.g. a master-protocol NCT testing two drugs, which cannot pick a single asset) cannot nest in the company > asset > trial tree, so they render in a separate "Unlinked trials" section rather than silently disappearing while still counting toward the "(N trials)" header. Footer shows a readable selection summary and an amber blocking message; Confirm is gated on blocking flags (a new trial with no asset is blocking, so it cannot reach the NOT NULL `trials.asset_id` insert). Full two-pane layout (source text) retained for URL/text imports. Pure review-decision logic lives in `review-grid.logic.ts` (unit-tested). |
-| `review-grid.logic.ts` | `features/source-import/` | Pure, DOM-free review-decision module (vitest `npm run test:units`). Exports `entityState`, `deriveTrialFlags`/`deriveAssetFlags`, `duplicateTrialIndexes`, `deriveCtgovFlag`/`deriveFuzzyFlag`, `readableSummary`, `blockingReason`, `trialMissingAsset` (shared by the grid flag and the commit gate so they cannot diverge), and `resolveTrialAssetIndex`/`orphanTrialIndexes` (the single predicate the tree builder uses to nest trials under assets and to surface the unlinked remainder, so nesting and orphan-detection cannot disagree). Flag taxonomy: blocking = no-asset, within-batch duplicate; attention = no-indication, observational (by `study_type`), no-MOA/ROA, missing phase/status, CT.gov pick, fuzzy; info = CT.gov lookup failed. |
+| `ReviewPageComponent` | `features/source-import/` | Review page as a grouped grid (PrimeNG TreeTable): company > asset > trial nesting with column-aligned scanning, plus markers and events nested as leaf rows under the entity they describe (a marker under its trial; an event under its trial/asset/company anchor). Leaf rows carry their identity in the entity cell (title with a muted category + date meta line), leave the trial-shaped columns blank, and are not editable. Markers render the real `app-marker-icon` glyph their `marker_type` resolves to (via `pickMarkerType`, mirroring the commit's exact -> case-insensitive -> system-default name match against the space's marker types), so the review preview matches the timeline/legend; events use the canonical events icon. Surfacing these rows means a linked marker/event is visible and deselectable rather than committed invisibly, and it is what makes the filter-tab count (which walks the grid tree) match the footer/Confirm total. Calm-by-default rows (new carries no badge; `existing` gets a quiet slate tag); amber flag chips only on rows needing review per the taxonomy below. Per-row chevron expands an inline detail panel (CT.gov candidate picker, fuzzy-match override, missing-asset blocker, inline field edits incl. indication). The per-entity edit dialog (`ReviewEditDialogComponent`) locks identity fields when the Match control links the entity to an existing record, because `commit_source_import` links existing matches by id and discards their proposal fields: assets disable name/generic-name/company (MOA/ROA stay editable since the commit merges those into the matched asset), companies disable name/website, trials disable every field, and an inline note explains the link. Toolbar filter (All / Needs review / New) collapses to flagged rows keeping parent context. Trials whose `asset_ref` does not resolve to an asset (e.g. a master-protocol NCT testing two drugs, which cannot pick a single asset) cannot nest in the company > asset > trial tree, so they render in a separate "Unlinked trials" section rather than silently disappearing while still counting toward the "(N trials)" header. Footer shows a readable selection summary and an amber blocking message; Confirm is gated on blocking flags (a new trial with no asset is blocking, so it cannot reach the NOT NULL `trials.asset_id` insert). Full two-pane layout (source text) retained for URL/text imports. Pure review-decision logic lives in `review-grid.logic.ts` (unit-tested). |
+| `review-grid.logic.ts` | `features/source-import/` | Pure, DOM-free review-decision module (vitest `npm run test:units`). Exports `entityState`, `deriveTrialFlags`/`deriveAssetFlags`, `duplicateTrialIndexes`, `deriveCtgovFlag`/`deriveFuzzyFlag`, `readableSummary`, `blockingReason`, `trialMissingAsset` (shared by the grid flag and the commit gate so they cannot diverge), `resolveTrialAssetIndex`/`orphanTrialIndexes` (the single predicate the tree builder uses to nest trials under assets and to surface the unlinked remainder, so nesting and orphan-detection cannot disagree), and `markerLeafDisplay`/`eventLeafDisplay` (the category + date a marker/event leaf row renders). Flag taxonomy: blocking = no-asset, within-batch duplicate; attention = no-indication, observational (by `study_type`), no-MOA/ROA, missing phase/status, CT.gov pick, fuzzy; info = CT.gov lookup failed. |
 | `SourceImportService` | `features/source-import/` | Ephemeral proposal state between import page and review. `source_kind` widened to `'url' | 'text' | 'nct'`. |
 | `SuperAdminAiUsageComponent` | `features/super-admin/` | 3-level AI usage drill-down + ai_enabled toggle |
 

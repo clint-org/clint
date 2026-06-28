@@ -6,6 +6,7 @@ import {
   inject,
   input,
   OnInit,
+  output,
   signal,
 } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -20,8 +21,10 @@ import { errorMessage } from '../../../core/utils/error-message';
 import { MaterialService } from '../../../core/services/material.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { confirmDelete } from '../../utils/confirm-delete';
+import { materialsSectionHidden } from './materials-section-visibility';
 import { MaterialRowComponent } from '../material-row/material-row.component';
 import { MaterialUploadZoneComponent } from '../material-upload-zone/material-upload-zone.component';
+import { LoaderComponent } from '../loader/loader.component';
 
 type MaterialFilter = MaterialType | 'all';
 
@@ -34,7 +37,7 @@ type MaterialFilter = MaterialType | 'all';
 @Component({
   selector: 'app-materials-section',
   standalone: true,
-  imports: [MaterialRowComponent, MaterialUploadZoneComponent],
+  imports: [MaterialRowComponent, MaterialUploadZoneComponent, LoaderComponent],
   templateUrl: './materials-section.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -67,6 +70,17 @@ export class MaterialsSectionComponent implements OnInit {
    * add the first material. Default false keeps every other host unchanged.
    */
   readonly hideWhenEmpty = input<boolean>(false);
+  /**
+   * When true, the material list caps its height and scrolls internally so a
+   * long list never pushes the pinned upload zone off-screen. Used by the
+   * fixed-width sidebar cards (asset / trial / company); full-width hosts leave
+   * it false so the list grows naturally.
+   */
+  readonly scrollList = input<boolean>(false);
+
+  /** Emits the loaded material count after each fetch (0 on empty or error) so
+   *  the surrounding section-card can show it in the header badge. */
+  readonly loaded = output<number>();
 
   protected readonly materials = signal<Material[]>([]);
   protected readonly loading = signal(true);
@@ -94,17 +108,23 @@ export class MaterialsSectionComponent implements OnInit {
   /**
    * Whether the whole section collapses to nothing. When a host opts in via
    * hideWhenEmpty (e.g. a transient detail pane that is not an upload surface),
-   * the section disappears once the fetch settles with no materials, for every
-   * role. While loading or on error we still render so the user is never left
-   * with a silent gap. Hosts that are the contextual upload surface (entity
-   * detail pages) simply do not set hideWhenEmpty, so they keep the zone.
+   * the section disappears once the fetch settles with no materials AND the
+   * viewer cannot upload. An editor who can upload keeps the (empty) section so
+   * they can register the first material; the drop zone is their only entry
+   * point on that surface. While loading or on error we still render so the
+   * user is never left with a silent gap. Hosts that are the contextual upload
+   * surface (entity detail pages) simply do not set hideWhenEmpty, so they keep
+   * the zone regardless. The rule lives in materialsSectionHidden() so it can be
+   * unit-tested without a DOM.
    */
-  protected readonly hidden = computed(
-    () =>
-      this.hideWhenEmpty() &&
-      !this.loading() &&
-      !this.error() &&
-      this.materials().length === 0
+  protected readonly hidden = computed(() =>
+    materialsSectionHidden({
+      hideWhenEmpty: this.hideWhenEmpty(),
+      loading: this.loading(),
+      error: this.error() !== null,
+      isEmpty: this.materials().length === 0,
+      canUpload: this.canUpload(),
+    })
   );
 
   // Reload whenever the anchor entity changes. Guards against the
@@ -131,9 +151,11 @@ export class MaterialsSectionComponent implements OnInit {
         entityId: this.entityId(),
       });
       this.materials.set(result.rows ?? []);
+      this.loaded.emit(this.materials().length);
     } catch (e) {
       this.error.set(errorMessage(e));
       this.materials.set([]);
+      this.loaded.emit(0);
     } finally {
       this.loading.set(false);
     }

@@ -24,6 +24,14 @@ jobs:
       - run: cd src/client && npx ng lint
       - run: cd src/client && npx ng build
       - run: cd src/client && npm run test:scripts
+      - run: cd src/client && npm run migrations:check-secrets
+      - name: Check migration redefinition ordering
+        # Fetch the PR base branch so the guard can tell newly-added migrations
+        # from already-deployed ones (it compares against origin/$GITHUB_BASE_REF).
+        run: |
+          BASE="${GITHUB_BASE_REF:-develop}"
+          git fetch --no-tags --depth=1 origin "+refs/heads/${BASE}:refs/remotes/origin/${BASE}" || true
+          cd src/client && npm run migrations:check-redefs
 
   tests:
     needs: lint-and-build

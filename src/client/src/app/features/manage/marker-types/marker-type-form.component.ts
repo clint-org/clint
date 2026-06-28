@@ -7,6 +7,7 @@ import {
   OnInit,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +15,6 @@ import { InputText } from 'primeng/inputtext';
 import { InputNumber } from 'primeng/inputnumber';
 import { Select } from 'primeng/select';
 import { ColorPicker } from 'primeng/colorpicker';
-import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
 import { MarkerType, MarkerCategory } from '../../../core/models/marker.model';
@@ -22,6 +22,10 @@ import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { MarkerCategoryService } from '../../../core/services/marker-category.service';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
+import {
+  createInlineCategory,
+  shouldOfferCategoryCreate,
+} from './marker-type-form.inline-category';
 
 @Component({
   selector: 'app-marker-type-form',
@@ -32,7 +36,6 @@ import { FormActionsComponent } from '../../../shared/components/form-actions.co
     InputNumber,
     Select,
     ColorPicker,
-    ButtonModule,
     MessageModule,
     FormFieldComponent,
     FormActionsComponent,
@@ -76,8 +79,17 @@ export class MarkerTypeFormComponent implements OnInit {
   readonly nameBlurred = signal(false);
   readonly categoryBlurred = signal(false);
 
+  private readonly categorySelect = viewChild<Select>('categorySelect');
+  readonly categoryFilter = signal('');
+  readonly creatingCategory = signal(false);
+
   readonly nameInvalid = computed(() => this.nameBlurred() && !this.name().trim());
   readonly categoryInvalid = computed(() => this.categoryBlurred() && !this.categoryId());
+
+  readonly createCategoryLabel = computed(() => this.categoryFilter().trim());
+  readonly showCreateCategory = computed(() =>
+    shouldOfferCategoryCreate(this.categoryFilter(), this.categories())
+  );
 
   async ngOnInit(): Promise<void> {
     const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
@@ -95,6 +107,37 @@ export class MarkerTypeFormComponent implements OnInit {
       this.color.set(existing.color);
       this.displayOrder.set(existing.display_order);
       this.categoryId.set(existing.category_id);
+    }
+  }
+
+  onCategoryFilter(filter: string): void {
+    this.categoryFilter.set(filter);
+  }
+
+  async createCategoryFromFilter(): Promise<void> {
+    if (this.creatingCategory()) return;
+    this.creatingCategory.set(true);
+    this.error.set(null);
+    try {
+      const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+      const created = await createInlineCategory(
+        this.categoryService,
+        spaceId,
+        this.categoryFilter()
+      );
+      if (!created) return;
+      this.categories.update((list) => [...list, created]);
+      this.categoryId.set(created.id);
+      this.categoryFilter.set('');
+      this.categorySelect()?.hide();
+    } catch (e) {
+      this.error.set(
+        e && typeof e === 'object' && 'message' in e && typeof e.message === 'string'
+          ? e.message
+          : 'Could not create the category.'
+      );
+    } finally {
+      this.creatingCategory.set(false);
     }
   }
 

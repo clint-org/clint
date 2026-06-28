@@ -18,7 +18,7 @@ export function buildEntityRouterLink(
   entityId: string
 ): unknown[] | null {
   if (!tenantId || !spaceId) return null;
-  const base = ['/t', tenantId, 's', spaceId, 'manage'];
+  const base = ['/t', tenantId, 's', spaceId, 'profiles'];
   switch (entityType) {
     case 'trial':
       return [...base, 'trials', entityId];

@@ -47,6 +47,7 @@ Helper methods in the sync service handle phase mapping, masking conversion, spo
     - bulk_update_last_polled
     - get_trials_for_polling
     - get_latest_sync_run
+    - mark_trials_ctgov_withdrawn
     - record_sync_run
     - _verify_ctgov_worker_secret
   tables:
@@ -60,7 +61,7 @@ Helper methods in the sync service handle phase mapping, masking conversion, spo
 - id: ctgov-manual-trial-sync
   summary: Single-trial sync trigger for ad-hoc refresh of a single NCT.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
   rpcs:
     - trigger_single_trial_sync
   tables:
@@ -96,4 +97,33 @@ Helper methods in the sync service handle phase mapping, masking conversion, spo
   user_facing: false
   role: viewer
   status: active
+- id: ctgov-trial-date-markers
+  summary: Trial dates (start, end) live as Trial Start / Trial End markers. Partial dates are resolved to full dates with a precision label; seeding uses a source-aware UPSERT with an adoption step. A BEFORE UPDATE/DELETE trigger enforces ct.gov ownership on markers.
+  routes: []
+  rpcs:
+    - _ctgov_resolve_partial_date
+    - _seed_ctgov_marker_upsert
+    - _create_trial_date_markers
+    - _guard_ctgov_locked_markers
+  tables:
+    - markers
+    - marker_assignments
+  related:
+    - ctgov-snapshot-history
+    - ctgov-field-mapping
+  user_facing: false
+  role: viewer
+  status: active
 ```
+
+## Sync health: partial dates, withdrawn trials, and failure visibility
+
+The daily pull runs in the prod `clint` Worker on a `0 7 * * *` cron (dev has `crons: []`, so the scheduled sync never fires in dev). Each run records one row in `ctgov_sync_runs` with counts and a `status` of `success` / `partial` / `failed`.
+
+**Partial dates.** CT.gov emits month- or year-precision dates (e.g. `2026-04`, `2026`) for `startDateStruct` / `primaryCompletionDateStruct` / `completionDateStruct`, and month-precision for `statusVerifiedDate`. All date parsing in the ingest path goes through `_safe_iso_date()`, which returns null for anything that is not a full `YYYY-MM-DD`. A partial date never raises `22007` (which previously aborted `ingest_ctgov_snapshot` and dropped the run to `partial`). In `_classify_change`, a `date_moved` event for a partial still emits with `days_diff: null` and the raw `from`/`to` strings.
+
+**Withdrawn trials (404).** When a full pull returns 404, the study has been removed from the registry. The worker collects the trial id and calls `mark_trials_ctgov_withdrawn`, which stamps `trials.ctgov_withdrawn_at`, emits a one-time `trial_withdrawn` event, and bumps `last_polled_at`. `get_trials_for_polling` excludes trials with a non-null `ctgov_withdrawn_at`, so a withdrawn NCT leaves the queue and is not re-fetched daily. A 404 is expected attrition, not a sync error: it does not add to `errors_count` and does not drag the run to `partial`.
+
+**Failure visibility.** `runScheduledSync` always records a run row: if it throws before the normal `record_sync_run` (e.g. `get_trials_for_polling` 500s), it records a `status=failed` row with `error_summary.errors[0].kind = 'fatal'` and then rethrows so the `scheduled()` handler still logs. Previously a fatal throw left no row at all -- the run vanished into an unread Worker log, which is what produced the multi-day gaps in `ctgov_sync_runs`.
+
+**Watchdog alert.** `.github/workflows/ctgov-sync-health.yml` is a scheduled GitHub Actions check (`0 9 * * *`, ~2h after the sync) that queries prod for the latest `ctgov_sync_runs` row. It fails -- opening or commenting on a deduped `ctgov-sync-failure` issue, the same pattern as `uptime-check.yml` -- when the latest run is stale (> 26h, i.e. a daily run was missed), is `failed`/`partial`, or no runs exist. Because it runs on GitHub's infra rather than the Worker, it is the only signal that catches the Worker cron silently not firing at all.

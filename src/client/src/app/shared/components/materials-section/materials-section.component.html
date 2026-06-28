@@ -1,80 +1,97 @@
 @if (!hidden()) {
-<div class="materials-section__inner flex flex-col">
-  @if (heading()) {
-    <p class="border-b border-slate-100 px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-      {{ heading() }}
-    </p>
-  }
-  <!-- Filter chip row -->
-  <div
-    class="flex flex-wrap items-center gap-1 border-b border-slate-100 px-4 py-2"
-    role="group"
-    aria-label="Filter by material type"
-  >
-    @for (chip of typeFilters; track chip.value) {
-      <button
-        type="button"
-        class="rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500"
-        [class.border-brand-300]="activeFilter() === chip.value"
-        [class.bg-brand-50]="activeFilter() === chip.value"
-        [class.text-brand-700]="activeFilter() === chip.value"
-        [class.border-slate-200]="activeFilter() !== chip.value"
-        [class.bg-white]="activeFilter() !== chip.value"
-        [class.text-slate-500]="activeFilter() !== chip.value"
-        [attr.aria-pressed]="activeFilter() === chip.value"
-        (click)="setFilter(chip.value)"
+  <div class="materials-section__inner flex flex-col">
+    @if (heading()) {
+      <p
+        class="border-b border-slate-100 px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
       >
-        {{ chip.label }}
-      </button>
-    }
-    <span class="ml-auto font-mono text-[10px] text-slate-400 tabular-nums">
-      {{ visibleMaterials().length }} {{ visibleMaterials().length === 1 ? 'item' : 'items' }}
-    </span>
-  </div>
-
-  <!-- Body: list -->
-  <div class="materials-section__list" aria-live="polite">
-    @if (loading()) {
-      <p class="px-4 py-3 text-xs text-slate-400">Loading materials...</p>
-    } @else if (error()) {
-      <p class="px-4 py-3 text-xs text-red-600">{{ error() }}</p>
-    } @else if (visibleMaterials().length === 0) {
-      <p class="px-4 py-3 text-xs text-slate-400">
-        @if (activeFilter() === 'all') {
-          No materials linked to this entity yet.
-        } @else {
-          No materials of this type yet.
-        }
+        {{ heading() }}
       </p>
-    } @else {
-      <ul class="divide-y divide-slate-100">
-        @for (material of visibleMaterials(); track material.id) {
-          <li>
-            <app-material-row
-              [material]="material"
-              [showLinks]="true"
-              [tenantId]="tenantId()"
-              [spaceId]="spaceId()"
-              (downloadClick)="onDownloadClick($event)"
-              (deleteClick)="onDeleteClick($event)"
-            />
-          </li>
+    }
+    <!-- Filter chip row. Gated on total materials, not the filtered count, so
+         it stays visible when a type filter yields nothing (letting the user
+         switch back to All) but disappears entirely when the section is empty. -->
+    @if (materials().length > 0) {
+    <div
+      class="flex flex-wrap items-center gap-1 border-b border-slate-100 px-4 py-2"
+      role="group"
+      aria-label="Filter by material type"
+    >
+      @for (chip of typeFilters; track chip.value) {
+        <button
+          type="button"
+          class="rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider transition-colors focus:outline-none focus:ring-1 focus:ring-brand-500"
+          [class.border-brand-300]="activeFilter() === chip.value"
+          [class.bg-brand-50]="activeFilter() === chip.value"
+          [class.text-brand-700]="activeFilter() === chip.value"
+          [class.border-slate-200]="activeFilter() !== chip.value"
+          [class.bg-white]="activeFilter() !== chip.value"
+          [class.text-slate-500]="activeFilter() !== chip.value"
+          [attr.aria-pressed]="activeFilter() === chip.value"
+          (click)="setFilter(chip.value)"
+        >
+          {{ chip.label }}
+        </button>
+      }
+      <span class="ml-auto font-mono text-[10px] text-slate-400 tabular-nums">
+        {{ visibleMaterials().length }}
+        {{ visibleMaterials().length === 1 ? 'material' : 'materials' }}
+      </span>
+    </div>
+    }
+
+    <!-- Body: list. On the sidebar cards (scrollList) the height is capped with
+         an internal scroll so a long list never pushes the pinned upload zone
+         off-screen; the filter row above and the drop zone below stay put.
+         Full-width hosts (engagement) leave it uncapped. -->
+    <div
+      class="materials-section__list"
+      [class.max-h-64]="scrollList()"
+      [class.overflow-y-auto]="scrollList()"
+      aria-live="polite"
+    >
+      @if (loading()) {
+        <app-loader class="px-4 py-3" [size]="18" label="Loading materials" />
+      } @else if (error()) {
+        <p class="px-4 py-3 text-xs text-red-600">{{ error() }}</p>
+      } @else if (visibleMaterials().length === 0) {
+        <!-- When the section is wholly empty and the user can upload, the drop
+             zone below names the empty (its `empty` input), so we don't repeat
+             it here. We still name it for viewers (no drop zone) and for an
+             empty type-filter (materials exist, just none of this type). -->
+        @if (activeFilter() !== 'all') {
+          <p class="px-4 py-3 text-xs text-slate-400">No materials of this type yet.</p>
+        } @else if (!canUpload()) {
+          <p class="px-4 py-3 text-xs text-slate-400">No materials linked to this entity yet.</p>
         }
-      </ul>
+      } @else {
+        <ul class="flex flex-col gap-2.5 px-4 py-3">
+          @for (material of visibleMaterials(); track material.id) {
+            <li>
+              <app-material-row
+                [material]="material"
+                [showLinks]="true"
+                [tenantId]="tenantId()"
+                [spaceId]="spaceId()"
+                (downloadClick)="onDownloadClick($event)"
+                (deleteClick)="onDeleteClick($event)"
+              />
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <!-- Upload zone (owners and editors only) -->
+    @if (canUpload()) {
+      <div class="border-t border-slate-100 px-4 py-3">
+        <app-material-upload-zone
+          [spaceId]="spaceId()"
+          [entityType]="entityType()"
+          [entityId]="entityId()"
+          [empty]="materials().length === 0"
+          (uploaded)="onUploaded()"
+        />
+      </div>
     }
   </div>
-
-  <!-- Upload zone (owners and editors only) -->
-  @if (canUpload()) {
-    <div class="border-t border-slate-100 px-4 py-3">
-      <app-material-upload-zone
-        [spaceId]="spaceId()"
-        [entityType]="entityType()"
-        [entityId]="entityId()"
-        (uploaded)="onUploaded()"
-      />
-    </div>
-  }
-
-</div>
 }

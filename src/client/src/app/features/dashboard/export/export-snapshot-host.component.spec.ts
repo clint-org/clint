@@ -34,7 +34,6 @@ describe('ExportSnapshotHostComponent template contract', () => {
       '[hideTrialColumn]="hideTrialColumn()"',
       '[hideMoaColumn]="hideMoaColumn()"',
       '[hideRoaColumn]="hideRoaColumn()"',
-      '[hideNotesColumn]="hideNotesColumn()"',
     ]) {
       expect(src).toContain(binding);
     }
@@ -47,7 +46,7 @@ describe('ExportSnapshotHostComponent template contract', () => {
 
   it('delegates the branded footer to ExportFooterComponent with the Timeline label', () => {
     expect(src).toContain(
-      `import { ExportFooterComponent } from '../../../shared/export/export-footer.component'`,
+      `import { ExportFooterComponent } from '../../../shared/export/export-footer.component'`
     );
     expect(src).toContain('ExportFooterComponent');
     expect(src).toContain('<app-export-footer');

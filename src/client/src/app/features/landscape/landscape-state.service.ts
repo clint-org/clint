@@ -15,10 +15,13 @@ import {
   spanOverlapsRange,
   timePeriodToRange,
 } from '../../core/models/landscape.model';
+import { PiReference } from '../../core/models/primary-intelligence.model';
 import { CatalystService } from '../../core/services/catalyst.service';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceSettingsService } from '../../core/services/space-settings.service';
 import { groupCatalystsByTimePeriod, flattenGroupedCatalysts } from '../catalysts/group-catalysts';
+import { deriveTrialPhaseSpan, type TrialPhaseSpan } from '../../core/models/trial-phase-span';
 
 interface PersistedLandscapeState {
   filters: LandscapeFilters;
@@ -29,7 +32,7 @@ interface PersistedLandscapeState {
   countUnit: CountUnit;
   showMoaColumn: boolean;
   showRoaColumn: boolean;
-  showNotesColumn: boolean;
+  showIndicationColumn: boolean;
 }
 
 const STORAGE_PREFIX = 'landscape-state:';
@@ -51,6 +54,7 @@ const STORAGE_PREFIX = 'landscape-state:';
 export class LandscapeStateService {
   private readonly dashboardService = inject(DashboardService);
   private readonly catalyst = inject(CatalystService);
+  private readonly intelligence = inject(PrimaryIntelligenceService);
   private readonly spaceSettings = inject(SpaceSettingsService);
   private storageKey = '';
   private spaceId = '';
@@ -85,12 +89,17 @@ export class LandscapeStateService {
   // ─── Column visibility (timeline grid) ──────────────────────────────
   readonly showMoaColumn = signal(true);
   readonly showRoaColumn = signal(true);
-  readonly showNotesColumn = signal(true);
+  // Off by default: most trials map to a single indication, so the column
+  // only earns its width when a user wants the indication cut. Toggled via
+  // the COLUMNS control in the insight strip.
+  readonly showIndicationColumn = signal(false);
 
   // ─── Shared detail panel ─────────────────────────────────────────────
   readonly selectedMarkerId = signal<string | null>(null);
   readonly selectedDetail = signal<CatalystDetail | null>(null);
   readonly detailLoading = signal(false);
+  /** Incoming PI references for the selected marker (entries that cite it). */
+  readonly selectedMarkerReferences = signal<PiReference[]>([]);
 
   // ─── Filtered views (computed) ───────────────────────────────────────
 
@@ -138,7 +147,7 @@ export class LandscapeStateService {
       countUnit: this.countUnit(),
       showMoaColumn: this.showMoaColumn(),
       showRoaColumn: this.showRoaColumn(),
-      showNotesColumn: this.showNotesColumn(),
+      showIndicationColumn: this.showIndicationColumn(),
     };
     if (!this.storageKey || this.disablePersistence) return;
     try {
@@ -161,7 +170,7 @@ export class LandscapeStateService {
       columnDefaults?: {
         showMoaColumn?: boolean;
         showRoaColumn?: boolean;
-        showNotesColumn?: boolean;
+        showIndicationColumn?: boolean;
       };
     }
   ): Promise<void> {
@@ -179,8 +188,8 @@ export class LandscapeStateService {
         this.showMoaColumn.set(opts.columnDefaults.showMoaColumn);
       if (opts.columnDefaults.showRoaColumn !== undefined)
         this.showRoaColumn.set(opts.columnDefaults.showRoaColumn);
-      if (opts.columnDefaults.showNotesColumn !== undefined)
-        this.showNotesColumn.set(opts.columnDefaults.showNotesColumn);
+      if (opts.columnDefaults.showIndicationColumn !== undefined)
+        this.showIndicationColumn.set(opts.columnDefaults.showIndicationColumn);
     }
     if (!this.disablePersistence) {
       this.restorePersistedState();
@@ -223,7 +232,23 @@ export class LandscapeStateService {
   private async fetchAndSet(markerId: string): Promise<void> {
     this.selectedMarkerId.set(markerId);
     this.selectedDetail.set(null);
+    this.selectedMarkerReferences.set([]);
     this.detailLoading.set(true);
+
+    // Incoming PI references load in parallel and never block the catalyst
+    // detail; they are a non-critical augmentation of the pane.
+    const spaceId = this.spaceIdSig();
+    if (spaceId) {
+      void this.intelligence
+        .getMarkerReferences(spaceId, markerId)
+        .then((refs) => {
+          if (this.selectedMarkerId() === markerId) this.selectedMarkerReferences.set(refs);
+        })
+        .catch(() => {
+          /* references are non-critical */
+        });
+    }
+
     try {
       const detail = await this.catalyst.getCatalystDetail(markerId);
       if (this.selectedMarkerId() === markerId) {
@@ -240,6 +265,7 @@ export class LandscapeStateService {
   clearSelection(): void {
     this.selectedMarkerId.set(null);
     this.selectedDetail.set(null);
+    this.selectedMarkerReferences.set([]);
   }
 
   // ─── Private ─────────────────────────────────────────────────────────
@@ -285,8 +311,8 @@ export class LandscapeStateService {
       if (saved.countUnit) this.countUnit.set(saved.countUnit);
       if (typeof saved.showMoaColumn === 'boolean') this.showMoaColumn.set(saved.showMoaColumn);
       if (typeof saved.showRoaColumn === 'boolean') this.showRoaColumn.set(saved.showRoaColumn);
-      if (typeof saved.showNotesColumn === 'boolean')
-        this.showNotesColumn.set(saved.showNotesColumn);
+      if (typeof saved.showIndicationColumn === 'boolean')
+        this.showIndicationColumn.set(saved.showIndicationColumn);
     } catch {
       // Corrupt data -- ignore and start fresh.
     }
@@ -333,16 +359,17 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
             trials = trials.filter((t) => filters.trialIds.includes(t.id));
           }
 
-          // Indication filter: trials carry their indication grouping in
-          // `_indication` (attached by DashboardService). Match on the
-          // indication entity id, which is `_indication.indication_id` -- not
-          // the asset_indication join-row id on `_indication.id`. Trials with
-          // no `_indication` are excluded when an indication filter is active.
+          // Indication filter: trials carry their indication groupings in
+          // `_indications` (attached by DashboardService). A trial matches when
+          // ANY of its indications is selected. Match on the indication entity
+          // id (`_indications[].indication_id`) -- not the asset_indication
+          // join-row id. Trials with no `_indications` are excluded when an
+          // indication filter is active.
           if (filters.indicationIds.length > 0) {
-            trials = trials.filter(
-              (t) =>
-                t._indication?.indication_id &&
-                filters.indicationIds.includes(t._indication.indication_id)
+            trials = trials.filter((t) =>
+              (t._indications ?? []).some((ind) =>
+                filters.indicationIds.includes(ind.indication_id)
+              )
             );
           }
 
@@ -363,6 +390,21 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
             );
           }
 
+          // Snapshot each trial's phase span from its ORIGINAL markers, BEFORE
+          // the marker-category filter below rewrites t.markers. The system
+          // Trial Start / Trial End marker types carry no marker category, so an
+          // active category filter strips them; deriving the span afterward
+          // would lose the phase window. The old phase-date columns were plain
+          // trial fields unaffected by the category filter, so phase-span /
+          // time-period filtering stays independent of it. Keyed by trial id
+          // (unique within an asset).
+          const phaseSpanByTrialId = new Map<string, TrialPhaseSpan>();
+          if (hasTimeWindow) {
+            for (const t of trials) {
+              phaseSpanByTrialId.set(t.id, deriveTrialPhaseSpan(t.markers ?? []));
+            }
+          }
+
           // Filter markers by category if set
           if (filters.markerCategoryIds.length > 0) {
             trials = trials.map((t) => ({
@@ -375,8 +417,9 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
           }
 
           // Time period: prune markers outside the window, then keep trials
-          // whose phase span overlaps it. Trials with no phase dates pass
-          // only if at least one of their markers survived the pruning.
+          // whose phase span (from the pre-category-filter snapshot) overlaps
+          // it. Trials with no phase span pass only if at least one of their
+          // markers survived the pruning.
           if (hasTimeWindow) {
             trials = trials
               .map((t) => ({
@@ -386,8 +429,9 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
                 ),
               }))
               .filter((t) => {
-                const start = t.phase_start_date ?? null;
-                const end = t.phase_end_date ?? null;
+                const span = phaseSpanByTrialId.get(t.id);
+                const start = span?.start ?? null;
+                const end = span?.end ?? null;
                 if (start === null && end === null) return (t.markers ?? []).length > 0;
                 return spanOverlapsRange(start, end, timeRange);
               });

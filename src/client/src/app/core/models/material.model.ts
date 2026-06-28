@@ -6,7 +6,7 @@
 
 export type MaterialType = 'briefing' | 'conference_report' | 'priority_notice' | 'ad_hoc';
 
-export type MaterialEntityType = 'trial' | 'marker' | 'company' | 'product' | 'space';
+export type MaterialEntityType = 'trial' | 'marker' | 'company' | 'product' | 'space' | 'event';
 
 export interface MaterialLink {
   entity_type: MaterialEntityType;
@@ -19,6 +19,14 @@ export interface MaterialLink {
    * Null when the linked entity has been deleted.
    */
   entity_name?: string | null;
+  /**
+   * Parent trial id for a marker link, resolved server-side by the list RPCs
+   * (the marker's first trial assignment). Lets the UI deep-link a marker chip
+   * to the trial timeline, since markers have no standalone page. Null/absent
+   * for non-marker links and for a marker with no trial assignment. Read-only
+   * output: the register/update inputs do not send it.
+   */
+  trial_id?: string | null;
 }
 
 export interface Material {
@@ -80,7 +88,8 @@ export const MATERIAL_ENTITY_LABEL: Record<MaterialEntityType, string> = {
   marker: 'Marker',
   company: 'Company',
   product: 'Asset',
-  space: 'Engagement',
+  space: 'Space',
+  event: 'Event',
 };
 
 /**
@@ -110,6 +119,31 @@ export function classifyMaterialMime(mime: string, fileName?: string): MaterialF
     return 'docx';
   }
   return 'other';
+}
+
+/**
+ * Short uppercase label shown inside the file-type tile (e.g. "PDF", "PPTX").
+ * Prefers the real filename extension when it is short and alphanumeric, so a
+ * `.doc` reads "DOC" rather than the kind's canonical "DOCX"; falls back to the
+ * file-kind label when the name carries no usable extension.
+ */
+export function materialExtLabel(fileName: string, kind: MaterialFileKind): string {
+  const name = fileName ?? '';
+  const dot = name.lastIndexOf('.');
+  if (dot >= 0 && dot < name.length - 1) {
+    const ext = name.slice(dot + 1).toUpperCase();
+    if (ext.length <= 4 && /^[A-Z0-9]+$/.test(ext)) return ext;
+  }
+  switch (kind) {
+    case 'pptx':
+      return 'PPTX';
+    case 'pdf':
+      return 'PDF';
+    case 'docx':
+      return 'DOCX';
+    default:
+      return 'FILE';
+  }
 }
 
 export const MATERIAL_DEFAULT_ALLOWED_MIME: readonly string[] = [

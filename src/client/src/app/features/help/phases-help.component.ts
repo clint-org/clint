@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { PHASE_DESCRIPTORS } from '../../core/models/phase-colors';
 import { BrandContextService } from '../../core/services/brand-context.service';
@@ -8,10 +7,10 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
 @Component({
   selector: 'app-phases-help',
   standalone: true,
-  imports: [RouterLink, ManagePageShellComponent],
+  imports: [ManagePageShellComponent],
   template: `
     <app-manage-page-shell>
-      <div class="max-w-3xl">
+      <div class="max-w-6xl">
         <header class="mb-6">
           <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Help</p>
           <h1 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">
@@ -24,46 +23,57 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
           </p>
         </header>
 
-        <section class="mb-8">
-          <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Phase progression
-          </h2>
-          <div class="border border-slate-200 bg-white">
-            @for (phase of phases(); track phase.key) {
-              <div
-                class="grid grid-cols-[8rem_5rem_1fr] items-start gap-4 border-b border-slate-100 px-5 py-4 last:border-b-0"
-              >
-                <div class="flex items-center gap-3">
-                  <span
-                    class="inline-block h-3 w-8 rounded-sm"
-                    [style.background-color]="phase.color"
-                    aria-hidden="true"
-                  ></span>
-                  <span class="text-sm font-semibold text-slate-900">{{ phase.label }}</span>
-                  <span
-                    class="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400"
-                    >{{ phase.shortLabel }}</span
-                  >
+        <div class="lg:grid lg:grid-cols-2 lg:items-start lg:gap-10">
+          <section class="mb-8 lg:mb-0">
+            <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Phase progression
+            </h2>
+            <div class="border border-slate-200 bg-white">
+              @for (phase of phases(); track phase.key) {
+                <div
+                  class="grid grid-cols-[14rem_1fr] items-start gap-4 border-b border-slate-100 px-5 py-4 last:border-b-0"
+                >
+                  <div class="flex items-center gap-2.5">
+                    <span
+                      class="inline-block h-3 w-8 shrink-0 rounded-sm"
+                      [style.background-color]="phase.color"
+                      aria-hidden="true"
+                    ></span>
+                    <span class="text-sm font-semibold text-slate-900">{{ phase.label }}</span>
+                    <span class="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400">{{
+                      phase.shortLabel
+                    }}</span>
+                  </div>
+                  <div class="text-sm text-slate-600">{{ phase.description }}</div>
                 </div>
-                <div class="text-sm text-slate-600">{{ phase.description }}</div>
-              </div>
-            }
-          </div>
-        </section>
+              }
+            </div>
+          </section>
 
+          <div>
         <section class="mb-8">
           <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
             How to read the bars
           </h2>
           <div class="border border-slate-200 bg-white px-5 py-4 text-sm text-slate-600">
             <ul class="space-y-2 list-disc pl-5">
-              <li>Bars span the start and end dates of each phase.</li>
+              <li>
+                A bar runs from the trial's earliest <span class="font-medium">Trial Start</span>
+                marker to its latest <span class="font-medium">Trial End</span> marker (the
+                <span class="font-medium">Primary Completion Date</span> marker stands in when there
+                is no Trial End). The bar has no dates of its own, so the markers are the bar: correct
+                a date on the marker and the bar follows.
+              </li>
+              <li>
+                Color and label come from the trial's phase, not its markers. A trial with no Trial
+                Start or Trial End marker has no span, so no bar renders.
+              </li>
               <li>
                 Color intensity rises through PH 1 → PH 2 → PH 3 so the pivotal phase is the most
                 prominent.
               </li>
               <li>P4 and APPROVED shift to the violet family to mark the regulatory transition.</li>
-              <li>LAUNCHED uses the brand teal -- the strongest commercial state, hero color.</li>
+              <li>LAUNCHED uses the brand teal, the strongest commercial state and hero color.</li>
               <li>
                 Observational arms use amber so they sit visually apart from interventional
                 progression.
@@ -99,17 +109,14 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
             }
           </div>
         </section>
-
-        <p class="mt-8 text-xs text-slate-400">
-          <a [routerLink]="backLink()" class="text-brand-700 hover:underline">Back</a>
-        </p>
+          </div>
+        </div>
       </div>
     </app-manage-page-shell>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PhasesHelpComponent {
-  private readonly route = inject(ActivatedRoute);
   private readonly brand = inject(BrandContextService);
 
   // Plural-people slot. Companies take a singular noun, so the agency name
@@ -131,16 +138,12 @@ export class PhasesHelpComponent {
     const subject = this.analystSubject();
     return [
       {
-        q: 'Why is P3 the brightest color?',
-        a: 'Pivotal trials decide the commercial and partnership narrative. The hero color cues the eye to the assets in or near pivotal readout. Earlier phases stay muted so they recede into context.',
-      },
-      {
         q: 'Why are APPROVED and LAUNCHED separate?',
         a: `Regulatory approval and commercial launch are different competitive events. APPROVED marks the regulatory clearance; LAUNCHED marks revenue exposure. Distinct colors let ${subject} spot assets that are approved-but-not-launched at a glance.`,
       },
       {
-        q: 'What does PRECLIN mean for a competitor read?',
-        a: 'Preclinical assets are early-signal indicators. They appear muted because they are weak signals individually but matter in aggregate -- a cluster of preclinical activity in an area is itself a competitive datum.',
+        q: 'What does PRECLIN mean for a competitor analysis?',
+        a: 'Preclinical assets are early signals. They appear muted because each one is a weak signal on its own, but they matter in aggregate. A cluster of preclinical activity in one area is itself worth watching.',
       },
       {
         q: 'Why don\'t I see the preclinical phase in my space?',
@@ -148,13 +151,8 @@ export class PhasesHelpComponent {
       },
       {
         q: 'Can the colors change per tenant?',
-        a: 'No. Phase colors are a global semantic and stay consistent across all tenants and engagements so anyone moving between spaces reads the same signal the same way.',
+        a: 'No. Phase colors are fixed and stay the same across every workspace and space, so a color always means the same phase no matter whose space you are looking at.',
       },
     ];
   });
-
-  protected backLink(): string[] {
-    const tenantId = this.route.snapshot.paramMap.get('tenantId');
-    return tenantId ? ['/t', tenantId, 'spaces'] : ['/'];
-  }
 }

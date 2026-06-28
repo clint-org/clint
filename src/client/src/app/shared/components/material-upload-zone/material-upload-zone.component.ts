@@ -65,6 +65,9 @@ interface PendingFile {
       <div class="flex items-center gap-3 text-xs">
         <i class="fa-solid fa-cloud-arrow-up text-slate-400"></i>
         <span class="text-slate-500">
+          @if (empty()) {
+            <span class="font-medium text-slate-600">No materials attached yet.</span>
+          }
           Drop a file or
           <button type="button" class="text-brand-700 hover:underline" (click)="fileInput.click()">
             browse
@@ -73,7 +76,7 @@ interface PendingFile {
         </span>
       </div>
       <span class="font-mono text-[10px] uppercase tracking-wider text-slate-400">
-        PPTX | PDF | DOCX
+        Accepts PPTX, PDF, DOCX.
       </span>
 
       <input
@@ -173,6 +176,7 @@ interface PendingFile {
             <app-linked-entities-picker
               [spaceId]="spaceId()"
               [value]="pickerLinks()"
+              [showRelationship]="false"
               (valueChange)="onPickerChange($event)"
             />
           </div>
@@ -215,6 +219,13 @@ export class MaterialUploadZoneComponent {
   readonly allowedMimeTypes = input<readonly string[]>(MATERIAL_DEFAULT_ALLOWED_MIME);
   /** Tenant-configured maximum size in bytes; null means use server default. */
   readonly maxSizeBytes = input<number | null>(null);
+  /**
+   * When true, the idle drop prompt leads with "No materials attached yet."
+   * so the zone names the empty state before pointing at the action. Hosts
+   * set this only when there are genuinely no materials; the zone is a
+   * persistent upload affordance otherwise.
+   */
+  readonly empty = input<boolean>(false);
 
   readonly uploaded = output<Material>();
 
@@ -344,8 +355,10 @@ export class MaterialUploadZoneComponent {
 
     const filenameWithoutExt = file.name.replace(/\.[^.]+$/, '');
 
-    // Pre-select the current entity in the picker, unless it is space-level
-    // (the picker can't render space links).
+    // Pre-select the current entity in the picker, unless it is space- or
+    // event-level. The picker is shared with primary-intelligence authoring and
+    // only renders the PI link types (trial/marker/company/asset); space and
+    // event anchors are force-added as links at upload time instead (below).
     const initialPickerLinks: {
       entity_type: 'trial' | 'marker' | 'company' | 'product';
       entity_id: string;
@@ -355,7 +368,7 @@ export class MaterialUploadZoneComponent {
     }[] = [];
     const eType = this.entityType();
     const eId = this.entityId();
-    if (eType !== 'space') {
+    if (eType !== 'space' && eType !== 'event') {
       initialPickerLinks.push({
         entity_type: eType,
         entity_id: eId,
@@ -410,26 +423,31 @@ export class MaterialUploadZoneComponent {
     const sid = this.spaceId();
     const file = pending.file;
 
-    // Compose links: picker links plus, when the current entity is
-    // space-level, an explicit space link (the picker doesn't show
-    // space as a target).
+    // Compose links: picker links plus, when the current entity is space- or
+    // event-level, an explicit anchor link (the picker doesn't render those
+    // types, so they are added here instead).
     const links: MaterialLink[] = this.pickerLinks().map((l, i) => ({
       entity_type: l.entity_type,
       entity_id: l.entity_id,
       display_order: i,
     }));
-    if (this.entityType() === 'space') {
+    const anchorType = this.entityType();
+    if (anchorType === 'space' || anchorType === 'event') {
       links.unshift({
-        entity_type: 'space',
+        entity_type: anchorType,
         entity_id: this.entityId(),
         display_order: 0,
       });
     }
 
+    // Tracked across the try so the catch can roll back an orphaned
+    // registration if a later step fails (see the catch handler).
+    let materialId: string | undefined;
+
     try {
       // 1. Register first. RPC validates size/mime/access. Returns a
       //    material_id; worker derives the canonical R2 key from this id.
-      const materialId = await this.materialService.registerMaterial({
+      materialId = await this.materialService.registerMaterial({
         space_id: sid,
         // Placeholder path; the worker derives the real R2 key from
         // (space_id, material_id, file_name) at sign-upload time. The
@@ -484,6 +502,17 @@ export class MaterialUploadZoneComponent {
       this.dialogOpen.set(false);
       this.onDialogClose();
     } catch (e) {
+      // Roll back the orphaned registration so a failed upload does not
+      // leave a never-finalized row behind. Best-effort: the RPC no-ops on
+      // a finalized row, and we swallow its own errors so the original
+      // upload failure is what surfaces to the user.
+      if (materialId) {
+        try {
+          await this.materialService.discardPending(materialId);
+        } catch {
+          // ignore -- surface the original upload error below
+        }
+      }
       this.uploadError.set(errorMessage(e));
     } finally {
       this.uploading.set(false);

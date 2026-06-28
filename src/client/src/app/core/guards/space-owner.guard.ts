@@ -54,7 +54,7 @@ export const spaceOwnerGuard: CanActivateFn = async (route: ActivatedRouteSnapsh
   messageService.add({
     severity: 'info',
     summary: 'Owner access required',
-    detail: 'Only an engagement owner can open this setting.',
+    detail: 'Only a space owner can open this setting.',
     life: 6000,
   });
   return tenantId

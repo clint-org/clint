@@ -36,7 +36,6 @@ import { BullseyeDetailPanelComponent } from './bullseye-detail-panel.component'
 import { BullseyeTooltipComponent } from './bullseye-tooltip.component';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { LandscapeStateService } from './landscape-state.service';
-import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
 import { type ExportAction } from '../../shared/export/export-button.component';
 import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
@@ -56,7 +55,6 @@ import { BrandContextService } from '../../core/services/brand-context.service';
     BullseyeTooltipComponent,
     RouterLink,
     ButtonModule,
-    MarkWatermarkComponent,
     MessageModule,
     SkeletonComponent,
     Tooltip,
@@ -101,15 +99,20 @@ export class LandscapeComponent implements OnInit {
     },
   });
 
-  readonly allAssets = computed<BullseyeAsset[]>(() => this.bullseyeAssets.value() ?? []);
+  readonly allAssets = computed<BullseyeAsset[]>(() => this.bullseyeAssets.value()?.assets ?? []);
 
   /** Intermediate computed that holds the raw grouping result. */
   private readonly groupedResult = computed(() => {
-    const assets = this.bullseyeAssets.value();
-    if (!assets) return null;
+    const result = this.bullseyeAssets.value();
+    if (!result) return null;
+    const { assets, companiesWithIntelligence } = result;
     if (assets.length === 0)
       return { spokes: [] as BullseyeSpoke[], duplicatedAssetIds: new Set<string>() };
-    return groupAssetsIntoSpokes(assets, this.state.spokeGrouping());
+    return groupAssetsIntoSpokes(
+      assets,
+      this.state.spokeGrouping(),
+      new Set(companiesWithIntelligence),
+    );
   });
 
   readonly chartData = computed<BullseyeData | null>(() => {
@@ -228,10 +231,10 @@ export class LandscapeComponent implements OnInit {
     inject(DestroyRef).onDestroy(() => this.exportSync.teardown());
 
     effect(() => {
-      const assets = this.bullseyeAssets.value();
+      const result = this.bullseyeAssets.value();
       const currentSelected = this.selectedAssetId();
-      if (!assets || !currentSelected) return;
-      const exists = assets.some((a) => a.id === currentSelected);
+      if (!result || !currentSelected) return;
+      const exists = result.assets.some((a) => a.id === currentSelected);
       if (!exists) {
         this.selectedAssetId.set(null);
         this.updateQueryParam(null);
@@ -302,7 +305,7 @@ export class LandscapeComponent implements OnInit {
   }
 
   onOpenTrial(trialId: string): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'trials', trialId]);
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'profiles', 'trials', trialId]);
   }
 
   onOpenCompany(companyId: string): void {
@@ -312,19 +315,10 @@ export class LandscapeComponent implements OnInit {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'companies',
       companyId,
     ]);
-  }
-
-  onOpenInTimeline(payload: { assetId: string; therapeuticAreaId: string }): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'timeline'], {
-      queryParams: {
-        assetIds: payload.assetId,
-        indicationIds: payload.therapeuticAreaId,
-      },
-    });
   }
 
   onOpenMarker(markerId: string): void {

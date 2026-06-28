@@ -79,7 +79,7 @@ export interface CompetitorRaceGroup {
           />
           @if (canLink()) {
             <a
-              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', group.companyId]"
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'companies', group.companyId]"
               appDetailPanelEntityLink
               class="truncate rounded-sm text-[12.5px] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
               >{{ group.companyName }}</a
@@ -102,7 +102,7 @@ export interface CompetitorRaceGroup {
             <div class="w-[140px] shrink-0 truncate">
               @if (canLink()) {
                 <a
-                  [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', asset.id]"
+                  [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'assets', asset.id]"
                   appDetailPanelEntityLink
                   class="rounded-sm text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   [class.font-bold]="asset.id === leaderId()"

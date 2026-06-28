@@ -1,7 +1,11 @@
 import ExcelJS from 'exceljs';
 
 import type { Company } from '../models/company.model';
-import { buildMarkerTableRows, buildTrialExportRows, type MarkerStatus } from './export-common.util';
+import {
+  buildMarkerTableRows,
+  buildTrialExportRows,
+  type MarkerStatus,
+} from './export-common.util';
 
 export interface XlsxMeta {
   appDisplayName: string;
@@ -48,12 +52,12 @@ export function buildXlsxWorkbook(companies: Company[], meta: XlsxMeta): ExcelJS
     { header: 'Asset', key: 'asset', width: 20 },
     { header: 'MOA', key: 'moa', width: 26 },
     { header: 'ROA', key: 'roa', width: 12 },
+    { header: 'Indication', key: 'indication', width: 22 },
     { header: 'Trial', key: 'trial', width: 22 },
     { header: 'NCT ID', key: 'nctId', width: 14 },
     { header: 'Phase', key: 'phase', width: 10 },
     { header: 'Phase Start', key: 'phaseStart', width: 14, style: { numFmt: 'yyyy-mm-dd' } },
     { header: 'Phase End', key: 'phaseEnd', width: 14, style: { numFmt: 'yyyy-mm-dd' } },
-    { header: 'Notes', key: 'notes', width: 60 },
   ];
   for (const r of buildTrialExportRows(companies)) {
     trials.addRow({

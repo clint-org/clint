@@ -1,80 +1,82 @@
-import { describe, it, expect } from 'vitest';
-import { filterNavSections } from './sidebar-nav';
+import { describe, expect, it } from 'vitest';
+import { NAV_SECTIONS, filterNavSections } from './sidebar-nav';
 
-// Minimal fixtures mirroring the shape of NAV_SECTIONS. We construct our own
-// rather than import the private constant so the test pins the filtering
-// contract, not the exact production nav.
-const sections = [
-  {
-    id: 'manage' as const,
-    label: 'Manage',
-    items: [
-      { label: 'Companies', route: 'manage/companies' },
-      { label: 'Assets', route: 'manage/assets' },
-    ],
-  },
-  {
-    id: 'settings' as const,
-    label: 'Settings',
-    items: [
-      { label: 'General', route: 'settings/general', ownerOnly: true },
-      { label: 'Members', route: 'settings/members', ownerOnly: true },
-      { label: 'Taxonomies', route: 'settings/taxonomies' },
-      { label: 'Marker Types', route: 'settings/marker-types' },
-      { label: 'Audit log', route: 'settings/audit-log', ownerOnly: true },
-    ],
-  },
-];
+const ids = (sections: ReturnType<typeof filterNavSections>) => sections.map((s) => s.id);
+const settingsItems = (sections: ReturnType<typeof filterNavSections>) =>
+  sections.find((s) => s.id === 'settings')?.items.map((i) => i.route) ?? [];
+const intelligenceItems = (sections: ReturnType<typeof filterNavSections>) =>
+  sections.find((s) => s.id === 'intelligence')?.items.map((i) => i.route) ?? [];
 
-function settingsRoutes(result: ReturnType<typeof filterNavSections>): string[] {
-  return result.find((s) => s.id === 'settings')?.items.map((i) => i.route) ?? [];
-}
-
-describe('filterNavSections', () => {
-  it('owner sees every section and every settings item', () => {
-    const result = filterNavSections(sections, true, true);
-    expect(result.map((s) => s.id)).toEqual(['manage', 'settings']);
-    expect(settingsRoutes(result)).toEqual([
-      'settings/general',
-      'settings/members',
-      'settings/taxonomies',
-      'settings/marker-types',
-      'settings/audit-log',
-    ]);
+describe('filterNavSections role gating', () => {
+  it('viewer: keeps profiles + reference, drops settings entirely', () => {
+    const out = filterNavSections(NAV_SECTIONS, false, false, true);
+    expect(ids(out)).toContain('profiles');
+    expect(ids(out)).toContain('reference');
+    expect(ids(out)).not.toContain('settings');
   });
 
-  it('editor (non-owner) keeps manage but loses owner-only settings items', () => {
-    const result = filterNavSections(sections, true, false);
-    expect(result.map((s) => s.id)).toEqual(['manage', 'settings']);
-    expect(settingsRoutes(result)).toEqual(['settings/taxonomies', 'settings/marker-types']);
+  it('editor: keeps profiles + reference + taxonomies/marker-types settings, no owner items', () => {
+    const out = filterNavSections(NAV_SECTIONS, true, false, true);
+    expect(ids(out)).toContain('profiles');
+    expect(settingsItems(out)).toEqual(['settings/taxonomies', 'settings/marker-types']);
   });
 
-  it('viewer (non-editor, non-owner) drops manage and keeps only reference settings', () => {
-    const result = filterNavSections(sections, false, false);
-    expect(result.map((s) => s.id)).toEqual(['settings']);
-    expect(settingsRoutes(result)).toEqual(['settings/taxonomies', 'settings/marker-types']);
+  it('owner: keeps everything', () => {
+    const out = filterNavSections(NAV_SECTIONS, true, true, true);
+    expect(settingsItems(out)).toEqual(
+      expect.arrayContaining([
+        'settings/general',
+        'settings/members',
+        'settings/fields',
+        'settings/taxonomies',
+        'settings/marker-types',
+        'settings/audit-log',
+      ])
+    );
   });
 
-  it('keeps the settings section when only reference items remain (does not drop it)', () => {
-    const result = filterNavSections(sections, false, false);
-    expect(result.some((s) => s.id === 'settings')).toBe(true);
-  });
-
-  it('drops a section that becomes empty after owner-only filtering', () => {
-    const ownerOnlySection = [
-      {
-        id: 'settings' as const,
-        label: 'Settings',
-        items: [{ label: 'General', route: 'settings/general', ownerOnly: true }],
-      },
-    ];
-    const result = filterNavSections(ownerOnlySection, true, false);
-    expect(result).toEqual([]);
+  it('reference group is visible to all roles', () => {
+    for (const [canEdit, isOwner] of [
+      [false, false],
+      [true, false],
+      [true, true],
+    ] as const) {
+      expect(ids(filterNavSections(NAV_SECTIONS, canEdit, isOwner, true))).toContain('reference');
+    }
   });
 
   it('does not mutate the input sections', () => {
-    const snapshot = JSON.stringify(sections);
-    filterNavSections(sections, false, false);
-    expect(JSON.stringify(sections)).toEqual(snapshot);
+    const before = NAV_SECTIONS.map((s) => s.items.length);
+    filterNavSections(NAV_SECTIONS, false, false, true);
+    expect(NAV_SECTIONS.map((s) => s.items.length)).toEqual(before);
+  });
+});
+
+describe('Intelligence section ordering and engagement gating', () => {
+  it('orders Feed first, then Engagement, then Events before Materials (when engagement exists)', () => {
+    const out = filterNavSections(NAV_SECTIONS, true, true, true);
+    expect(intelligenceItems(out)).toEqual([
+      'intelligence',
+      'profiles/engagement',
+      'events',
+      'materials',
+    ]);
+  });
+
+  it('hides the Engagement item from every role when no engagement exists', () => {
+    for (const [canEdit, isOwner] of [
+      [false, false],
+      [true, false],
+      [true, true],
+    ] as const) {
+      const out = filterNavSections(NAV_SECTIONS, canEdit, isOwner, false);
+      expect(intelligenceItems(out)).toEqual(['intelligence', 'events', 'materials']);
+      expect(intelligenceItems(out)).not.toContain('profiles/engagement');
+    }
+  });
+
+  it('keeps the rest of the Intelligence section when engagement is hidden', () => {
+    const out = filterNavSections(NAV_SECTIONS, false, false, false);
+    expect(ids(out)).toContain('intelligence');
   });
 });

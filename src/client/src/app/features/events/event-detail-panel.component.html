@@ -35,7 +35,7 @@
         <span class="text-slate-400">
           @if (d.company_id && tenantId() && spaceId()) {
             <a
-              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', d.company_id]"
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'companies', d.company_id]"
               appDetailPanelEntityLink
               entityLinkTone="muted"
               >{{ d.company_name }}</a
@@ -47,7 +47,7 @@
             <span class="text-slate-300"> / </span>
             @if (d.asset_id && tenantId() && spaceId()) {
               <a
-                [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', d.asset_id]"
+                [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'assets', d.asset_id]"
                 appDetailPanelEntityLink
                 entityLinkTone="muted"
                 >{{ d.entity_name }}</a
@@ -65,8 +65,7 @@
         <div class="flex-1">
           <div class="flex items-center gap-2">
             <span class="h-2 w-2 shrink-0 rounded-full bg-red-500" aria-hidden="true"></span>
-            <span
-              class="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-red-700"
+            <span class="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-red-700"
               >High priority</span
             >
           </div>
@@ -96,6 +95,12 @@
           }
         </ul>
       </app-detail-panel-section>
+    }
+
+    @if (d.source_doc_id) {
+      <div class="px-1 pt-1">
+        <app-source-provenance-line [sourceDocId]="d.source_doc_id" [canView]="canEdit()" />
+      </div>
     }
 
     @if (d.tags.length > 0) {
@@ -170,6 +175,19 @@
       </app-detail-panel-section>
     }
 
+    @if (spaceId()) {
+      <section class="mt-3 border-t border-slate-100 pt-3">
+        <app-materials-section
+          heading="Materials"
+          [hideWhenEmpty]="true"
+          entityType="event"
+          [entityId]="d.id"
+          [spaceId]="spaceId()"
+          [tenantId]="tenantId()"
+        />
+      </section>
+    }
+
     <p class="mt-4 text-[10px] text-slate-400">Created {{ d.created_at | date: 'medium' }}</p>
 
     <!-- Detected event detail branch -->
@@ -204,18 +222,16 @@
     <!-- Signal row: date + priority -->
     <div class="mt-2 flex items-center gap-2 text-[12px] text-slate-500">
       <span class="font-mono tabular-nums">{{ item.event_date | date: 'MMM d, y' }}</span>
-      @if (item.priority === 'high') {
-        <app-detail-panel-pill tone="red">High signal</app-detail-panel-pill>
-      }
     </div>
 
     <!-- Diff hero: WAS -> NOW for a detected date shift -->
     @if (dateDiff(); as diff) {
       <div class="mt-4 border border-amber-300 bg-amber-50 px-4 pb-3.5 pt-4">
         <div class="mb-3 flex items-center justify-between">
-          <span class="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800">{{
-            diff.later ? 'Projected date slipped' : 'Projected date pulled in'
-          }}</span>
+          <span
+            class="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-amber-800"
+            >{{ diff.later ? 'Projected date slipped' : 'Projected date pulled in' }}</span
+          >
           <span
             class="inline-flex items-center gap-1 border border-amber-300 bg-white px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wide text-amber-800"
           >
@@ -230,7 +246,9 @@
         </div>
         <div class="flex items-center gap-3.5">
           <div class="flex-1">
-            <div class="mb-0.5 font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-amber-700">
+            <div
+              class="mb-0.5 font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-amber-700"
+            >
               Was
             </div>
             <span class="text-[15px] font-semibold tabular-nums text-slate-500 line-through">{{
@@ -239,7 +257,9 @@
           </div>
           <span class="text-lg text-amber-700" aria-hidden="true">&rarr;</span>
           <div class="flex-1">
-            <div class="mb-0.5 font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-amber-800">
+            <div
+              class="mb-0.5 font-mono text-[9.5px] font-bold uppercase tracking-[0.1em] text-amber-800"
+            >
               Now
             </div>
             <span class="text-[17px] font-bold tabular-nums text-amber-900">{{ diff.now }}</span>
@@ -316,7 +336,7 @@
                   tenantId(),
                   's',
                   spaceId(),
-                  'manage',
+                  'profiles',
                   'companies',
                   item.company_id,
                 ]"
@@ -330,7 +350,7 @@
           }
           @if (item.asset_id && tenantId() && spaceId()) {
             <a
-              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', item.asset_id]"
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'assets', item.asset_id]"
               appDetailPanelEntityLink
               >{{ item.entity_name }}</a
             >
@@ -341,8 +361,8 @@
       </div>
     </app-detail-panel-section>
 
-    <!-- Analyst note block -->
-    <div class="mt-4 rounded border border-brand-200 bg-brand-50/40 p-3">
+    <!-- Analyst note block hidden until we leverage notes elsewhere (table + RPCs + AnnotationService retained) -->
+    <!-- <div class="mt-4 rounded border border-brand-200 bg-brand-50/40 p-3">
       <div class="mb-1.5 flex items-center gap-1.5">
         <i class="fa-solid fa-message text-[9px] text-brand-600" aria-hidden="true"></i>
         <p class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-brand-700">
@@ -400,7 +420,7 @@
           Updated {{ ann.updated_at | date: 'MMM d, y' }}
         </p>
       } @else if (annotationLoading()) {
-        <p class="text-[12px] italic text-slate-400">Loading...</p>
+        <app-loader [size]="16" label="Loading" />
       } @else if (canEdit()) {
         <button
           type="button"
@@ -412,7 +432,7 @@
       } @else {
         <p class="text-[12px] italic text-slate-400">No analyst note yet.</p>
       }
-    </div>
+    </div> -->
 
     <!-- Marker detail branch -->
   } @else if (catalystDetail()) {
@@ -429,7 +449,7 @@
     <app-detail-panel-empty-state prompt="Click an event to see details">
       <p class="mt-2 text-[13px] text-slate-700">
         <span class="text-base font-semibold tabular-nums text-slate-900">{{
-          feedItems().length
+          overviewTotal()
         }}</span>
         in window
         @if (highPriorityCount() > 0) {
@@ -470,9 +490,10 @@
                     [style.background-color]="entry.color"
                   ></span>
                 </span>
-                <span class="w-4 shrink-0 text-right font-mono text-[12px] font-bold tabular-nums text-slate-900">{{
-                  entry.count
-                }}</span>
+                <span
+                  class="w-4 shrink-0 text-right font-mono text-[12px] font-bold tabular-nums text-slate-900"
+                  >{{ entry.count }}</span
+                >
               </app-detail-panel-entity-row>
             }
           </app-detail-panel-entity-list>

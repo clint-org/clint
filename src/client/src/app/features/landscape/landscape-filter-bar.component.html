@@ -1,287 +1,290 @@
 <div class="border-b border-slate-200 bg-white">
   <!--
-    flex-wrap, not overflow-x-auto: at laptop widths the Period group and the
-    sync caption were pushed past the right edge with no scroll affordance,
-    so they read as missing (UI review 2026-06-12, item 1).
+    Single-row layout: the filter controls scroll horizontally (overflow-x-auto)
+    instead of wrapping to a second line. The sync caption is kept OUTSIDE the
+    scroll region so it stays pinned at the right and is never lost off-screen
+    (the original concern that motivated flex-wrap; UI review 2026-06-24).
+    All dropdown panels use appendTo="body", so overflow-x-auto does not clip
+    them.
   -->
-  <div
-    class="flex flex-wrap items-center gap-x-1.5 gap-y-1 px-3 py-1.5"
-    role="toolbar"
-    aria-label="Landscape filters"
-  >
+  <div class="flex items-center gap-x-2 px-3 py-1.5" role="toolbar" aria-label="Landscape filters">
     @if (loading()) {
       <app-loader [size]="20" label="Loading filters..." />
     } @else {
-      <!-- View-specific: zoom (timeline) -->
-      @if (viewMode() === 'timeline') {
-        <p-selectbutton
-          [options]="zoomOptions"
-          [ngModel]="state.zoomLevel()"
-          (ngModelChange)="state.zoomLevel.set($event)"
-          optionLabel="label"
-          optionValue="value"
-          [allowEmpty]="false"
-          size="small"
-        >
-          <ng-template #item let-item>
-            <span [pTooltip]="item.tooltip" tooltipPosition="top">{{ item.label }}</span>
-          </ng-template>
-        </p-selectbutton>
-        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-      }
+      <div class="flex min-w-0 flex-1 items-center gap-x-1.5 overflow-x-auto pb-0.5">
+        <!-- View-specific: zoom (timeline) -->
+        @if (viewMode() === 'timeline') {
+          <p-selectbutton
+            [options]="zoomOptions"
+            [ngModel]="state.zoomLevel()"
+            (ngModelChange)="state.zoomLevel.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            [allowEmpty]="false"
+            size="small"
+          >
+            <ng-template #item let-item>
+              <span [pTooltip]="item.tooltip" tooltipPosition="top">{{ item.label }}</span>
+            </ng-template>
+          </p-selectbutton>
+          <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+        }
 
-      <!-- Count unit toggle for heatmap removed: sidebar COUNT in
+        <!-- Count unit toggle for heatmap removed: sidebar COUNT in
            HeatmapControlsPanelComponent replaces it. -->
 
-      <!-- Common filters -->
-      @if (viewMode() !== 'bullseye' || dimension() !== 'company') {
+        <!-- Common filters -->
+        @if (viewMode() !== 'bullseye' || dimension() !== 'company') {
+          <p-multiselect
+            [options]="companyOptions()"
+            [ngModel]="state.filters().companyIds"
+            (ngModelChange)="update('companyIds', $event ?? [])"
+            placeholder="Company"
+            ariaLabel="Filter by company"
+            optionLabel="label"
+            optionValue="value"
+            [filter]="true"
+            [showClear]="true"
+            appendTo="body"
+            [styleClass]="'w-fit' + (state.filters().companyIds.length ? ' has-value' : '')"
+            size="small"
+            [maxSelectedLabels]="0"
+            [selectedItemsLabel]="'Company (' + state.filters().companyIds.length + ')'"
+          />
+        }
+
         <p-multiselect
-          [options]="companyOptions()"
-          [ngModel]="state.filters().companyIds"
-          (ngModelChange)="update('companyIds', $event ?? [])"
-          placeholder="Company"
-          ariaLabel="Filter by company"
+          [options]="productOptions()"
+          [ngModel]="state.filters().assetIds"
+          (ngModelChange)="update('assetIds', $event ?? [])"
+          placeholder="Asset"
+          ariaLabel="Filter by asset"
           optionLabel="label"
           optionValue="value"
           [filter]="true"
           [showClear]="true"
           appendTo="body"
-          [styleClass]="'w-fit' + (state.filters().companyIds.length ? ' has-value' : '')"
+          [styleClass]="'w-fit' + (state.filters().assetIds.length ? ' has-value' : '')"
           size="small"
           [maxSelectedLabels]="0"
-          [selectedItemsLabel]="'Company (' + state.filters().companyIds.length + ')'"
+          [selectedItemsLabel]="'Asset (' + state.filters().assetIds.length + ')'"
         />
-      }
 
-      <p-multiselect
-        [options]="productOptions()"
-        [ngModel]="state.filters().assetIds"
-        (ngModelChange)="update('assetIds', $event ?? [])"
-        placeholder="Asset"
-        ariaLabel="Filter by asset"
-        optionLabel="label"
-        optionValue="value"
-        [filter]="true"
-        [showClear]="true"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().assetIds.length ? ' has-value' : '')"
-        size="small"
-        [maxSelectedLabels]="0"
-        [selectedItemsLabel]="'Asset (' + state.filters().assetIds.length + ')'"
-      />
-
-      <p-multiselect
-        [options]="trialOptions()"
-        [ngModel]="state.filters().trialIds"
-        (ngModelChange)="update('trialIds', $event ?? [])"
-        placeholder="Trial"
-        ariaLabel="Filter by trial"
-        optionLabel="label"
-        optionValue="value"
-        [filter]="true"
-        [showClear]="true"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().trialIds.length ? ' has-value' : '')"
-        size="small"
-        [maxSelectedLabels]="0"
-        [selectedItemsLabel]="'Trial (' + state.filters().trialIds.length + ')'"
-      />
-
-      @if (viewMode() !== 'bullseye' || dimension() !== 'indication') {
         <p-multiselect
-          [options]="taOptions()"
-          [ngModel]="state.filters().indicationIds"
-          (ngModelChange)="update('indicationIds', $event ?? [])"
-          placeholder="Indication"
-          ariaLabel="Filter by indication"
+          [options]="trialOptions()"
+          [ngModel]="state.filters().trialIds"
+          (ngModelChange)="update('trialIds', $event ?? [])"
+          placeholder="Trial"
+          ariaLabel="Filter by trial"
           optionLabel="label"
           optionValue="value"
           [filter]="true"
           [showClear]="true"
           appendTo="body"
-          [styleClass]="'w-fit' + (state.filters().indicationIds.length ? ' has-value' : '')"
+          [styleClass]="'w-fit' + (state.filters().trialIds.length ? ' has-value' : '')"
           size="small"
           [maxSelectedLabels]="0"
-          [selectedItemsLabel]="'Indication (' + state.filters().indicationIds.length + ')'"
+          [selectedItemsLabel]="'Trial (' + state.filters().trialIds.length + ')'"
         />
-      }
 
-      @if (viewMode() !== 'bullseye' || dimension() !== 'moa') {
+        @if (viewMode() !== 'bullseye' || dimension() !== 'indication') {
+          <p-multiselect
+            [options]="taOptions()"
+            [ngModel]="state.filters().indicationIds"
+            (ngModelChange)="update('indicationIds', $event ?? [])"
+            placeholder="Indication"
+            ariaLabel="Filter by indication"
+            optionLabel="label"
+            optionValue="value"
+            [filter]="true"
+            [showClear]="true"
+            appendTo="body"
+            [styleClass]="'w-fit' + (state.filters().indicationIds.length ? ' has-value' : '')"
+            size="small"
+            [maxSelectedLabels]="0"
+            [selectedItemsLabel]="'Indication (' + state.filters().indicationIds.length + ')'"
+          />
+        }
+
+        @if (viewMode() !== 'bullseye' || dimension() !== 'moa') {
+          <p-multiselect
+            [options]="moaOptions()"
+            [ngModel]="state.filters().mechanismOfActionIds"
+            (ngModelChange)="update('mechanismOfActionIds', $event ?? [])"
+            placeholder="MOA"
+            ariaLabel="Filter by mechanism of action"
+            pTooltip="Mechanism of action"
+            tooltipPosition="top"
+            optionLabel="label"
+            optionValue="value"
+            [filter]="true"
+            [showClear]="true"
+            appendTo="body"
+            [styleClass]="
+              'w-fit' + (state.filters().mechanismOfActionIds.length ? ' has-value' : '')
+            "
+            size="small"
+            [maxSelectedLabels]="0"
+            [selectedItemsLabel]="'MOA (' + state.filters().mechanismOfActionIds.length + ')'"
+          />
+        }
+
+        @if (viewMode() !== 'bullseye' || dimension() !== 'roa') {
+          <p-multiselect
+            [options]="roaOptions()"
+            [ngModel]="state.filters().routeOfAdministrationIds"
+            (ngModelChange)="update('routeOfAdministrationIds', $event ?? [])"
+            placeholder="ROA"
+            ariaLabel="Filter by route of administration"
+            pTooltip="Route of administration"
+            tooltipPosition="top"
+            optionLabel="label"
+            optionValue="value"
+            [filter]="true"
+            [showClear]="true"
+            appendTo="body"
+            [styleClass]="
+              'w-fit' + (state.filters().routeOfAdministrationIds.length ? ' has-value' : '')
+            "
+            size="small"
+            [maxSelectedLabels]="0"
+            [selectedItemsLabel]="'ROA (' + state.filters().routeOfAdministrationIds.length + ')'"
+          />
+        }
+
         <p-multiselect
-          [options]="moaOptions()"
-          [ngModel]="state.filters().mechanismOfActionIds"
-          (ngModelChange)="update('mechanismOfActionIds', $event ?? [])"
-          placeholder="MOA"
-          ariaLabel="Filter by mechanism of action"
-          pTooltip="Mechanism of action"
-          tooltipPosition="top"
+          [options]="phaseOptions()"
+          [ngModel]="state.filters().phases"
+          (ngModelChange)="update('phases', $event ?? [])"
+          placeholder="Phase"
+          ariaLabel="Filter by phase"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          appendTo="body"
+          [styleClass]="'w-fit' + (state.filters().phases.length ? ' has-value' : '')"
+          size="small"
+          [maxSelectedLabels]="0"
+          [selectedItemsLabel]="'Phase (' + state.filters().phases.length + ')'"
+        />
+
+        <p-multiselect
+          [options]="statusOptions"
+          [ngModel]="state.filters().recruitmentStatuses"
+          (ngModelChange)="update('recruitmentStatuses', $event ?? [])"
+          placeholder="Status"
+          ariaLabel="Filter by recruitment status"
+          optionLabel="label"
+          optionValue="value"
+          [showClear]="true"
+          appendTo="body"
+          [styleClass]="'w-fit' + (state.filters().recruitmentStatuses.length ? ' has-value' : '')"
+          size="small"
+          [maxSelectedLabels]="0"
+          [selectedItemsLabel]="'Status (' + state.filters().recruitmentStatuses.length + ')'"
+        />
+
+        <p-multiselect
+          [options]="markerCategoryOptions()"
+          [ngModel]="state.filters().markerCategoryIds"
+          (ngModelChange)="update('markerCategoryIds', $event ?? [])"
+          placeholder="Category"
+          ariaLabel="Filter by marker category"
           optionLabel="label"
           optionValue="value"
           [filter]="true"
           [showClear]="true"
           appendTo="body"
-          [styleClass]="'w-fit' + (state.filters().mechanismOfActionIds.length ? ' has-value' : '')"
+          [styleClass]="'w-fit' + (state.filters().markerCategoryIds.length ? ' has-value' : '')"
           size="small"
           [maxSelectedLabels]="0"
-          [selectedItemsLabel]="'MOA (' + state.filters().mechanismOfActionIds.length + ')'"
+          [selectedItemsLabel]="'Category (' + state.filters().markerCategoryIds.length + ')'"
         />
-      }
 
-      @if (viewMode() !== 'bullseye' || dimension() !== 'roa') {
-        <p-multiselect
-          [options]="roaOptions()"
-          [ngModel]="state.filters().routeOfAdministrationIds"
-          (ngModelChange)="update('routeOfAdministrationIds', $event ?? [])"
-          placeholder="ROA"
-          ariaLabel="Filter by route of administration"
-          pTooltip="Route of administration"
-          tooltipPosition="top"
-          optionLabel="label"
-          optionValue="value"
-          [filter]="true"
-          [showClear]="true"
-          appendTo="body"
-          [styleClass]="
-            'w-fit' + (state.filters().routeOfAdministrationIds.length ? ' has-value' : '')
-          "
-          size="small"
-          [maxSelectedLabels]="0"
-          [selectedItemsLabel]="'ROA (' + state.filters().routeOfAdministrationIds.length + ')'"
-        />
-      }
-
-      <p-multiselect
-        [options]="phaseOptions()"
-        [ngModel]="state.filters().phases"
-        (ngModelChange)="update('phases', $event ?? [])"
-        placeholder="Phase"
-        ariaLabel="Filter by phase"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().phases.length ? ' has-value' : '')"
-        size="small"
-        [maxSelectedLabels]="0"
-        [selectedItemsLabel]="'Phase (' + state.filters().phases.length + ')'"
-      />
-
-      <p-multiselect
-        [options]="statusOptions"
-        [ngModel]="state.filters().recruitmentStatuses"
-        (ngModelChange)="update('recruitmentStatuses', $event ?? [])"
-        placeholder="Status"
-        ariaLabel="Filter by recruitment status"
-        optionLabel="label"
-        optionValue="value"
-        [showClear]="true"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().recruitmentStatuses.length ? ' has-value' : '')"
-        size="small"
-        [maxSelectedLabels]="0"
-        [selectedItemsLabel]="'Status (' + state.filters().recruitmentStatuses.length + ')'"
-      />
-
-      <p-multiselect
-        [options]="markerCategoryOptions()"
-        [ngModel]="state.filters().markerCategoryIds"
-        (ngModelChange)="update('markerCategoryIds', $event ?? [])"
-        placeholder="Category"
-        ariaLabel="Filter by marker category"
-        optionLabel="label"
-        optionValue="value"
-        [filter]="true"
-        [showClear]="true"
-        appendTo="body"
-        [styleClass]="'w-fit' + (state.filters().markerCategoryIds.length ? ' has-value' : '')"
-        size="small"
-        [maxSelectedLabels]="0"
-        [selectedItemsLabel]="'Category (' + state.filters().markerCategoryIds.length + ')'"
-      />
-
-      <!-- Time period: From/To year with optional quarter. Hidden on the
+        <!-- Time period: From/To year with optional quarter. Hidden on the
            bullseye, where get_bullseye_assets ignores the period entirely, so
            the control would imply an effect it does not have. -->
-      @if (viewMode() !== 'bullseye') {
-        <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
-        <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-slate-500"
-          >Period</span
-        >
-        <p-select
-          [options]="yearOptions()"
-          [ngModel]="state.filters().timePeriod?.startYear ?? null"
-          (ngModelChange)="updateTimePeriod({ startYear: $event ?? null })"
-          placeholder="From"
-          ariaLabel="Time period start year"
-          optionLabel="label"
-          optionValue="value"
-          [showClear]="true"
-          appendTo="body"
-          [styleClass]="'w-fit' + (state.filters().timePeriod?.startYear ? ' has-value' : '')"
-          size="small"
-        />
-        <p-select
-          [options]="quarterOptions"
-          [ngModel]="state.filters().timePeriod?.startQuarter ?? null"
-          (ngModelChange)="updateTimePeriod({ startQuarter: $event ?? null })"
-          placeholder="Q"
-          ariaLabel="Time period start quarter"
-          optionLabel="label"
-          optionValue="value"
-          [showClear]="true"
-          [disabled]="!state.filters().timePeriod?.startYear"
-          appendTo="body"
-          [styleClass]="'w-fit' + (state.filters().timePeriod?.startQuarter ? ' has-value' : '')"
-          size="small"
-        />
-        <p-select
-          [options]="yearOptions()"
-          [ngModel]="state.filters().timePeriod?.endYear ?? null"
-          (ngModelChange)="updateTimePeriod({ endYear: $event ?? null })"
-          placeholder="To"
-          ariaLabel="Time period end year"
-          optionLabel="label"
-          optionValue="value"
-          [showClear]="true"
-          appendTo="body"
-          [styleClass]="'w-fit' + (state.filters().timePeriod?.endYear ? ' has-value' : '')"
-          size="small"
-        />
-        <p-select
-          [options]="quarterOptions"
-          [ngModel]="state.filters().timePeriod?.endQuarter ?? null"
-          (ngModelChange)="updateTimePeriod({ endQuarter: $event ?? null })"
-          placeholder="Q"
-          ariaLabel="Time period end quarter"
-          optionLabel="label"
-          optionValue="value"
-          [showClear]="true"
-          [disabled]="!state.filters().timePeriod?.endYear"
-          appendTo="body"
-          [styleClass]="'w-fit' + (state.filters().timePeriod?.endQuarter ? ' has-value' : '')"
-          size="small"
-        />
-      }
+        @if (viewMode() !== 'bullseye') {
+          <div class="h-4 w-px bg-slate-200 mx-0.5"></div>
+          <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-slate-500"
+            >Period</span
+          >
+          <p-select
+            [options]="yearOptions()"
+            [ngModel]="state.filters().timePeriod?.startYear ?? null"
+            (ngModelChange)="updateTimePeriod({ startYear: $event ?? null })"
+            placeholder="From"
+            ariaLabel="Time period start year"
+            optionLabel="label"
+            optionValue="value"
+            [showClear]="true"
+            appendTo="body"
+            [styleClass]="'w-fit' + (state.filters().timePeriod?.startYear ? ' has-value' : '')"
+            size="small"
+          />
+          <p-select
+            [options]="quarterOptions"
+            [ngModel]="state.filters().timePeriod?.startQuarter ?? null"
+            (ngModelChange)="updateTimePeriod({ startQuarter: $event ?? null })"
+            placeholder="Q"
+            ariaLabel="Time period start quarter"
+            optionLabel="label"
+            optionValue="value"
+            [showClear]="true"
+            [disabled]="!state.filters().timePeriod?.startYear"
+            appendTo="body"
+            [styleClass]="'w-fit' + (state.filters().timePeriod?.startQuarter ? ' has-value' : '')"
+            size="small"
+          />
+          <p-select
+            [options]="yearOptions()"
+            [ngModel]="state.filters().timePeriod?.endYear ?? null"
+            (ngModelChange)="updateTimePeriod({ endYear: $event ?? null })"
+            placeholder="To"
+            ariaLabel="Time period end year"
+            optionLabel="label"
+            optionValue="value"
+            [showClear]="true"
+            appendTo="body"
+            [styleClass]="'w-fit' + (state.filters().timePeriod?.endYear ? ' has-value' : '')"
+            size="small"
+          />
+          <p-select
+            [options]="quarterOptions"
+            [ngModel]="state.filters().timePeriod?.endQuarter ?? null"
+            (ngModelChange)="updateTimePeriod({ endQuarter: $event ?? null })"
+            placeholder="Q"
+            ariaLabel="Time period end quarter"
+            optionLabel="label"
+            optionValue="value"
+            [showClear]="true"
+            [disabled]="!state.filters().timePeriod?.endYear"
+            appendTo="body"
+            [styleClass]="'w-fit' + (state.filters().timePeriod?.endQuarter ? ' has-value' : '')"
+            size="small"
+          />
+        }
 
-      @if (hasAnyActive()) {
-        <p-button
-          [label]="'Clear filters (' + activeFilterCount() + ')'"
-          severity="secondary"
-          [text]="true"
-          size="small"
-          (onClick)="clearAll()"
-          [attr.aria-label]="
-            'Clear ' +
-            activeFilterCount() +
-            ' active filter' +
-            (activeFilterCount() === 1 ? '' : 's')
-          "
-        />
-      }
+        @if (hasAnyActive()) {
+          <p-button
+            [label]="'Clear filters (' + activeFilterCount() + ')'"
+            severity="secondary"
+            [text]="true"
+            size="small"
+            (onClick)="clearAll()"
+            [attr.aria-label]="
+              'Clear ' +
+              activeFilterCount() +
+              ' active filter' +
+              (activeFilterCount() === 1 ? '' : 's')
+            "
+          />
+        }
+      </div>
 
       @if (state.lastSyncedAt(); as ts) {
         <span
-          class="ml-auto shrink-0 font-mono text-[10px] tabular-nums text-slate-500"
+          class="shrink-0 font-mono text-[10px] tabular-nums text-slate-500"
           [pTooltip]="'Most recent CT.gov sync across all trials. Individual trials may be older or not yet synced.'"
           tooltipPosition="left"
         >

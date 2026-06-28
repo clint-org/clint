@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
@@ -9,6 +9,9 @@ import {
   IntelligenceFeedResult,
   IntelligenceFeedRow,
   IntelligenceHistoryPayload,
+  IntelligenceLinkEntityType,
+  PiReference,
+  PrimaryIntelligenceBrief,
   UpsertIntelligenceInput,
 } from '../models/primary-intelligence.model';
 
@@ -23,6 +26,14 @@ const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
 export class PrimaryIntelligenceService {
   private supabase = inject(SupabaseService);
   private cache = inject(RpcCache);
+
+  /**
+   * Bumps on every intelligence mutation (upsert / lead / reorder / delete /
+   * withdraw / purge). Reactive consumers depend on this to re-derive state
+   * after a write -- e.g. the shell re-checks engagement presence so the
+   * Engagement nav item appears as soon as a space write-up is published.
+   */
+  readonly changed = signal(0);
 
   async getTrialDetail(trialId: string): Promise<IntelligenceDetailBundle | null> {
     return this.cache.get(
@@ -117,7 +128,7 @@ export class PrimaryIntelligenceService {
     authorId?: string | null;
     since?: string | null;
     query?: string | null;
-    referencingEntityType?: IntelligenceEntityType | null;
+    referencingEntityType?: IntelligenceEntityType | IntelligenceLinkEntityType | null;
     referencingEntityId?: string | null;
     limit?: number;
     offset?: number;
@@ -144,6 +155,42 @@ export class PrimaryIntelligenceService {
     });
   }
 
+  /**
+   * Returns the ordered brief list for one entity (company / product / trial).
+   * Each element carries `{anchor_id, is_lead, display_order, published, draft,
+   * updated_at, version_count}`. Published and draft are full payload objects or
+   * null. Callers filter to `published !== null` for read-only surfaces.
+   * SECURITY INVOKER on the DB side: non-agency callers only see anchors that
+   * have a published version.
+   */
+  async listIntelligenceForEntity(
+    spaceId: string,
+    entityType: 'company' | 'product' | 'trial',
+    entityId: string
+  ): Promise<PrimaryIntelligenceBrief[]> {
+    return this.cache.get(
+      'list_intelligence_for_entity',
+      { spaceId, entityType, entityId },
+      {
+        ttl: HEAVY_TTL,
+        tags: [
+          `space:${spaceId}:primary-intelligence`,
+          `${entityType}:${entityId}:detail`,
+        ],
+        fetch: async () => {
+          const { data } = await this.supabase.client
+            .rpc('list_intelligence_for_entity', {
+              p_space_id: spaceId,
+              p_entity_type: entityType,
+              p_entity_id: entityId,
+            })
+            .throwOnError();
+          return (data as PrimaryIntelligenceBrief[]) ?? [];
+        },
+      }
+    );
+  }
+
   async getIntelligenceNotesForAsset(
     spaceId: string,
     assetId: string
@@ -164,24 +211,48 @@ export class PrimaryIntelligenceService {
     );
   }
 
+  /**
+   * Incoming PI references for a marker: the published trial/asset/company
+   * intelligence entries that cite this catalyst via primary_intelligence_links.
+   * Markers do not own PI, so this is always a reference list, never an owned
+   * block. Returns a normalized PiReference[] for the shared PiDetailSection.
+   */
+  async getMarkerReferences(spaceId: string, markerId: string): Promise<PiReference[]> {
+    const result = await this.list({
+      spaceId,
+      entityTypes: ['trial', 'company', 'product'],
+      referencingEntityType: 'marker',
+      referencingEntityId: markerId,
+      limit: 50,
+    });
+    return result.rows.map((r) => ({
+      id: r.id,
+      entity_type: r.entity_type,
+      entity_id: r.entity_id,
+      entity_name: null,
+      headline: r.headline,
+    }));
+  }
+
+  /**
+   * Load the version history for a single anchor. The cache is keyed by
+   * anchorId (so parallel anchors on the same entity get distinct entries)
+   * but tagged with the entity tag so upsert/delete/withdraw/purge flush it.
+   */
   async loadHistory(
-    spaceId: string,
+    anchorId: string,
     entityType: IntelligenceEntityType,
     entityId: string
   ): Promise<IntelligenceHistoryPayload> {
     return this.cache.get(
       'get_primary_intelligence_history',
-      { spaceId, entityType, entityId },
+      { anchorId },
       {
         ttl: HEAVY_TTL,
         tags: [`${entityType}:${entityId}:history-intelligence`],
         fetch: async () => {
           const { data } = await this.supabase.client
-            .rpc('get_primary_intelligence_history', {
-              p_space_id: spaceId,
-              p_entity_type: entityType,
-              p_entity_id: entityId,
-            })
+            .rpc('get_primary_intelligence_history', { p_anchor_id: anchorId })
             .throwOnError();
           return (
             (data as IntelligenceHistoryPayload) ?? {
@@ -200,6 +271,7 @@ export class PrimaryIntelligenceService {
     const { data } = await this.supabase.client
       .rpc('upsert_primary_intelligence', {
         p_id: input.id,
+        p_anchor_id: input.anchor_id,
         p_space_id: input.space_id,
         p_entity_type: input.entity_type,
         p_entity_id: input.entity_id,
@@ -217,46 +289,61 @@ export class PrimaryIntelligenceService {
         })),
       })
       .throwOnError();
-    this.cache.invalidateTags([
-      `space:${input.space_id}:primary-intelligence`,
-      `space:${input.space_id}:drafts`,
-      `space:${input.space_id}:activity`,
-      `space:${input.space_id}:landing-stats`,
-      `space:${input.space_id}:dashboard`,
-      `${input.entity_type}:${input.entity_id}:detail`,
-      `${input.entity_type}:${input.entity_id}:history-intelligence`,
-    ]);
+    this.invalidateEntity(input.space_id, input.entity_type, input.entity_id);
     return data as string;
+  }
+
+  async setLead(
+    anchorId: string,
+    spaceId: string,
+    entityType: IntelligenceEntityType,
+    entityId: string
+  ): Promise<void> {
+    await this.supabase.client
+      .rpc('set_intelligence_lead', { p_anchor_id: anchorId })
+      .throwOnError();
+    this.invalidateEntity(spaceId, entityType, entityId);
+  }
+
+  async reorder(
+    spaceId: string,
+    entityType: IntelligenceEntityType,
+    entityId: string,
+    anchorIds: string[]
+  ): Promise<void> {
+    await this.supabase.client
+      .rpc('reorder_intelligence', {
+        p_space_id: spaceId,
+        p_entity_type: entityType,
+        p_entity_id: entityId,
+        p_anchor_ids: anchorIds,
+      })
+      .throwOnError();
+    this.invalidateEntity(spaceId, entityType, entityId);
   }
 
   async delete(id: string): Promise<void> {
     const { data: existing } = await this.supabase.client
       .from('primary_intelligence')
-      .select('space_id, entity_type, entity_id')
+      .select('space_id, primary_intelligence_anchors!inner(entity_type, entity_id)')
       .eq('id', id)
       .single();
-    await this.supabase.client
-      .rpc('delete_primary_intelligence', {
-        p_id: id,
-      })
-      .throwOnError();
+    await this.supabase.client.rpc('delete_primary_intelligence', { p_id: id }).throwOnError();
     if (existing?.space_id) {
-      this.cache.invalidateTags([
-        `space:${existing.space_id}:primary-intelligence`,
-        `space:${existing.space_id}:drafts`,
-        `space:${existing.space_id}:activity`,
-        `space:${existing.space_id}:landing-stats`,
-        `space:${existing.space_id}:dashboard`,
-        `${existing.entity_type}:${existing.entity_id}:detail`,
-        `${existing.entity_type}:${existing.entity_id}:history-intelligence`,
-      ]);
+      const ent = existing.primary_intelligence_anchors as unknown as {
+        entity_type: IntelligenceEntityType;
+        entity_id: string;
+      } | null;
+      if (ent?.entity_type && ent?.entity_id) {
+        this.invalidateEntity(existing.space_id, ent.entity_type, ent.entity_id);
+      }
     }
   }
 
   async withdraw(id: string, changeNote: string): Promise<void> {
     const { data: existing } = await this.supabase.client
       .from('primary_intelligence')
-      .select('space_id, entity_type, entity_id')
+      .select('space_id, primary_intelligence_anchors!inner(entity_type, entity_id)')
       .eq('id', id)
       .single();
     await this.supabase.client
@@ -266,22 +353,20 @@ export class PrimaryIntelligenceService {
       })
       .throwOnError();
     if (existing?.space_id) {
-      this.cache.invalidateTags([
-        `space:${existing.space_id}:primary-intelligence`,
-        `space:${existing.space_id}:drafts`,
-        `space:${existing.space_id}:activity`,
-        `space:${existing.space_id}:landing-stats`,
-        `space:${existing.space_id}:dashboard`,
-        `${existing.entity_type}:${existing.entity_id}:detail`,
-        `${existing.entity_type}:${existing.entity_id}:history-intelligence`,
-      ]);
+      const ent = existing.primary_intelligence_anchors as unknown as {
+        entity_type: IntelligenceEntityType;
+        entity_id: string;
+      } | null;
+      if (ent?.entity_type && ent?.entity_id) {
+        this.invalidateEntity(existing.space_id, ent.entity_type, ent.entity_id);
+      }
     }
   }
 
   async purge(id: string, confirmation: string, purgeAnchor = false): Promise<void> {
     const { data: existing } = await this.supabase.client
       .from('primary_intelligence')
-      .select('space_id, entity_type, entity_id')
+      .select('space_id, primary_intelligence_anchors!inner(entity_type, entity_id)')
       .eq('id', id)
       .single();
     await this.supabase.client
@@ -292,15 +377,30 @@ export class PrimaryIntelligenceService {
       })
       .throwOnError();
     if (existing?.space_id) {
-      this.cache.invalidateTags([
-        `space:${existing.space_id}:primary-intelligence`,
-        `space:${existing.space_id}:drafts`,
-        `space:${existing.space_id}:activity`,
-        `space:${existing.space_id}:landing-stats`,
-        `space:${existing.space_id}:dashboard`,
-        `${existing.entity_type}:${existing.entity_id}:detail`,
-        `${existing.entity_type}:${existing.entity_id}:history-intelligence`,
-      ]);
+      const ent = existing.primary_intelligence_anchors as unknown as {
+        entity_type: IntelligenceEntityType;
+        entity_id: string;
+      } | null;
+      if (ent?.entity_type && ent?.entity_id) {
+        this.invalidateEntity(existing.space_id, ent.entity_type, ent.entity_id);
+      }
     }
+  }
+
+  private invalidateEntity(
+    spaceId: string,
+    entityType: IntelligenceEntityType,
+    entityId: string
+  ): void {
+    this.cache.invalidateTags([
+      `space:${spaceId}:primary-intelligence`,
+      `space:${spaceId}:drafts`,
+      `space:${spaceId}:activity`,
+      `space:${spaceId}:landing-stats`,
+      `space:${spaceId}:dashboard`,
+      `${entityType}:${entityId}:detail`,
+      `${entityType}:${entityId}:history-intelligence`,
+    ]);
+    this.changed.update((n) => n + 1);
   }
 }

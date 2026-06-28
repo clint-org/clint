@@ -9,6 +9,7 @@ import {
   RingPhase,
 } from '../../core/models/landscape.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
+import { BOOKMARK_PATH } from '../../shared/components/pi-mark/pi-mark.component';
 import {
   SpokeLabelTransform,
   CX,
@@ -55,6 +56,7 @@ interface SpokeLabelSpec extends SpokeLabelTransform {
   id: string;
   name: string;
   abbreviation: string;
+  hasIntelligence: boolean;
 }
 
 interface DotSpec {
@@ -112,8 +114,8 @@ const DIMMED_OPACITY = 0.55;
       animation: pulse-ring 2.5s ease-out infinite;
       pointer-events: none;
     }
-    .halo-ring,
-    .dup-ring {
+    .dup-ring,
+    .pi-badge {
       pointer-events: none;
     }
   `,
@@ -129,6 +131,10 @@ export class BullseyeChartComponent {
   readonly productHover = output<string | null>();
   readonly assetClick = output<string>();
   readonly backgroundClick = output<void>();
+
+  /** Shared PI bookmark glyph (24-unit path) rendered ~11px at the node corner. */
+  protected readonly bookmarkPath = BOOKMARK_PATH;
+  protected readonly bookmarkScale = 11 / 24;
 
   /** Internal hover signal for cross-spoke highlighting within this chart instance. */
   protected readonly internalHoveredAssetId = signal<string | null>(null);
@@ -235,6 +241,7 @@ export class BullseyeChartComponent {
         id: s.id,
         name: displayName,
         abbreviation: s.name,
+        hasIntelligence: s.has_intelligence ?? false,
         ...transform,
       };
     });

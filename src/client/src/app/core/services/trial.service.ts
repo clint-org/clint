@@ -18,8 +18,7 @@ const TRIAL_SELECT = `
       *,
       marker_types(*, marker_categories(*))
     )
-  ),
-  trial_notes(*)
+  )
 `;
 
 const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
@@ -96,7 +95,19 @@ export class TrialService {
     return normalizeTrial(data as Record<string, unknown>);
   }
 
-  async create(spaceId: string, trial: Partial<Trial>): Promise<Trial> {
+  /**
+   * Creates a trial. Phase start/end dates are passed explicitly (they no
+   * longer live on the Trial model -- they are Trial Start / Trial End
+   * markers). `create_trial` still accepts them and creates the analyst-owned
+   * date markers server-side, so the values flow straight through as
+   * `p_phase_start_date` / `p_phase_end_date`.
+   */
+  async create(
+    spaceId: string,
+    trial: Partial<Trial>,
+    phaseStartDate: string | null = null,
+    phaseEndDate: string | null = null
+  ): Promise<Trial> {
     const { data: newId } = await this.supabase.client
       .rpc('create_trial', {
         p_space_id: spaceId,
@@ -105,8 +116,8 @@ export class TrialService {
         p_identifier: trial.identifier ?? null,
         p_status: trial.status ?? null,
         p_phase_type: trial.phase_type ?? null,
-        p_phase_start_date: trial.phase_start_date ?? null,
-        p_phase_end_date: trial.phase_end_date ?? null,
+        p_phase_start_date: phaseStartDate ?? null,
+        p_phase_end_date: phaseEndDate ?? null,
       })
       .throwOnError();
     const tags: string[] = [
@@ -165,17 +176,12 @@ export class TrialService {
 
   async update(id: string, changes: Partial<Trial>): Promise<Trial> {
     const payload: Partial<Trial> = { ...changes };
-    // When the caller supplies a phase field without an explicit source,
-    // tag it as analyst-written. The migration's BEFORE UPDATE trigger
-    // also enforces this server-side.
+    // When the caller supplies phase_type without an explicit source, tag it
+    // as analyst-written. The migration's BEFORE UPDATE trigger also enforces
+    // this server-side. Trial dates are no longer columns -- they are Trial
+    // Start / Trial End markers, edited through MarkerService, not here.
     if ('phase_type' in changes && !('phase_type_source' in changes)) {
       payload.phase_type_source = 'analyst';
-    }
-    if ('phase_start_date' in changes && !('phase_start_date_source' in changes)) {
-      payload.phase_start_date_source = 'analyst';
-    }
-    if ('phase_end_date' in changes && !('phase_end_date_source' in changes)) {
-      payload.phase_end_date_source = 'analyst';
     }
     const { data } = await this.supabase.client
       .from('trials')
@@ -263,9 +269,10 @@ export class TrialService {
     const { data } = await this.supabase.client
       .rpc('get_trial_indications', { p_trial_id: trialId })
       .throwOnError();
-    return (
-      (data ?? []) as { indication_id: string; indication_name: string }[]
-    ).map((row) => ({ id: row.indication_id, name: row.indication_name }));
+    return ((data ?? []) as { indication_id: string; indication_name: string }[]).map((row) => ({
+      id: row.indication_id,
+      name: row.indication_name,
+    }));
   }
 
   /**

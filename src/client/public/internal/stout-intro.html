@@ -378,7 +378,7 @@
         display: flex;
         align-items: center;
         gap: 16px;
-        margin-bottom: 56px;
+        margin-bottom: 32px;
       }
       .cover .big-logo svg {
         width: 44px;
@@ -393,12 +393,12 @@
         text-transform: uppercase;
       }
       .cover h1 {
-        font-size: 56px;
+        font-size: 46px;
         font-weight: 700;
         color: var(--slate-900);
         line-height: 1.05;
         letter-spacing: -0.015em;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
         max-width: 900px;
       }
       .cover h1 .accent {
@@ -486,7 +486,7 @@
         width: auto;
       }
       .cover-hero {
-        margin: 8px 0 40px;
+        margin: 8px 0 0;
         border: 1px solid var(--slate-200);
         background: white;
         border-radius: 14px;
@@ -497,9 +497,190 @@
         display: block;
         width: 100%;
         height: auto;
-        max-height: 320px;
+        max-height: 420px;
         object-fit: cover;
         object-position: top left;
+      }
+      /* Generic, stylized pipeline timeline shown on the cover in place of a
+         real product screenshot — it evokes the product without exposing its
+         actual UI or data. */
+      .cover-tl {
+        overflow: visible;
+        padding: 24px 32px 20px;
+      }
+      .tl-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 26px;
+      }
+      .tl-title {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--slate-700);
+      }
+      .tl-tag {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--slate-400);
+      }
+      .tl-field {
+        position: relative;
+      }
+      .tl-years,
+      .tl-overlay {
+        position: absolute;
+        left: 88px;
+        right: 8px;
+      }
+      .tl-years {
+        top: -4px;
+        height: 16px;
+      }
+      .tl-year {
+        position: absolute;
+        top: 0;
+        transform: translateX(-50%);
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        letter-spacing: 0.1em;
+        color: var(--slate-400);
+      }
+      .tl-overlay {
+        top: 18px;
+        bottom: 22px;
+        pointer-events: none;
+      }
+      .tl-gl {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--slate-100);
+      }
+      .tl-today {
+        position: absolute;
+        top: -2px;
+        bottom: -2px;
+        width: 0;
+        border-left: 1.5px dashed var(--brand-500);
+      }
+      .tl-today .lbl {
+        position: absolute;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        color: var(--brand-700);
+        white-space: nowrap;
+      }
+      .tl-rows {
+        position: relative;
+        padding-top: 18px;
+        padding-bottom: 22px;
+      }
+      .tl-row {
+        position: relative;
+        height: 40px;
+      }
+      .tl-co {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 80px;
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        color: var(--slate-600);
+      }
+      .tl-track {
+        position: absolute;
+        left: 88px;
+        right: 8px;
+        top: 0;
+        bottom: 0;
+      }
+      .tl-bar {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 11px;
+        border-radius: 6px;
+        display: flex;
+        overflow: hidden;
+      }
+      .tl-seg {
+        height: 100%;
+      }
+      .seg-pre {
+        background: var(--slate-300);
+      }
+      .seg-p2 {
+        background: var(--brand-300);
+      }
+      .seg-p3 {
+        background: var(--brand-600);
+      }
+      .tl-mk {
+        position: absolute;
+        top: 50%;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+      }
+      .mk-data {
+        background: var(--green-600);
+      }
+      .mk-info {
+        background: #2563eb;
+      }
+      .mk-slate {
+        background: var(--slate-400);
+      }
+      .tl-mk.diamond {
+        border-radius: 2px;
+        width: 12px;
+        height: 12px;
+        transform: translate(-50%, -50%) rotate(45deg);
+        background: var(--amber-600);
+      }
+      .tl-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin-top: 8px;
+        padding-top: 14px;
+        border-top: 1px solid var(--slate-100);
+      }
+      .tl-legend .li {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11px;
+        color: var(--slate-500);
+      }
+      .tl-legend .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex: none;
+      }
+      .tl-legend .dot.dia {
+        border-radius: 2px;
+        transform: rotate(45deg);
       }
       /* Compact thumbnail floated top-right so body text wraps around and
      below it. Avoids the empty column the prior grid layout produced
@@ -552,12 +733,34 @@
         padding: 32px;
         animation: lightbox-fade 120ms ease-out;
       }
-      .lightbox-backdrop img {
+      .lightbox-backdrop figure {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
         max-width: 100%;
         max-height: 100%;
+        margin: 0;
+      }
+      .lightbox-backdrop img {
+        min-height: 0;
+        flex: 0 1 auto;
+        max-width: 100%;
         object-fit: contain;
         border-radius: 10px;
         box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6);
+      }
+      /* The alt text, surfaced for sighted viewers in the expanded state. It is
+         the detailed description of the screenshot, not the marketing caption. */
+      .lightbox-backdrop figcaption {
+        flex: none;
+        max-width: 720px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--slate-300);
+        text-align: center;
+        cursor: default;
       }
       @keyframes lightbox-fade {
         from {
@@ -858,6 +1061,50 @@
       .reveal-link:focus-visible {
         border-bottom-color: var(--brand-600);
       }
+      /* === Build / reveal motion ===========================================
+         When a slide becomes active, the accent bar wipes in and the slide's
+         content fades + rises as a SINGLE motion on the content wrapper, rather
+         than many staggered per-element nudges (which read as jittery). Driven
+         purely by the .slide.active class plus CSS @keyframes, no JS timing. The
+         RESTING state is fully visible (opacity 1, no transform), so print,
+         reduced motion, and any non-animating context show the complete slide. */
+      @keyframes accent-wipe {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+      @keyframes slide-content-in {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .accent-bar {
+        transform-origin: left center;
+      }
+      .slide.active .accent-bar {
+        animation: accent-wipe 0.7s cubic-bezier(0.21, 0.7, 0.25, 1) both;
+      }
+      /* the whole slide content arrives as one piece; the accent bar leads it */
+      .slide.active .slide-inner,
+      .slide.active .cover {
+        animation: slide-content-in 0.5s cubic-bezier(0.21, 0.7, 0.25, 1) both;
+        animation-delay: 0.12s;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .slide.active .accent-bar,
+        .slide.active .slide-inner,
+        .slide.active .cover {
+          animation: none !important;
+        }
+      }
       @media (max-width: 768px) {
         .deck {
           height: 100dvh;
@@ -1118,6 +1365,11 @@
         .body {
           overflow: visible;
         }
+        .slide.active .accent-bar,
+        .slide.active .slide-inner,
+        .slide.active .cover {
+          animation: none !important;
+        }
       }
       @page {
         size: 11in 8.5in landscape;
@@ -1301,17 +1553,14 @@
             </svg>
           </div>
           <h1>
-            <span class="accent">Primary</span> pharma intelligence, published
-            <span class="accent">live</span> through <span class="accent">your brand</span>.
+            Competitive pharma <span class="accent">intelligence</span>,<br />
+            published <span class="accent">live</span> under <span class="accent">your brand</span>.
           </h1>
           <div class="cover-hero">
             <img
               src="img/timeline.png"
-              alt="Pfizer-branded Clint timeline view: multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years; the Stout agency mark sits in the platform-brand slot at the top of the sidebar"
+              alt="The timeline: every company's obesity and cardiometabolic programs laid out by year, phase bars behind dated markers for data, regulatory, approval, and launch. Filter, group, and zoom to read any slice of the field."
             />
-          </div>
-          <div class="footer-line">
-            <span>Prepared 2026-06-04</span>
           </div>
         </div>
       </section>
@@ -1358,9 +1607,11 @@
             file, and the live view your client sees.
           </h2>
           <p class="lede">
-            It doesn't replace the data tools Stout already runs. It's the layer where Stout's read
-            sits on top of them: where the CI work lives, where deliverables get filed, and where the
-            client sees it all in real time.
+            Each Stout client engagement runs as its own space in Clint, with its data firewalled to
+            that engagement and visible only to that engagement's users. It doesn't replace the data
+            sources Stout already works from. It's the layer where Stout's analysis sits on top of
+            them: where the CI work lives, where deliverables get filed, and where the client sees
+            it all in real time.
           </p>
           <div class="body">
             <div class="grid-2">
@@ -1368,20 +1619,20 @@
                 <button
                   type="button"
                   class="card-thumb"
-                  aria-label="Expand: Engagement landing screenshot"
+                  aria-label="Expand: Space home screenshot"
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
                     src="img/engagement-landing.png"
-                    alt="Engagement landing: the home page for an engagement, with the next catalyst featured at the top, a quick read on what is moving, the latest analysis from Stout, what changed this week, and recent files"
+                    alt="Space home: the next catalyst featured at the top, a quick snapshot of what is moving, the latest intelligence from Stout, what changed this week, and recent files"
                   />
                 </button>
-                <h3>Every engagement opens to a live read</h3>
+                <h3>Every space opens to a live view</h3>
                 <p>
                   The landing page is the first thing clients see: the next catalyst front and
-                  center, a quick read on what's moving, the latest analysis from Stout, and what
-                  changed this week. The headline numbers take you straight into the data behind
-                  them.
+                  center, a quick snapshot of what's moving, the latest analysis from Stout, and
+                  what changed this week. The headline numbers take you straight into the data
+                  behind them.
                 </p>
               </div>
               <div class="card">
@@ -1393,7 +1644,7 @@
                 >
                   <img
                     src="img/source-import.png"
-                    alt="Source import: an entry screen to add companies, assets, and trials from structured sources, with tabs for a list of NCT IDs, a URL, or a block of text, and a fetch-and-resolve action that hands the source to Clint's AI"
+                    alt="Source import: hand Clint a list of NCT IDs, a URL, or a block of text, and its AI reads it and proposes the companies, assets, and trials to add, which you review before committing."
                   />
                 </button>
                 <h3>Build the competitive picture from a single source</h3>
@@ -1413,15 +1664,15 @@
                 >
                   <img
                     src="img/intelligence.png"
-                    alt="Primary analysis on a trial detail page: a published note with its author, the entities it is linked to, and a history panel below showing how the analysis has changed from one version to the next"
+                    alt="Primary intelligence on a trial: a published read with its author and the entities it links to, plus a full version history of how it changed. Analysts write it inline and publish under the agency's name."
                   />
                 </button>
-                <h3>Stout's analysis, with its full history</h3>
+                <h3>Stout's intelligence, with its full history</h3>
                 <p>
-                  Stout's analysts write their read directly onto any trial, company, asset, or
-                  catalyst in a rich text editor. Each time they publish, Clint keeps the version
-                  before it, so the client always sees the latest thinking and anyone can look back
-                  at how it got there.
+                  Stout's analysts write their intelligence directly onto any trial, company, or
+                  asset: what a development means, what it shifts, and what the client should do
+                  about it. Every version is kept, so the client always sees the latest thinking and
+                  can trace how it changed.
                 </p>
               </div>
               <div class="card">
@@ -1433,7 +1684,7 @@
                 >
                   <img
                     src="img/activity.png"
-                    alt="Activity feed: a running list of changes, each showing what changed (old value struck through, new value highlighted), the company, the trial or asset, when it happened, and where it came from"
+                    alt="The activity feed: every change to the field as a dated, sourced entry, with the old and new values, the company and asset or trial it touched, and where it came from."
                   />
                 </button>
                 <h3>Always current, without the busywork</h3>
@@ -1454,7 +1705,7 @@
                 >
                   <img
                     src="img/materials.png"
-                    alt="Files on a trial detail page: a filter strip across the top, a recency-ordered list of deliverables with a file-type badge, title, date, and size on each row, and a drag-and-drop upload area beneath"
+                    alt="Files on a trial: deliverables filed against the entities they cover, each with its type, date, and size, a filter to narrow by type, and a drop zone to add more. The same panel rides on every company, asset, and trial."
                   />
                 </button>
                 <h3>Deliverables filed where the client looks</h3>
@@ -1474,14 +1725,16 @@
                 >
                   <img
                     src="img/whitelabel-stout-login.png"
-                    alt="A client login page in the client's own brand: the client's logo and colors in the foreground, with a quiet 'by Stout' attribution beneath the sign-in buttons"
+                    alt="A client login in the client's own brand: their logo and colors in front, with a quiet 'by Stout' credit beneath the sign-in."
                   />
                 </button>
                 <h3>A site in each client's own brand, run from one portal</h3>
                 <p>
                   Each client gets its own space, dressed in that client's brand: their logo, their
                   colors. Stout runs all of it from the agency portal: set up a new client, choose
-                  their branding, and manage who has access. No IT project, no waiting.
+                  their branding, and manage who has access. No IT project, no waiting. And the
+                  agency keeps its credit throughout: an "Intelligence by Stout" mark sits in the
+                  header on every screen, so the work always reads as Stout's, not the platform's.
                 </p>
               </div>
             </div>
@@ -1539,7 +1792,7 @@
                 </p>
               </div>
               <div class="card">
-                <h3>Show the kind of read Stout delivers</h3>
+                <h3>Show the kind of analysis Stout delivers</h3>
                 <p>
                   Add Stout's own analysis, framing, and the catalysts that matter, so the client
                   sees what Stout would put in front of them as their vendor, not a generic
@@ -1627,15 +1880,15 @@
                   <h3>Draft, model, and ask inside Clint</h3>
                   <p>
                     Draft briefs, run quick what-if scenarios, and ask questions across the whole
-                    engagement, all in the platform, without sending client data to outside tools.
+                    space, all in the platform, without sending client data to outside tools.
                   </p>
                 </div>
                 <div class="rm-stage">
                   <div class="rm-marker"><span class="rm-node"></span></div>
                   <span class="pill">On the roadmap</span>
-                  <h3>Use Clint from inside your AI assistant</h3>
+                  <h3>Use Clint from inside your AI agents</h3>
                   <p>
-                    Ask your AI assistant about the competitive picture and get an answer drawn from
+                    Ask your AI agents about the competitive picture and get an answer drawn from
                     Clint, with the sources attached. Analysts who already work this way get Clint's
                     data without leaving the tools they use.
                   </p>
@@ -1686,7 +1939,8 @@
           <h2 class="slide-title">The work shifts from assembly to interpretation.</h2>
           <p class="lede">
             Clint doesn't just make the work faster. It changes what a Stout engagement is, and
-            where Stout's hours go.
+            where Stout's hours go. No advisory firm delivers competitive intelligence this way
+            today; Stout would be first.
           </p>
           <div class="body">
             <div class="shift">
@@ -1702,8 +1956,8 @@
                   engagement.
                 </div>
                 <div class="shift-after">
-                  <strong>AI assembles the baseline; analysts start at the read.</strong> Their time
-                  goes to interpretation and recommendations, not setup.
+                  <strong>AI assembles the baseline; analysts start at the analysis.</strong> Their
+                  time goes to interpretation and recommendations, not setup.
                 </div>
               </div>
               <div class="shift-row">
@@ -1717,19 +1971,26 @@
                 </div>
               </div>
               <div class="shift-row climax">
-                <div class="shift-dim">Across engagements</div>
-                <div class="shift-before">Each one starts from zero.</div>
+                <div class="shift-dim">Over the engagement</div>
+                <div class="shift-before">
+                  Each deliverable starts from zero. Last quarter's deck gets reopened and rebuilt
+                  by hand.
+                </div>
                 <div class="shift-after">
-                  <strong>Analysis, its full history, and filed deliverables accumulate.</strong>
-                  The watchlist and annotations from Q1 carry into Q2; a year in, the account holds a
-                  full year of Stout's thinking, and that is hard to walk away from.
+                  <strong>Each deliverable builds on the one before.</strong> The watchlist,
+                  annotations, and filed deliverables from Q1 carry into Q2; a year in, the account
+                  holds dozens of annotated catalysts and four quarters of work with its full edit
+                  history, none of it rebuilt. The longer the engagement runs, the harder it is to
+                  walk away from.
                 </div>
               </div>
             </div>
             <p class="shift-foot">
               <strong>And the client seeing it doesn't make Stout any less needed.</strong>
-              Assembling the picture was never the value; Stout's read is. A live, annotated view
-              puts that read in front of the client every week, not just at the readout.
+              Assembling the picture was never the value; Stout's analysis is. A live, annotated
+              view puts that analysis in front of the client every week, not just at the readout.
+              The quarterly briefing doesn't disappear; it sharpens to "here is what we recommend
+              you do," on top of a view the client already trusts.
             </p>
             <p class="shift-foot">
               <strong>And no engineering investment.</strong> Clint runs the syncs, the
@@ -1787,11 +2048,11 @@
                 >
                   <img
                     src="img/engagement-landing.png"
-                    alt="Engagement landing: the home page for an engagement, with the next catalyst featured at the top, a quick read on what is moving, the latest analysis from Stout, what changed this week, and recent files"
+                    alt="Space home: the next catalyst featured at the top, a quick snapshot of what is moving, the latest intelligence from Stout, what changed this week, and recent files"
                   />
                 </button>
                 <figcaption class="caption">
-                  <div class="caption-label">Engagement landing</div>
+                  <div class="caption-label">Space home</div>
                   <h4>What's moving, plus the latest from Stout</h4>
                 </figcaption>
               </figure>
@@ -1803,7 +2064,7 @@
                 >
                   <img
                     src="img/timeline.png"
-                    alt="Pfizer timeline view: multi-company heart-failure pipeline with phase bars and dated markers (data, regulatory, approval, launch) across years"
+                    alt="The timeline: every company's obesity and cardiometabolic programs laid out by year, phase bars behind dated markers for data, regulatory, approval, and launch. Filter, group, and zoom to read any slice of the field."
                   />
                 </button>
                 <figcaption class="caption">
@@ -1819,12 +2080,12 @@
                 >
                   <img
                     src="img/bullseye.png"
-                    alt="Bullseye for Heart Failure: competitors arranged radially by phase, grouped into spokes by company, with halo rings for intelligence and recent activity, a one-line competitive read bar, and a Zelvox detail panel showing trials, MOA, and recent markers"
+                    alt="Bullseye: competitors arranged radially by phase and grouped into spokes by whatever cut you choose (company, indication, mechanism of action, route, or asset), with halo rings for intelligence and recent activity, a one-line competitive summary bar, and a detail panel for the selected asset showing its trials, MOA, and recent markers"
                   />
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Bullseye</div>
-                  <h4>Competitors by phase, with a one-line competitive read</h4>
+                  <h4>Every competitor, placed by development phase</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -1835,12 +2096,12 @@
                 >
                   <img
                     src="img/heatmap.png"
-                    alt="Heatmap by MOA: mechanisms as rows, development phases as columns, cells heat-colored by asset count, with a left controls panel for group-by, count toggle, competitive read, and shade legend"
+                    alt="The heatmap: where the field clusters, mechanisms as rows and phases as columns, each cell shaded by how many assets fall in it. Regroup by any dimension to see the density a different way."
                   />
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Heatmap</div>
-                  <h4>Asset counts by phase</h4>
+                  <h4>Where the field clusters, by mechanism and phase</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -1851,7 +2112,7 @@
                 >
                   <img
                     src="img/catalysts.png"
-                    alt="Catalysts list: upcoming readouts and regulatory dates grouped by next week, month, and quarter; ECHO-HF interim analysis selected with a detail panel"
+                    alt="Future catalysts: every upcoming readout, regulatory date, and milestone, grouped by the window it falls in, with a detail panel on any one you pick."
                   />
                 </button>
                 <figcaption class="caption">
@@ -1867,7 +2128,7 @@
                 >
                   <img
                     src="img/activity.png"
-                    alt="Activity page: typed change-event feed with summary-led rows showing structured change text (old strikethrough, new bold and tinted), 16px company logo tile, product or trial name, relative time, and source chip; phase transitions render in destination phase color"
+                    alt="The activity feed: every change to the field as a dated, sourced entry, with the old and new values, the company and asset or trial it touched, and where it came from."
                   />
                 </button>
                 <figcaption class="caption">
@@ -1883,7 +2144,7 @@
                 >
                   <img
                     src="img/source-import.png"
-                    alt="Source import entry: tabs to add companies, assets, and trials from a list of NCT IDs, a URL, or a block of text, with NCT IDs pasted into the field and a fetch-and-resolve action that hands the source to Clint's AI"
+                    alt="Source import: hand Clint a list of NCT IDs, a URL, or a block of text, and its AI reads it and proposes the companies, assets, and trials to add, which you review before committing."
                   />
                 </button>
                 <figcaption class="caption">
@@ -1899,12 +2160,12 @@
                 >
                   <img
                     src="img/intelligence.png"
-                    alt="Stout's analysis on a trial detail page: a rich text editor with simple formatting controls, the note's author and the entities it is linked to, and a history panel below showing how the analysis changed from one version to the next"
+                    alt="Primary intelligence on a trial: a published read with its author and the entities it links to, plus a full version history of how it changed. Analysts write it inline and publish under the agency's name."
                   />
                 </button>
                 <figcaption class="caption">
-                  <div class="caption-label">Stout's analysis</div>
-                  <h4>Written in place, with its full history</h4>
+                  <div class="caption-label">Primary intelligence</div>
+                  <h4>Written by Stout in place, with its full history</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -1915,12 +2176,12 @@
                 >
                   <img
                     src="img/materials.png"
-                    alt="Files on a trial detail page: a filter strip across the top, a recency-ordered list of deliverables with a file-type badge, title, date, and size on each row, and a drag-and-drop upload area beneath"
+                    alt="Files on a trial: deliverables filed against the entities they cover, each with its type, date, and size, a filter to narrow by type, and a drop zone to add more. The same panel rides on every company, asset, and trial."
                   />
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Files</div>
-                  <h4>Deliverables, filed against what they cover</h4>
+                  <h4>Deliverables, easy to find by the entities they cover</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -1931,12 +2192,12 @@
                 >
                   <img
                     src="img/command-palette.png"
-                    alt="Command palette: Cmd+K overlay with prefix tokens for commands, companies, trials, and catalysts, showing pinned entities, recents, and trigram-matched results across companies, products, trials, markers, and events"
+                    alt="The command palette: Cmd+K from anywhere to jump to any company, asset, trial, marker, event, or catalyst, or run a command, with pins and recents a keystroke away."
                   />
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Command palette</div>
-                  <h4>Cmd+K finder across the engagement</h4>
+                  <h4>Cmd+K to jump to any company, trial, or catalyst in a keystroke</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -1947,12 +2208,15 @@
                 >
                   <img
                     src="img/trial-detail.png"
-                    alt="CARDIO-SHIELD trial detail: markers table covering loss of exclusivity, regulatory, approval, clinical, and data events with company-projected vs. actual flagging"
+                    alt="A trial in full: its markers across clinical, data, regulatory, approval, and loss-of-exclusivity events (projected vs. actual), with the intelligence, activity, scoped events, and files attached to it, all kept in sync with ClinicalTrials.gov."
                   />
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Trial detail</div>
-                  <h4>Intelligence, markers, materials on every trial</h4>
+                  <h4>
+                    Intelligence, markers, and materials, on a trial kept in sync with
+                    ClinicalTrials.gov
+                  </h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -1963,7 +2227,7 @@
                 >
                   <img
                     src="img/events.png"
-                    alt="Events feed: dated events across companies, trials, and products with marker/event categories; AstraZeneca leadership transition selected, detail panel shows the event thread"
+                    alt="The events feed: external developments across companies, assets, and trials, categorized and dated, with any event opening a panel that threads the related ones together."
                   />
                 </button>
                 <figcaption class="caption">
@@ -1979,7 +2243,7 @@
                 >
                   <img
                     src="img/whitelabel-stout-login.png"
-                    alt="Pfizer login page on the Stout whitelabel: Pfizer brand in the foreground (logo, 'Sign in to the Pfizer workspace'), 'Competitive intelligence by STOUT' attribution beneath the sign-in buttons"
+                    alt="Pfizer's login on the Stout white label: Pfizer's brand in front, with 'Competitive intelligence by Stout' credited beneath the sign-in."
                   />
                 </button>
                 <figcaption class="caption">
@@ -2038,10 +2302,13 @@
             <div class="grid-3">
               <div class="card">
                 <div class="card-label">Your data</div>
-                <h3>Separated and access-controlled</h3>
+                <h3>Walled off by client and by space</h3>
                 <p>
-                  Each client's information is kept separate, and access is tightly controlled. One
-                  engagement can never see another's.
+                  Every client's data sits behind its own wall; no client can ever reach another's.
+                  Within a client, each engagement is a separate space with the same wall around it:
+                  access is granted one space at a time by explicit membership, so one engagement
+                  never sees another's data, watchlist, or deliverables, even inside the same
+                  client.
                 </p>
               </div>
               <div class="card">
@@ -2072,7 +2339,10 @@
       </section>
 
       <!-- ============ SLIDE 8: HOW IT'S PRICED ============ -->
-      <section class="slide">
+      <!-- Presenter-only: removed from the DOM unless the deck is opened with
+           ?present, so the bare shareable URL sent ahead of time carries no
+           pricing slide and no link to the pricing-detail page. -->
+      <section class="slide" data-present-only>
         <div class="accent-bar"></div>
         <div class="slide-inner">
           <div class="wordmark">
@@ -2110,22 +2380,23 @@
           </div>
           <h2 class="slide-title">Pricing, kept simple.</h2>
           <p class="lede">
-            Priced per engagement, with a cap, and meant to be flexible. Today the number matters
-            less than getting Clint onto a live engagement with your team.
+            Priced per space, with volume pricing. Simple and predictable, and it scales in your
+            favor as your team uses it more widely.
           </p>
           <div class="body">
             <ul class="points">
               <li>
-                <strong>Per engagement.</strong> Priced per client engagement, not a platform fee.
-                Straightforward and predictable.
+                <strong>You pay for what you run.</strong> One price per space, with no firm
+                license, no seat counts, and no minimum. The total goes up only when you add a
+                space.
               </li>
               <li>
-                <strong>Capped.</strong> There's a ceiling on the total, so it stays predictable
-                however widely you use it.
+                <strong>Costs less as you grow.</strong> The more spaces you run, the less each one
+                costs.
               </li>
             </ul>
             <p class="close-note">
-              The full breakdown is a click away. The number is the easy part to agree on.
+              The number is the easy part. The next page covers what it buys.
             </p>
           </div>
         </div>
@@ -2134,7 +2405,7 @@
         >
       </section>
 
-      <!-- ============ SLIDE 9: THE ASK / CO-BUILD ============ -->
+      <!-- ============ SLIDE 9: THE ASK / PILOT ============ -->
       <section class="slide">
         <div class="accent-bar"></div>
         <div class="slide-inner">
@@ -2171,12 +2442,10 @@
               <use href="#stout-logo" /></svg
             ><span class="meta">Presentation</span>
           </div>
-          <h2 class="slide-title">
-            I want to build this <span class="accent">with</span> you, not hand it over.
-          </h2>
+          <h2 class="slide-title">A <span class="accent">partnership</span>, not a handoff.</h2>
           <p class="lede">
-            The goal today isn't to sell Stout a finished tool. It's to get Clint into your team's
-            hands on real work, and spend the time making it fit how Stout runs an engagement.
+            The fastest way to see what Clint does is to put it on real work. We start with one live
+            engagement, on your own data, and fit the platform to how Stout runs it.
           </p>
           <div class="body">
             <ul class="points">
@@ -2189,14 +2458,14 @@
                 it up together, on your own data, and you see it working before anything is decided.
               </li>
               <li>
-                <strong>Shaped around Stout.</strong> I work alongside your team, fit the workflow to
-                how you actually operate, and put your priorities on the roadmap. What you need next
-                is what gets built next.
+                <strong>Shaped around Stout.</strong> We work alongside your team, fit the workflow
+                to how you actually operate, and put your priorities on the roadmap. What you need
+                next is what gets built next.
               </li>
             </ul>
             <p class="close-note">
-              What matters now is getting Clint into your hands and building it around the way Stout
-              works. Build it with us, and it becomes yours.
+              Put Clint on one live engagement, shaped around the way Stout works, and it becomes
+              part of how your team operates.
             </p>
           </div>
         </div>
@@ -2222,10 +2491,18 @@
         if (!img) return;
         const back = document.createElement('div');
         back.className = 'lightbox-backdrop';
+        const fig = document.createElement('figure');
         const big = document.createElement('img');
         big.src = img.src;
         big.alt = img.alt;
-        back.appendChild(big);
+        fig.appendChild(big);
+        // Surface the alt description as a visible caption in the expanded view.
+        if (img.alt) {
+          const cap = document.createElement('figcaption');
+          cap.textContent = img.alt;
+          fig.appendChild(cap);
+        }
+        back.appendChild(fig);
         back.addEventListener('click', () => back.remove());
         document.body.appendChild(back);
       }
@@ -2245,6 +2522,15 @@
 
     <script>
       (function () {
+        // Presenter mode: open the deck with ?present to include the
+        // pricing slide (and its link to the pricing-detail page). Without
+        // the flag — the link sent to the client ahead of the call — every
+        // [data-present-only] slide is stripped from the DOM, so it never
+        // appears, the counter total drops, and nav skips it cleanly.
+        const presentMode = new URLSearchParams(location.search).has('present');
+        if (!presentMode) {
+          document.querySelectorAll('[data-present-only]').forEach((el) => el.remove());
+        }
         const slides = document.querySelectorAll('.slide');
         const counter = document.getElementById('counter');
         const prevBtn = document.getElementById('prev');

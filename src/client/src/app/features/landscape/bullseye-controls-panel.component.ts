@@ -13,11 +13,12 @@ import { LandscapeStateService } from './landscape-state.service';
 import { buildLandscapeRead, fromSpokes } from './competitive-read/index';
 import { CompetitiveReadStripComponent } from './competitive-read/competitive-read-strip.component';
 import { SegmentedControlComponent } from '../../shared/components/segmented-control/segmented-control.component';
+import { PiMarkComponent } from '../../shared/components/pi-mark/pi-mark.component';
 
 @Component({
   selector: 'app-bullseye-controls-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [SegmentedControlComponent, CompetitiveReadStripComponent],
+  imports: [SegmentedControlComponent, CompetitiveReadStripComponent, PiMarkComponent],
   template: `
     <aside class="bullseye-controls">
       <!-- Section: Group By -->
@@ -31,9 +32,9 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
         />
       </div>
 
-      <!-- Section: Competitive Read -->
+      <!-- Section: Competitive read (auto-generated narration) -->
       <div class="controls-section">
-        <div class="section-label">READ</div>
+        <div class="section-label">AT A GLANCE</div>
         @if (read().text) {
           <app-competitive-read-strip class="read-content" [read]="read()" />
         }
@@ -68,7 +69,7 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
           }
           <div class="legend-divider"></div>
           <div class="legend-item">
-            <span class="legend-indicator legend-intel"></span>
+            <app-pi-mark [size]="12" />
             <span>Intelligence attached</span>
           </div>
           <div class="legend-item">
@@ -189,11 +190,6 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
       flex-shrink: 0;
     }
 
-    .legend-intel {
-      border: 2px solid #2563eb;
-      background: transparent;
-    }
-
     .legend-activity {
       border: 2px solid #f97316;
       background: transparent;
@@ -221,7 +217,9 @@ export class BullseyeControlsPanelComponent {
   }
 
   /** Domain noun for the spoke count, e.g. "companies" under company grouping. */
-  protected readonly spokeNoun = computed(() => spokeGroupingNoun(this.grouping(), this.spokeCount()));
+  protected readonly spokeNoun = computed(() =>
+    spokeGroupingNoun(this.grouping(), this.spokeCount())
+  );
 
   // When grouping by asset, the spoke count and the asset count are the same
   // number with the same noun ("N assets" twice). Collapse to a single box.

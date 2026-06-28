@@ -3,11 +3,12 @@ import { Router, RouterLink } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { TenantService } from '../../core/services/tenant.service';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
 @Component({
   selector: 'app-auth-callback',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, LoaderComponent],
   template: `
     <div class="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div class="text-center">
@@ -21,11 +22,7 @@ import { TenantService } from '../../core/services/tenant.service';
             Return to sign in
           </a>
         } @else {
-          <div
-            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"
-            role="status"
-            aria-label="Completing sign in"
-          ></div>
+          <app-loader [size]="40" />
           <p class="mt-4 text-xs uppercase tracking-wider text-slate-400">Completing sign in</p>
         }
       </div>

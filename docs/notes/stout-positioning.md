@@ -96,11 +96,11 @@ The grey area: partner needs Stout to engage so the asset doesn't go to a compet
 
 This is the concrete number the partner quotes when the MD pushes on cost. It is the on-ramp to the options matrix below, not a replacement for it. The exclusivity and equity structures in the matrix layer on top of this model once the pilot has proven value.
 
-**$25K per engagement space per year, flat, capped at $300K/yr firm-wide.**
+**$25K per engagement space per year, with volume pricing as the book grows. No firm-wide cap.**
 
 - **Unit.** One space = one client engagement. Cost scales only as Stout's book grows. More clients, more spaces. It is never a flat tax on the firm.
 - **Standard rate.** $25K/space from Year 1 on. No introductory discount.
-- **Cap.** $300K/yr total regardless of space count. The cap bites at 12 engagements; past that, every new client Stout adds to Clint is free. This is the line that drives roll-out across the whole practice, and it kills the runaway-bill fear in one sentence.
+- **Volume pricing.** Marginal brackets that step down as the book grows: $25K each for spaces 1-5, $21K for spaces 6-12, $18K for space 13 and beyond. The rate only ever improves, and there is no cap. This is the line that drives roll-out across the whole practice: the more engagements Stout runs, the less each one costs, and the savings never stop.
 - **Stout-facing, not client-facing.** $25K/space is what Stout pays Clint. Stout bundles it into the client engagement fee. The platform is never exposed to the end client as a SaaS line item (see 5a).
 
 **The justification chain** (what makes $25K defensible to a price-sensitive MD):
@@ -110,20 +110,20 @@ This is the concrete number the partner quotes when the MD pushes on cost. It is
 | The $15K social-listening tool Stout just bought | $25K is under 2x | "You spent $15K on a tool that tells you when something gets mentioned. This is a full client-facing CI platform that runs the whole engagement." |
 | The engagement budget ($100--200K/project, often multiple projects per engagement) | ~12% of one small project; low-single-digit % of a multi-project engagement | "It's a fraction of a single engagement. It bundles into your fee as cost of goods, not a line item." |
 | Competitor seats ($20--50K each) | One space < one Evaluate seat | "One space costs less than a single competitor seat, and it covers the whole team plus the client." |
-| The cap vs the firm-license band ($75--500K/yr, option 1) | $300K sits inside the band | "Once you're running it across the practice, it's effectively a firm license, and new engagements cost nothing." |
+| Volume pricing vs the firm-license band ($75--500K/yr, option 1) | Blended cost lands inside the band as the book grows | "Once you're running it across the practice, the per-space rate steps down to $18K, so it prices like a firm license while still scaling with the value you deliver." |
 
-How cost scales against the cap:
+How cost scales as the book grows (marginal brackets, no cap):
 
-| Active spaces | At $25K flat | After cap | Effective $/space |
-|---|---|---|---|
-| 1 | $25K | $25K | $25K |
-| 4 | $100K | $100K | $25K |
-| 8 | $200K | $200K | $25K |
-| 12 | $300K | $300K (cap) | $25K |
-| 15 | $375K | $300K | $20K |
-| 25 | $625K | $300K | $12K |
+| Active spaces | Total / yr | Blended $/space |
+|---|---|---|
+| 1 | $25K | $25.0K |
+| 4 | $100K | $25.0K |
+| 8 | $188K | $23.5K |
+| 12 | $272K | $22.7K |
+| 15 | $326K | $21.7K |
+| 25 | $506K | $20.2K |
 
-**What goes on the shared MD deck (`stout-intro.html`):** the framing only, no dollar figures. Priced per engagement space, scales with the book, a fraction of a single engagement, less than one competitor seat, capped so it can't run away. The $25K / $300K numbers stay in this doc and the internal partner deck, quoted verbally when asked (see 2: "No price" in the first conversation still holds for the bare figure on a slide).
+**What goes on the shared MD deck (`stout-intro.html`):** the framing only, no dollar figures. Priced per engagement space, scales with the book, a fraction of a single engagement, less than one competitor seat, with volume pricing so the per-space rate falls the more you run. The $25K / $21K / $18K bracket numbers stay in this doc and the internal partner deck, quoted verbally when asked (see 2: "No price" in the first conversation still holds for the bare figure on a slide).
 
 ### Options matrix
 
@@ -138,7 +138,7 @@ How cost scales against the cap:
 ### Recommended sequence
 
 1. **Pilot on a live engagement.** A 90-day pilot on a real Stout client. We get Clint in front of the team, both sides see what works, and it ends with a delivered artifact the client can use. There is no discounted Year 1.
-2. **Standard per-space from Year 1.** Convert into paid spaces at the standard $25K/space rate (capped at $300K/yr). The number Stout has already seen work during the pilot is the number it pays.
+2. **Standard per-space from Year 1.** Convert into paid spaces at the standard $25K/space rate, with volume brackets stepping the rate down as the book grows. The number Stout has already seen work during the pilot is the number it pays.
 3. **Co-creator partnership at Year 2+.** The structural conversation layers on top of the per-space model: equity, exclusivity, roadmap seat. Option 04 above becomes the long-term shape.
 
 ### Exclusivity without losing IP -- the playbook

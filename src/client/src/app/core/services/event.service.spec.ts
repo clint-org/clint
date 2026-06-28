@@ -11,6 +11,8 @@ interface QueryBuilderStub {
   update: ReturnType<typeof vi.fn>;
   delete: ReturnType<typeof vi.fn>;
   eq: ReturnType<typeof vi.fn>;
+  order: ReturnType<typeof vi.fn>;
+  limit: ReturnType<typeof vi.fn>;
   single: ReturnType<typeof vi.fn>;
   throwOnError: ReturnType<typeof vi.fn>;
   _data: unknown;
@@ -24,6 +26,8 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
     update: vi.fn(),
     delete: vi.fn(),
     eq: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
     single: vi.fn(),
     throwOnError: vi.fn(),
     _data: data,
@@ -32,7 +36,7 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
   const chain = qb as unknown as PromiseLike<{ data: unknown; error: unknown }>;
   (chain as { then: PromiseLike<unknown>['then'] }).then = (
     onFulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null,
-    onRejected?: ((reason: unknown) => unknown) | null,
+    onRejected?: ((reason: unknown) => unknown) | null
   ) => {
     if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
     return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
@@ -42,13 +46,15 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
   qb.update.mockReturnValue(qb);
   qb.delete.mockReturnValue(qb);
   qb.eq.mockReturnValue(qb);
+  qb.order.mockReturnValue(qb);
+  qb.limit.mockReturnValue(qb);
   qb.throwOnError.mockReturnValue(qb);
   qb.single.mockImplementation(() => {
     const s = { throwOnError: vi.fn() } as Record<string, unknown>;
     const sp = s as unknown as PromiseLike<{ data: unknown; error: unknown }>;
     (sp as { then: PromiseLike<unknown>['then'] }).then = (
       onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
-      onRejected?: ((r: unknown) => unknown) | null,
+      onRejected?: ((r: unknown) => unknown) | null
     ) => {
       if (qb._error) return Promise.reject(qb._error).then(null, onRejected);
       return Promise.resolve({ data: qb._data, error: qb._error }).then(onFulfilled ?? undefined);
@@ -65,7 +71,7 @@ function makeRpcResult(data: unknown, error: unknown = null) {
   const t = obj as unknown as PromiseLike<{ data: unknown; error: unknown }>;
   (t as { then: PromiseLike<unknown>['then'] }).then = (
     onFulfilled?: ((v: { data: unknown; error: unknown }) => unknown) | null,
-    onRejected?: ((r: unknown) => unknown) | null,
+    onRejected?: ((r: unknown) => unknown) | null
   ) => {
     if (error) return Promise.reject(error).then(null, onRejected);
     return Promise.resolve({ data, error: null }).then(onFulfilled ?? undefined);
@@ -101,10 +107,13 @@ const baseFilters = {
   dateTo: null,
   entityLevel: null,
   entityId: null,
-  categoryIds: [],
+  categoryNames: [],
   tags: [],
   priority: null,
   sourceType: null,
+  search: null,
+  sortField: null,
+  sortDir: null,
 };
 
 describe('EventService.getEventsPageData', () => {
@@ -121,6 +130,78 @@ describe('EventService.getEventsPageData', () => {
     expect(rpcName).toBe('get_events_page_data');
     expect(params).toMatchObject({ spaceId: 'space-1' });
     expect(opts.tags).toEqual(['space:space-1:events']);
+  });
+
+  it('maps category names to p_category_names (never the uuid p_category_ids)', async () => {
+    // Run the real fetch closure so we assert the actual RPC params.
+    const get = vi.fn((_name, _params, opts) => opts.fetch());
+    const rpc = vi.fn().mockReturnValue(makeRpcResult({ items: [], total: 0 }));
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get, invalidateTags: vi.fn() }
+    );
+
+    await service.getEventsPageData('space-1', {
+      ...baseFilters,
+      categoryNames: ['Regulatory', 'Catalyst lifecycle'],
+    });
+
+    const [, params] = rpc.mock.calls[0];
+    expect(params.p_category_names).toEqual(['Regulatory', 'Catalyst lifecycle']);
+    expect(params).not.toHaveProperty('p_category_ids');
+  });
+
+  it('sends null p_category_names when no category filter is set', async () => {
+    const get = vi.fn((_name, _params, opts) => opts.fetch());
+    const rpc = vi.fn().mockReturnValue(makeRpcResult({ items: [], total: 0 }));
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get, invalidateTags: vi.fn() }
+    );
+
+    await service.getEventsPageData('space-1', baseFilters);
+
+    const [, params] = rpc.mock.calls[0];
+    expect(params.p_category_names).toBeNull();
+  });
+
+  it('maps the server overview aggregates (snake_case) onto the result', async () => {
+    const get = vi.fn((_name, _params, opts) => opts.fetch());
+    const rpc = vi.fn().mockReturnValue(
+      makeRpcResult({
+        items: [{ id: 'e1' }],
+        total: 27,
+        high_priority_count: 4,
+        distribution: [{ name: 'Approval', count: 27 }],
+        recent: [{ id: 'r1' }],
+      })
+    );
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get, invalidateTags: vi.fn() }
+    );
+
+    const result = await service.getEventsPageData('space-1', baseFilters);
+
+    expect(result.total).toBe(27);
+    expect(result.highPriorityCount).toBe(4);
+    expect(result.distribution).toEqual([{ name: 'Approval', count: 27 }]);
+    expect(result.recent).toEqual([{ id: 'r1' }]);
+  });
+
+  it('defaults the overview aggregates when the RPC omits them', async () => {
+    const get = vi.fn((_name, _params, opts) => opts.fetch());
+    const rpc = vi.fn().mockReturnValue(makeRpcResult({ items: [], total: 0 }));
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get, invalidateTags: vi.fn() }
+    );
+
+    const result = await service.getEventsPageData('space-1', baseFilters);
+
+    expect(result.highPriorityCount).toBe(0);
+    expect(result.distribution).toEqual([]);
+    expect(result.recent).toEqual([]);
   });
 });
 
@@ -177,7 +258,10 @@ describe('EventService.create', () => {
       {
         from,
         rpc,
-        auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }), getSession: vi.fn() },
+        auth: {
+          getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }),
+          getSession: vi.fn(),
+        },
       },
       { get: vi.fn(), invalidateTags }
     );
@@ -191,14 +275,14 @@ describe('EventService.create', () => {
       []
     );
 
-    expect(rpc).toHaveBeenCalledWith('create_event', expect.objectContaining({
-      p_space_id: 'space-1',
-      p_title: 'New Event',
-    }));
-    expect(invalidateTags).toHaveBeenCalledWith([
-      'space:space-1:events',
-      'space:space-1:tags',
-    ]);
+    expect(rpc).toHaveBeenCalledWith(
+      'create_event',
+      expect.objectContaining({
+        p_space_id: 'space-1',
+        p_title: 'New Event',
+      })
+    );
+    expect(invalidateTags).toHaveBeenCalledWith(['space:space-1:events', 'space:space-1:tags']);
   });
 });
 
@@ -297,11 +381,52 @@ describe('EventService.updateLinks', () => {
   });
 });
 
+describe('EventService.nextThreadOrder', () => {
+  it('returns max existing thread_order + 1 for a populated thread', async () => {
+    const qb = makeQueryBuilder([{ thread_order: 3 }]);
+    const from = vi.fn().mockReturnValue(qb);
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+
+    const next = await service.nextThreadOrder('thread-1');
+
+    expect(from).toHaveBeenCalledWith('events');
+    expect(qb.eq).toHaveBeenCalledWith('thread_id', 'thread-1');
+    expect(qb.order).toHaveBeenCalledWith('thread_order', { ascending: false, nullsFirst: false });
+    expect(next).toBe(4);
+  });
+
+  it('returns 1 for an empty thread', async () => {
+    const qb = makeQueryBuilder([]);
+    const from = vi.fn().mockReturnValue(qb);
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+
+    expect(await service.nextThreadOrder('thread-1')).toBe(1);
+  });
+
+  it('treats a null max thread_order as position 0 (next is 1)', async () => {
+    const qb = makeQueryBuilder([{ thread_order: null }]);
+    const from = vi.fn().mockReturnValue(qb);
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+
+    expect(await service.nextThreadOrder('thread-1')).toBe(1);
+  });
+});
+
 describe('EventService.delete', () => {
   it('looks up space_id before delete and invalidates space + event tags', async () => {
     const lookupQb = makeQueryBuilder({ space_id: 'space-3' });
     const deleteQb = makeQueryBuilder(null);
-    const from = vi.fn()
+    const from = vi
+      .fn()
       .mockReturnValueOnce(lookupQb as unknown as ReturnType<typeof from>)
       .mockReturnValueOnce(deleteQb as unknown as ReturnType<typeof from>);
     const invalidateTags = vi.fn();

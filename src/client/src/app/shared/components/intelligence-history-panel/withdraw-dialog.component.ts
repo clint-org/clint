@@ -15,7 +15,7 @@ import { Dialog } from 'primeng/dialog';
     <p-dialog
       [visible]="visible()"
       (visibleChange)="onVisibleChange($event)"
-      header="Withdraw this read"
+      header="Withdraw this intelligence"
       [modal]="true"
       styleClass="!w-[32rem]"
       [closable]="true"

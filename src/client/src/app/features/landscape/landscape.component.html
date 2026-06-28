@@ -20,18 +20,17 @@
     } @else {
       @if (chartData(); as cd) {
         @if (cd.spokes.length === 0) {
-          <div class="relative flex items-center justify-center h-full">
-            <app-mark-watermark />
-            <div class="relative flex flex-col items-center gap-3 text-center max-w-md">
+          <div class="flex items-center justify-center h-full">
+            <div class="flex flex-col items-center gap-3 text-center max-w-md">
               <p-message severity="info" [closable]="false">
                 No assets match the current filters. Adjust scope or add assets and trials to see
                 them here.
               </p-message>
               <p-button
-                label="Manage assets"
+                label="View assets"
                 severity="secondary"
                 size="small"
-                [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets']"
+                [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'assets']"
               />
             </div>
           </div>
@@ -69,7 +68,6 @@
                     [multiSpoke]="selectedAssetMultiSpoke()"
                     (openTrial)="onOpenTrial($event)"
                     (openCompany)="onOpenCompany($event)"
-                    (openInTimeline)="onOpenInTimeline($event)"
                     (openMarker)="onOpenMarker($event)"
                     (openIntelligence)="onOpenIntelligence($event)"
                     (ringHighlightToggle)="onRingHighlightToggle($event)"

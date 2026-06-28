@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import { ButtonModule } from 'primeng/button';
 
 import { BrandContextService } from '../../../core/services/brand-context.service';
+import { PiMarkComponent } from '../pi-mark/pi-mark.component';
 
 /**
  * Empty-state placeholder rendered on entity detail pages when no primary
@@ -12,7 +13,7 @@ import { BrandContextService } from '../../../core/services/brand-context.servic
 @Component({
   selector: 'app-intelligence-empty',
   standalone: true,
-  imports: [ButtonModule],
+  imports: [ButtonModule, PiMarkComponent],
   template: `
     @if (canEdit()) {
       <section
@@ -21,19 +22,23 @@ import { BrandContextService } from '../../../core/services/brand-context.servic
       >
         <div class="flex items-center justify-between gap-4">
           <div class="min-w-0">
-            <h3 class="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <h3
+              class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+            >
+              <app-pi-mark [size]="12" />
               Primary intelligence
             </h3>
             <p class="mt-1 text-sm text-slate-600">
-              No read yet. Capture {{ agencyName() }}'s summary and implications for this
+              No intelligence yet. Capture {{ agencyName() }}'s summary and implications for this
               {{ entityLabel() }}.
             </p>
           </div>
           <p-button
-            label="Add primary intelligence"
+            label="Add intelligence"
             icon="fa-solid fa-plus"
             size="small"
             [text]="false"
+            styleClass="shrink-0 whitespace-nowrap"
             (onClick)="add.emit()"
           />
         </div>

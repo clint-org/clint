@@ -4,39 +4,46 @@ import {
   computed,
   effect,
   inject,
-  OnDestroy,
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
-import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
+import { IntelligenceStackComponent } from '../../../shared/components/intelligence-stack/intelligence-stack.component';
+import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
-import { IntelligenceHistoryPanelComponent } from '../../../shared/components/intelligence-history-panel/intelligence-history-panel.component';
 import { WithdrawIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/withdraw-dialog.component';
 import { PurgeIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/purge-dialog.component';
-import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { TimelineViewComponent } from '../../landscape/timeline-view.component';
 import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
+import { LoaderComponent } from '../../../shared/components/loader/loader.component';
+import { SourceProvenanceLineComponent } from '../../../shared/components/source-provenance/source-provenance-line.component';
 import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 
 import { AssetService } from '../../../core/services/asset.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
-import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { Asset } from '../../../core/models/asset.model';
-import { IntelligenceDetailBundle } from '../../../core/models/primary-intelligence.model';
+import {
+  IntelligenceDetailBundle,
+  IntelligenceHistoryPayload,
+} from '../../../core/models/primary-intelligence.model';
+import { SectionCardComponent } from '../../../shared/components/section-card.component';
+import { RowActionsComponent } from '../../../shared/components/row-actions.component';
+import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
 import { AssetFormComponent } from './asset-form.component';
+import { TrialCreateDialogComponent } from '../trials/trial-create-dialog.component';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 
@@ -44,28 +51,35 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
   selector: 'app-asset-detail',
   imports: [
     BrandLogoComponent,
+    ButtonModule,
     RouterLink,
     ConfirmDialogModule,
     Dialog,
     ToastModule,
     ManagePageShellComponent,
-    IntelligenceBlockComponent,
+    IntelligenceStackComponent,
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,
-    IntelligenceHistoryPanelComponent,
     WithdrawIntelligenceDialogComponent,
     PurgeIntelligenceDialogComponent,
     MaterialsSectionComponent,
     TimelineViewComponent,
+    PiMarkComponent,
     EntityMarkerDrawerComponent,
     EntityEventsPanelComponent,
+    RowActionsComponent,
+    SectionCardComponent,
+    ReferencedInPanelComponent,
     AssetFormComponent,
+    TrialCreateDialogComponent,
+    LoaderComponent,
+    SourceProvenanceLineComponent,
   ],
   providers: [ConfirmationService, MessageService, LandscapeStateService],
   templateUrl: './asset-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AssetDetailComponent implements OnDestroy {
+export class AssetDetailComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private assetService = inject(AssetService);
@@ -73,7 +87,6 @@ export class AssetDetailComponent implements OnDestroy {
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
-  private readonly topbarState = inject(TopbarStateService);
 
   // Route paramMap as a signal so assetId reacts to in-place navigation
   // when clicking a LINKED product chip on an asset detail page (same route
@@ -86,11 +99,16 @@ export class AssetDetailComponent implements OnDestroy {
   protected readonly asset = signal<Asset | null>(null);
   protected readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   protected readonly drawerOpen = signal(false);
+  // anchor_id of the brief currently open in the drawer; null = new brief
+  protected readonly drawerAnchorId = signal<string | null>(null);
   protected readonly loading = signal(true);
   protected readonly legendVisible = signal(false);
 
-  // Intelligence history (version list, withdraw / purge dialogs)
-  protected readonly historyHost = new IntelligenceHistoryHost(this.intelligenceService);
+  // Per-anchor history map; populated lazily via onRequestHistory.
+  protected readonly histories = signal<Record<string, IntelligenceHistoryPayload>>({});
+  // Stores the published record id surfaced by the stack's withdraw output.
+  protected readonly withdrawTargetId = signal<string | null>(null);
+
   protected readonly withdrawDialogOpen = signal(false);
   protected readonly purgeDialogOpen = signal(false);
   protected readonly purgeAnchorMode = signal(false);
@@ -98,25 +116,32 @@ export class AssetDetailComponent implements OnDestroy {
   protected readonly purgeTargetId = signal<string | null>(null);
 
   readonly editingAsset = signal(false);
+  protected readonly creatingTrial = signal(false);
 
-  private readonly topbarActionsEffect = effect(() => {
+  // Entity overflow menu (Edit details / Delete), rendered in the content
+  // section-header instead of the topbar. Empty for viewers.
+  protected readonly entityMenu = computed<MenuItem[]>(() => {
     const asset = this.asset();
-    if (!asset || !this.spaceRole.canEdit()) {
-      this.topbarState.overflowActions.set([]);
-      return;
-    }
-    this.topbarState.overflowActions.set(
-      buildEntityActionMenu({
-        canEdit: true,
-        editLabel: 'Edit details',
-        onEdit: () => this.editingAsset.set(true),
-        onDelete: () => void this.deleteAsset(asset),
-      })
-    );
+    if (!asset || !this.spaceRole.canEdit()) return [];
+    return buildEntityActionMenu({
+      canEdit: true,
+      editLabel: 'Edit details',
+      onEdit: () => this.editingAsset.set(true),
+      onDelete: () => void this.deleteAsset(asset),
+    });
   });
 
-  ngOnDestroy(): void {
-    this.topbarState.clear();
+  protected onTrialCreated({ trialId }: { trialId: string }): void {
+    this.creatingTrial.set(false);
+    void this.router.navigate([
+      '/t',
+      this.tenantIdSig(),
+      's',
+      this.spaceIdSig(),
+      'profiles',
+      'trials',
+      trialId,
+    ]);
   }
 
   private async deleteAsset(asset: Asset): Promise<void> {
@@ -138,7 +163,7 @@ export class AssetDetailComponent implements OnDestroy {
           this.tenantIdSig(),
           's',
           this.spaceIdSig(),
-          'manage',
+          'profiles',
           'assets',
         ]),
       errorFallback: 'Could not delete asset. It may have associated trials.',
@@ -151,13 +176,17 @@ export class AssetDetailComponent implements OnDestroy {
     this.messageService.add({ severity: 'success', summary: 'Asset updated.', life: 3000 });
   }
 
-  protected readonly hasIntelligence = computed(() => {
-    const i = this.intelligence();
-    return !!(i?.published || i?.draft);
-  });
+  protected readonly hasIntelligence = computed(() =>
+    (this.intelligence()?.briefs.length ?? 0) > 0
+  );
 
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
+
+  // Header count badges for the events / materials cards, fed by each panel's
+  // (loaded) output since those counts are fetched inside the child component.
+  protected readonly eventsCount = signal(0);
+  protected readonly materialsCount = signal(0);
 
   private readonly landscape = inject(LandscapeStateService);
 
@@ -171,7 +200,7 @@ export class AssetDetailComponent implements OnDestroy {
   private async initLandscape(spaceId: string, assetId: string): Promise<void> {
     await this.landscape.init(spaceId, {
       disablePersistence: true,
-      columnDefaults: { showMoaColumn: false, showRoaColumn: false, showNotesColumn: true },
+      columnDefaults: { showMoaColumn: false, showRoaColumn: false },
     });
     this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, assetIds: [assetId] });
   }
@@ -199,9 +228,6 @@ export class AssetDetailComponent implements OnDestroy {
   private async loadAsset(): Promise<void> {
     try {
       this.asset.set(await this.assetService.getById(this.assetId()));
-      // History panel depends on the loaded asset space_id; refresh once
-      // the asset resolves so the inline panel reflects the latest versions.
-      await this.refreshHistory();
     } catch {
       this.asset.set(null);
     } finally {
@@ -209,27 +235,35 @@ export class AssetDetailComponent implements OnDestroy {
     }
   }
 
-  private async refreshHistory(): Promise<void> {
+  /** Lazily loads version history for one anchor card; called by the stack on first expand. */
+  protected async onRequestHistory(anchorId: string): Promise<void> {
     const p = this.asset();
     if (!p) return;
     try {
-      await this.historyHost.load(p.space_id, 'product', p.id);
+      const payload = await this.intelligenceService.loadHistory(anchorId, 'product', p.id);
+      this.histories.update((m) => ({ ...m, [anchorId]: payload }));
     } catch {
-      // History panel mirrors the intelligence-block: load failures should
-      // not block the page. The panel renders an empty state on its own.
+      // Per-card history load failure must not block the page; the card keeps
+      // its loading line and the user can collapse/expand to retry.
     }
   }
 
+  protected onWithdrawRequested(e: { anchorId: string; id: string; headline: string }): void {
+    this.withdrawTargetId.set(e.id);
+    this.withdrawDialogOpen.set(true);
+  }
+
   protected async onWithdrawConfirmed(reason: string): Promise<void> {
-    const id = this.historyHost.payload().current?.id;
+    const id = this.withdrawTargetId();
     if (!id) return;
     try {
-      await this.historyHost.withdraw(id, reason);
+      await this.intelligenceService.withdraw(id, reason);
       this.withdrawDialogOpen.set(false);
       await Promise.all([this.loadIntelligence(), this.loadAsset()]);
+      this.histories.set({});
       this.messageService.add({
         severity: 'success',
-        summary: 'Read withdrawn.',
+        summary: 'Intelligence withdrawn.',
         life: 3000,
       });
     } catch (err) {
@@ -253,12 +287,13 @@ export class AssetDetailComponent implements OnDestroy {
     const id = this.purgeTargetId();
     if (!id) return;
     try {
-      await this.historyHost.purge(id, confirmation, this.purgeAnchorMode());
+      await this.intelligenceService.purge(id, confirmation, this.purgeAnchorMode());
       this.purgeDialogOpen.set(false);
       await Promise.all([this.loadIntelligence(), this.loadAsset()]);
+      this.histories.set({});
       this.messageService.add({
         severity: 'success',
-        summary: 'Read purged.',
+        summary: 'Intelligence purged.',
         life: 3000,
       });
     } catch (err) {
@@ -279,8 +314,76 @@ export class AssetDetailComponent implements OnDestroy {
     }
   }
 
-  protected onIntelligenceEdit(): void {
+  protected openDrawerForNewBrief(): void {
+    this.drawerAnchorId.set(null);
     this.drawerOpen.set(true);
+  }
+
+  protected openBriefInDrawer(anchorId: string): void {
+    this.drawerAnchorId.set(anchorId);
+    this.drawerOpen.set(true);
+  }
+
+  protected async onBriefPin(anchorId: string): Promise<void> {
+    const i = this.intelligence();
+    if (!i) return;
+    try {
+      await this.intelligenceService.setLead(anchorId, i.space_id, i.entity_type, i.entity_id);
+      await this.loadIntelligence();
+      this.histories.set({});
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not set lead entry',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
+  }
+
+  protected async onBriefReorder(anchorIds: string[]): Promise<void> {
+    const i = this.intelligence();
+    if (!i) return;
+    try {
+      await this.intelligenceService.reorder(i.space_id, i.entity_type, i.entity_id, anchorIds);
+      await this.loadIntelligence();
+      this.histories.set({});
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not reorder entries',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
+  }
+
+  protected onDiscardDraft(anchorId: string): void {
+    const brief = this.intelligence()?.briefs.find((b) => b.anchor_id === anchorId);
+    const id = brief?.draft?.record.id;
+    if (!id) return;
+    this.confirmation.confirm({
+      header: 'Discard draft?',
+      message: 'This permanently removes the unpublished draft. This cannot be undone.',
+      acceptLabel: 'Discard draft',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectLabel: 'Cancel',
+      accept: async () => {
+        try {
+          await this.intelligenceService.delete(id);
+          this.messageService.add({ severity: 'success', summary: 'Draft discarded.', life: 3000 });
+          await this.loadIntelligence();
+          this.histories.set({});
+        } catch (err) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Discard failed',
+            detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+            life: 4000,
+          });
+        }
+      },
+    });
   }
 
   protected async onIntelligenceClosed(): Promise<void> {
@@ -291,36 +394,13 @@ export class AssetDetailComponent implements OnDestroy {
   protected async onIntelligencePublished(): Promise<void> {
     this.drawerOpen.set(false);
     await this.loadIntelligence();
-    this.messageService.add({ severity: 'success', summary: 'Read published.', life: 3000 });
-  }
-
-  protected onIntelligenceDelete(): void {
-    const i = this.intelligence();
-    const id = i?.published?.record.id ?? i?.draft?.record.id;
-    if (!id) return;
-    this.confirmation.confirm({
-      header: 'Delete primary intelligence?',
-      message: 'This cannot be undone.',
-      acceptLabel: 'Delete',
-      acceptButtonStyleClass: 'p-button-danger',
-      rejectLabel: 'Cancel',
-      accept: async () => {
-        try {
-          await this.intelligenceService.delete(id);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Deleted',
-            detail: 'Primary intelligence removed.',
-          });
-          await this.loadIntelligence();
-        } catch (err) {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Delete failed',
-            detail: (err as Error).message,
-          });
-        }
-      },
+    this.histories.set({});
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Intelligence published.',
+      life: 3000,
     });
   }
+
 }
+

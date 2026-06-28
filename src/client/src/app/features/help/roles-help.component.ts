@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 
@@ -20,7 +19,7 @@ interface CapabilityRow {
 @Component({
   selector: 'app-roles-help',
   standalone: true,
-  imports: [RouterLink, ManagePageShellComponent],
+  imports: [ManagePageShellComponent],
   template: `
     <app-manage-page-shell>
       <div class="max-w-3xl">
@@ -126,19 +125,12 @@ interface CapabilityRow {
             }
           </div>
         </section>
-
-        <p class="mt-8 text-xs text-slate-400">
-          <a [routerLink]="backLink()" class="text-brand-700 hover:underline"
-            >Back to space members</a
-          >
-        </p>
       </div>
     </app-manage-page-shell>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RolesHelpComponent {
-  private readonly route = inject(ActivatedRoute);
   private readonly brand = inject(BrandContextService);
 
   // Individual-person slot ("a new {teammate}", "Most {teammates} working").
@@ -174,63 +166,63 @@ export class RolesHelpComponent {
 
   protected readonly capabilityRows: CapabilityRow[] = [
     {
-      group: 'Engagement data',
+      group: 'Space data',
       capability: 'View companies, assets, trials, catalysts, events',
       owner: 'yes',
       contributor: 'yes',
       reader: 'yes',
     },
     {
-      group: 'Engagement data',
+      group: 'Space data',
       capability: 'Add or edit catalysts, markers, trials, trial notes',
       owner: 'yes',
       contributor: 'yes',
       reader: 'no',
     },
     {
-      group: 'Engagement data',
+      group: 'Space data',
       capability: 'Add or edit events, sources, threads, links',
       owner: 'yes',
       contributor: 'yes',
       reader: 'no',
     },
     {
-      group: 'Engagement data',
+      group: 'Space data',
       capability: 'Add or edit indications, mechanisms, routes of administration',
       owner: 'yes',
       contributor: 'yes',
       reader: 'no',
     },
     {
-      group: 'Engagement structure',
+      group: 'Space structure',
       capability: 'Invite people to the space',
       owner: 'yes',
       contributor: 'no',
       reader: 'no',
     },
     {
-      group: 'Engagement structure',
+      group: 'Space structure',
       capability: 'Change someone else’s role in the space',
       owner: 'yes',
       contributor: 'no',
       reader: 'no',
     },
     {
-      group: 'Engagement structure',
+      group: 'Space structure',
       capability: 'Remove someone from the space',
       owner: 'yes',
       contributor: 'no',
       reader: 'no',
     },
     {
-      group: 'Engagement structure',
+      group: 'Space structure',
       capability: 'Rename the space, edit description',
       owner: 'yes',
       contributor: 'no',
       reader: 'no',
     },
     {
-      group: 'Engagement structure',
+      group: 'Space structure',
       capability: 'Delete the space',
       owner: 'yes',
       contributor: 'no',
@@ -257,15 +249,15 @@ export class RolesHelpComponent {
     return [
       {
         q: 'When should I make someone a Contributor instead of an Owner?',
-        a: `Make people Contributors by default. Owner status is for the people who decide who else gets in and what the space contains. Most ${teammates} working an engagement should be Contributors. Promote to Owner only when someone needs to manage the space itself.`,
+        a: `Make people Contributors by default. Owner status is for the people who decide who else gets in and what the space contains. Most ${teammates} working in a space should be Contributors. Promote to Owner only when someone needs to manage the space itself.`,
       },
       {
         q: 'When is Reader the right role?',
-        a: 'When the person consumes the analysis but should not change it. Typical cases: a client stakeholder who reviews findings, an executive who reads catalysts, an auditor.',
+        a: 'When the person consumes the intelligence but should not change it. Typical cases: a client stakeholder who reviews findings, an executive who reads catalysts, an auditor.',
       },
       {
         q: 'What happens when I add an agency colleague to a space?',
-        a: 'They get the role you assign in this space, the same as anyone else. Agency membership outside the space does not grant any data access; the firewall between engagements is enforced per space.',
+        a: 'They get the role you assign in this space, the same as anyone else. Agency membership outside the space does not grant any data access; the firewall between spaces is enforced per space.',
       },
       {
         q: 'Can a Reader see who else is in the space?',
@@ -296,10 +288,5 @@ export class RolesHelpComponent {
     return value === 'yes'
       ? 'inline-block min-w-[2.5rem] text-xs font-semibold text-brand-700'
       : 'inline-block min-w-[2.5rem] text-xs font-semibold text-slate-300';
-  }
-
-  protected backLink(): string[] {
-    const tenantId = this.route.snapshot.paramMap.get('tenantId');
-    return tenantId ? ['/t', tenantId, 'spaces'] : ['/'];
   }
 }

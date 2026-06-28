@@ -88,9 +88,9 @@ See [Multi-Tenant Model](09-multi-tenant-model.md) for full details.
 - id: cascade-delete-preview
   summary: Read-only preview RPCs that return a jsonb count breakdown of what cascade will hit before the destructive call. Powers the count-aware confirm dialog across company, asset (product), and trial delete surfaces.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/companies
-    - /t/:tenantId/s/:spaceId/manage/assets
-    - /t/:tenantId/s/:spaceId/manage/trials
+    - /t/:tenantId/s/:spaceId/profiles/companies
+    - /t/:tenantId/s/:spaceId/profiles/assets
+    - /t/:tenantId/s/:spaceId/profiles/trials
   rpcs:
     - preview_company_delete
     - preview_asset_delete

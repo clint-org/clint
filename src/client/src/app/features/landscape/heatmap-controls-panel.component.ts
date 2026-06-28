@@ -46,7 +46,7 @@ import { SegmentedControlComponent } from '../../shared/components/segmented-con
       </div>
 
       <div class="controls-section">
-        <div class="section-label">READ</div>
+        <div class="section-label">AT A GLANCE</div>
         @if (read().text) {
           <app-competitive-read-strip class="read-content" [read]="read()" />
         }

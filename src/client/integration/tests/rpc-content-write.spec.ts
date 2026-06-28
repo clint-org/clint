@@ -77,6 +77,7 @@ describe('rpc upsert_primary_intelligence (gate)', () => {
   it('agency_only: gate accepts (FK violation on fake entity_id is fine)', async () => {
     const r = await as(p, 'agency_only').rpc('upsert_primary_intelligence', {
       p_id: null,
+      p_anchor_id: null,
       p_space_id: p.org.spaceId,
       p_entity_type: 'company',
       p_entity_id: FAKE_ENTITY,
@@ -97,6 +98,7 @@ describe('rpc upsert_primary_intelligence (gate)', () => {
   it('tenant_owner (agency-firewalled): denied', async () => {
     const r = await as(p, 'tenant_owner').rpc('upsert_primary_intelligence', {
       p_id: null,
+      p_anchor_id: null,
       p_space_id: p.org.spaceId,
       p_entity_type: 'company',
       p_entity_id: FAKE_ENTITY,
@@ -113,29 +115,32 @@ describe('rpc upsert_primary_intelligence (gate)', () => {
   });
 });
 
-describe('rpc build_intelligence_payload (gate)', () => {
+describe('rpc list_intelligence_for_entity (gate)', () => {
+  // build_intelligence_payload (5-param) was dropped in 20260627130400; its
+  // callers were rewritten to use list_intelligence_for_entity + the DEFINER
+  // detail-bundle RPCs. These gate tests verify the replacement is accessible
+  // to the correct roles.
   it('agency_only: gate accepts', async () => {
-    const r = await as(p, 'agency_only').rpc('build_intelligence_payload', {
+    const r = await as(p, 'agency_only').rpc('list_intelligence_for_entity', {
       p_space_id: p.org.spaceId,
       p_entity_type: 'company',
       p_entity_id: FAKE_ENTITY,
-      p_state: 'draft',
     });
     if (r.error?.code === '42501' || r.error?.code === 'P0001') {
       throw new Error(`agency_only denied at gate: ${r.error.message}`);
     }
   });
 
-  it('tenant_owner: gate denies or RLS-filters to empty', async () => {
-    const r = await as(p, 'tenant_owner').rpc('build_intelligence_payload', {
+  it('tenant_owner: gate accepts (space members can read published content)', async () => {
+    const r = await as(p, 'tenant_owner').rpc('list_intelligence_for_entity', {
       p_space_id: p.org.spaceId,
       p_entity_type: 'company',
       p_entity_id: FAKE_ENTITY,
-      p_state: 'draft',
     });
-    // build_intelligence_payload is a read RPC; the agency firewall manifests
-    // either as 42501/P0001 OR as RLS returning empty data. Both are
-    // acceptable. 5xx would indicate a server bug.
+    // list_intelligence_for_entity returns [] for unknown/no-brief entities.
+    // The access guard inside the DEFINER function filters by
+    // is_agency_member_of_space OR has_space_access; tenant_owner has space
+    // access. 5xx would indicate a server bug.
     if (r.error?.code?.startsWith('5')) {
       throw new Error(`unexpected server error: ${r.error.code}: ${r.error.message}`);
     }
@@ -169,13 +174,20 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
   };
 
   async function read(state: 'draft' | 'published'): Promise<Payload | null> {
-    const r = await as(p, 'agency_only').rpc('build_intelligence_payload', {
+    // build_intelligence_payload (5-param) was dropped in 20260627130400.
+    // list_intelligence_for_entity returns all anchors for the entity; the
+    // round-trip suite creates at most one anchor for Trial Alpha, so rows[0]
+    // is always the right anchor. The published/draft fields carry the full
+    // {record, links, contributors, authors} payload shape.
+    const r = await as(p, 'agency_only').rpc('list_intelligence_for_entity', {
       p_space_id: p.org.spaceId,
       p_entity_type: 'trial',
       p_entity_id: trialAId,
-      p_state: state,
     });
-    return expectOk(r) as Payload | null;
+    const rows = expectOk(r) as any[] | null;
+    if (!rows || rows.length === 0) return null;
+    const anchor = rows[0];
+    return (state === 'draft' ? anchor.draft : anchor.published) as Payload | null;
   }
 
   async function upsert(args: {
@@ -187,6 +199,7 @@ describe('upsert_primary_intelligence + build_intelligence_payload (round-trip)'
   }): Promise<string> {
     const r = await as(p, 'agency_only').rpc('upsert_primary_intelligence', {
       p_id: args.id,
+      p_anchor_id: null,
       p_space_id: p.org.spaceId,
       p_entity_type: 'trial',
       p_entity_id: trialAId,

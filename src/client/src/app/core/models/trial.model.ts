@@ -16,13 +16,14 @@ export interface Trial {
   updated_at: string;
   updated_by: string | null;
 
-  // Phase override (analyst-owned)
+  // Import provenance: the source_documents row this entity landed from when
+  // created by an AI import. Null for manually created entities.
+  source_doc_id: string | null;
+
+  // Phase override (analyst-owned). Dates are derived from Trial Start / Trial
+  // End / PCD markers via deriveTrialPhaseSpan (core/models/trial-phase-span.ts).
   phase_type: string | null;
-  phase_start_date: string | null;
-  phase_end_date: string | null;
   phase_type_source?: 'ctgov' | 'analyst' | null;
-  phase_start_date_source?: 'ctgov' | 'analyst' | null;
-  phase_end_date_source?: 'ctgov' | 'analyst' | null;
 
   conditions?: Condition[];
   assets?: {
@@ -43,20 +44,32 @@ export interface Trial {
   ctgov_last_synced_at?: string | null;
   latest_ctgov_version?: number | null;
   last_polled_at?: string | null;
+  // Timestamp (ISO string) when CT.gov last flagged this trial as removed/withdrawn; null while active.
+  ctgov_withdrawn_at?: string | null;
 
   // Change-feed badge fields (from get_dashboard_data)
   recent_changes_count?: number;
   most_recent_change_type?: string | null;
   most_recent_change_event_id?: string | null;
 
+  // Primary-intelligence presence (from get_dashboard_data). True when this
+  // trial owns published primary intelligence; intelligence_headline carries
+  // that PI headline for the timeline's inline headline treatment.
+  has_intelligence?: boolean;
+  intelligence_headline?: string | null;
+
   /**
-   * Dashboard-only augmentation: the indication grouping this trial was nested
-   * under in get_dashboard_data. Attached by DashboardService (absent
-   * everywhere else). `indication_id` is the indication entity id that the
-   * Indication filter (filters.indicationIds) matches against; `id` mirrors it
-   * (the RPC does not surface the asset_indication join-row id).
+   * Dashboard-only augmentation: every indication grouping this trial was
+   * nested under in get_dashboard_data. A trial can span multiple of its
+   * asset's indications (e.g. a trial whose conditions map to both Obesity and
+   * Overweight); the RPC nests it once per indication, and DashboardService
+   * dedupes those into a single row carrying all of them here. Attached by
+   * DashboardService (absent everywhere else). `indication_id` is the
+   * indication entity id that the Indication filter (filters.indicationIds)
+   * matches against; `id` mirrors it (the RPC does not surface the
+   * asset_indication join-row id).
    */
-  _indication?: { id: string; indication_id: string; indication_name: string } | null;
+  _indications?: { id: string; indication_id: string; indication_name: string }[];
 }
 
 export interface TrialNote {

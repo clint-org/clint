@@ -60,33 +60,52 @@ export class DashboardService {
 /**
  * Maps the raw get_dashboard_data RPC payload into the client DashboardData
  * company > asset > trial shape. Trials nested under an indication get an
- * `_indication` augmentation so the client-side indication filter can match
- * on the indication entity id. Exported as a pure function so the mapping can
- * be unit-tested without mocking Supabase (mirrors filterDashboardData).
+ * `_indications` augmentation so the client-side indication filter can match
+ * on the indication entity id. A trial can span several of its asset's
+ * indications (the RPC nests it once per indication); we dedupe by trial id
+ * into a single row that carries all of them, so the timeline -- which has no
+ * indication column -- shows one row per trial rather than one per indication.
+ * Exported as a pure function so the mapping can be unit-tested without mocking
+ * Supabase (mirrors filterDashboardData).
  */
 export function mapDashboardCompanies(data: any[]): any[] {
   return (data ?? []).map((c: any) => ({
     ...c,
+    has_intelligence: c.has_intelligence ?? false,
+    intelligence_headline: c.intelligence_headline ?? null,
     assets: (c.assets ?? []).map((p: any) => {
-      const indicationTrials = (p.indications ?? []).flatMap((ind: any) =>
-        (ind.trials ?? []).map((t: any) => ({
-          ...t,
-          // The RPC emits the indication entity id as `id` and its name as
-          // `name`. The indication filter matches on `_indication.indication_id`,
-          // so surface the entity id under that key (and the name) here.
-          _indication: { id: ind.id, indication_id: ind.id, indication_name: ind.name },
-        }))
-      );
+      const byTrialId = new Map<string, any>();
+      for (const ind of p.indications ?? []) {
+        // The RPC emits the indication entity id as `id` and its name as
+        // `name`. The indication filter matches on `_indications[].indication_id`,
+        // so surface the entity id under that key (and the name) here.
+        // Synthetic "unspecified" nodes (is_unspecified === true or id === null)
+        // contribute their trials to the flat list but add no indication ref so
+        // no fake chip appears in the UI.
+        const isUnspecified = ind.is_unspecified === true || ind.id == null;
+        const indicationRef = isUnspecified
+          ? null
+          : { id: ind.id, indication_id: ind.id, indication_name: ind.name };
+        for (const t of ind.trials ?? []) {
+          const existing = byTrialId.get(t.id);
+          if (existing) {
+            if (indicationRef) existing._indications.push(indicationRef);
+          } else {
+            byTrialId.set(t.id, { ...t, _indications: indicationRef ? [indicationRef] : [] });
+          }
+        }
+      }
+      const indicationTrials = [...byTrialId.values()];
       const allTrials = indicationTrials.length > 0 ? indicationTrials : (p.trials ?? []);
       return {
         ...p,
-        indications: p.indications ?? [],
+        has_intelligence: p.has_intelligence ?? false,
+        intelligence_headline: p.intelligence_headline ?? null,
+        indications: (p.indications ?? []).filter((ind: any) => !(ind.is_unspecified === true || ind.id == null)),
         trials: allTrials.map((t: any) => ({
           ...t,
           identifier: t.identifier ?? null,
           phase_type: t.phase_data?.phase_type ?? null,
-          phase_start_date: t.phase_data?.phase_start_date ?? null,
-          phase_end_date: t.phase_data?.phase_end_date ?? null,
           markers: (t.markers ?? []).map((m: any) => ({
             ...m,
             marker_types: m.marker_type
@@ -99,7 +118,9 @@ export function mapDashboardCompanies(data: any[]): any[] {
                 }
               : null,
           })),
-          trial_notes: t.trial_notes ?? [],
+          ctgov_withdrawn_at: t.ctgov_withdrawn_at ?? null,
+          has_intelligence: t.has_intelligence ?? false,
+          intelligence_headline: t.intelligence_headline ?? null,
         })),
       };
     }),

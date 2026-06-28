@@ -38,10 +38,19 @@ import {
   resolveTrialPrimaryAssetIndex,
   orphanTrialIndexes,
   countFilterMatches,
+  markerLeafDisplay,
+  eventLeafDisplay,
+  pickMarkerType,
+  defaultSelections,
+  type MarkerTypeLite,
   type ReviewFlag,
 } from './review-grid.logic';
+import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
+import { MarkerTypeService } from '../../core/services/marker-type.service';
+import type { MarkerType } from '../../core/models/marker.model';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
 import { ReviewEditDialogComponent } from './review-edit-dialog.component';
+import { commitSummary, type CommitCreated } from './commit-summary.logic';
 
 type EditableEntityType = 'companies' | 'assets' | 'trials';
 
@@ -79,7 +88,7 @@ interface GridRow {
   key: string;
   type: EntityType;
   idx: number;
-  kind: 'company' | 'asset' | 'trial';
+  kind: 'company' | 'asset' | 'trial' | 'marker' | 'event';
   name: string;
   state: 'new' | 'existing';
   phase: string | null;
@@ -91,11 +100,35 @@ interface GridRow {
   // nesting is under its primary (headline) asset or a secondary one. Undefined
   // for single-asset trials and for non-trial rows.
   multiAssetRole?: 'primary' | 'secondary';
+  // Marker/event leaf rows carry their identity in the entity cell instead of
+  // the trial-shaped columns: a category chip (marker_type / event category)
+  // and a date. Undefined for company/asset/trial rows.
+  category?: string | null;
+  date?: string | null;
+  // For a marker row, the resolved marker type whose glyph it will receive on
+  // commit, so the review renders the real app-marker-icon (not a stand-in).
+  // Null while the space's marker types are still loading.
+  markerType?: MarkerTypeLite | null;
 }
+
+// Row kinds that are leaf attributes of an entity (markers, events) rather than
+// structural records. They render in the entity cell, leave the trial columns
+// blank, and are not editable through the dialog.
+const LEAF_KINDS = new Set<GridRow['kind']>(['marker', 'event']);
 
 @Component({
   selector: 'app-review-page',
-  imports: [FormsModule, NgTemplateOutlet, Checkbox, ButtonModule, Tooltip, MessageModule, TreeTableModule, ReviewEditDialogComponent],
+  imports: [
+    FormsModule,
+    NgTemplateOutlet,
+    Checkbox,
+    ButtonModule,
+    Tooltip,
+    MessageModule,
+    TreeTableModule,
+    ReviewEditDialogComponent,
+    MarkerIconComponent,
+  ],
   host: {
     class: 'block h-full',
     '(keydown)': 'onKeydown($event)',
@@ -221,7 +254,9 @@ interface GridRow {
           <!-- Hierarchical tree view -->
           @let tree = hierarchicalTree();
 
-          <div class="mb-3 inline-flex overflow-hidden rounded border border-slate-200 bg-white text-xs">
+          <div
+            class="mb-3 inline-flex overflow-hidden rounded border border-slate-200 bg-white text-xs"
+          >
             @for (opt of filterOptions; track opt.value) {
               <button
                 type="button"
@@ -233,31 +268,38 @@ interface GridRow {
                 (click)="gridFilter.set(opt.value)"
               >
                 {{ opt.label }}
-                <span class="ml-1 font-mono text-[10px] tabular-nums opacity-60"
-                  >{{ filterCounts()[opt.countKey] }}</span
-                >
+                <span class="ml-1 font-mono text-[10px] tabular-nums opacity-60">{{
+                  filterCounts()[opt.countKey]
+                }}</span>
               </button>
             }
           </div>
 
           <div class="overflow-x-auto">
-            <p-treeTable [value]="filteredNodes()" dataKey="key" styleClass="min-w-[64rem] review-grid">
+            <p-treeTable
+              [value]="filteredNodes()"
+              dataKey="key"
+              styleClass="min-w-[72rem] review-grid"
+            >
               <ng-template pTemplate="header">
                 <tr class="font-mono text-[10px] uppercase tracking-[0.06em] text-slate-400">
                   <th class="w-10"></th>
-                  <th class="min-w-72">Entity</th>
+                  <th class="min-w-80">Entity</th>
                   <th class="w-[5.25rem]">Type</th>
                   <th class="w-16">Phase</th>
                   <th class="w-28">Status</th>
-                  <th class="min-w-48">MOA / ROA</th>
-                  <th class="min-w-48">Indication</th>
+                  <th class="w-48">MOA / ROA</th>
+                  <th class="w-48">Indication</th>
                   <th class="w-[4.5rem]">Source</th>
                   <th class="w-16 text-right">Edit</th>
                 </tr>
               </ng-template>
               <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
                 @let row = asGridRow(rowData);
-                <tr [class.opacity-50]="!isSelected(row.key)" [class.bg-amber-50]="hasBlockingFlag(row)">
+                <tr
+                  [class.opacity-50]="!isSelected(row.key)"
+                  [class.bg-amber-50]="hasBlockingFlag(row)"
+                >
                   <td>
                     <p-checkbox
                       [ngModel]="isSelected(row.key)"
@@ -267,45 +309,96 @@ interface GridRow {
                     />
                   </td>
                   <td class="align-top">
-                    <div class="flex items-start gap-2">
-                      <p-treeTableToggler [rowNode]="rowNode" />
-                      <span
-                        class="whitespace-normal break-words"
-                        [class.font-mono]="row.kind === 'company'"
-                        [class.font-bold]="row.kind === 'company'"
-                        [class.uppercase]="row.kind === 'company'"
-                        [class.font-semibold]="row.kind === 'asset'"
-                        [class.text-brand-600]="row.kind === 'trial'"
-                        >{{ row.name }}</span
-                      >
-                      @if (row.state === 'existing') {
+                    @if (isLeafRow(row)) {
+                      <!-- Marker/event leaf: title on its own line, a muted meta
+                           line below for category + date, so nothing competes for
+                           horizontal room in the deeply-indented cell. -->
+                      <div class="flex items-start gap-2">
+                        <p-treeTableToggler [rowNode]="rowNode" />
+                        <!-- Markers render the real glyph their marker_type
+                             resolves to (same as the legend/timeline); events use
+                             the canonical events icon (shared/constants/nav-icons.ts).
+                             Marker falls back to fa-shapes until types load. -->
+                        @if (row.kind === 'marker' && row.markerType; as mt) {
+                          <span class="mt-0.5 inline-flex">
+                            <app-marker-icon
+                              [shape]="mt.shape"
+                              [color]="mt.color"
+                              [fillStyle]="mt.fill_style"
+                              [innerMark]="mt.inner_mark"
+                              [size]="13"
+                            />
+                          </span>
+                        } @else {
+                          <i
+                            class="fa-solid mt-1 text-[10px] text-slate-400"
+                            [class.fa-shapes]="row.kind === 'marker'"
+                            [class.fa-calendar-day]="row.kind === 'event'"
+                            aria-hidden="true"
+                          ></i>
+                        }
+                        <div class="min-w-0">
+                          <div class="whitespace-normal break-words text-slate-600">
+                            {{ row.name }}
+                          </div>
+                          @if (row.category || row.date || row.state === 'existing') {
+                            <div
+                              class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[10px] uppercase tracking-[0.04em] text-slate-400"
+                            >
+                              @if (row.category) {
+                                <span class="text-slate-500">{{ row.category }}</span>
+                              }
+                              @if (row.date) {
+                                <span class="tabular-nums">{{ row.date }}</span>
+                              }
+                              @if (row.state === 'existing') {
+                                <span>existing</span>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="flex items-start gap-2">
+                        <p-treeTableToggler [rowNode]="rowNode" />
                         <span
-                          class="rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
-                          >existing</span
+                          class="whitespace-normal break-words"
+                          [class.font-mono]="row.kind === 'company'"
+                          [class.font-bold]="row.kind === 'company'"
+                          [class.uppercase]="row.kind === 'company'"
+                          [class.font-semibold]="row.kind === 'asset'"
+                          [class.text-brand-600]="row.kind === 'trial'"
+                          >{{ row.name }}</span
                         >
-                      }
-                      @if (row.multiAssetRole === 'primary') {
-                        <span
-                          class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
-                          pTooltip="This trial tests more than one asset; this is its primary (headline) asset"
-                          tooltipPosition="top"
-                          >primary</span
-                        >
-                      } @else if (row.multiAssetRole === 'secondary') {
-                        <span
-                          class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-400"
-                          pTooltip="This trial also tests this asset; its primary asset is shown elsewhere"
-                          tooltipPosition="top"
-                          >also tested</span
-                        >
-                      }
-                      @for (f of row.flags; track f.id) {
-                        <span
-                          class="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-amber-700"
-                          >{{ f.label }}</span
-                        >
-                      }
-                    </div>
+                        @if (row.state === 'existing') {
+                          <span
+                            class="rounded border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-500"
+                            >existing</span
+                          >
+                        }
+                        @if (row.multiAssetRole === 'primary') {
+                          <span
+                            class="rounded border border-cyan-200 bg-cyan-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-cyan-700"
+                            pTooltip="This trial tests more than one asset; this is its primary (headline) asset"
+                            tooltipPosition="top"
+                            >primary</span
+                          >
+                        } @else if (row.multiAssetRole === 'secondary') {
+                          <span
+                            class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-slate-400"
+                            pTooltip="This trial also tests this asset; its primary asset is shown elsewhere"
+                            tooltipPosition="top"
+                            >also tested</span
+                          >
+                        }
+                        @for (f of row.flags; track f.id) {
+                          <span
+                            class="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] uppercase text-amber-700"
+                            >{{ f.label }}</span
+                          >
+                        }
+                      </div>
+                    }
                   </td>
                   <td class="align-top font-mono text-[10px] uppercase text-slate-400">
                     {{ row.kind === 'company' ? '' : row.kind }}
@@ -318,9 +411,15 @@ interface GridRow {
                       >
                     }
                   </td>
-                  <td class="align-top whitespace-normal break-words text-slate-500">{{ row.status }}</td>
-                  <td class="align-top whitespace-normal break-words text-slate-500">{{ row.moaRoa }}</td>
-                  <td class="align-top whitespace-normal break-words text-slate-500">{{ row.indication }}</td>
+                  <td class="align-top whitespace-normal break-words text-slate-500">
+                    {{ row.status }}
+                  </td>
+                  <td class="align-top whitespace-normal break-words text-slate-500">
+                    {{ row.moaRoa }}
+                  </td>
+                  <td class="align-top whitespace-normal break-words text-slate-500">
+                    {{ row.indication }}
+                  </td>
                   <td class="align-top">
                     @if (row.kind === 'trial') {
                       <span
@@ -330,16 +429,18 @@ interface GridRow {
                     }
                   </td>
                   <td class="align-top text-right">
-                    <button
-                      type="button"
-                      class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-brand-600"
-                      (click)="openEdit(row.type, row.idx)"
-                      [pTooltip]="'Edit ' + row.kind"
-                      tooltipPosition="left"
-                      [attr.aria-label]="'Edit ' + row.name"
-                    >
-                      <i class="fa-solid fa-pen text-[11px]"></i>
-                    </button>
+                    @if (!isLeafRow(row)) {
+                      <button
+                        type="button"
+                        class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-brand-600"
+                        (click)="openEdit(row.type, row.idx)"
+                        [pTooltip]="'Edit ' + row.kind"
+                        tooltipPosition="left"
+                        [attr.aria-label]="'Edit ' + row.name"
+                      >
+                        <i class="fa-solid fa-pen text-[11px]"></i>
+                      </button>
+                    }
                   </td>
                 </tr>
               </ng-template>
@@ -364,7 +465,9 @@ interface GridRow {
                 [inputId]="orphKey"
                 size="small"
               />
-              <span class="min-w-0 flex-1 truncate text-sm text-slate-700">{{ entityName(type, idx) }}</span>
+              <span class="min-w-0 flex-1 truncate text-sm text-slate-700">{{
+                entityName(type, idx)
+              }}</span>
               @if (type === 'trials') {
                 @let orphPhase = trialPhase(idx);
                 @if (orphPhase) {
@@ -463,7 +566,12 @@ interface GridRow {
         }
 
         @if (commitError()) {
-          <span class="text-xs text-red-600">{{ commitError() }}</span>
+          <span
+            class="text-xs"
+            [class.text-amber-700]="duplicateBlocked()"
+            [class.text-red-600]="!duplicateBlocked()"
+            >{{ commitError() }}</span
+          >
         }
 
         <div class="flex items-center gap-2">
@@ -474,15 +582,27 @@ interface GridRow {
             [text]="true"
             (onClick)="navigateBack()"
           />
-          <p-button
-            [label]="'Confirm ' + selectedCount() + ' items'"
-            size="small"
-            [loading]="committing()"
-            [disabled]="!canConfirm()"
-            (onClick)="confirm()"
-            pTooltip="Cmd/Ctrl+Enter"
-            tooltipPosition="top"
-          />
+          @if (duplicateBlocked()) {
+            <p-button
+              label="Commit anyway"
+              size="small"
+              severity="warn"
+              [loading]="committing()"
+              (onClick)="commitAllowingDuplicate()"
+              pTooltip="Import this source again even though the same source text was already imported"
+              tooltipPosition="top"
+            />
+          } @else {
+            <p-button
+              [label]="'Confirm ' + selectedCount() + ' items'"
+              size="small"
+              [loading]="committing()"
+              [disabled]="!canConfirm()"
+              (onClick)="confirm()"
+              pTooltip="Cmd/Ctrl+Enter"
+              tooltipPosition="top"
+            />
+          }
         </div>
       </footer>
 
@@ -505,6 +625,11 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   private readonly messages = inject(MessageService);
   private readonly rpcCache = inject(RpcCache);
   private readonly changeEventService = inject(ChangeEventService);
+  private readonly markerTypeService = inject(MarkerTypeService);
+
+  // The space's marker types, loaded once spaceId is known, so marker leaf rows
+  // can render the real glyph their marker_type resolves to (see gridNodes).
+  protected readonly markerTypes = signal<MarkerType[]>([]);
 
   protected readonly entityOrder = ENTITY_ORDER;
 
@@ -539,11 +664,14 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   readonly committing = signal(false);
   readonly commitError = signal<string | null>(null);
   readonly committed = signal(false);
+  protected readonly duplicateBlocked = signal(false);
   readonly highlightedEvidence = signal<{ text: string; pinned: boolean } | null>(null);
 
   // The entity currently open in the edit dialog (null when closed).
   private readonly editTarget = signal<{ type: EditableEntityType; index: number } | null>(null);
-  protected readonly editType = computed<EditableEntityType | null>(() => this.editTarget()?.type ?? null);
+  protected readonly editType = computed<EditableEntityType | null>(
+    () => this.editTarget()?.type ?? null
+  );
   protected readonly editIndex = computed<number | null>(() => this.editTarget()?.index ?? null);
 
   // Set once the user saves an edit through the dialog; the dialog mutates the
@@ -762,6 +890,11 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected hasBlockingFlag(row: GridRow): boolean {
     return row.flags.some((f) => f.tier === 'blocking');
   }
+  // Marker/event leaf rows render their identity in the entity cell and have no
+  // edit dialog, so the template branches on this.
+  protected isLeafRow(row: GridRow): boolean {
+    return LEAF_KINDS.has(row.kind);
+  }
   // PrimeNG TreeTable rowData is untyped; cast once so the template is type-checked.
   protected asGridRow(rowData: unknown): GridRow {
     return rowData as GridRow;
@@ -773,7 +906,38 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const assetCount = this.entitiesOf('assets').length;
     const dupes = duplicateTrialIndexes(trials);
 
-    const trialRow = (idx: number, parentAssetIdx: number): TreeNode => {
+    // Markers and events nest as leaf rows under the entity they describe. The
+    // selection key stays per-entity (so a marker shared by two trials toggles
+    // together) while the tree-node key is namespaced by the parent node, since
+    // the same leaf can appear under several parents (mirrors multi-asset trials).
+    const markerTypes = this.markerTypes();
+    const leafRow = (type: 'markers' | 'events', idx: number, parentNodeKey: string): TreeNode => {
+      const e = this.entitiesOf(type)[idx];
+      const disp = type === 'markers' ? markerLeafDisplay(e) : eventLeafDisplay(e);
+      const row: GridRow = {
+        key: this.entityKey(type, idx),
+        type,
+        idx,
+        kind: type === 'markers' ? 'marker' : 'event',
+        name: this.entityName(type, idx),
+        state: entityState(e),
+        phase: null,
+        status: null,
+        moaRoa: '',
+        indication: null,
+        flags: [],
+        category: disp.category,
+        date: disp.date,
+        markerType: type === 'markers' ? pickMarkerType(disp.category, markerTypes) : null,
+      };
+      return { key: `${parentNodeKey}/${row.key}`, data: row };
+    };
+
+    const branch = (key: string, data: GridRow, children: TreeNode[]): TreeNode =>
+      children.length > 0 ? { key, data, expanded: true, children } : { key, data };
+
+    const trialRow = (tn: TrialNode, parentAssetIdx: number): TreeNode => {
+      const idx = tn.trialIdx;
       const t = trials[idx];
       const flags = [
         ...deriveTrialFlags(t),
@@ -807,10 +971,14 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       // The tree-node key must be unique per nesting: a multi-asset trial appears
       // under several assets, so namespace it by the parent asset. row.key (the
       // selection key) stays per-trial so both copies share state.
-      return { key: `assets_${parentAssetIdx}/${row.key}`, data: row };
+      const nodeKey = `assets_${parentAssetIdx}/${row.key}`;
+      return branch(nodeKey, row, [
+        ...tn.markers.map((mi) => leafRow('markers', mi, nodeKey)),
+        ...tn.events.map((ei) => leafRow('events', ei, nodeKey)),
+      ]);
     };
 
-    const assetRow = (an: { assetIdx: number; trials: { trialIdx: number }[] }): TreeNode => {
+    const assetRow = (an: AssetNode): TreeNode => {
       const idx = an.assetIdx;
       const a = this.entitiesOf('assets')[idx];
       const flags = [
@@ -830,7 +998,10 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         indication: null,
         flags,
       };
-      return { key: row.key, data: row, expanded: true, children: an.trials.map((tn) => trialRow(tn.trialIdx, an.assetIdx)) };
+      return branch(row.key, row, [
+        ...an.trials.map((tn) => trialRow(tn, an.assetIdx)),
+        ...an.events.map((ei) => leafRow('events', ei, row.key)),
+      ]);
     };
 
     return tree.companies.map((cn) => {
@@ -847,7 +1018,10 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         indication: null,
         flags: [],
       };
-      return { key: row.key, data: row, expanded: true, children: cn.assets.map((an) => assetRow(an)) };
+      return branch(row.key, row, [
+        ...cn.assets.map((an) => assetRow(an)),
+        ...cn.events.map((ei) => leafRow('events', ei, row.key)),
+      ]);
     });
   });
 
@@ -856,8 +1030,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected readonly filteredNodes = computed<TreeNode[]>(() => {
     const f = this.gridFilter();
     if (f === 'all') return this.gridNodes();
-    const keep = (row: GridRow) =>
-      f === 'flagged' ? row.flags.length > 0 : row.state === 'new';
+    const keep = (row: GridRow) => (f === 'flagged' ? row.flags.length > 0 : row.state === 'new');
     // Keep a parent if it or any descendant matches, so linkage context is preserved.
     const filterNode = (node: TreeNode): TreeNode | null => {
       const children = (node.children ?? [])
@@ -922,6 +1095,20 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   ngOnInit(): void {
     this.extractRouteParams();
     this.initSelections();
+    void this.loadMarkerTypes();
+  }
+
+  // Fetch the space's marker types (system + space-scoped) so marker leaf rows
+  // can resolve their real glyph. Best-effort: on failure the rows fall back to
+  // the fa-shapes icon, which is purely cosmetic for the review preview.
+  private async loadMarkerTypes(): Promise<void> {
+    const spaceId = this.spaceId();
+    if (!spaceId) return;
+    try {
+      this.markerTypes.set(await this.markerTypeService.list(spaceId));
+    } catch {
+      this.markerTypes.set([]);
+    }
   }
 
   hasUnsavedChanges(): boolean {
@@ -1011,7 +1198,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     return p.ctgov_candidates[`trials_${index}`] ?? [];
   }
 
-
   protected trialMissingAsset(entity: Record<string, unknown>): boolean {
     // Delegate to the pure logic module so the grid's no-asset flag and the
     // commit gate share one definition (an existing_id match also counts).
@@ -1055,14 +1241,24 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   protected async confirm(): Promise<void> {
     this.committing.set(true);
     this.commitError.set(null);
+    await this.doCommit(false);
+  }
 
+  protected async commitAllowingDuplicate(): Promise<void> {
+    this.committing.set(true);
+    this.duplicateBlocked.set(false);
+    this.commitError.set(null);
+    await this.doCommit(true);
+  }
+
+  private async doCommit(allowDuplicate: boolean): Promise<void> {
     const session = this.supabase.session();
     if (!session) {
       this.committing.set(false);
       return;
     }
 
-    const payload = this.buildCommitPayload();
+    const payload = this.buildCommitPayload(allowDuplicate);
 
     const { data, error } = await this.supabase.client.rpc('commit_source_import', {
       p_space_id: this.spaceId(),
@@ -1078,9 +1274,19 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       return;
     }
 
+    const dupResult = data as { code?: string; existing_id?: string } | null;
+    if (dupResult?.code === 'duplicate_source') {
+      this.committing.set(false);
+      this.duplicateBlocked.set(true);
+      this.commitError.set(
+        'This exact source was already imported, so nothing was added. Choose Commit anyway to import it again.'
+      );
+      return;
+    }
+
     if (this.isNctImport()) {
-      const result = data as { created?: { trials?: string[] } } | null;
-      const createdTrialIds = result?.created?.trials ?? [];
+      const nctResult = data as { created?: { trials?: string[] } } | null;
+      const createdTrialIds = nctResult?.created?.trials ?? [];
       for (const trialId of createdTrialIds) {
         // fire-and-forget: sync runs in the background via the worker
         this.changeEventService
@@ -1108,9 +1314,10 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     ]);
 
     const title = this.proposal()?.source_title ?? 'source';
+    const created = (data as { created?: CommitCreated } | null)?.created ?? null;
     this.messages.add({
       severity: 'success',
-      summary: `Committed ${this.selectedCount()} items from ${title}. View in timeline.`,
+      summary: commitSummary(created, title),
       life: 5000,
     });
 
@@ -1148,14 +1355,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const proposal = this.proposal();
     const p = proposal?.proposals;
     if (!p) return;
-    const sel: Record<string, boolean> = {};
-    for (const type of ENTITY_ORDER) {
-      const items = p[type] ?? [];
-      for (let i = 0; i < items.length; i++) {
-        sel[`${type}_${i}`] = true;
-      }
-    }
-    this.selections.set(sel);
+    this.selections.set(defaultSelections(p as unknown as Record<string, unknown>));
 
     if (proposal) {
       const nctDefaults: Record<number, string> = {};
@@ -1174,7 +1374,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     }
   }
 
-  private buildCommitPayload(): {
+  private buildCommitPayload(allowDuplicate = false): {
     sourceDocument: Record<string, unknown>;
     proposal: Record<string, unknown>;
   } {
@@ -1259,6 +1459,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         source_summary: p.source_summary,
         source_text: p.source_text,
         text_hash: p.source_text_hash,
+        ...(allowDuplicate ? { allow_duplicate: true } : {}),
       },
       proposal: {
         ...filteredProposals,

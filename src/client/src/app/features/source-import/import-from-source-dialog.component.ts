@@ -17,6 +17,7 @@ import { Textarea } from 'primeng/textarea';
 import { MessageModule } from 'primeng/message';
 
 import { SupabaseService } from '../../core/services/supabase.service';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { SourceImportProposal, SourceImportService } from './source-import.service';
 
 type Mode = 'url' | 'text';
@@ -42,7 +43,7 @@ const STEP_TIMINGS_MS = [1200, 3000, 6000];
 
 @Component({
   selector: 'app-import-from-source-dialog',
-  imports: [FormsModule, Dialog, ButtonModule, InputText, Textarea, MessageModule],
+  imports: [FormsModule, Dialog, ButtonModule, InputText, Textarea, MessageModule, LoaderComponent],
   template: `
     <p-dialog
       header="Import from source"
@@ -111,22 +112,17 @@ const STEP_TIMINGS_MS = [1200, 3000, 6000];
                 <div class="flex items-center gap-2.5">
                   @if (stepIndex() > $index) {
                     <span
-                      class="flex h-4 w-4 items-center justify-center rounded-full bg-brand-600"
+                      class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600"
                     >
-                      <i class="pi pi-check text-[9px] text-white"></i>
+                      <i class="fa-solid fa-check text-[11px] text-white"></i>
                     </span>
                     <span class="text-xs text-slate-500">{{ stepLabels[s] }}</span>
                   } @else if (stepIndex() === $index) {
-                    <span class="relative flex h-4 w-4">
-                      <span
-                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-40"
-                      ></span>
-                      <span class="relative inline-flex h-4 w-4 rounded-full bg-brand-500"></span>
-                    </span>
+                    <app-loader [size]="20" />
                     <span class="text-xs font-medium text-slate-700">{{ stepLabels[s] }}</span>
                   } @else {
                     <span
-                      class="flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white"
+                      class="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white"
                     >
                     </span>
                     <span class="text-xs text-slate-400">{{ stepLabels[s] }}</span>

@@ -1,9 +1,9 @@
 /**
- * Primary intelligence -- Stout's authored read on an entity in the
+ * Primary intelligence -- Stout's authored intelligence on an entity in the
  * engagement (trial, company, product, or the space itself). Markers
  * are no longer first-class owners of primary intelligence; the
  * marker's own description carries the catalyst-level write-up, and
- * trial/asset PI carries the competitive read. Markers remain valid
+ * trial/asset PI carries the competitive intelligence. Markers remain valid
  * link targets so a trial PI can still cite a specific catalyst.
  *
  * Mirrors the Postgres tables `primary_intelligence` and
@@ -24,8 +24,9 @@ export type VersionState = Exclude<IntelligenceState, 'draft'>;
 export interface PrimaryIntelligence {
   id: string;
   space_id: string;
-  entity_type: IntelligenceEntityType;
-  entity_id: string;
+  // entity_type and entity_id were dropped from the primary_intelligence table when
+  // the anchor model was introduced; those fields now live on primary_intelligence_anchors.
+  // They are not present on rows returned from the DB and must not be read here.
   state: IntelligenceState;
   headline: string;
   summary_md: string;
@@ -69,19 +70,33 @@ export interface ReferencedInRow {
   gloss: string | null;
 }
 
+/** One brief (anchor) with its current published/draft payloads. Matches
+ *  one element of the detail bundle `briefs[]` array. */
+export interface PrimaryIntelligenceBrief {
+  anchor_id: string;
+  is_lead: boolean;
+  display_order: number;
+  published: IntelligencePayload | null;
+  draft: IntelligencePayload | null;
+  updated_at: string | null;
+  version_count: number;
+}
+
 /** Detail-page bundle returned by the get_*_with_intelligence RPCs. */
 export interface IntelligenceDetailBundle {
   space_id: string;
   entity_type: IntelligenceEntityType;
   entity_id: string;
-  published: IntelligencePayload | null;
-  draft: IntelligencePayload | null;
+  briefs: PrimaryIntelligenceBrief[];
   referenced_in: ReferencedInRow[];
+  authors?: Record<string, string>;
 }
 
 /** Compact row used by Latest-from-Stout feed and the browse view. */
 export interface IntelligenceFeedRow {
   id: string;
+  anchor_id: string;
+  is_lead: boolean;
   space_id: string;
   entity_type: IntelligenceEntityType;
   entity_id: string;
@@ -106,6 +121,7 @@ export interface IntelligenceFeedResult {
 
 export interface UpsertIntelligenceInput {
   id: string | null;
+  anchor_id: string | null;
   space_id: string;
   entity_type: IntelligenceEntityType;
   entity_id: string;
@@ -135,6 +151,18 @@ export interface AssetIntelligenceNote {
   updated_at: string;
 }
 
+/** One normalized row in a PI reference list (owner of a citing PI entry). */
+export interface PiReference {
+  /** PI row id. */
+  id: string;
+  entity_type: IntelligenceEntityType | IntelligenceLinkEntityType;
+  /** Owner entity id (trial/asset/company the PI is about) for navigation. */
+  entity_id: string;
+  /** Resolved owner name when the surface has it; otherwise null. */
+  entity_name: string | null;
+  headline: string;
+}
+
 export const ENTITY_TYPE_LABEL: Record<
   IntelligenceEntityType | IntelligenceLinkEntityType,
   string
@@ -143,7 +171,7 @@ export const ENTITY_TYPE_LABEL: Record<
   marker: 'Marker',
   company: 'Company',
   product: 'Asset',
-  space: 'Engagement',
+  space: 'Space',
 };
 
 /**

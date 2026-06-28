@@ -8,14 +8,15 @@ import {
   type DatePrecision,
 } from '../models/marker-date-precision';
 import type { ZoomLevel } from '../models/dashboard.model';
+import { deriveTrialPhaseSpan } from '../models/trial-phase-span';
 
 export interface ColumnVisibility {
   showMoa: boolean;
   showRoa: boolean;
-  showNotes: boolean;
+  showIndication: boolean;
 }
 
-export type ColumnKey = 'company' | 'asset' | 'moa' | 'roa' | 'trial' | 'notes';
+export type ColumnKey = 'company' | 'asset' | 'moa' | 'roa' | 'indication' | 'trial';
 
 export interface ColumnDef {
   key: ColumnKey;
@@ -36,7 +37,7 @@ export interface ExportOptions {
   endYear: number;
   showMoaColumn: boolean;
   showRoaColumn: boolean;
-  showNotesColumn: boolean;
+  showIndicationColumn: boolean;
   /** Workspace tenant for the export footer's "Prepared for" segment. */
   tenant?: { name: string; logoUrl: string | null } | null;
   /** Download filename; defaults to the generic dashboard name when omitted. */
@@ -51,7 +52,7 @@ export interface FlatRow {
   nctId: string | null;
   moa: string;
   roa: string;
-  hasNotes: boolean;
+  indications: string;
   trial: Trial;
   isFirstInCompany: boolean;
   isFirstInAsset: boolean;
@@ -68,6 +69,9 @@ export function flattenTrials(companies: Company[]): FlatRow[] {
         .map((r) => r.abbreviation ?? r.name)
         .join(', ');
       for (const trial of asset.trials ?? []) {
+        // Indication is per-trial (a trial can span several of its asset's
+        // indications), unlike MOA/ROA which are asset-level.
+        const indications = (trial._indications ?? []).map((i) => i.indication_name).join(', ');
         rows.push({
           companyName: company.name,
           companyId: company.id,
@@ -76,7 +80,7 @@ export function flattenTrials(companies: Company[]): FlatRow[] {
           nctId: trial.identifier ?? null,
           moa,
           roa,
-          hasNotes: !!(trial.notes || (trial.trial_notes?.length ?? 0) > 0),
+          indications,
           trial,
           isFirstInCompany,
           isFirstInAsset,
@@ -94,27 +98,30 @@ export interface TrialExportRow {
   asset: string;
   moa: string;
   roa: string;
+  indication: string;
   trial: string;
   nctId: string;
   phase: string;
   phaseStart: string | null;
   phaseEnd: string | null;
-  notes: string;
 }
 
 export function buildTrialExportRows(companies: Company[]): TrialExportRow[] {
-  return flattenTrials(companies).map((r) => ({
-    company: r.companyName,
-    asset: r.assetName,
-    moa: r.moa,
-    roa: r.roa,
-    trial: r.trialName,
-    nctId: r.nctId ?? '',
-    phase: r.trial.phase_type ? phaseShortLabel(r.trial.phase_type) : '',
-    phaseStart: r.trial.phase_start_date ?? null,
-    phaseEnd: r.trial.phase_end_date ?? null,
-    notes: r.trial.notes ?? '',
-  }));
+  return flattenTrials(companies).map((r) => {
+    const span = deriveTrialPhaseSpan(r.trial.markers ?? []);
+    return {
+      company: r.companyName,
+      asset: r.assetName,
+      moa: r.moa,
+      roa: r.roa,
+      indication: r.indications,
+      trial: r.trialName,
+      nctId: r.nctId ?? '',
+      phase: r.trial.phase_type ? phaseShortLabel(r.trial.phase_type) : '',
+      phaseStart: span.start,
+      phaseEnd: span.end,
+    };
+  });
 }
 
 const COLUMN_WIDTHS: Record<ColumnKey, number> = {
@@ -122,16 +129,16 @@ const COLUMN_WIDTHS: Record<ColumnKey, number> = {
   asset: 0.85,
   moa: 0.8,
   roa: 0.45,
+  indication: 0.9,
   trial: 1.05,
-  notes: 0.35,
 };
 
 export function computeLeftColumns(v: ColumnVisibility): ColumnLayout {
   const keys: ColumnKey[] = ['company', 'asset'];
   if (v.showMoa) keys.push('moa');
   if (v.showRoa) keys.push('roa');
+  if (v.showIndication) keys.push('indication');
   keys.push('trial');
-  if (v.showNotes) keys.push('notes');
 
   const columns: ColumnDef[] = [];
   let x = 0;

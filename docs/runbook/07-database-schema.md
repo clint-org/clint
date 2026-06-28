@@ -31,6 +31,7 @@ erDiagram
   SPACES ||--o{ AI_CALLS : "space_id"
   TENANTS ||--o{ AI_CALLS : "tenant_id"
   TENANTS ||--o{ AI_CONFIG : "tenant_id"
+  AI_MODEL_PRICING ||--o{ AI_MODEL_PRICING : "superseded_by"
   ASSETS ||--o{ ASSET_INDICATIONS : "asset_id"
   INDICATIONS ||--o{ ASSET_INDICATIONS : "indication_id"
   SPACES ||--o{ ASSET_INDICATIONS : "space_id"
@@ -76,7 +77,9 @@ erDiagram
   SPACES ||--o{ MECHANISMS_OF_ACTION : "space_id"
   SPACES ||--o{ PALETTE_PINNED : "space_id"
   SPACES ||--o{ PALETTE_RECENTS : "space_id"
+  PRIMARY_INTELLIGENCE_ANCHORS ||--o{ PRIMARY_INTELLIGENCE : "anchor_id"
   SPACES ||--o{ PRIMARY_INTELLIGENCE : "space_id"
+  SPACES ||--o{ PRIMARY_INTELLIGENCE_ANCHORS : "space_id"
   PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
   SPACES ||--o{ ROUTES_OF_ADMINISTRATION : "space_id"
   SPACES ||--o{ SOURCE_DOCUMENTS : "space_id"
@@ -113,6 +116,50 @@ erDiagram
   USER_REDACTIONS { }
 ```
 <!-- /AUTO-GEN:ER -->
+
+### primary_intelligence_anchors and the many-briefs model
+
+An entity (engagement, company, asset, or trial) can own many intelligence briefs. Each brief is a row in `primary_intelligence_anchors`, which records the polymorphic entity binding (`entity_type text`, `entity_id uuid`, no FK enforcement) plus two ordering fields:
+
+- `is_lead bool` -- the one brief surfaced on entity detail pages and the landscape strip. Enforced as a partial unique index (`is_lead = true` per `(space_id, entity_type, entity_id)`); the `set_intelligence_lead` RPC clears all sibling `is_lead` flags atomically.
+- `display_order int` -- manual sort position among siblings. Set by `reorder_intelligence`, which rejects partial arrays to prevent accidental omission.
+
+```mermaid
+erDiagram
+  PRIMARY_INTELLIGENCE_ANCHORS {
+    uuid id PK
+    uuid space_id FK
+    text entity_type
+    uuid entity_id
+    bool is_lead
+    int display_order
+  }
+  PRIMARY_INTELLIGENCE {
+    uuid id PK
+    uuid anchor_id FK
+    text state
+    int version_number
+    text headline
+    text summary_md
+    text implications_md
+    text publish_note
+    uuid published_by
+    timestamptz archived_at
+    text withdraw_note
+  }
+  PRIMARY_INTELLIGENCE_LINKS {
+    uuid id PK
+    uuid primary_intelligence_id FK
+    text entity_type
+    uuid entity_id
+    text relationship_type
+    text gloss
+  }
+  PRIMARY_INTELLIGENCE_ANCHORS ||--o{ PRIMARY_INTELLIGENCE : "anchor_id"
+  PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
+```
+
+Marker rows are valid link targets in `primary_intelligence_links` but are not anchor owners; the marker description carries the catalyst-level write-up.
 
 ### primary_intelligence version columns
 
@@ -681,13 +728,13 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 **Tables in `public` schema not mentioned:**
 - `ai_calls`
 - `ai_config`
+- `ai_model_pricing`
 - `asset_mechanisms_of_action`
 - `asset_routes_of_administration`
 - `audit_events`
 - `change_event_annotations`
 - `palette_pinned`
 - `palette_recents`
-- `primary_intelligence_links`
 - `r2_pending_deletes`
 - `source_documents`
 - `trial_assets`
@@ -933,4 +980,63 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260618160000_seed_completed_trial_readouts_confirmed.sql`
 - `20260618170000_landscape_rpcs_company_logo_url.sql`
 - `20260618180000_bullseye_assets_trial_filter.sql`
+- `20260618190000_restore_preclinical_guard_bullseye_assets.sql`
+- `20260623120000_seed_demo_event_thread.sql`
+- `20260623130000_fix_detected_date_moved_title.sql`
+- `20260624100000_rpc_tenant_owner_update_ai_config_enabled_only.sql`
+- `20260624100100_rpc_platform_admin_update_ai_config.sql`
+- `20260624100200_rpc_get_tenant_ai_status.sql`
+- `20260624100300_ai_config_platform_admin_only_rls.sql`
+- `20260624120000_remove_detected_event_priority.sql`
+- `20260624140000_discard_pending_material.sql`
+- `20260624140100_material_delete_editor_audit.sql`
+- `20260624140200_intelligence_author_editor_owner.sql`
+- `20260624150000_create_ai_model_pricing.sql`
+- `20260624150050_ai_config_token_cap.sql`
+- `20260624150100_ai_call_server_side_cost_and_model.sql`
+- `20260624150200_backfill_ai_call_cost.sql`
+- `20260624150300_rollup_failure_log.sql`
+- `20260624150400_rpc_platform_admin_upsert_ai_model_pricing.sql`
+- `20260624160000_drop_ai_import_status.sql`
+- `20260624170000_material_links_marker_trial_id.sql`
+- `20260624180000_rollup_imports_detail.sql`
+- `20260625100000_ai_call_request_capture.sql`
+- `20260625110000_ai_call_detail_created_entities.sql`
+- `20260625120000_material_links_support_events.sql`
+- `20260625130000_get_source_document_rpc.sql`
+- `20260625160000_detail_rpcs_source_doc_provenance.sql`
+- `20260625170000_fix_get_catalyst_detail_icon_and_upcoming_glyph.sql`
+- `20260625180000_classify_change_safe_partial_dates.sql`
+- `20260625190000_restore_phase_materialization_with_acronym.sql`
+- `20260625200000_ctgov_withdrawn_trials.sql`
+- `20260626120000_seed_demo_redefine2_trial_events_and_reference.sql`
+- `20260626120050_ctgov_restore_path.sql`
+- `20260626120100_dashboard_data_ctgov_withdrawn.sql`
+- `20260626140000_ctgov_secret_health_rpc.sql`
+- `20260626150000_ai_model_pricing_updated_by_set_null.sql`
+- `20260626160000_drop_ctgov_secret_health_rpc.sql`
+- `20260626170000_landscape_primary_intelligence_presence.sql`
+- `20260626180000_positioning_intelligence_includes_trials.sql`
+- `20260627032406_marker_categories_unique_name.sql`
+- `20260627044328_grant_marker_categories_writes.sql`
+- `20260627120000_dashboard_data_drop_notes.sql`
+- `20260627130000_ctgov_trial_dates_markers.sql`
+- `20260627130050_intelligence_anchors_schema.sql`
+- `20260627130100_intelligence_upsert_anchor_aware.sql`
+- `20260627130200_intelligence_lead_and_order_rpcs.sql`
+- `20260627130300_list_intelligence_for_entity.sql`
+- `20260627130350_intelligence_payload_for_row_definer.sql`
+- `20260627130400_intelligence_detail_bundles_multi.sql`
+- `20260627130500_intelligence_history_and_lifecycle_multi.sql`
+- `20260627130600_intelligence_feed_and_landscape_multi.sql`
+- `20260627130700_intelligence_seed_multi.sql`
+- `20260627130800_drop_dead_build_intelligence_payload.sql`
+- `20260627130900_fix_asset_entity_type_anchors.sql`
+- `20260627140000_ctgov_marker_robustness.sql`
+- `20260627150000_dashboard_unspecified_indication_node.sql`
+- `20260627160000_commit_source_import_skip_existing.sql`
+- `20260627161000_dashboard_data_intelligence_presence_anchors.sql`
+- `20260627170000_inventory_snapshot_marker_event_instances.sql`
+- `20260627180000_fix_get_dashboard_data_unspecified_clobber.sql`
+- `20260627190000_rpc_source_duplicate_check.sql`
 <!-- /AUTO-GEN:DRIFT -->

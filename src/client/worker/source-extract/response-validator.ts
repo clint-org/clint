@@ -188,6 +188,140 @@ export function validateExtraction(
   data.assets.forEach((a, i) => checkExistingId(a, 'asset', i));
   data.trials.forEach((t, i) => checkExistingId(t, 'trial', i));
 
+  // --- Step 4b: Marker/event existing-id check (id-in-inventory, cross-trial/anchor, one-to-one) ---
+
+  const inventoryMarkerById = new Map(
+    (inventory.markers ?? []).map((m) => [m.id, m]),
+  );
+  const inventoryEventById = new Map(
+    (inventory.events ?? []).map((e) => [e.id, e]),
+  );
+
+  const claimedMarkerIds = new Set<string>();
+  const claimedEventIds = new Set<string>();
+
+  for (let i = 0; i < data.markers.length; i++) {
+    if (isDropped('marker', i)) continue;
+    const marker = data.markers[i];
+    if (marker.match.kind !== 'existing') continue;
+
+    const id = marker.match.id;
+
+    // 1. ID must be in the inventory marker set.
+    if (!inventoryMarkerById.has(id)) {
+      warnings.push(
+        `marker[${i}] claimed existing id ${id} not found in inventory; demoted to new`,
+      );
+      (marker as any).match = { kind: 'new' };
+      continue;
+    }
+
+    // 2. The matched inventory marker must belong to the same trial the proposal resolves to.
+    const firstTrialRef = marker.trial_refs[0];
+    const proposedTrial =
+      firstTrialRef !== undefined ? data.trials[firstTrialRef] : undefined;
+    if (!proposedTrial || proposedTrial.match.kind === 'new') {
+      warnings.push(
+        `marker[${i}] claimed existing id ${id} but resolved trial is new; demoted to new`,
+      );
+      (marker as any).match = { kind: 'new' };
+      continue;
+    }
+    const resolvedTrialId = proposedTrial.match.id;
+    const inventoryMarker = inventoryMarkerById.get(id)!;
+    if (inventoryMarker.trial_id !== resolvedTrialId) {
+      warnings.push(
+        `marker[${i}] claimed existing id ${id} but trial mismatch (inventory has ${inventoryMarker.trial_id}, proposal resolves to ${resolvedTrialId}); demoted to new`,
+      );
+      (marker as any).match = { kind: 'new' };
+      continue;
+    }
+
+    // 3. One-to-one: only the first proposal may claim a given id.
+    if (claimedMarkerIds.has(id)) {
+      warnings.push(
+        `marker[${i}] claimed existing id ${id} already claimed by an earlier proposal; demoted to new`,
+      );
+      (marker as any).match = { kind: 'new' };
+      continue;
+    }
+    claimedMarkerIds.add(id);
+  }
+
+  for (let i = 0; i < data.events.length; i++) {
+    if (isDropped('event', i)) continue;
+    const event = data.events[i];
+    if (event.match.kind !== 'existing') continue;
+
+    const id = event.match.id;
+
+    // 1. ID must be in the inventory event set.
+    if (!inventoryEventById.has(id)) {
+      warnings.push(
+        `event[${i}] claimed existing id ${id} not found in inventory; demoted to new`,
+      );
+      (event as any).match = { kind: 'new' };
+      continue;
+    }
+
+    // 2. The matched inventory event must belong to the same anchor the proposal resolves to.
+    const inventoryEvent = inventoryEventById.get(id)!;
+    const { level, ref } = event.anchor;
+
+    if (level === 'space') {
+      if (inventoryEvent.anchor.level !== 'space') {
+        warnings.push(
+          `event[${i}] claimed existing id ${id} but anchor mismatch; demoted to new`,
+        );
+        (event as any).match = { kind: 'new' };
+        continue;
+      }
+    } else {
+      // Resolve the anchor entity's existing id from the proposal.
+      let resolvedAnchorId: string | null = null;
+      if (ref !== null && ref !== undefined) {
+        let anchorEntity:
+          | { match: { kind: string; id?: string } }
+          | undefined;
+        if (level === 'company') anchorEntity = data.companies[ref];
+        else if (level === 'asset') anchorEntity = data.assets[ref];
+        else anchorEntity = data.trials[ref]; // 'trial'
+        if (anchorEntity?.match.kind === 'existing') {
+          resolvedAnchorId = anchorEntity.match.id!;
+        }
+      }
+
+      if (!resolvedAnchorId) {
+        warnings.push(
+          `event[${i}] claimed existing id ${id} but anchor resolves to a new entity; demoted to new`,
+        );
+        (event as any).match = { kind: 'new' };
+        continue;
+      }
+
+      if (
+        inventoryEvent.anchor.level !== level ||
+        inventoryEvent.anchor.id !== resolvedAnchorId
+      ) {
+        warnings.push(
+          `event[${i}] claimed existing id ${id} but anchor mismatch; demoted to new`,
+        );
+        (event as any).match = { kind: 'new' };
+        continue;
+      }
+    }
+
+    // 3. One-to-one: only the first proposal may claim a given id.
+    if (claimedEventIds.has(id)) {
+      warnings.push(
+        `event[${i}] claimed existing id ${id} already claimed by an earlier proposal; demoted to new`,
+      );
+      (event as any).match = { kind: 'new' };
+      continue;
+    }
+    claimedEventIds.add(id);
+  }
+
   // --- Step 5: Name-substring rule (skipped when skipNameGrounding is true) ---
 
   const groundedCompany = new Set<number>();

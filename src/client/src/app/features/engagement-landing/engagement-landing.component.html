@@ -69,7 +69,7 @@
                 tooltipPosition="bottom"
                 (click)="navigateToImport()"
               >
-                <i class="pi pi-file-import text-[11px]"></i>
+                <i class="fa-solid fa-file-import text-[11px]"></i>
                 Import
               </button>
             }
@@ -254,10 +254,21 @@
           >
             <div class="flex min-w-0 items-baseline gap-3.5">
               <h2
-                class="m-0 text-base font-semibold tracking-[-0.01em] text-slate-900"
+                class="m-0 flex items-center gap-2 text-base font-semibold tracking-[-0.01em] text-slate-900"
                 id="latest-heading"
               >
-                Latest from Stout
+                <span>Latest from</span>
+                @if (agencyLogoUrl(); as logo) {
+                  <img
+                    [ngSrc]="logo"
+                    [alt]="agencyName()"
+                    width="140"
+                    height="28"
+                    class="h-[18px] w-auto max-w-[120px] rounded-[3px] bg-slate-50 object-contain"
+                  />
+                } @else {
+                  <span>{{ agencyName() }}</span>
+                }
               </h2>
               @if (hasFeedItems()) {
                 <span
@@ -318,8 +329,8 @@
             >
               <p class="m-0 text-sm font-semibold text-slate-900">No published intelligence yet.</p>
               <p class="m-0 max-w-[56ch] self-center text-[13px] leading-[1.5] text-slate-500">
-                Once your agency publishes a primary intelligence read against this engagement, it
-                will appear here in recency order.
+                Once your agency publishes primary intelligence against this engagement, it will
+                appear here in recency order.
               </p>
               <p class="m-0 max-w-[56ch] self-center text-[13px] leading-[1.5] text-slate-500">
                 Reach out to your {{ agencyLeadLabel() }} or check the

@@ -11,6 +11,7 @@ import { CompanyTileComponent } from '../../shared/components/company-tile.compo
 import { recentChangeLabel } from '../../shared/components/change-badge/change-badge.logic';
 import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
 import { BullseyeSignalMarkComponent } from './bullseye-signal-mark.component';
+import { PiMarkComponent } from '../../shared/components/pi-mark/pi-mark.component';
 
 interface LadderCell {
   phase: RingPhase;
@@ -29,7 +30,7 @@ interface LadderCell {
  */
 @Component({
   selector: 'app-bullseye-tooltip',
-  imports: [CompanyTileComponent, BullseyeSignalMarkComponent],
+  imports: [CompanyTileComponent, BullseyeSignalMarkComponent, PiMarkComponent],
   animations: [fadeTooltipAnimation],
   template: `
     @if (product()) {
@@ -62,14 +63,14 @@ interface LadderCell {
             </div>
           </div>
           <!-- Live chart mark: phase-colored core ringed by the same signal
-               rings the bullseye plots (orange = recent activity, blue =
-               intelligence, dashed slate = multiple spokes). Shared geometry
-               with the chart dot and detail pane. -->
+               rings the bullseye plots (orange = recent activity, dashed slate
+               = multiple spokes). Primary intelligence shows as the brand
+               bookmark badge on the node. Shared geometry with the chart dot
+               and detail pane. -->
           <app-bullseye-signal-mark
             class="mt-0.5"
             [phase]="p.highest_phase"
             [hasRecentActivity]="p.has_recent_activity"
-            [hasIntelligence]="p.intelligence_count > 0"
             [multiSpoke]="spokeCount() > 1"
             [size]="30"
           />
@@ -139,13 +140,10 @@ interface LadderCell {
               }
               @if (p.intelligence_count > 0) {
                 <span
-                  class="inline-flex items-center gap-1.5 border border-blue-200 bg-blue-50 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.04em] text-blue-700"
+                  class="inline-flex items-center gap-1.5 border border-brand-200 bg-brand-50 px-2 py-1 font-mono text-[10px] font-bold tracking-[0.04em] text-brand-700"
                 >
-                  <span
-                    class="h-[10px] w-[10px] shrink-0 rounded-full border-2 border-[#2563eb]"
-                    aria-hidden="true"
-                  ></span>
-                  {{ p.intelligence_count }} {{ p.intelligence_count === 1 ? 'read' : 'reads' }}
+                  <app-pi-mark [size]="11" />
+                  {{ p.intelligence_count }} {{ p.intelligence_count === 1 ? 'entry' : 'entries' }}
                 </span>
               }
             </div>

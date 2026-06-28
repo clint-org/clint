@@ -15,7 +15,11 @@
     },
     "ai_config": {
       "authenticated": ["select"],
-      "justification": "client: import.guard, engagement-landing, and tenant-settings read AI availability flags. Writes go through tenant-settings RPCs and service-role fixtures (source-import-rpc.spec uses the admin client)."
+      "justification": "client: super-admin AI usage edit-limits dialog reads the full row (RLS is platform-admin-only). Owner/member reads (import.guard, engagement-landing, tenant-settings) go through get_tenant_ai_status, which never exposes cost caps. Writes go through tenant_owner_update_ai_config (on/off) and platform_admin_update_ai_config (caps); fixtures use the admin client."
+    },
+    "ai_model_pricing": {
+      "authenticated": ["select"],
+      "justification": "client: super-admin AI usage edit-limits dialog reads the active model catalog for the model chooser. Pricing is public; RLS allows any authenticated read. Writes (add model, change price) are platform-admin-only via RLS + platform_admin_upsert_ai_model_pricing."
     },
     "asset_indications": {
       "authenticated": ["select", "insert"],
@@ -82,8 +86,8 @@
       "justification": "client: marker.service reads assignments for cache invalidation and trial detail embeds them via TRIAL_SELECT; integration: marker-edit-flow.spec contributor direct delete expects ok (orphan-cleanup contract). Assignment writes go through the update_marker_assignments SECURITY DEFINER RPC; the only direct authenticated insert test expects 42501."
     },
     "marker_categories": {
-      "authenticated": ["select"],
-      "justification": "client: marker-category.service lists categories; marker-type and trial selects embed marker_categories."
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: marker-category.service full CRUD (manage surface: create/rename/reorder/delete) plus inline create from the marker-type form; marker-type and trial selects embed marker_categories. RLS restricts writes to space owners/editors."
     },
     "marker_types": {
       "authenticated": ["select", "insert", "update", "delete"],
@@ -108,6 +112,10 @@
     "primary_intelligence": {
       "authenticated": ["select"],
       "justification": "client: primary-intelligence.service reads scope rows for cache invalidation and listing. Writes go through upsert_primary_intelligence and related RPCs; e2e fixtures use the service-role key."
+    },
+    "primary_intelligence_anchors": {
+      "authenticated": ["select"],
+      "justification": "client: primary-intelligence.service reads anchors for cache invalidation and brief lists via list_intelligence_for_entity. Writes go through upsert_primary_intelligence / set_intelligence_lead / reorder_intelligence (SECURITY DEFINER); e2e fixtures use the service-role key."
     },
     "primary_intelligence_links": {
       "authenticated": ["select"],

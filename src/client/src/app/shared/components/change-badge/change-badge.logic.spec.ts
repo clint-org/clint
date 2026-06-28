@@ -12,6 +12,12 @@ describe('badgeTypeLabel', () => {
   it('maps intelligence_published to "New intelligence"', () => {
     expect(badgeTypeLabel('intelligence_published')).toBe('New intelligence');
   });
+  it('maps trial_withdrawn to "Removed from CT.gov"', () => {
+    expect(badgeTypeLabel('trial_withdrawn')).toBe('Removed from CT.gov');
+  });
+  it('maps trial_restored to "Restored to CT.gov"', () => {
+    expect(badgeTypeLabel('trial_restored')).toBe('Restored to CT.gov');
+  });
   it('humanizes an unknown type by replacing underscores', () => {
     expect(badgeTypeLabel('some_new_thing')).toBe('some new thing');
   });

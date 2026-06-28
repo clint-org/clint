@@ -16,6 +16,8 @@ Company
 
 **Multi-asset trials (master protocols).** A trial can test more than one asset (e.g. a master-protocol NCT with separate experimental arms). Membership lives in the `trial_assets` join table; `trials.asset_id` is a maintained cache of the trial's primary asset. `get_dashboard_data` nests such a trial under EVERY asset it tests (for the matching indication), and its indication/development_status derives onto each member asset. The same per-asset attribution applies to positioning and bullseye; landscape index views pivot on `asset_indications` and inherit it. `get_events_page_data` likewise surfaces a trial's events / markers / detected changes on each member asset's timeline and entity-events panel (its asset-scope filters match `trial_assets` membership). Membership is set at import (the review grid's chip + star editor) or later in the trial-edit dialog (`Assets` multi-select + primary), both via the `set_trial_assets` RPC. Deleting an asset only removes a trial if that was its last asset; otherwise the trial survives with a repointed primary. See `docs/superpowers/specs/2026-06-04-trial-multi-asset-design.md`.
 
+**Indication-less trials (Unspecified node).** A trial whose asset has no derived `asset_indication` (no condition has mapped to an indication yet) would otherwise have no Indication parent to nest under. `get_dashboard_data` surfaces such trials under a synthetic "Unspecified" indication node per asset (assembled by the `_dashboard_trial_obj` helper), so they stay visible in the grid instead of disappearing. The frontend maps that node to an empty `_indications` array and renders an "Unclassified" affordance on the row. When an indication filter is applied, the Unspecified node is suppressed (these trials match no real indication). The landscape "At a glance" strip inherits this behavior: it also calls `get_dashboard_data` with null indication filters, so orphan trials appear there too and are suppressed when an indication filter is active. See `docs/specs/clinical-trial-dashboard/spec.md`.
+
 **Phase Bars** -- horizontal bands that span the timeline for each trial phase. Color-coded by phase type:
 - **Phase 1** -- Muted slate (`#94a3b8`, early/exploratory)
 - **Phase 2** -- Cyan (`#67e8f9`, building evidence)
@@ -30,8 +32,6 @@ Company
 - Orange/red arrows/X -- Change/status events
 
 Each marker carries a `Mon 'YY` date caption. Captions decollide per trial row: `DashboardGridComponent` keeps a caption only when it sits at least 38 px right of the previously kept one (greedy left-to-right, `marker-label-layout.ts`), so clustered catalysts no longer overprint at year zoom. Suppressed dates remain available in the marker hover tooltip.
-
-**Notes** -- free-text annotations attached to trials, displayed inline.
 
 **Entity-page surfaces.** The timeline now mounts on trial, asset, and company detail pages with a per-page `LandscapeStateService` instance whose filters are locked to that entity and persistence is disabled. Each page also embeds `EntityEventsPanelComponent`, which lists external events scoped to the same entity via the hierarchical `get_events_page_data` RPC (trial -> product -> company rollup). Company detail passes explicit `[startYear]` / `[endYear]` for a forward-2-year window; trial and product pages use the default window. See `docs/superpowers/specs/2026-05-10-catalysts-events-on-entity-pages-design.md` for full design context.
 
@@ -72,7 +72,7 @@ A horizontal strip (`TimelineInsightStripComponent`) between the filter bar and 
 
 - **READ** -- auto-generated competitive intelligence one-liner computed by `buildCompetitiveRead()` in `competitive-read.ts`. Identifies the leader (most late-stage trials), deepest P3 pipeline, and most active company (by recent changes count). Handles edge cases: single company shows a sole-entrant summary; suppresses duplicate names when one company wins both deepest and most-active.
 - **STATS** -- company, asset, trial, and catalyst counts. Catalyst count covers markers with `event_date` in the next 90 days, computed by `computeTimelineStats()`.
-- **COLUMNS** -- checkbox toggles for MOA, ROA, and Notes column visibility. These signals live on `LandscapeStateService` (`showMoaColumn`, `showRoaColumn`, `showNotesColumn`) and are persisted to sessionStorage alongside other landscape state. `DashboardGridComponent` reads column visibility from the service via optional injection (falls back to all-visible when used outside the landscape shell, e.g. on entity detail pages).
+- **COLUMNS** -- checkbox toggles for MOA, ROA, and Indication column visibility. These signals live on `LandscapeStateService` (`showMoaColumn`, `showRoaColumn`, `showIndicationColumn`) and are persisted to sessionStorage alongside other landscape state. `DashboardGridComponent` reads column visibility from the service via optional injection (falls back to all-visible when used outside the landscape shell, e.g. on entity detail pages).
 
 ## Legend
 
@@ -87,6 +87,7 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - /t/:tenantId/s/:spaceId/timeline
   rpcs:
     - get_dashboard_data
+    - _dashboard_trial_obj
   tables:
     - companies
     - assets
@@ -95,7 +96,6 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - trials
     - markers
     - marker_types
-    - trial_notes
   related:
     - timeline-zoom
     - timeline-filtering
@@ -132,25 +132,12 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   user_facing: true
   role: viewer
   status: active
-- id: timeline-trial-notes
-  summary: Free-text trial annotations rendered inline on timeline rows.
-  routes:
-    - /t/:tenantId/s/:spaceId/timeline
-  rpcs:
-    - get_dashboard_data
-  tables:
-    - trial_notes
-  related:
-    - timeline-grid
-  user_facing: true
-  role: viewer
-  status: active
 - id: timeline-entity-page-mount
   summary: Timeline embedded on trial, asset, and company detail pages with filters locked to the entity and persistence disabled.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
-    - /t/:tenantId/s/:spaceId/manage/assets/:id
-    - /t/:tenantId/s/:spaceId/manage/companies/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/assets/:id
+    - /t/:tenantId/s/:spaceId/profiles/companies/:id
   rpcs:
     - get_dashboard_data
     - get_events_page_data
@@ -166,7 +153,7 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   role: viewer
   status: active
 - id: timeline-insight-strip
-  summary: Horizontal strip above the grid with competitive read (leader, deepest pipeline, most active), summary stats (companies, assets, trials, catalysts in 90d), and column visibility toggles (MOA, ROA, Notes).
+  summary: Horizontal strip above the grid with competitive read (leader, deepest pipeline, most active), summary stats (companies, assets, trials, catalysts in 90d), and column visibility toggles (MOA, ROA, Indication).
   routes:
     - /t/:tenantId/s/:spaceId/timeline
   rpcs:

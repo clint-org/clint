@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { PiMarkComponent } from '../../shared/components/pi-mark/pi-mark.component';
+
 import {
   type CountUnit,
   type HeatmapBubble,
@@ -51,12 +53,14 @@ export interface MatrixCell {
   count: number;
   /** Phase-hued tint for the cell, or null when the cell is empty. */
   background: string | null;
+  /** True when any asset in this cell (group at this phase) owns published PI. */
+  hasIntelligence: boolean;
 }
 
 @Component({
   selector: 'app-heatmap',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TooltipModule],
+  imports: [TooltipModule, PiMarkComponent],
   host: {
     '(keydown.escape)': 'onEscape()',
   },
@@ -366,6 +370,9 @@ export interface MatrixCell {
                   tooltipPosition="top"
                   >{{ row.bubble.label }}</span
                 >
+                @if (row.bubble.has_intelligence) {
+                  <app-pi-mark [size]="9" class="ml-1 inline-block align-middle" />
+                }
                 <div class="row-label-sub">
                   {{ row.bubble.competitor_count }}
                   {{ row.bubble.competitor_count === 1 ? 'company' : 'companies' }}
@@ -381,8 +388,11 @@ export interface MatrixCell {
                     @if (cell.count === 0) {
                       <div class="heat-pip empty" aria-hidden="true"></div>
                     } @else {
-                      <div class="heat-pip" [style.background-color]="cell.background">
+                      <div class="heat-pip relative" [style.background-color]="cell.background">
                         {{ cell.count }}
+                        @if (cell.hasIntelligence) {
+                          <app-pi-mark [size]="9" class="absolute right-0.5 top-0.5" />
+                        }
                       </div>
                     }
                   </div>
@@ -428,6 +438,9 @@ export class HeatmapComponent {
           phase,
           count,
           background: cellTint(PHASE_COLOR[phase], count),
+          hasIntelligence: bubble.products.some(
+            (p) => p.highest_phase === phase && p.has_intelligence
+          ),
         };
       });
       return { bubble, cells, total: bubble.unit_count };

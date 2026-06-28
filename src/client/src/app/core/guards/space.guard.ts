@@ -39,8 +39,8 @@ export const spaceGuard: CanActivateFn = async (route: ActivatedRouteSnapshot) =
   // page the user just left), so explain why. (Persona fix P1.3a.)
   messageService.add({
     severity: 'info',
-    summary: 'No access to this engagement',
-    detail: 'Ask an engagement owner to add you as a member.',
+    summary: 'No access to this space',
+    detail: 'Ask a space owner to add you as a member.',
     life: 6000,
   });
   return router.createUrlTree(['/t', tenantId, 'spaces']);

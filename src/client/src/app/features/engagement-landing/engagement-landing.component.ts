@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs';
-import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
+import { DatePipe, LowerCasePipe, NgClass, NgOptimizedImage } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
@@ -92,6 +92,7 @@ interface InventoryTotals {
   standalone: true,
   imports: [
     NgClass,
+    NgOptimizedImage,
     DatePipe,
     LowerCasePipe,
     RouterLink,
@@ -169,6 +170,12 @@ export class EngagementLandingComponent implements OnInit {
     return name ? `${name} lead` : 'agency lead';
   });
 
+  /** Agency name for attribution; falls back to the platform's default agency. */
+  readonly agencyName = computed(() => this.brand.agency()?.name ?? 'Stout');
+
+  /** Agency logo for the inline attribution lockups; null renders the name. */
+  readonly agencyLogoUrl = computed(() => this.brand.agency()?.logo_url ?? null);
+
   readonly catalystsRoute = computed(() => {
     const tid = this.tenantId();
     const sid = this.spaceId();
@@ -182,9 +189,9 @@ export class EngagementLandingComponent implements OnInit {
     if (!tid || !sid) return null;
     const base = `/t/${tid}/s/${sid}`;
     return {
-      activeTrials: `${base}/manage/trials`,
-      companies: `${base}/manage/companies`,
-      assets: `${base}/manage/assets`,
+      activeTrials: `${base}/profiles/trials`,
+      companies: `${base}/profiles/companies`,
+      assets: `${base}/profiles/assets`,
       catalysts: `${base}/catalysts`,
       intelligence: `${base}/intelligence`,
     };
@@ -219,10 +226,10 @@ export class EngagementLandingComponent implements OnInit {
       },
       {
         key: 'newIntel',
-        label: pluralize(s?.new_intel_7d, 'New read'),
+        label: pluralize(s?.new_intel_7d, 'New intelligence entry', 'New intelligence entries'),
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
-        display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
+        display: s?.new_intel_7d == null ? '' : String(s.new_intel_7d),
         route: hasRoute ? ['/t', tid, 's', sid, 'intelligence'] : null,
         queryParams: hasRoute ? { since: '7d' } : null,
         warn: false,
@@ -497,12 +504,12 @@ export class EngagementLandingComponent implements OnInit {
     if (spaceRes.status === 'fulfilled') this.space.set(spaceRes.value);
     if (tenantRes.status === 'fulfilled') {
       this.tenant.set(tenantRes.value);
-      const { data } = await this.supabase.client
-        .from('ai_config')
-        .select('ai_enabled')
-        .eq('tenant_id', tid)
-        .maybeSingle();
-      this.aiEnabled.set(data?.ai_enabled === true);
+      // Via the SECURITY DEFINER RPC: ai_config RLS is platform-admin-only, so a
+      // direct select returns nothing for non-owner members on the landing page.
+      const { data } = await this.supabase.client.rpc('get_tenant_ai_status', {
+        p_tenant_id: tid,
+      });
+      this.aiEnabled.set((data as { ai_enabled?: boolean } | null)?.ai_enabled === true);
     }
     if (statsRes.status === 'fulfilled') {
       this.stats.set(statsRes.value);

@@ -177,37 +177,246 @@
         font-weight: 600;
       }
 
-      /* ---- ROI section ---------------------------------------------------- */
-      .roi {
-        border: 1px solid var(--slate-200);
-        border-radius: 6px;
-        overflow: hidden;
+      /* ---- Value section -------------------------------------------------- */
+      .value-intro {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--slate-900);
+        letter-spacing: -0.005em;
+        margin-bottom: 22px;
+        max-width: 60ch;
+      }
+      /* Value blocks: each pillar gets a heading + one illustration. The "after"
+         row in each visual (On Clint / With Clint) wears the brand mark, so the
+         improved state is the branded one. */
+      .vblock {
+        margin-bottom: 30px;
+      }
+      .vhead {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
         margin-bottom: 14px;
       }
-      .roi-anchor {
-        background: var(--brand-50);
-        border-bottom: 1px solid var(--slate-200);
-        padding: 22px 26px;
-      }
-      .roi-anchor .big {
-        font-size: 20px;
-        font-weight: 700;
+      .vhead h4 {
+        font-size: 14.5px;
+        font-weight: 600;
         color: var(--slate-900);
-        letter-spacing: -0.01em;
-        margin-bottom: 4px;
+        letter-spacing: -0.005em;
       }
-      .roi-anchor .sub {
-        font-size: 14px;
-        color: var(--slate-600);
+      .illus {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--slate-400);
+        border: 1px solid var(--slate-200);
+        border-radius: 3px;
+        padding: 2px 7px;
+        flex: none;
       }
-      .roi-body {
-        padding: 24px 26px 26px;
-      }
-      .roi-intro {
+      .vsub {
         font-size: 13.5px;
         color: var(--slate-600);
-        margin-bottom: 18px;
+        margin-top: 12px;
         max-width: 62ch;
+      }
+      .vsub strong {
+        color: var(--slate-900);
+        font-weight: 600;
+      }
+      /* before/after bars: equal width = same hours; the teal "judgment" share
+         grows on Clint. Illustrative, no measured percentage shown. */
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 14px;
+      }
+      .legend .item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--slate-600);
+      }
+      .legend .sw {
+        width: 11px;
+        height: 11px;
+        border-radius: 2px;
+        flex: none;
+      }
+      .sw.assembly {
+        background: var(--slate-300);
+      }
+      .sw.value {
+        background: var(--brand-600);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 9px;
+      }
+      .rlabel {
+        width: 96px;
+        flex: none;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--slate-500);
+        text-align: right;
+      }
+      .bar {
+        flex: 1;
+        display: flex;
+        height: 32px;
+        border: 1px solid var(--slate-200);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .bar .seg {
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+      .bar .seg.assembly {
+        background: var(--slate-100);
+        color: var(--slate-500);
+      }
+      .bar .seg.value {
+        background: var(--brand-600);
+        color: #fff;
+        font-weight: 500;
+      }
+      .bar .seg + .seg {
+        border-left: 1px solid #fff;
+      }
+      /* the branded "after" row label carries the small Clint mark */
+      .rlabel.brand,
+      .cad-label.brand {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+      }
+      .rlabel .mini,
+      .cad-label .mini {
+        width: 14px;
+        height: 14px;
+        flex: none;
+      }
+      /* cadence: a deck spikes once at the readout; Clint is steady every week */
+      .cad-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+      .cad-label {
+        width: 96px;
+        flex: none;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--slate-500);
+        text-align: right;
+      }
+      .cad-track {
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        height: 30px;
+        border-bottom: 1px solid var(--slate-200);
+      }
+      .cad-track.steady {
+        justify-content: space-between;
+      }
+      .cad-track.once {
+        justify-content: flex-end;
+      }
+      .cad-track .tick {
+        width: 4px;
+        background: var(--brand-600);
+        border-radius: 1px;
+      }
+      .cad-track.steady .tick {
+        height: 15px;
+      }
+      .cad-track.once .tick {
+        height: 28px;
+      }
+      .cad-axis {
+        display: flex;
+        justify-content: space-between;
+        margin-left: 112px;
+        margin-top: 5px;
+        font-family: var(--font-mono);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--slate-400);
+      }
+      .divider {
+        height: 1px;
+        background: var(--slate-200);
+        margin: 30px 0;
+      }
+      /* Volume brackets: a quiet rate card. Shows the per-space rate
+         stepping down, not firm-wide totals, so it reads as a discount that
+         improves rather than a bill that grows. */
+      .tiers {
+        width: 100%;
+        max-width: 420px;
+        border-collapse: collapse;
+        font-size: 14.5px;
+        margin-bottom: 14px;
+      }
+      .tiers thead th {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--slate-500);
+        text-align: left;
+        padding: 0 14px 10px 0;
+        border-bottom: 1px solid var(--slate-200);
+      }
+      .tiers thead th:last-child {
+        text-align: right;
+      }
+      .tiers tbody td {
+        padding: 11px 14px 11px 0;
+        border-top: 1px solid var(--slate-100);
+        color: var(--slate-700);
+      }
+      .tiers tbody tr:first-child td {
+        border-top: 0;
+      }
+      .tiers tbody td:last-child {
+        text-align: right;
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        color: var(--slate-900);
+      }
+      .tiers tbody td.best {
+        color: var(--brand-700);
+      }
+      .tier-note {
+        font-size: 13px;
+        color: var(--slate-600);
+        max-width: 64ch;
       }
       .boundary {
         font-size: 13px;
@@ -223,163 +432,34 @@
         color: var(--slate-900);
         font-weight: 600;
       }
-      .inputs {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 18px 28px;
-        margin-bottom: 26px;
-      }
-      .field {
-        display: flex;
-        flex-direction: column;
-        gap: 7px;
-      }
-      .field .flabel {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        font-size: 13px;
-        color: var(--slate-700);
-        font-weight: 500;
-      }
-      .field .flabel .val {
-        font-family: var(--font-mono);
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--brand-700);
-      }
-      .field input[type='range'] {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 100%;
-        height: 4px;
-        border-radius: 2px;
-        background: var(--slate-200);
-        outline: none;
-      }
-      .field input[type='range']::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: var(--brand-600);
-        cursor: pointer;
-        border: 2px solid #fff;
-        box-shadow: 0 0 0 1px var(--slate-300);
-      }
-      .field input[type='range']::-moz-range-thumb {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: var(--brand-600);
-        cursor: pointer;
-        border: 2px solid #fff;
-        box-shadow: 0 0 0 1px var(--slate-300);
-      }
-      .field .fhint {
-        font-size: 11.5px;
-        color: var(--slate-400);
-      }
-
-      .readout {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 14px;
-        margin-bottom: 26px;
-      }
-      .stat {
-        border: 1px solid var(--slate-200);
-        border-radius: 4px;
-        padding: 14px 16px;
-        background: var(--slate-50);
-      }
-      .stat .k {
-        font-family: var(--font-mono);
-        font-size: 9.5px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--slate-500);
-        margin-bottom: 6px;
-      }
-      .stat .v {
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--slate-900);
-        letter-spacing: -0.01em;
-        line-height: 1.1;
-      }
-      .stat .note {
-        font-size: 11.5px;
-        color: var(--slate-500);
-        margin-top: 3px;
-      }
-      .stat.hero {
-        background: var(--brand-50);
-        border-color: var(--brand-200);
-      }
-      .stat.hero .v {
-        color: var(--brand-700);
-      }
-
-      table.cap {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-      }
-      table.cap thead th {
-        font-family: var(--font-mono);
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--slate-500);
-        text-align: left;
-        padding: 0 12px 10px;
-        border-bottom: 1px solid var(--slate-200);
-      }
-      table.cap thead th:not(:first-child),
-      table.cap tbody td:not(:first-child) {
-        text-align: right;
-      }
-      table.cap tbody td {
-        padding: 10px 12px;
-        border-top: 1px solid var(--slate-100);
-        color: var(--slate-600);
-      }
-      table.cap tbody tr.cap-row td {
-        background: var(--brand-50);
-        color: var(--slate-900);
-        font-weight: 600;
-      }
-      table.cap tbody tr.here td {
-        outline: 1.5px solid var(--brand-600);
-        outline-offset: -1.5px;
-      }
-      table.cap tbody td:first-child {
-        color: var(--slate-700);
-      }
-      table.cap td.pos {
-        color: var(--brand-700);
-        font-weight: 600;
-      }
-      .gapline {
-        font-size: 13.5px;
-        color: var(--slate-600);
-        margin-top: 16px;
-        padding-top: 14px;
-        border-top: 1px solid var(--slate-200);
-      }
-      .gapline strong {
-        color: var(--slate-900);
-      }
       .foot {
         margin-top: 30px;
         padding-top: 18px;
         border-top: 1px solid var(--slate-200);
         font-size: 12.5px;
         color: var(--slate-400);
+      }
+      /* === Motion ==========================================================
+         Sections rise into place as they scroll in. Transform-only (opacity
+         stays at 1), so every figure, bar, and tier is shown at its real value
+         even before — or without — the motion. Nothing can render blank. */
+      .reveal {
+        transform: translateY(16px);
+        transition: transform 0.6s cubic-bezier(0.21, 0.7, 0.25, 1);
+      }
+      .reveal.in {
+        transform: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .reveal {
+          transform: none !important;
+          transition: none !important;
+        }
+      }
+      @media print {
+        .reveal {
+          transform: none !important;
+        }
       }
       @media (max-width: 640px) {
         .pad {
@@ -388,9 +468,18 @@
         .headline .num {
           font-size: 40px;
         }
-        .inputs,
-        .readout {
-          grid-template-columns: 1fr;
+        .rlabel,
+        .cad-label {
+          width: 74px;
+        }
+        .cad-axis {
+          margin-left: 90px;
+        }
+        /* On narrow screens the bar is too short for in-segment labels; drop the
+           text and let the legend carry it, so the bars stay clean color shares. */
+        .bar .seg {
+          font-size: 0;
+          padding: 0;
         }
       }
     </style>
@@ -433,147 +522,205 @@
         </div>
 
         <h1>Pricing</h1>
-        <div class="headline">
+        <div class="headline reveal">
           <span class="num">$25,000</span>
-          <span class="unit">per engagement space, per year</span>
+          <span class="unit">per space, per year</span>
         </div>
-        <p class="subhead">
-          Capped at <strong>$300,000 / year</strong> firmwide, however many engagements you run.
+        <p class="subhead reveal">
+          The more spaces you run, the <strong>less each one costs</strong>.
         </p>
 
-        <p class="lede">
-          Priced per engagement, with a cap, and meant to be flexible. The goal right now is to get
-          Clint in front of your team on a live engagement and shape it around how you work. It
-          starts with a 90-day pilot on one engagement.
+        <p class="lede reveal">
+          Priced per space, with volume pricing, and meant to be flexible. The goal right now is to
+          get Clint in front of your team on a live engagement and shape it around how you work. It
+          starts with a 90-day pilot.
         </p>
 
-        <div class="block">
+        <div class="block reveal">
           <div class="section-label">How it works</div>
           <ul class="points">
             <li>
-              <strong>Per engagement.</strong> One space is one client engagement. You pay for the
-              engagements you run on Clint, not a flat platform fee.
+              <strong>You pay for what you run.</strong> A space is one client engagement. One price
+              per space, with no firm license and no minimum. The total goes up only when you add a
+              space.
             </li>
             <li>
-              <strong>Unlimited users.</strong> Every space includes your whole team and the
-              client's people. No per-seat charge, no counting.
+              <strong>Unlimited users.</strong> Every space covers your whole team and the client's
+              people. No per-seat charge.
             </li>
             <li>
-              <strong>Capped.</strong> Total cost never exceeds $300,000 a year. Past twelve
-              engagements, additional spaces are included.
+              <strong>Costs less as you grow.</strong> The rate per space drops as you take on more.
             </li>
           </ul>
         </div>
 
-        <!-- ============ ROI ============ -->
-        <div class="block">
-          <div class="section-label">What it saves you</div>
+        <div class="block reveal tiers-block">
+          <div class="section-label">Volume pricing</div>
+          <table class="tiers">
+            <thead>
+              <tr>
+                <th>Spaces</th>
+                <th>Rate each</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1 to 5</td>
+                <td>$25,000</td>
+              </tr>
+              <tr>
+                <td>6 to 12</td>
+                <td>$21,000</td>
+              </tr>
+              <tr>
+                <td>13 and up</td>
+                <td class="best">$18,000</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-          <div class="roi">
-            <div class="roi-anchor">
-              <div class="big" id="anchorBig">It pays for itself on a single engagement.</div>
-              <div class="sub">
-                One space costs less than a single seat on the big data platforms, and it covers your
-                whole team plus the client.
+        <!-- ============ WHAT THE PRICE BUYS ============ -->
+        <div class="block reveal">
+          <div class="section-label">What the price buys</div>
+
+          <p class="value-intro">
+            Clint gives the same team more time for the work clients pay for, and keeps Stout in
+            front of the client between readouts.
+          </p>
+
+          <!-- capacity: same hours, redeployed -->
+          <div class="vblock" data-anim="bars">
+            <div class="vhead">
+              <h4>More time on the work that matters</h4>
+              <span class="illus">Illustrative</span>
+            </div>
+            <div class="legend">
+              <span class="item"><span class="sw assembly"></span>Assembly and upkeep</span>
+              <span class="item"
+                ><span class="sw value"></span>Judgment, pitches, and client time</span
+              >
+            </div>
+            <div class="row">
+              <span class="rlabel">Today</span>
+              <div class="bar">
+                <span class="seg assembly" style="width: 62%">Assembly and upkeep</span>
+                <span class="seg value" style="width: 38%">Judgment</span>
               </div>
             </div>
-
-            <div class="roi-body">
-              <p class="roi-intro">
-                The defaults below are one program manager's hours. The analysts on her team spend
-                more on top. Set your own numbers and see where it lands.
-              </p>
-
-              <p class="boundary">
-                <strong>What Clint replaces:</strong> finding the data, checking it, and keeping it
-                current for every report. <strong>What stays yours:</strong> the analysis, the story,
-                and the final deck. The hours below count only the part Clint takes off your plate.
-              </p>
-
-              <div class="inputs">
-                <div class="field">
-                  <label class="flabel" for="upkeep"
-                    >Competitive upkeep, hrs / week / engagement
-                    <span class="val" id="upkeepV">2</span></label
-                  >
-                  <input type="range" id="upkeep" min="0" max="20" step="0.5" value="2" />
-                  <span class="fhint" id="upkeepHint"
-                    >Reading and analyzing the landscape. About 104 hrs/yr.</span
-                  >
-                </div>
-
-                <div class="field">
-                  <label class="flabel" for="deckhrs"
-                    >Data &amp; assembly hrs per deck <span class="val" id="deckhrsV">3</span></label
-                  >
-                  <input type="range" id="deckhrs" min="0" max="40" step="1" value="3" />
-                  <span class="fhint"
-                    >Only the data work Clint removes, not the analysis or design</span
-                  >
-                </div>
-
-                <div class="field">
-                  <label class="flabel" for="cycles"
-                    >Deck builds / yr <span class="val" id="cyclesV">52</span></label
-                  >
-                  <input type="range" id="cycles" min="0" max="72" step="1" value="52" />
-                  <span class="fhint">12 monthly landscape + ~40 conference &amp; adhoc reports</span>
-                </div>
-
-                <div class="field">
-                  <label class="flabel" for="rate"
-                    >Blended hourly cost <span class="val" id="rateV">$150</span></label
-                  >
-                  <input type="range" id="rate" min="75" max="400" step="5" value="150" />
-                  <span class="fhint">Loaded internal cost of the team's time</span>
-                </div>
-
-                <div class="field">
-                  <label class="flabel" for="engs"
-                    >Engagements on Clint / yr <span class="val" id="engsV">3</span></label
-                  >
-                  <input type="range" id="engs" min="1" max="20" step="1" value="3" />
-                  <span class="fhint">3 today, expanding toward 5</span>
-                </div>
+            <div class="row">
+              <span class="rlabel brand">
+                <svg class="mini" viewBox="0 0 140 140" fill="none" aria-hidden="true">
+                  <polyline
+                    points="112,24 24,24 24,116 112,116"
+                    stroke="#cbd5e1"
+                    stroke-width="4"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <polyline
+                    points="96,40 40,40 40,100 96,100"
+                    stroke="#94a3b8"
+                    stroke-width="5.5"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <polyline
+                    points="80,56 56,56 56,84 80,84"
+                    stroke="#0d9488"
+                    stroke-width="7.5"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                On Clint
+              </span>
+              <div class="bar">
+                <span class="seg assembly" style="width: 30%">Upkeep</span>
+                <span class="seg value" style="width: 70%">Judgment, pitches, client time</span>
               </div>
-
-              <div class="readout">
-                <div class="stat">
-                  <div class="k">Labor saved / engagement</div>
-                  <div class="v" id="perEng">$39,000</div>
-                  <div class="note" id="perEngHrs">260 hrs &times; $150</div>
-                </div>
-                <div class="stat">
-                  <div class="k">Your cost / engagement</div>
-                  <div class="v" id="effEng">$25,000</div>
-                  <div class="note" id="effNote">list rate, below the cap</div>
-                </div>
-                <div class="stat hero">
-                  <div class="k">Net saved / yr</div>
-                  <div class="v" id="netYr">+$42,000</div>
-                  <div class="note" id="netNote">across 3 engagements</div>
-                </div>
-              </div>
-
-              <div class="section-label">As your book grows</div>
-              <table class="cap">
-                <thead>
-                  <tr>
-                    <th>Active engagements</th>
-                    <th>Your cost</th>
-                    <th>Labor saved</th>
-                    <th>Net</th>
-                  </tr>
-                </thead>
-                <tbody id="growBody"></tbody>
-              </table>
-
-              <p class="gapline" id="gapLine"></p>
             </div>
+            <p class="vsub">
+              <strong>Same hours, used differently.</strong> The repetitive layer, finding the data,
+              checking it, and keeping it current, moves to Clint, so more of your team's week goes
+              to the read and the recommendation.
+            </p>
           </div>
 
-          <p class="foot">
-            Figures update live from the inputs above and are illustrative. Nothing is stored.
+          <!-- stickiness: present every week, and it accumulates -->
+          <div class="vblock" data-anim="cadence">
+            <div class="vhead">
+              <h4>Stout in the client's workflow every week</h4>
+              <span class="illus">Illustrative</span>
+            </div>
+            <div class="cad-row">
+              <span class="cad-label">With a deck</span>
+              <div class="cad-track once"><span class="tick"></span></div>
+            </div>
+            <div class="cad-row">
+              <span class="cad-label brand">
+                <svg class="mini" viewBox="0 0 140 140" fill="none" aria-hidden="true">
+                  <polyline
+                    points="112,24 24,24 24,116 112,116"
+                    stroke="#cbd5e1"
+                    stroke-width="4"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <polyline
+                    points="96,40 40,40 40,100 96,100"
+                    stroke="#94a3b8"
+                    stroke-width="5.5"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <polyline
+                    points="80,56 56,56 56,84 80,84"
+                    stroke="#0d9488"
+                    stroke-width="7.5"
+                    fill="none"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                With Clint
+              </span>
+              <div class="cad-track steady">
+                <span class="tick"></span><span class="tick"></span><span class="tick"></span
+                ><span class="tick"></span><span class="tick"></span><span class="tick"></span
+                ><span class="tick"></span><span class="tick"></span><span class="tick"></span
+                ><span class="tick"></span><span class="tick"></span><span class="tick"></span>
+              </div>
+            </div>
+            <div class="cad-axis"><span>Quarter start</span><span>Readout</span></div>
+            <p class="vsub">
+              <strong>A deck lands once, then goes quiet.</strong> A live, Stout-branded view is
+              current any day the client signs in, and a year of notes, history, and filed work
+              builds up in the account, so renewal becomes the easy choice.
+            </p>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- differentiation -->
+          <div class="vblock">
+            <div class="vhead"><h4>A sharper way to show up</h4></div>
+            <p class="vsub">
+              A live view under Stout's brand is a different thing to put in front of a client than
+              a quarterly deck, in the pitch and through the engagement. It helps win the work and
+              hold your pricing.
+            </p>
+          </div>
+
+          <p class="boundary">
+            <strong>What Clint replaces:</strong> finding the data, checking it, and keeping it
+            current for every report. <strong>What stays yours:</strong> the analysis, the story,
+            and the final deck.
           </p>
         </div>
       </div>
@@ -581,115 +728,30 @@
 
     <script>
       (function () {
-        var PRICE = 25000;
-        var CAP = 300000;
-        var ROWS = [1, 3, 5, 8, 12, 15, 20];
-
-        var el = function (id) {
-          return document.getElementById(id);
-        };
-        var ids = ['upkeep', 'deckhrs', 'cycles', 'rate', 'engs'];
-        var fmt = function (n) {
-          return '$' + Math.round(n).toLocaleString('en-US');
-        };
-        var fmtK = function (n) {
-          if (Math.abs(n) >= 1000000) return '$' + Math.round(n / 100000) / 10 + 'M';
-          return '$' + Math.round(n / 1000) + 'K';
-        };
-
-        function capped(n) {
-          return Math.min(n * PRICE, CAP);
-        }
-
-        function render() {
-          var upkeepWk = +el('upkeep').value;
-          var deckhrs = +el('deckhrs').value;
-          var cycles = +el('cycles').value;
-          var rate = +el('rate').value;
-          var engs = +el('engs').value;
-
-          el('upkeepV').textContent = upkeepWk;
-          el('upkeepHint').textContent =
-            'Reading and analyzing the landscape. About ' + Math.round(upkeepWk * 52) + ' hrs/yr.';
-          el('deckhrsV').textContent = deckhrs;
-          el('cyclesV').textContent = cycles;
-          el('rateV').textContent = '$' + rate;
-          el('engsV').textContent = engs;
-
-          var perEngHrs = upkeepWk * 52 + cycles * deckhrs;
-          var perEngSaved = perEngHrs * rate;
-          var totalSaved = perEngSaved * engs;
-          var totalCost = capped(engs);
-          var net = totalSaved - totalCost;
-          var effEng = totalCost / engs;
-
-          el('perEng').textContent = fmt(perEngSaved);
-          el('perEngHrs').textContent = perEngHrs + ' hrs × $' + rate;
-          el('effEng').textContent = fmt(effEng);
-          el('effNote').textContent =
-            engs * PRICE > CAP ? 'effective, after the $300K cap' : 'list rate, below the cap';
-          el('netYr').textContent = (net >= 0 ? '+' : '−') + fmt(Math.abs(net));
-          el('netNote').textContent = 'across ' + engs + ' engagement' + (engs === 1 ? '' : 's');
-
-          var heroStat = el('netYr').closest('.stat');
-          if (net < 0) heroStat.classList.remove('hero');
-          else heroStat.classList.add('hero');
-
-          // anchor headline reacts to the single-engagement result
-          var mult = perEngSaved / PRICE;
-          if (mult >= 1.2)
-            el('anchorBig').textContent =
-              'Each engagement saves about ' + Math.round(mult * 10) / 10 + '× what Clint costs.';
-          else if (perEngSaved >= PRICE)
-            el('anchorBig').textContent = 'It pays for itself on a single engagement.';
-          else el('anchorBig').textContent = 'It pays for itself across a year of engagements.';
-
-          // growth table
-          var body = el('growBody');
-          body.innerHTML = '';
-          ROWS.forEach(function (n) {
-            var cost = capped(n);
-            var saved = perEngSaved * n;
-            var rowNet = saved - cost;
-            var tr = document.createElement('tr');
-            if (n === 12) tr.className = 'cap-row';
-            if (n === engs) tr.className = (tr.className ? tr.className + ' ' : '') + 'here';
-            tr.innerHTML =
-              '<td>' +
-              n +
-              '</td><td>' +
-              fmtK(cost) +
-              (n * PRICE >= CAP ? ' (cap)' : '') +
-              '</td><td>' +
-              fmtK(saved) +
-              '</td><td class="' +
-              (rowNet >= 0 ? 'pos' : '') +
-              '">' +
-              (rowNet >= 0 ? '+' : '−') +
-              fmtK(Math.abs(rowNet)) +
-              '</td>';
-            body.appendChild(tr);
+        var els = [].slice.call(document.querySelectorAll('.reveal'));
+        if (
+          !('IntersectionObserver' in window) ||
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ) {
+          els.forEach(function (el) {
+            el.classList.add('in');
           });
-
-          // narrative: anchor to their current book, then the cap upside
-          el('gapLine').innerHTML =
-            'At your ' +
-            engs +
-            ' engagement' +
-            (engs === 1 ? '' : 's') +
-            ', that is <strong>' +
-            fmtK(totalSaved) +
-            '</strong> of analyst time displaced against a <strong>' +
-            fmtK(totalCost) +
-            '</strong> cost. It keeps going: past twelve engagements your cost stays at ' +
-            '<strong>$300K</strong> while the hours saved keep rising. Every engagement you add ' +
-            'past the cap is free.';
+          return;
         }
-
-        ids.forEach(function (id) {
-          el(id).addEventListener('input', render);
+        var io = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (en) {
+              if (en.isIntersecting) {
+                en.target.classList.add('in');
+                io.unobserve(en.target);
+              }
+            });
+          },
+          { threshold: 0, rootMargin: '0px 0px -8% 0px' }
+        );
+        els.forEach(function (el) {
+          io.observe(el);
         });
-        render();
       })();
     </script>
   </body>

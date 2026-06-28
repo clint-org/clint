@@ -17,7 +17,7 @@ export interface PngExportSnapshot {
   hideTrialColumn: boolean;
   hideMoaColumn: boolean;
   hideRoaColumn: boolean;
-  hideNotesColumn: boolean;
+  hideIndicationColumn: boolean;
   spaceId: string;
   tenantName: string;
   tenantLogoUrl: string | null;
@@ -41,7 +41,7 @@ export class PngExportService {
 
   /**
    * elementInjector must be the caller's Injector: the grid resolves
-   * LandscapeStateService (providedIn: 'any') through it, so MOA/ROA/Notes
+   * LandscapeStateService (providedIn: 'any') through it, so MOA/ROA
    * visibility in the capture matches the live view instead of resetting to
    * defaults.
    */
@@ -64,7 +64,7 @@ export class PngExportService {
         ref.setInput('hideTrialColumn', snapshot.hideTrialColumn);
         ref.setInput('hideMoaColumn', snapshot.hideMoaColumn);
         ref.setInput('hideRoaColumn', snapshot.hideRoaColumn);
-        ref.setInput('hideNotesColumn', snapshot.hideNotesColumn);
+        ref.setInput('hideIndicationColumn', snapshot.hideIndicationColumn);
         ref.setInput('spaceId', snapshot.spaceId);
         ref.setInput('tenantName', snapshot.tenantName);
         ref.setInput('tenantLogoUrl', logos.tenantLogoUrl);

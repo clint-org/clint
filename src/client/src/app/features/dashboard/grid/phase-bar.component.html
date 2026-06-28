@@ -27,7 +27,7 @@
   [attr.height]="barHeight"
   [attr.rx]="cornerRadius"
   [attr.fill]="barColor()"
-  fill-opacity="0.12"
+  [attr.fill-opacity]="withdrawn() ? 0.05 : 0.12"
   [attr.stroke]="barColor()"
   stroke-width="1.2"
   [attr.mask]="fadeStops() ? 'url(#' + maskId + ')' : null"
@@ -52,4 +52,50 @@
   >
     {{ labelText() }}
   </svg:text>
+}
+
+@if (startTreatment() === 'cap') {
+  <!-- Hollow end-cap: reuses the marker range-tail token (white fill, phase ring). -->
+  <svg:circle
+    [attr.cx]="barX()"
+    [attr.cy]="8 + barHeight / 2"
+    r="5.5"
+    fill="white"
+    [attr.stroke]="barColor()"
+    stroke-width="1.5"
+    pointer-events="none"
+    aria-hidden="true"
+  />
+  <svg:text
+    [attr.x]="barX()"
+    [attr.y]="8 + barHeight + 9"
+    text-anchor="middle"
+    font-size="8"
+    class="font-mono pointer-events-none select-none"
+    fill="#64748b"
+    aria-hidden="true"
+  >{{ startCapCaption() }}</svg:text>
+}
+
+@if (endTreatment() === 'cap' && endCapCaption()) {
+  <!-- Hollow end-cap at the right bar edge for an approximate end date. -->
+  <svg:circle
+    [attr.cx]="endX()"
+    [attr.cy]="8 + barHeight / 2"
+    r="5.5"
+    fill="white"
+    [attr.stroke]="barColor()"
+    stroke-width="1.5"
+    pointer-events="none"
+    aria-hidden="true"
+  />
+  <svg:text
+    [attr.x]="endX()"
+    [attr.y]="8 + barHeight + 9"
+    text-anchor="middle"
+    font-size="8"
+    class="font-mono pointer-events-none select-none"
+    fill="#64748b"
+    aria-hidden="true"
+  >{{ endCapCaption() }}</svg:text>
 }

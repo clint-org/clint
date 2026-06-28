@@ -21,6 +21,7 @@ import { Space } from '../../core/models/space.model';
 import { SpaceService } from '../../core/services/space.service';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { resolveSpaceBadge } from '../../core/utils/display-fallbacks';
@@ -49,6 +50,7 @@ import { resolveSpaceBadge } from '../../core/utils/display-fallbacks';
     MessageModule,
     ManagePageShellComponent,
     RouterLink,
+    LoaderComponent,
   ],
   templateUrl: './space-archived-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,9 +81,7 @@ export class SpaceArchivedListComponent implements OnInit, OnDestroy {
     validators: [Validators.required],
   });
 
-  readonly canPermanentlyDelete = computed(
-    () => this.isTenantOwner() || this.isPlatformAdmin()
-  );
+  readonly canPermanentlyDelete = computed(() => this.isTenantOwner() || this.isPlatformAdmin());
 
   readonly typedNameMatches = computed(
     () => this.typedName().trim() === (this.deleteTarget()?.name ?? '').trim()

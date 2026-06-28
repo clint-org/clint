@@ -15,12 +15,14 @@ import { SelectModule } from 'primeng/select';
 
 import { IntelligenceEntityType } from '../../../core/models/primary-intelligence.model';
 import { SupabaseService } from '../../../core/services/supabase.service';
-import { buildComposeEntityOptions, ComposeEntityRow } from './compose-entity-options';
+import {
+  buildComposeEntityOptions,
+  buildComposeTarget,
+  ComposeEntityRow,
+  ComposeTarget,
+} from './compose-entity-options';
 
-export interface ComposeTarget {
-  entityType: IntelligenceEntityType;
-  entityId: string;
-}
+export type { ComposeTarget };
 
 interface EntityOption {
   label: string;
@@ -32,14 +34,14 @@ const LEVEL_OPTIONS: { label: string; value: IntelligenceEntityType }[] = [
   { label: 'Trial', value: 'trial' },
   { label: 'Company', value: 'company' },
   { label: 'Asset', value: 'product' },
-  { label: 'Engagement', value: 'space' },
+  { label: 'Space', value: 'space' },
 ];
 
 /**
  * Entity picker that fronts the primary-intelligence author drawer when
  * composing from the Intelligence feed (which is not entity-scoped). The
  * author picks a level (trial / company / asset / engagement) and, for the
- * entity-scoped levels, the specific entity to attach the read to. On
+ * entity-scoped levels, the specific entity to attach the intelligence to. On
  * confirm it emits the chosen anchor; the feed opens the shared
  * IntelligenceDrawerComponent against it. No author form is duplicated here.
  *
@@ -61,7 +63,8 @@ const LEVEL_OPTIONS: { label: string; value: IntelligenceEntityType }[] = [
     >
       <div class="space-y-4">
         <p class="text-sm text-slate-700">
-          The feed spans the whole engagement, so choose what this read is about before authoring it.
+          The feed spans the whole space, so choose what this intelligence is about before authoring
+          it.
         </p>
         <div>
           <label
@@ -122,7 +125,7 @@ const LEVEL_OPTIONS: { label: string; value: IntelligenceEntityType }[] = [
       <ng-template #footer>
         <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="onCancel()" />
         <p-button
-          label="Author read"
+          label="Write intelligence"
           icon="fa-solid fa-pen-nib"
           size="small"
           [disabled]="!canContinue()"
@@ -174,7 +177,7 @@ export class IntelligenceComposeDialogComponent {
   );
 
   protected readonly emptyMessage = computed<string>(
-    () => `No ${this.entityLabel().toLowerCase()} records in this engagement yet.`
+    () => `No ${this.entityLabel().toLowerCase()} records in this space yet.`
   );
 
   protected readonly canContinue = computed<boolean>(() => {
@@ -213,7 +216,9 @@ export class IntelligenceComposeDialogComponent {
     const id = lvl === 'space' ? this.spaceId() : this.entityId();
     if (!id) return;
     this.open.set(false);
-    this.chosen.emit({ entityType: lvl, entityId: id });
+    // anchorId is always null from the compose path: the drawer opens in
+    // new-brief mode and creates a fresh anchor for the chosen entity.
+    this.chosen.emit(buildComposeTarget(lvl, id));
   }
 
   private async loadOptions(): Promise<void> {
@@ -225,11 +230,7 @@ export class IntelligenceComposeDialogComponent {
       const [trials, companies, assets] = await Promise.all([
         client.from('trials').select('id, name, identifier').eq('space_id', sid).order('name'),
         client.from('companies').select('id, name').eq('space_id', sid).order('name'),
-        client
-          .from('assets')
-          .select('id, name, companies(name)')
-          .eq('space_id', sid)
-          .order('name'),
+        client.from('assets').select('id, name, companies(name)').eq('space_id', sid).order('name'),
       ]);
       this.rows.set(
         buildComposeEntityOptions({

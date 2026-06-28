@@ -128,7 +128,7 @@ function buildComputeds(
       },
       {
         key: 'newIntel',
-        label: pluralize(s?.new_intel_7d, 'New read'),
+        label: pluralize(s?.new_intel_7d, 'New intelligence entry', 'New intelligence entries'),
         windowLabel: 'last 7d',
         value: v(s?.new_intel_7d),
         display: s?.new_intel_7d == null ? '' : s.new_intel_7d > 0 ? `+${s.new_intel_7d}` : '0',
@@ -238,24 +238,24 @@ describe('EngagementLandingComponent header computeds', () => {
   it('motionStats uses singular labels when a count is exactly 1 (UI-24)', () => {
     const { stats, motionStats } = buildComputeds();
     stats.set(
-      makeStats({ p3_readouts_90d: 1, catalysts_90d: 1, new_intel_7d: 1, trial_moves_30d: 1 }),
+      makeStats({ p3_readouts_90d: 1, catalysts_90d: 1, new_intel_7d: 1, trial_moves_30d: 1 })
     );
     const byKey = Object.fromEntries(motionStats().map((cell) => [cell.key, cell]));
     expect(byKey['p3Readouts'].label).toBe('P3 readout');
     expect(byKey['catalysts'].label).toBe('Catalyst');
-    expect(byKey['newIntel'].label).toBe('New read');
+    expect(byKey['newIntel'].label).toBe('New intelligence entry');
     expect(byKey['trialMoves'].label).toBe('Trial move');
   });
 
   it('motionStats uses plural labels for counts other than 1 (UI-24)', () => {
     const { stats, motionStats } = buildComputeds();
     stats.set(
-      makeStats({ p3_readouts_90d: 3, catalysts_90d: 0, new_intel_7d: 2, trial_moves_30d: 5 }),
+      makeStats({ p3_readouts_90d: 3, catalysts_90d: 0, new_intel_7d: 2, trial_moves_30d: 5 })
     );
     const byKey = Object.fromEntries(motionStats().map((cell) => [cell.key, cell]));
     expect(byKey['p3Readouts'].label).toBe('P3 readouts');
     expect(byKey['catalysts'].label).toBe('Catalysts');
-    expect(byKey['newIntel'].label).toBe('New reads');
+    expect(byKey['newIntel'].label).toBe('New intelligence entries');
     expect(byKey['trialMoves'].label).toBe('Trial moves');
   });
 
@@ -288,7 +288,9 @@ describe('EngagementLandingComponent feedHeaderTag (honest counts)', () => {
     const { stats, latestIntelligence, feedHeaderTag } = buildComputeds();
     stats.set(makeStats({ intelligence_total: 47, new_intel_7d: 6 }));
     // The teaser buffer is capped (e.g. 8 loaded rows) and must NOT drive the header.
-    latestIntelligence.set(Array.from({ length: 8 }, () => ({ updated_at: '2026-06-18T00:00:00Z' })));
+    latestIntelligence.set(
+      Array.from({ length: 8 }, () => ({ updated_at: '2026-06-18T00:00:00Z' }))
+    );
     expect(feedHeaderTag()).toEqual({ total: 47, week: 6 });
   });
 

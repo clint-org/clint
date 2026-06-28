@@ -13,7 +13,7 @@ The Bullseye view renders a concentric-ring chart of assets grouped by a user-se
 
 Key components:
 - **LandscapeComponent**: fetches a flat asset list via `get_bullseye_assets` RPC with multi-select scope filters, then groups client-side via `groupAssetsIntoSpokes()`. Regrouping is instant (no re-fetch). Two-column layout: controls panel left, chart right.
-- **BullseyeControlsPanelComponent**: left sidebar (260px) with Group By toggle, competitive read summary, spoke/asset stats, and full legend (phase colors, intelligence ring, activity pulse, duplicate ring indicators).
+- **BullseyeControlsPanelComponent**: left sidebar (260px) with Group By toggle, an "At a glance" competitive read, spoke/asset stats, and full legend (phase colors, intelligence ring, activity pulse, duplicate ring indicators).
 - **BullseyeChartComponent**: renders SVG radial chart. Dots use a halo ring system: teal ring for intelligence, amber pulse for recent activity, dashed ring for duplicates. Cross-spoke hover highlighting dims non-matching dots to 15%.
 - **BullseyeDetailPanelComponent**: right sidebar detail pane shown on dot click. Renders asset name, company, MOA, ROA, trials (with CT.gov field overlays and change badges), and recent markers. An activity callout at the top shows the latest event (type + date) when present. An "Intelligence (N)" section lazy-loads published note rows for the asset and its trials via `get_intelligence_notes_for_asset`; each row shows the headline, an entity type badge (Asset/Trial), and entity name, and navigates to the entity detail page on click.
 - **LandscapeFilterBar**: shared filter bar for cross-view scope filters. Group-by toggle lives in the controls panel, not the filter bar.
@@ -21,7 +21,7 @@ Key components:
 
 ## Heatmap
 
-The Heatmap view renders a competitive heatmap: rows are the grouping dimension (MOA, indication, MOA+indication, company, ROA), columns are the tracked development phases (7, or 6 when the space does not track preclinical -- see the per-space "Track preclinical phase" setting), and cells are heat-colored by asset count. A left-sidebar controls panel provides GROUP BY, COUNT toggle, competitive READ summary, STATS, and LEGEND sections. It lives at `/t/:tenantId/s/:spaceId/heatmap` with five cuts: `by-company`, `by-moa`, `by-roa`, `by-indication`, and `by-moa-indication`. Grouping is owned by the sidebar (the shell top bar does not render grouping sub-tabs). Legacy `/positioning/*` routes redirect to `/heatmap/*`.
+The Heatmap view renders a competitive heatmap: rows are the grouping dimension (MOA, indication, MOA+indication, company, ROA), columns are the tracked development phases (7, or 6 when the space does not track preclinical -- see the per-space "Track preclinical phase" setting), and cells are heat-colored by asset count. A left-sidebar controls panel provides GROUP BY, COUNT toggle, AT A GLANCE (the auto-generated competitive read), STATS, and LEGEND sections. It lives at `/t/:tenantId/s/:spaceId/heatmap` with five cuts: `by-company`, `by-moa`, `by-roa`, `by-indication`, and `by-moa-indication`. Grouping is owned by the sidebar (the shell top bar does not render grouping sub-tabs). Legacy `/positioning/*` routes redirect to `/heatmap/*`.
 
 ## Capabilities
 
@@ -68,7 +68,7 @@ The Heatmap view renders a competitive heatmap: rows are the grouping dimension 
   role: viewer
   status: active
 - id: competitive-read-bar
-  summary: Auto-generated one-line competitive summary shared across radial, heatmap, and timeline views. Single source of truth at `competitive-read/index.ts` (`buildLandscapeRead`). Adaptive headline (5 competitive shapes for Company group-by, 4 distributional shapes for Indication/MoA/RoA, count summary for Asset), view-flavored second clause (radial = competitive standing, heatmap = concentration, timeline = upcoming catalysts), optional momentum clause for non-leader recent activity. Replaces three copy-pasted generators that shared a bug class where the runner-up "deepest pipeline" claim fired even when the leader had more P3 assets.
+  summary: Auto-generated one-line competitive read, labeled "At a glance" in the UI, shared across radial, heatmap, and timeline views. Single source of truth at `competitive-read/index.ts` (`buildLandscapeRead`). Adaptive headline (5 competitive shapes for Company group-by, 4 distributional shapes for Indication/MoA/RoA, count summary for Asset), view-flavored second clause (radial = competitive standing, heatmap = concentration, timeline = upcoming catalysts), optional momentum clause for non-leader recent activity. Replaces three copy-pasted generators that shared a bug class where the runner-up "deepest pipeline" claim fired even when the leader had more P3 assets.
   routes: []
   rpcs: []
   tables: []
@@ -114,7 +114,7 @@ The Heatmap view renders a competitive heatmap: rows are the grouping dimension 
   role: viewer
   status: active
 - id: heatmap
-  summary: Competitive heatmap at /heatmap. Rows are the grouping dimension, columns are 7 development phases, cells are heat-colored by asset count. Left-sidebar controls panel with GROUP BY, COUNT toggle, competitive READ summary, STATS, and shade LEGEND. Legacy /positioning/* routes redirect here.
+  summary: Competitive heatmap at /heatmap. Rows are the grouping dimension, columns are 7 development phases, cells are heat-colored by asset count. Left-sidebar controls panel with GROUP BY, COUNT toggle, AT A GLANCE (the auto-generated competitive read), STATS, and shade LEGEND. Legacy /positioning/* routes redirect here.
   routes:
     - /t/:tenantId/s/:spaceId/heatmap
     - /t/:tenantId/s/:spaceId/heatmap/by-company

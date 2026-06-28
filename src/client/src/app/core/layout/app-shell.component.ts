@@ -27,6 +27,7 @@ import { ContextualTopbarComponent, TopbarTab } from './contextual-topbar.compon
 import { TopbarStateService } from '../services/topbar-state.service';
 import { OnboardingTooltipService } from '../../features/engagement-landing/onboarding-tooltip.service';
 import { SpaceRoleService } from '../services/space-role.service';
+import { PrimaryIntelligenceService } from '../services/primary-intelligence.service';
 import { NAV_ICONS } from '../../shared/constants/nav-icons';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
@@ -39,7 +40,7 @@ import {
   menuSlideUpAnimation,
 } from '../../shared/animations/overlay.animation';
 
-type Section = 'landscape' | 'intelligence' | 'manage' | 'settings';
+type Section = 'landscape' | 'intelligence' | 'profiles' | 'settings' | 'reference';
 type PageType = 'landscape' | 'list' | 'detail' | 'blank';
 
 @Component({
@@ -70,6 +71,7 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
         [hasSpace]="!!spaceId()"
         [canEdit]="spaceRole.canEdit()"
         [isOwner]="spaceRole.isOwner()"
+        [hasEngagement]="hasEngagement()"
         [userInitials]="initials()"
         [userEmail]="user()?.email ?? ''"
         [userAvatarUrl]="avatarUrl()"
@@ -139,7 +141,9 @@ type PageType = 'landscape' | 'list' | 'detail' | 'blank';
                 referrerpolicy="no-referrer"
               />
             } @else {
-              <span class="account-menu__avatar account-menu__avatar--initials">{{ initials() }}</span>
+              <span class="account-menu__avatar account-menu__avatar--initials">{{
+                initials()
+              }}</span>
             }
             <div class="account-menu__who">
               <p class="account-menu__name">{{ displayName() }}</p>
@@ -393,12 +397,20 @@ export class AppShellComponent implements OnInit {
   readonly topbarState = inject(TopbarStateService);
   readonly onboardingTooltip = inject(OnboardingTooltipService);
   protected readonly spaceRole = inject(SpaceRoleService);
+  private readonly primaryIntelligence = inject(PrimaryIntelligenceService);
   protected readonly appVersion = APP_VERSION;
   readonly user = this.supabase.currentUser;
   readonly tenantId = signal('');
   readonly spaceId = signal('');
   readonly spaces = signal<Space[]>([]);
   readonly tenants = signal<Tenant[]>([]);
+  /**
+   * Whether the current space has an engagement write-up (published or draft).
+   * Gates the Engagement nav item in the sidebar. Refreshed on space change and
+   * after any intelligence mutation (via `primaryIntelligence.changed`).
+   */
+  readonly hasEngagement = signal(false);
+  private engagementProbeToken = 0;
   readonly accountOpen = signal(false);
 
   // Create space dialog state
@@ -413,7 +425,7 @@ export class AppShellComponent implements OnInit {
   readonly sidebarPinned = signal(false);
   private hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // The space-relative route path (e.g., 'manage/companies', 'events', 'bullseye/by-indication')
+  // The space-relative route path (e.g., 'profiles/companies', 'events', 'bullseye/by-indication')
   readonly activeSpaceRoute = signal('');
 
   // Current URL segments after spaceId for determining page context
@@ -465,12 +477,13 @@ export class AppShellComponent implements OnInit {
   // Determine which section is active from the route
   readonly activeSection = computed<Section>(() => {
     const route = this.activeSpaceRoute();
-    // Engagement lives under /manage for routing history but belongs to the
+    // Engagement lives under /profiles for routing but belongs to the
     // Intelligence group (matches the nav rail); without this it rendered
-    // the Manage tab set with no tab marked active.
-    if (route === 'manage/engagement') return 'intelligence';
-    if (route.startsWith('manage/')) return 'manage';
+    // the Profiles tab set with no tab marked active.
+    if (route === 'profiles/engagement') return 'intelligence';
+    if (route.startsWith('profiles/')) return 'profiles';
     if (route.startsWith('settings/')) return 'settings';
+    if (route.startsWith('help/')) return 'reference';
     if (route === 'events' || route === 'intelligence' || route === 'materials')
       return 'intelligence';
     if (route === 'catalysts') return 'landscape';
@@ -481,11 +494,7 @@ export class AppShellComponent implements OnInit {
   readonly pageType = computed<PageType>(() => {
     const route = this.activeSpaceRoute();
     if (!this.spaceId()) return 'blank';
-    // Trial detail (check before manage)
-    if (route.match(/^manage\/trials\/[^/]+$/)) {
-      return 'detail';
-    }
-    // Tab-based sections: landscape (incl. engagement-landing home), intelligence, manage
+    // Tab-based sections: landscape (incl. engagement-landing home), intelligence, profiles
     if (
       route === '' ||
       route === 'timeline' ||
@@ -495,7 +504,7 @@ export class AppShellComponent implements OnInit {
       route === 'intelligence' ||
       route === 'materials' ||
       route === 'catalysts' ||
-      route.startsWith('manage/')
+      route.startsWith('profiles/')
     ) {
       return 'landscape';
     }
@@ -511,8 +520,9 @@ export class AppShellComponent implements OnInit {
     const labels: Record<Section, string> = {
       landscape: 'Landscape',
       intelligence: 'Intelligence',
-      manage: 'Manage',
+      profiles: 'Profiles',
       settings: 'Settings',
+      reference: 'Reference',
     };
     return labels[this.activeSection()] ?? '';
   });
@@ -560,16 +570,26 @@ export class AppShellComponent implements OnInit {
       case 'intelligence':
         return [
           {
-            label: 'Engagement',
-            value: 'manage/engagement',
-            active: route === 'manage/engagement',
-            icon: NAV_ICONS['engagement'],
-          },
-          {
             label: 'Intelligence Feed',
             value: 'intelligence',
             active: route === 'intelligence',
             icon: NAV_ICONS['intelligence-feed'],
+          },
+          ...(this.hasEngagement()
+            ? [
+                {
+                  label: 'Engagement',
+                  value: 'profiles/engagement',
+                  active: route === 'profiles/engagement',
+                  icon: NAV_ICONS['engagement'],
+                },
+              ]
+            : []),
+          {
+            label: 'Events',
+            value: 'events',
+            active: route === 'events',
+            icon: NAV_ICONS['events'],
           },
           {
             label: 'Materials',
@@ -577,32 +597,25 @@ export class AppShellComponent implements OnInit {
             active: route === 'materials',
             icon: NAV_ICONS['materials'],
           },
-          {
-            label: 'Events',
-            value: 'events',
-            active: route === 'events',
-            icon: NAV_ICONS['events'],
-          },
         ];
-      case 'manage':
-        if (!this.spaceRole.canEdit()) return [];
+      case 'profiles':
         return [
           {
             label: 'Companies',
             value: 'companies',
-            active: route === 'manage/companies',
+            active: route === 'profiles/companies',
             icon: NAV_ICONS['companies'],
           },
           {
             label: 'Assets',
             value: 'assets',
-            active: route === 'manage/assets',
+            active: route === 'profiles/assets',
             icon: NAV_ICONS['assets'],
           },
           {
             label: 'Trials',
             value: 'trials',
-            active: route === 'manage/trials',
+            active: route === 'profiles/trials',
             icon: NAV_ICONS['trials'],
           },
         ];
@@ -615,9 +628,9 @@ export class AppShellComponent implements OnInit {
   readonly topbarListTitle = computed(() => {
     const route = this.activeSpaceRoute();
     const titleMap: Record<string, string> = {
-      'manage/companies': 'Companies',
-      'manage/assets': 'Assets',
-      'manage/trials': 'Trials',
+      'profiles/companies': 'Companies',
+      'profiles/assets': 'Assets',
+      'profiles/trials': 'Trials',
       events: 'Events',
       catalysts: 'Future Catalysts',
       'settings/taxonomies': 'Taxonomies',
@@ -631,12 +644,8 @@ export class AppShellComponent implements OnInit {
     return titleMap[route] ?? this.topbarState.title();
   });
 
-  // Detail page metadata
-  readonly topbarBackLabel = computed(() => {
-    const route = this.activeSpaceRoute();
-    if (route.match(/^manage\/trials\/[^/]+$/)) return 'Trials';
-    return '';
-  });
+  // Detail page metadata (no detail-topbar routes currently defined)
+  readonly topbarBackLabel = computed(() => '');
 
   constructor() {
     // Keep the space picker in sync. The list is reloaded both on tenant
@@ -651,6 +660,37 @@ export class AppShellComponent implements OnInit {
         this.loadSpaces(tenantId);
       }
     });
+
+    // Keep the Engagement nav item in sync with whether the current space has a
+    // write-up. Re-runs on space change and after any intelligence mutation, so
+    // the item appears the moment an editor publishes a space write-up from the
+    // Intelligence Feed and disappears again if it is withdrawn.
+    effect(() => {
+      const spaceId = this.spaceId();
+      this.primaryIntelligence.changed();
+      this.refreshEngagementPresence(spaceId);
+    });
+  }
+
+  private async refreshEngagementPresence(spaceId: string): Promise<void> {
+    const token = ++this.engagementProbeToken;
+    if (!spaceId) {
+      this.hasEngagement.set(false);
+      return;
+    }
+    try {
+      const bundle = await this.primaryIntelligence.getSpaceIntelligence(spaceId);
+      // Ignore a stale probe if the space changed (or another probe started)
+      // while this request was in flight.
+      if (token !== this.engagementProbeToken) return;
+      // Presence mirrors the engagement page's own `hasIntelligence` rule: any
+      // brief (published or draft) means there is a write-up to show.
+      this.hasEngagement.set((bundle?.briefs.length ?? 0) > 0);
+    } catch {
+      if (token === this.engagementProbeToken) {
+        this.hasEngagement.set(false);
+      }
+    }
   }
 
   async ngOnInit(): Promise<void> {
@@ -715,9 +755,10 @@ export class AppShellComponent implements OnInit {
   onSectionClick(section: Section): void {
     const defaultRoutes: Record<Section, string> = {
       landscape: '',
-      intelligence: 'events',
-      manage: 'manage/companies',
+      intelligence: 'intelligence',
+      profiles: 'profiles/companies',
       settings: 'settings/taxonomies',
+      reference: 'help/taxonomies',
     };
     this.navigateToSpaceRoute(defaultRoutes[section]);
   }
@@ -759,17 +800,14 @@ export class AppShellComponent implements OnInit {
       case 'intelligence':
         this.navigateToSpaceRoute(tab);
         break;
-      case 'manage':
-        this.navigateToSpaceRoute(`manage/${tab}`);
+      case 'profiles':
+        this.navigateToSpaceRoute(`profiles/${tab}`);
         break;
     }
   }
 
   onBackClick(): void {
-    const route = this.activeSpaceRoute();
-    if (route.match(/^manage\/trials\/[^/]+$/)) {
-      this.navigateToSpaceRoute('manage/trials');
-    }
+    // No detail-topbar routes currently defined; handler retained for future use.
   }
 
   // --- Tenant / Space ---

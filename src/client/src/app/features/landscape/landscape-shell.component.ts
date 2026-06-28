@@ -62,10 +62,12 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
               [surfaceKey]="viewMode() === 'catalysts' ? 'key_catalysts_panel' : 'timeline_detail'"
               [showEditAction]="true"
               [open]="!!state.selectedMarkerId()"
+              [references]="state.selectedMarkerReferences()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"
               (eventClick)="onEventClick($event)"
               (trialClick)="onTrialClick($event)"
+              (openIntelligence)="onOpenIntelligence($event)"
               (editMarkerClick)="onEditMarker($event)"
             />
           }
@@ -172,7 +174,21 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   }
 
   onTrialClick(trialId: string): void {
-    this.router.navigate([...this.spaceBase(), 'manage', 'trials', trialId]);
+    this.router.navigate([...this.spaceBase(), 'profiles', 'trials', trialId]);
+  }
+
+  /**
+   * A primary-intelligence reference in the marker pane was activated: navigate
+   * to the owning entity's manage page (where its full PI is read/edited).
+   */
+  onOpenIntelligence(target: { entityType: string; entityId: string }): void {
+    const segment =
+      target.entityType === 'company'
+        ? 'companies'
+        : target.entityType === 'product'
+          ? 'assets'
+          : 'trials';
+    this.router.navigate([...this.spaceBase(), 'profiles', segment, target.entityId]);
   }
 
   /**
@@ -183,7 +199,7 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
    * and editors ever emit this.
    */
   onEditMarker(target: { trialId: string; markerId: string }): void {
-    this.router.navigate([...this.spaceBase(), 'manage', 'trials', target.trialId], {
+    this.router.navigate([...this.spaceBase(), 'profiles', 'trials', target.trialId], {
       queryParams: { marker: target.markerId },
     });
   }

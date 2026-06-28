@@ -43,7 +43,11 @@ const EXTRACT_STEP_LABELS: Record<Exclude<ExtractStep, 'idle'>, string> = {
   enriching: 'Enriching from CT.gov...',
 };
 
-const EXTRACT_STEP_SEQUENCE: Exclude<ExtractStep, 'idle'>[] = ['fetching', 'extracting', 'enriching'];
+const EXTRACT_STEP_SEQUENCE: Exclude<ExtractStep, 'idle'>[] = [
+  'fetching',
+  'extracting',
+  'enriching',
+];
 const EXTRACT_STEP_TIMINGS_MS = [1200, 3000, 6000];
 
 function workerBase(): string {
@@ -140,15 +144,21 @@ function looksLikeUrl(s: string): boolean {
                     @for (s of extractStepSequence; track s) {
                       <div class="flex items-center gap-2.5">
                         @if (extractStepIndex() > $index) {
-                          <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
-                            <i class="pi pi-check text-[10px] text-white"></i>
+                          <span
+                            class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600"
+                          >
+                            <i class="fa-solid fa-check text-[11px] text-white"></i>
                           </span>
                           <span class="text-xs text-slate-500">{{ extractStepLabels[s] }}</span>
                         } @else if (extractStepIndex() === $index) {
                           <app-loader [size]="20" />
-                          <span class="text-xs font-medium text-slate-700">{{ extractStepLabels[s] }}</span>
+                          <span class="text-xs font-medium text-slate-700">{{
+                            extractStepLabels[s]
+                          }}</span>
                         } @else {
-                          <span class="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white"></span>
+                          <span
+                            class="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white"
+                          ></span>
                           <span class="text-xs text-slate-400">{{ extractStepLabels[s] }}</span>
                         }
                       </div>
@@ -235,15 +245,21 @@ function looksLikeUrl(s: string): boolean {
                     @for (s of extractStepSequence; track s) {
                       <div class="flex items-center gap-2.5">
                         @if (extractStepIndex() > $index) {
-                          <span class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600">
-                            <i class="pi pi-check text-[10px] text-white"></i>
+                          <span
+                            class="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600"
+                          >
+                            <i class="fa-solid fa-check text-[11px] text-white"></i>
                           </span>
                           <span class="text-xs text-slate-500">{{ extractStepLabels[s] }}</span>
                         } @else if (extractStepIndex() === $index) {
                           <app-loader [size]="20" />
-                          <span class="text-xs font-medium text-slate-700">{{ extractStepLabels[s] }}</span>
+                          <span class="text-xs font-medium text-slate-700">{{
+                            extractStepLabels[s]
+                          }}</span>
                         } @else {
-                          <span class="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white"></span>
+                          <span
+                            class="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white"
+                          ></span>
                           <span class="text-xs text-slate-400">{{ extractStepLabels[s] }}</span>
                         }
                       </div>
@@ -254,6 +270,24 @@ function looksLikeUrl(s: string): boolean {
 
               @if (extractError()) {
                 <p-message severity="error" [closable]="false">{{ extractError() }}</p-message>
+              }
+
+              @if (duplicateInfo()) {
+                <p-message severity="warn" [closable]="false">{{ duplicateInfo() }}</p-message>
+                <div class="flex gap-2">
+                  <p-button
+                    label="Continue anyway"
+                    size="small"
+                    [outlined]="true"
+                    (onClick)="extractFromText(true)"
+                  />
+                  <p-button
+                    label="Cancel"
+                    size="small"
+                    [text]="true"
+                    (onClick)="clearDuplicate()"
+                  />
+                </div>
               }
 
               @if (rateLimitCountdown() > 0) {
@@ -338,6 +372,7 @@ export class ImportPageComponent implements OnInit, OnDestroy {
   protected readonly canExtractText = computed(() => {
     if (this.extracting()) return false;
     if (this.rateLimitCountdown() > 0) return false;
+    if (this.duplicateInfo()) return false;
     return this.textInput().trim().length > 50;
   });
 
@@ -384,8 +419,8 @@ export class ImportPageComponent implements OnInit, OnDestroy {
     await this.extract('url', allowDuplicate);
   }
 
-  protected async extractFromText(): Promise<void> {
-    await this.extract('text');
+  protected async extractFromText(allowDuplicate = false): Promise<void> {
+    await this.extract('text', allowDuplicate);
   }
 
   async refreshAiStatus(): Promise<void> {
@@ -421,7 +456,7 @@ export class ImportPageComponent implements OnInit, OnDestroy {
   }
 
   private async fetchQuotaStatus(tenantId: string): Promise<AiImportStatusResult | null> {
-    const { data, error } = await this.supabase.client.rpc('ai_import_status', {
+    const { data, error } = await this.supabase.client.rpc('get_tenant_ai_status', {
       p_tenant_id: tenantId,
     });
     if (error || !data) return null;
@@ -509,7 +544,9 @@ export class ImportPageComponent implements OnInit, OnDestroy {
     }
 
     if (code === 'rate_limited' || code === 'rate_limited_minute' || code === 'rate_limited_hour') {
-      this.extractError.set(body.message ?? 'Too many imports in a short window. Try again shortly.');
+      this.extractError.set(
+        body.message ?? 'Too many imports in a short window. Try again shortly.'
+      );
       this.startRateLimitCountdown(60);
       return;
     }

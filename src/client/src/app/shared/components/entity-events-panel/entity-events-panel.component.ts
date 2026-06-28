@@ -6,19 +6,19 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { EntityNounPipe } from '../../pipes/entity-noun.pipe';
-import {
-  EntityEventRow,
-  EntityEventsPanelService,
-} from './entity-events-panel.service';
+import { LoaderComponent } from '../loader/loader.component';
+import { entityEventRowParams } from './entity-event-link';
+import { EntityEventRow, EntityEventsPanelService } from './entity-events-panel.service';
 
 @Component({
   selector: 'app-entity-events-panel',
-  imports: [DatePipe, RouterLink, EntityNounPipe],
+  imports: [DatePipe, RouterLink, EntityNounPipe, LoaderComponent],
   templateUrl: './entity-events-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -31,18 +31,32 @@ export class EntityEventsPanelComponent {
   readonly entityId = input.required<string>();
   readonly limit = input<number>(20);
 
+  /** Emits the loaded event count after each fetch (0 on empty or error) so the
+   *  surrounding section-card can show it in the header badge. */
+  readonly loaded = output<number>();
+
   protected readonly rows = signal<EntityEventRow[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected readonly seeAllLink = computed(() => [
-    '/t', this.tenantId(), 's', this.spaceId(), 'events',
+    '/t',
+    this.tenantId(),
+    's',
+    this.spaceId(),
+    'events',
   ]);
 
   protected readonly seeAllQueryParams = computed(() => ({
     entityLevel: this.entityLevel(),
     entityId: this.entityId(),
   }));
+
+  /** Deep-link params for a single row: the entity scope + the event id the
+   *  Events page opens in its detail pane. */
+  protected rowParams(eventId: string): { entityLevel: string; entityId: string; eventId: string } {
+    return entityEventRowParams(this.entityLevel(), this.entityId(), eventId);
+  }
 
   constructor() {
     effect(() => {
@@ -60,16 +74,18 @@ export class EntityEventsPanelComponent {
     spaceId: string,
     entityLevel: 'trial' | 'product' | 'company',
     entityId: string,
-    limit: number,
+    limit: number
   ): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
     try {
       const data = await this.service.fetch({ spaceId, entityLevel, entityId, limit });
       this.rows.set(data);
+      this.loaded.emit(data.length);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load events.');
       this.rows.set([]);
+      this.loaded.emit(0);
     } finally {
       this.loading.set(false);
     }

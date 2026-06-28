@@ -16,7 +16,7 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
   let pfizerId: string;
   let merckId: string;
   // Use pageSize=10 in the URL so 20 seeded assets span 2 pages.
-  const assetsUrl = () => `/t/${tenantId}/s/${spaceId}/manage/assets?pageSize=10`;
+  const assetsUrl = () => `/t/${tenantId}/s/${spaceId}/profiles/assets?pageSize=10`;
 
   test.beforeAll(async ({ browser }) => {
     tenantId = await createTestTenant('Grid Filter Org');
@@ -98,11 +98,11 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
     // Navigate to companies page first (pushes to history), then to assets page.
     // Since assets uses replaceUrl:true for state changes, going back should
     // return to companies (the last page that pushed a history entry).
-    const companiesUrl = `/t/${tenantId}/s/${spaceId}/manage/companies`;
+    const companiesUrl = `/t/${tenantId}/s/${spaceId}/profiles/companies`;
     await page.goto(companiesUrl, { waitUntil: 'domcontentloaded' });
     await page.goto(assetsUrl(), { waitUntil: 'domcontentloaded' });
     await page.goBack();
-    await expect(page).toHaveURL(/manage\/companies/);
+    await expect(page).toHaveURL(/profiles\/companies/);
   });
 
   test('inbound deep-link via company "View assets" lands pre-filtered', async () => {
@@ -110,7 +110,7 @@ test.describe('Assets grid — filtering, sorting, pagination', () => {
     // "click name -> filtered assets" affordance moved to the row-actions
     // menu's "View assets" item, which deep-links to the assets grid with a
     // text-contains companyName filter.
-    const companiesUrl = `/t/${tenantId}/s/${spaceId}/manage/companies`;
+    const companiesUrl = `/t/${tenantId}/s/${spaceId}/profiles/companies`;
     await page.goto(companiesUrl, { waitUntil: 'domcontentloaded' });
 
     const row = page.locator('tr', { hasText: 'Pfizer' }).first();

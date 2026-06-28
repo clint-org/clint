@@ -28,7 +28,7 @@ import { PngExportService } from '../dashboard/export/png-export.service';
 import { LegendComponent } from '../dashboard/legend/legend.component';
 import { LandscapeStateService } from './landscape-state.service';
 import { TimelineInsightStripComponent } from './timeline-insight-strip.component';
-import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-watermark.component';
+import { deriveTrialPhaseSpan } from '../../core/models/trial-phase-span';
 
 @Component({
   selector: 'app-timeline-view',
@@ -36,7 +36,6 @@ import { MarkWatermarkComponent } from '../../shared/components/watermark/mark-w
     ButtonModule,
     DashboardGridComponent,
     LegendComponent,
-    MarkWatermarkComponent,
     MessageModule,
     SkeletonComponent,
     TimelineInsightStripComponent,
@@ -61,7 +60,7 @@ export class TimelineViewComponent {
   readonly hideTrialColumn = input<boolean>(false);
   readonly hideMoaColumn = input<boolean>(false);
   readonly hideRoaColumn = input<boolean>(false);
-  readonly hideNotesColumn = input<boolean>(false);
+  readonly hideIndicationColumn = input<boolean>(false);
   readonly hideLegend = input<boolean>(false);
   readonly legendVisible = input<boolean>(false);
   readonly columnsOnly = input<boolean>(false);
@@ -86,6 +85,15 @@ export class TimelineViewComponent {
 
   readonly companies = computed(() => this.state.filteredCompanies());
   protected readonly skeletonRows = [0, 1, 2, 3, 4, 5];
+
+  /**
+   * Timeline-scoped density control (default on), persisted per user via
+   * localStorage keyed by space. When on, trial rows that own published primary
+   * intelligence render an inline PI headline; when off, only the compact
+   * bookmark mark shows, reclaiming vertical density.
+   */
+  readonly showIntelligenceHeadlines = signal<boolean>(true);
+  private readonly headlinePrefKey = computed(() => `clint:pi-headlines:${this.spaceId()}`);
 
   /**
    * Header export menu: PNG and Excel capture the timeline as shown; PPTX
@@ -119,6 +127,10 @@ export class TimelineViewComponent {
       snap = snap.parent;
     }
 
+    // Hydrate the persisted headline-density preference for this space.
+    const storedPref = this.readHeadlinePref();
+    if (storedPref !== null) this.showIntelligenceHeadlines.set(storedPref);
+
     effect(() => {
       // Skip auto-fit when caller provides both year inputs.
       if (this.startYear() !== null && this.endYear() !== null) return;
@@ -132,12 +144,13 @@ export class TimelineViewComponent {
       for (const company of companies) {
         for (const product of company.assets ?? []) {
           for (const trial of product.trials ?? []) {
-            if (trial.phase_start_date) {
-              const sy = new Date(trial.phase_start_date).getFullYear();
+            const trialSpan = deriveTrialPhaseSpan(trial.markers ?? []);
+            if (trialSpan.start) {
+              const sy = new Date(trialSpan.start).getFullYear();
               if (sy < minYear) minYear = sy;
             }
-            if (trial.phase_end_date) {
-              const ey = new Date(trial.phase_end_date).getFullYear();
+            if (trialSpan.end) {
+              const ey = new Date(trialSpan.end).getFullYear();
               if (ey > maxYear) maxYear = ey;
             }
             for (const marker of trial.markers ?? []) {
@@ -182,7 +195,7 @@ export class TimelineViewComponent {
       endYear: this.resolvedEndYear(),
       showMoaColumn: this.state.showMoaColumn(),
       showRoaColumn: this.state.showRoaColumn(),
-      showNotesColumn: this.state.showNotesColumn(),
+      showIndicationColumn: this.state.showIndicationColumn(),
       tenant,
       filename: await this.exportFilename('pptx'),
     });
@@ -201,7 +214,7 @@ export class TimelineViewComponent {
         hideTrialColumn: this.hideTrialColumn(),
         hideMoaColumn: this.hideMoaColumn(),
         hideRoaColumn: this.hideRoaColumn(),
-        hideNotesColumn: this.hideNotesColumn(),
+        hideIndicationColumn: this.hideIndicationColumn(),
         spaceId: this.spaceId(),
         tenantName: tenant?.name ?? '',
         tenantLogoUrl: tenant?.logoUrl ?? null,
@@ -221,7 +234,7 @@ export class TimelineViewComponent {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'trials',
       trial.id,
     ]);
@@ -231,13 +244,34 @@ export class TimelineViewComponent {
     this.state.selectMarker(marker.id);
   }
 
+  toggleIntelligenceHeadlines(): void {
+    const next = !this.showIntelligenceHeadlines();
+    this.showIntelligenceHeadlines.set(next);
+    try {
+      localStorage.setItem(this.headlinePrefKey(), String(next));
+    } catch {
+      // Persistence is best-effort; the toggle still works for this session.
+    }
+  }
+
+  private readHeadlinePref(): boolean | null {
+    try {
+      const stored = localStorage.getItem(this.headlinePrefKey());
+      return stored === null ? null : stored === 'true';
+    } catch {
+      return null;
+    }
+  }
+
   onTrialClick(trial: Trial): void {
+    // Open the trial's manage page, which has a full Primary intelligence
+    // section. The timeline shows only the presence mark + headline.
     this.router.navigate([
       '/t',
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'trials',
       trial.id,
     ]);
@@ -250,7 +284,7 @@ export class TimelineViewComponent {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'companies',
       companyId,
     ]);
@@ -258,7 +292,7 @@ export class TimelineViewComponent {
 
   onAssetClick(assetId: string): void {
     if (!assetId) return;
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'assets', assetId]);
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'profiles', 'assets', assetId]);
   }
 
   retry(): void {

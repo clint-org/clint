@@ -245,7 +245,7 @@ export type { SidebarSectionId } from './sidebar-nav';
       /* Logo row */
       .sidebar__logo {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 8px;
         padding: 12px;
         border-bottom: 1px solid #1e293b;
@@ -345,7 +345,6 @@ export type { SidebarSectionId } from './sidebar-nav';
         color: #475569;
         font-size: 11px;
         padding: 0;
-        margin-top: 4px;
         transition:
           color 150ms ease,
           transform 150ms ease;
@@ -580,6 +579,12 @@ export class SidebarComponent {
   readonly hasSpace = input<boolean>(false);
   readonly canEdit = input<boolean>(true);
   readonly isOwner = input<boolean>(false);
+  /**
+   * Whether the current space has an engagement write-up (published or draft).
+   * Gates the Engagement nav item: hidden for every role when false. Editors
+   * still author the first one from the Intelligence Feed.
+   */
+  readonly hasEngagement = input<boolean>(false);
   readonly userInitials = input<string>('');
   readonly userEmail = input<string>('');
   readonly userAvatarUrl = input<string | null>(null);
@@ -594,7 +599,7 @@ export class SidebarComponent {
   /** Product wordmark: the platform name, tracked uppercase via CSS. */
   protected readonly wordmark = PLATFORM_OPERATOR;
   readonly logoLabel = computed(() => 'Go to home');
-  readonly logoTooltip = computed(() => (this.hasSpace() ? 'Engagement home' : 'Spaces'));
+  readonly logoTooltip = computed(() => (this.hasSpace() ? 'Space home' : 'Spaces'));
 
   readonly pinToggle = output<void>();
   readonly navItemClick = output<string>();
@@ -607,7 +612,7 @@ export class SidebarComponent {
 
   readonly visibleSections = computed(() => {
     if (!this.hasSpace()) return ORG_ONLY_SECTIONS;
-    return filterNavSections(NAV_SECTIONS, this.canEdit(), this.isOwner());
+    return filterNavSections(NAV_SECTIONS, this.canEdit(), this.isOwner(), this.hasEngagement());
   });
 
   isParentExpanded(route: string): boolean {
@@ -616,8 +621,10 @@ export class SidebarComponent {
 
   readonly activeSection = computed(() => {
     const route = this.activeRoute();
-    if (route.startsWith('manage/')) return 'manage';
+    if (route === 'profiles/engagement') return 'intelligence';
+    if (route.startsWith('profiles/')) return 'profiles';
     if (route.startsWith('settings/')) return 'settings';
+    if (route.startsWith('help/')) return 'reference';
     if (route === 'events' || route === 'intelligence' || route === 'materials') {
       return 'intelligence';
     }

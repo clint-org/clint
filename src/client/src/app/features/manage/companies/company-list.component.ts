@@ -3,7 +3,6 @@ import {
   Component,
   effect,
   inject,
-  OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
@@ -26,8 +25,8 @@ import { HighlightPipe } from '../../../shared/pipes/highlight.pipe';
 import { buildFilterQueryParams, createGridState } from '../../../shared/grids';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
-import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import { SectionHeaderComponent } from '../../../shared/components/section-header/section-header.component';
 import {
   ExportButtonComponent,
   type ExportAction,
@@ -52,11 +51,12 @@ import { COMPANY_EXPORT_COLUMNS } from './companies-export.util';
     BrandLogoComponent,
     HighlightPipe,
     ExportButtonComponent,
+    SectionHeaderComponent,
   ],
   templateUrl: './company-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CompanyListComponent implements OnInit, OnDestroy {
+export class CompanyListComponent implements OnInit {
   readonly companies = signal<Company[]>([]);
   readonly loading = signal(false);
   readonly modalOpen = signal(false);
@@ -68,25 +68,10 @@ export class CompanyListComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
-  private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
   private readonly excel = inject(GridExcelExportService);
   private readonly exportNaming = inject(ExportNamingService);
 
-  private readonly topbarActionsEffect = effect(() => {
-    if (this.spaceRole.canEdit()) {
-      this.topbarState.actions.set([
-        {
-          label: 'Add company',
-          icon: 'fa-solid fa-plus',
-          text: true,
-          callback: () => this.openCreateModal(),
-        },
-      ]);
-    } else {
-      this.topbarState.actions.set([]);
-    }
-  });
   spaceId = '';
   tenantId = '';
 
@@ -115,10 +100,6 @@ export class CompanyListComponent implements OnInit, OnDestroy {
         }),
     },
   ];
-
-  private readonly countEffect = effect(() => {
-    this.topbarState.recordCount.set(String(this.grid.totalRecords() || ''));
-  });
 
   // Menu items are memoized per row-id so p-menu gets a stable reference on
   // every change-detection cycle. Without this, PrimeNG's popup menu swallows
@@ -149,12 +130,8 @@ export class CompanyListComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnDestroy(): void {
-    this.topbarState.clear();
-  }
-
   openAssets(companyName: string): void {
-    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'manage', 'assets'], {
+    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'profiles', 'assets'], {
       queryParams: buildFilterQueryParams({
         companyName: { kind: 'text', contains: companyName },
       }),
