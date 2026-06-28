@@ -61,6 +61,10 @@
       "authenticated": ["select"],
       "justification": "client: Activity surface reads the change log; writes only via the events trigger."
     },
+    "event_sources": {
+      "authenticated": ["select"],
+      "justification": "client: read RPCs (SECURITY INVOKER, e.g. get_events_page_data) embed event_sources; writes only via create_event(p_sources) / update_event_sources SECURITY DEFINER RPCs. RLS restricts reads to space members."
+    },
     "event_type_categories": {
       "authenticated": ["select", "insert", "update", "delete"],
       "justification": "client: taxonomy admin manage surface (Stage 3); selects embed categories. RLS restricts writes to owners/editors."
