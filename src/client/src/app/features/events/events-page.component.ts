@@ -21,7 +21,12 @@ import { TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
-import { EventCategory, EventDetail, FeedItem } from '../../core/models/event.model';
+import {
+  EventCategory,
+  EventCategoryDistribution,
+  EventDetail,
+  FeedItem,
+} from '../../core/models/event.model';
 import { FillStyle, MarkerCategory } from '../../core/models/marker.model';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { DetailPanelPillComponent } from '../../shared/components/detail-panel-pill.component';
@@ -47,10 +52,9 @@ import { EventFormComponent } from './event-form.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../core/services/space-role.service';
-import { EntityNounPipe } from '../../shared/pipes/entity-noun.pipe';
 import { formatEventDateSuffix } from './format-event-date-suffix';
 import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
-import { EntityScope, parseEntityScope } from './entity-scope';
+import { EntityScope, parseEntityScope, scopeChipLabel } from './entity-scope';
 import { buildServerQuery, type ServerQuery } from './server-query';
 import { entityCellParts, type EntityCellParts } from './entity-cell';
 import {
@@ -95,7 +99,6 @@ const DETECTED_CATEGORY_NAMES = [
     EventDetailPanelComponent,
     EventFormComponent,
     HighlightPipe,
-    EntityNounPipe,
     ExportButtonComponent,
     MarkerIconComponent,
     DetailPanelPillComponent,
@@ -126,8 +129,44 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   readonly eventCategories = signal<EventCategory[]>([]);
   readonly markerCategories = signal<MarkerCategory[]>([]);
 
+  // Overview aggregates over the FULL filtered set (not the loaded page), so
+  // the detail-pane distribution / recent / counts reflect every matching
+  // event rather than only what is on screen.
+  readonly overviewDistribution = signal<EventCategoryDistribution[]>([]);
+  readonly overviewRecent = signal<FeedItem[]>([]);
+  readonly overviewHighPriority = signal(0);
+
   // Server-side entity scope carried by the "See all" link from a detail page.
   readonly scope = signal<EntityScope | null>(null);
+
+  // The scoped entity's display name, resolved from the loaded feed: every row
+  // in a scoped view belongs to that entity's subtree, so the most-specific
+  // name for the scope level is consistent across rows. Null until rows load
+  // (or for an empty scoped result), in which case the chip falls back to the
+  // level noun.
+  private readonly scopeEntityName = computed<string | null>(() => {
+    const s = this.scope();
+    if (!s) return null;
+    const row = this.feedItems()[0];
+    if (!row) return null;
+    switch (s.entityLevel) {
+      case 'company':
+        return row.company_name;
+      case 'product':
+        return row.asset_name;
+      case 'trial':
+        return row.trial_name ?? row.entity_name;
+    }
+  });
+
+  // The entity scope rendered as a filter chip in the grid toolbar (named,
+  // with a level-aware "+ assets & trials" rollup suffix), or null when
+  // unscoped. Replaces the old separate "Scoped to this ..." banner.
+  readonly scopeChip = computed<{ header: string; label: string } | null>(() => {
+    const s = this.scope();
+    if (!s) return null;
+    return { header: 'Scope', label: scopeChipLabel(s.entityLevel, this.scopeEntityName()) };
+  });
 
   // UI state
   readonly loading = signal(false);
@@ -719,6 +758,9 @@ export class EventsPageComponent implements OnInit, OnDestroy {
       if (seq !== this.fetchSeq) return; // a newer query superseded this one
       this.feedItems.set(feed.items);
       this.serverTotal.set(feed.total);
+      this.overviewDistribution.set(feed.distribution);
+      this.overviewRecent.set(feed.recent);
+      this.overviewHighPriority.set(feed.highPriorityCount);
     } catch (err) {
       if (seq !== this.fetchSeq) return;
       this.error.set(err instanceof Error ? err.message : 'Failed to load events.');

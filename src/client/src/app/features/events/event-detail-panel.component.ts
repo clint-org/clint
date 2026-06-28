@@ -14,7 +14,7 @@ import { RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 
 import { CatalystDetail } from '../../core/models/catalyst.model';
-import { EventDetail, FeedItem } from '../../core/models/event.model';
+import { EventCategoryDistribution, EventDetail, FeedItem } from '../../core/models/event.model';
 import type { InnerMark, MarkerShape } from '../../core/models/marker.model';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { AnnotationService, Annotation } from '../../core/services/annotation.service';
@@ -112,8 +112,15 @@ export class EventDetailPanelComponent {
   /** The currently selected FeedItem (used for detected branch). */
   readonly selectedFeedItem = input<FeedItem | null>(null);
 
-  /** Feed snapshot used to render the empty-state overview. */
-  readonly feedItems = input<FeedItem[]>([]);
+  /**
+   * Overview aggregates for the empty-state pane, computed server-side over the
+   * FULL filtered set (not the loaded page): the category distribution, the
+   * 3 most recent rows, the matching-row total, and the high-priority count.
+   */
+  readonly distribution = input<EventCategoryDistribution[]>([]);
+  readonly recentItems = input<FeedItem[]>([]);
+  readonly overviewTotal = input<number>(0);
+  readonly overviewHighPriority = input<number>(0);
 
   readonly edit = output<void>();
   readonly delete = output<void>();
@@ -216,76 +223,53 @@ export class EventDetailPanelComponent {
     return summarySegmentsFor(feedItemToChangeEvent(fi, this.spaceId()));
   });
 
-  readonly highPriorityCount = computed(
-    () => this.feedItems().filter((i) => i.priority === 'high').length
-  );
+  readonly highPriorityCount = computed(() => this.overviewHighPriority());
 
+  // Distribution is server-aggregated over the full filtered set (already sorted
+  // by count desc); map it to the bar's view model. Event/detected categories
+  // have no marker glyph and fall back to the static category palette.
   readonly categoryHistogram = computed<CategoryHistogramEntry[]>(() => {
-    const counts = new Map<string, number>();
-    // Remember a representative marker FeedItem per category so the bar can
-    // carry that category's marker glyph + color (markers only). The glyph
-    // colors the share bar; event categories fall back to the static palette.
-    const sample = new Map<string, FeedItem>();
-    for (const item of this.feedItems()) {
-      counts.set(item.category_name, (counts.get(item.category_name) ?? 0) + 1);
-      if (
-        item.source_type === 'marker' &&
-        item.marker_type_shape &&
-        !sample.has(item.category_name)
-      ) {
-        sample.set(item.category_name, item);
-      }
-    }
-    const max = Math.max(1, ...counts.values());
-    return [...counts.entries()]
-      .map(([name, count]) => {
-        const rep = sample.get(name);
-        const glyph =
-          rep && rep.marker_type_shape
-            ? {
-                shape: rep.marker_type_shape,
-                color: rep.marker_type_color ?? CATEGORY_COLOR_FALLBACK,
-                innerMark: rep.marker_type_inner_mark ?? ('none' as InnerMark),
-                projected: false,
-              }
-            : null;
-        return {
-          name,
-          count,
-          color: rep?.category_color ?? CATEGORY_COLOR[name] ?? CATEGORY_COLOR_FALLBACK,
-          sharePct: Math.round((count / max) * 100),
-          glyph,
-        };
-      })
-      .sort((a, b) => b.count - a.count);
+    const entries = this.distribution();
+    const max = Math.max(1, ...entries.map((e) => e.count));
+    return entries.map((e) => ({
+      name: e.name,
+      count: e.count,
+      color: e.category_color ?? CATEGORY_COLOR[e.name] ?? CATEGORY_COLOR_FALLBACK,
+      sharePct: Math.round((e.count / max) * 100),
+      glyph: e.marker_type_shape
+        ? {
+            shape: e.marker_type_shape,
+            color: e.marker_type_color ?? CATEGORY_COLOR_FALLBACK,
+            innerMark: e.marker_type_inner_mark ?? ('none' as InnerMark),
+            projected: false,
+          }
+        : null,
+    }));
   });
 
+  // Server returns the 3 latest rows by event_date over the full filtered set.
   readonly mostRecent = computed<RecentItemSummary[]>(() =>
-    this.feedItems()
-      .slice()
-      .sort((a, b) => b.event_date.localeCompare(a.event_date))
-      .slice(0, 3)
-      .map((i) => ({
-        id: i.id,
-        // Detected rows carry a generic event-type title ("Marker Added");
-        // compose the same rich summary the table shows so the row is useful.
-        title:
-          i.source_type === 'detected' && i.change_event_type
-            ? flattenSummarySegments(summarySegmentsFor(feedItemToChangeEvent(i)).segments)
-            : i.title,
-        event_date: i.event_date,
-        sourceType: i.source_type,
-        isProjected: i.is_projected,
-        glyph:
-          i.source_type === 'marker' && i.marker_type_shape
-            ? {
-                shape: i.marker_type_shape,
-                color: i.marker_type_color ?? CATEGORY_COLOR_FALLBACK,
-                innerMark: i.marker_type_inner_mark ?? ('none' as InnerMark),
-                projected: !!i.is_projected,
-              }
-            : null,
-      }))
+    this.recentItems().map((i) => ({
+      id: i.id,
+      // Detected rows carry a generic event-type title ("Marker Added");
+      // compose the same rich summary the table shows so the row is useful.
+      title:
+        i.source_type === 'detected' && i.change_event_type
+          ? flattenSummarySegments(summarySegmentsFor(feedItemToChangeEvent(i)).segments)
+          : i.title,
+      event_date: i.event_date,
+      sourceType: i.source_type,
+      isProjected: i.is_projected,
+      glyph:
+        i.source_type === 'marker' && i.marker_type_shape
+          ? {
+              shape: i.marker_type_shape,
+              color: i.marker_type_color ?? CATEGORY_COLOR_FALLBACK,
+              innerMark: i.marker_type_inner_mark ?? ('none' as InnerMark),
+              projected: !!i.is_projected,
+            }
+          : null,
+    }))
   );
 
   /**

@@ -71,39 +71,23 @@
           >
             Intelligence ({{ intelligence()?.briefs?.length ?? 0 }})
           </h2>
-          <app-intelligence-block
-            [published]="leadBrief()?.published ?? null"
-            [draft]="leadBrief()?.draft ?? null"
-            [agencyView]="spaceRole.canAuthorIntelligence()"
+          <app-intelligence-stack
+            [briefs]="intelligence()?.briefs ?? []"
+            [canManage]="spaceRole.canAuthorIntelligence()"
             [canPurge]="spaceRole.canPurgeIntelligence()"
+            [authorMap]="intelligence()?.authors ?? {}"
             [tenantId]="tenantIdSig()"
             [spaceId]="spaceIdSig()"
-            (edit)="onIntelligenceEdit()"
-            (discardDraft)="onIntelligenceDelete()"
-            (withdraw)="withdrawDialogOpen.set(true)"
-            (purge)="
-              onPurgeRequested(
-                {
-                  id: historyHost.payload().current?.id ?? '',
-                  headline: historyHost.payload().current?.headline ?? '',
-                },
-                false
-              )
-            "
+            [histories]="histories()"
+            (edit)="openBriefInDrawer($event)"
+            (pin)="onBriefPin($event)"
+            (reorderTo)="onBriefReorder($event)"
+            (requestHistory)="onRequestHistory($event)"
+            (withdraw)="onWithdrawRequested($event)"
+            (discardDraft)="onDiscardDraft($event)"
+            (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
+            (purgeEntry)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
           />
-          @if (otherBriefs().length > 0) {
-            <app-intelligence-brief-list
-              [briefs]="otherBriefs()"
-              [canManage]="spaceRole.canAuthorIntelligence()"
-              [authorMap]="intelligence()?.authors ?? {}"
-              [tenantId]="tenantIdSig()"
-              [spaceId]="spaceIdSig()"
-              (open)="openBriefInDrawer($event)"
-              (pin)="onBriefPin($event)"
-              (reorderTo)="onBriefReorder($event)"
-              (viewHistory)="onViewHistory($event)"
-            />
-          }
           @if (spaceRole.canAuthorIntelligence()) {
             <div class="mt-2 flex justify-end">
               <button
@@ -120,16 +104,9 @@
           <app-intelligence-empty
             [canEdit]="spaceRole.canAuthorIntelligence()"
             entityLabel="company"
-            (add)="onIntelligenceEdit()"
+            (add)="openDrawerForNewBrief()"
           />
         }
-        <app-intelligence-history-panel
-          [payload]="historyHost.payload()"
-          [currentUserCanEdit]="spaceRole.canAuthorIntelligence()"
-          (withdraw)="withdrawDialogOpen.set(true)"
-          (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
-          (purgeAnchor)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
-        />
         <app-withdraw-intelligence-dialog
           [visible]="withdrawDialogOpen()"
           (cancelled)="withdrawDialogOpen.set(false)"

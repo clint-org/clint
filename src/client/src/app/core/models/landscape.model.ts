@@ -398,7 +398,12 @@ export function groupAssetsIntoSpokes(
     display_order: 0,
     highest_phase_rank: Math.max(...group.assets.map((a) => a.highest_phase_rank)),
     products: group.assets,
-    has_intelligence: grouping === 'company' && companiesWithIntelligence.has(id),
+    has_intelligence:
+      grouping === 'company'
+        ? companiesWithIntelligence.has(id)
+        : grouping === 'asset'
+          ? group.assets.some((a) => a.intelligence_count > 0)
+          : false,
   }));
 
   spokes.sort((a, b) => {

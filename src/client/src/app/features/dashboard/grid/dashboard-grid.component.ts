@@ -107,6 +107,11 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly assetClick = output<string>();
 
   readonly isScrolled = signal(false);
+  // The scroll position the timeline auto-anchors to on load ("today"). The
+  // company column collapses to a logo only once the user scrolls AWAY from
+  // this home position, so the default today view keeps the company name (and
+  // its intelligence mark) visible rather than collapsing immediately.
+  private homeScrollLeft = 0;
   readonly showMoaColumn = computed(() => this.landscapeState?.showMoaColumn() ?? true);
   readonly showRoaColumn = computed(() => this.landscapeState?.showRoaColumn() ?? true);
   readonly showIndicationColumn = computed(
@@ -136,6 +141,11 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
           viewportWidth: Math.max(0, el.clientWidth - frozenWidth),
           contentWidth,
         });
+        // Record where "home" landed (read back the clamped value) and treat it
+        // as not-scrolled, so the company column stays expanded at the default
+        // today anchor and only collapses once the user scrolls away from here.
+        this.homeScrollLeft = el.scrollLeft;
+        this.isScrolled.set(false);
       });
     });
   }
@@ -329,7 +339,15 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
       this.scrollListener = () => {
         if (this.scrollRafId !== null) return;
         this.scrollRafId = requestAnimationFrame(() => {
-          this.isScrolled.set(scrollEl.scrollLeft > 50);
+          // Relative to the auto-anchored home position, not absolute 0, so the
+          // initial programmatic scroll-to-today does not count as "scrolled".
+          // The threshold is about half a viewport: one wheel tick moves ~100px,
+          // so a small 50px threshold collapsed on nearly every nudge. Only a
+          // deliberate scroll away from today should reclaim the company column.
+          const collapseThreshold = Math.max(400, scrollEl.clientWidth * 0.5);
+          this.isScrolled.set(
+            Math.abs(scrollEl.scrollLeft - this.homeScrollLeft) > collapseThreshold
+          );
           this.scrollRafId = null;
         });
       };
