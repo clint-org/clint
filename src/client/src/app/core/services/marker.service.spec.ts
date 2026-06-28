@@ -120,6 +120,7 @@ describe('MarkerService.create', () => {
         title: 'Topline readout',
         projection: 'actual',
         event_date: '2026-07-01',
+        source_url: 'https://example.com/readout',
       },
       'trial-1'
     );
@@ -136,6 +137,10 @@ describe('MarkerService.create', () => {
       p_anchor_id: 'trial-1',
       p_projection: 'actual',
     });
+    // The single Source URL field maps to ONE citation via p_sources; the
+    // legacy scalar p_source_url is no longer passed.
+    expect(params.p_sources).toEqual([{ url: 'https://example.com/readout', label: null }]);
+    expect(params.p_source_url).toBeUndefined();
     // No metadata supplied -> no follow-up events update, only the getById read.
     expect(from).toHaveBeenCalledTimes(1);
     expect(from).toHaveBeenCalledWith('events');
@@ -173,6 +178,8 @@ describe('MarkerService.create', () => {
     expect(from).toHaveBeenCalledTimes(2);
     expect(metadataQb.update).toHaveBeenCalledWith({ metadata: { pathway: 'priority' } });
     expect(metadataQb.eq).toHaveBeenCalledWith('id', 'marker-1');
+    // No source URL supplied -> p_sources is null (no citation created).
+    expect(rpc.mock.calls[0][1].p_sources).toBeNull();
   });
 });
 
@@ -210,6 +217,70 @@ describe('MarkerService.update', () => {
     expect(mapped).toEqual({ event_date: '2026-09-01', projection: 'company' });
     expect(invalidateTags.mock.calls[0][0]).toContain('trial:trial-9:detail');
   });
+
+  it('routes a source_url change to update_event_sources and drops it from the inline update', async () => {
+    const updateQb = makeQueryBuilder(eventRow({ id: 'marker-1', space_id: 'space-1' }));
+    const from = vi.fn().mockReturnValueOnce(updateQb);
+    const rpc = vi.fn().mockReturnValue({
+      throwOnError: vi.fn().mockResolvedValue({ data: null, error: null }),
+    });
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from, rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    await service.update('marker-1', {
+      title: 'New title',
+      source_url: 'https://example.com/citation',
+    });
+
+    // source_url is not an events column anymore: the inline update omits it.
+    const mapped = updateQb.update.mock.calls[0][0] as Record<string, unknown>;
+    expect(mapped).toEqual({ title: 'New title' });
+    expect(mapped['source_url']).toBeUndefined();
+
+    // The single citation is replaced via update_event_sources.
+    expect(rpc).toHaveBeenCalledWith('update_event_sources', {
+      p_event_id: 'marker-1',
+      p_urls: ['https://example.com/citation'],
+      p_labels: [null],
+    });
+  });
+
+  it('clears the citation when source_url is set to empty', async () => {
+    const updateQb = makeQueryBuilder(eventRow({ id: 'marker-1', space_id: 'space-1' }));
+    const from = vi.fn().mockReturnValueOnce(updateQb);
+    const rpc = vi.fn().mockReturnValue({
+      throwOnError: vi.fn().mockResolvedValue({ data: null, error: null }),
+    });
+    const service = makeService(
+      { from, rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+
+    await service.update('marker-1', { title: 'New title', source_url: '' });
+
+    expect(rpc).toHaveBeenCalledWith('update_event_sources', {
+      p_event_id: 'marker-1',
+      p_urls: [],
+      p_labels: [],
+    });
+  });
+
+  it('does not touch event_sources when source_url is absent from the change set', async () => {
+    const updateQb = makeQueryBuilder(eventRow({ id: 'marker-1', space_id: 'space-1' }));
+    const from = vi.fn().mockReturnValueOnce(updateQb);
+    const rpc = vi.fn();
+    const service = makeService(
+      { from, rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+
+    await service.update('marker-1', { event_date: '2026-09-01' });
+
+    expect(rpc).not.toHaveBeenCalled();
+  });
 });
 
 describe('MarkerService.delete', () => {
@@ -245,7 +316,9 @@ describe('MarkerService.getById', () => {
     const marker = await service.getById('marker-1');
 
     expect(from).toHaveBeenCalledWith('events');
-    expect(getByIdQb.select).toHaveBeenCalledWith('*, event_types(*, event_type_categories(*))');
+    expect(getByIdQb.select).toHaveBeenCalledWith(
+      '*, event_types(*, event_type_categories(*)), event_sources(url, label, sort_order)'
+    );
     expect(marker?.marker_type_id).toBe('type-1');
     expect(marker?.marker_types?.marker_categories?.name).toBe('Clinical Data');
   });

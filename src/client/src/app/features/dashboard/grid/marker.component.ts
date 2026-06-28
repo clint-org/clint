@@ -143,6 +143,18 @@ export class MarkerComponent {
     return m.title || this.markerType()?.name || '';
   });
 
+  /**
+   * Primary link for the compact tooltip's single source slot. The derived
+   * CT.gov registry link wins, else the first attached citation, else the
+   * legacy source_url (mid-transition fallback). get_dashboard_data does not
+   * yet derive registry_url / sources for trial markers, so this resolves to
+   * source_url today and upgrades transparently once the RPC emits them.
+   */
+  readonly primarySourceUrl = computed<string | null>(() => {
+    const m = this.marker();
+    return m.registry_url ?? m.sources?.[0]?.url ?? m.source_url ?? null;
+  });
+
   onMarkerClick(): void {
     this.markerClick.emit(this.marker());
   }

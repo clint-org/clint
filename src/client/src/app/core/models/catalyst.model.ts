@@ -31,7 +31,22 @@ export interface Catalyst {
   trial_id: string | null;
   trial_phase: string | null;
   description: string | null;
+  /**
+   * Legacy single citation column. Retained until S5 drops it. Reads prefer
+   * `sources` / `registry_url`; this is the mid-transition fallback.
+   */
   source_url: string | null;
+  /**
+   * Attached citations from `event_sources` ({url, label}), emitted by the
+   * read RPCs (e.g. get_catalyst_detail). Optional: dashboard-flattened rows
+   * may carry only `source_url` until that RPC derives them.
+   */
+  sources?: { url: string; label: string | null }[];
+  /**
+   * Derived ClinicalTrials.gov link for trial-anchored markers, emitted by the
+   * read RPCs from the anchor trial's identifier. Never stored.
+   */
+  registry_url?: string | null;
   /**
    * Change-feed badge fields propagated from the catalyst's parent trial
    * (via the dashboard data the catalyst list flattens from). Optional so

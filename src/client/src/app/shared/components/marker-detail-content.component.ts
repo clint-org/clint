@@ -253,7 +253,9 @@ interface CtgovProvenanceBlock {
         </app-detail-panel-section>
       }
 
-      <!-- Source provenance -->
+      <!-- Source provenance: the derived CT.gov registry link (registry_url is
+           derived server-side, never stored) plus the attached citation list
+           (sources). The legacy source_url is only a mid-transition fallback. -->
       @if (ctgovProvenance(); as prov) {
         <app-detail-panel-section label="Source">
           <dl class="grid grid-cols-[auto,1fr] gap-x-3 gap-y-0.5 text-[11px]">
@@ -273,17 +275,45 @@ interface CtgovProvenanceBlock {
               </dd>
             }
           </dl>
-          @if (d.catalyst.source_url) {
-            <app-external-link [href]="d.catalyst.source_url" class="mt-2 block">
+          @if (registryUrl(); as reg) {
+            <app-external-link [href]="reg" class="mt-2 block">
               View on ClinicalTrials.gov
             </app-external-link>
           }
+          @if (citations().length > 0) {
+            <ul class="mt-2 space-y-1">
+              @for (src of citations(); track src.url) {
+                <li>
+                  <app-external-link [href]="src.url">{{
+                    src.label || extractDomain(src.url)
+                  }}</app-external-link>
+                </li>
+              }
+            </ul>
+          }
         </app-detail-panel-section>
-      } @else if (d.catalyst.source_url) {
+      } @else if (registryUrl() || citations().length > 0 || d.catalyst.source_url) {
         <app-detail-panel-section label="Source">
-          <app-external-link [href]="d.catalyst.source_url">
-            {{ extractDomain(d.catalyst.source_url) }}
-          </app-external-link>
+          @if (registryUrl(); as reg) {
+            <app-external-link [href]="reg" class="block">
+              View on ClinicalTrials.gov
+            </app-external-link>
+          }
+          @if (citations().length > 0) {
+            <ul class="space-y-1" [class.mt-2]="registryUrl()">
+              @for (src of citations(); track src.url) {
+                <li>
+                  <app-external-link [href]="src.url">{{
+                    src.label || extractDomain(src.url)
+                  }}</app-external-link>
+                </li>
+              }
+            </ul>
+          } @else if (!registryUrl() && d.catalyst.source_url) {
+            <app-external-link [href]="d.catalyst.source_url">
+              {{ extractDomain(d.catalyst.source_url) }}
+            </app-external-link>
+          }
         </app-detail-panel-section>
       }
 
@@ -587,6 +617,16 @@ export class MarkerDetailContentComponent {
       dateTypeLabel: dateType === 'ACTUAL' ? 'Actual' : 'Anticipated by sponsor',
     };
   });
+
+  /** Derived CT.gov registry link emitted by get_catalyst_detail (or null). */
+  protected readonly registryUrl = computed<string | null>(
+    () => this.detail()?.catalyst.registry_url ?? null
+  );
+
+  /** Attached citations from event_sources (empty when none are attached). */
+  protected readonly citations = computed<{ url: string; label: string | null }[]>(
+    () => this.detail()?.catalyst.sources ?? []
+  );
 
   protected isAutoDescription(desc: string): boolean {
     return desc.toLowerCase().startsWith('auto-derived from');

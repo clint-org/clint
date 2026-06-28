@@ -88,7 +88,7 @@
     @if (d.sources.length > 0) {
       <app-detail-panel-section [first]="!d.description" label="Sources">
         <ul class="space-y-1">
-          @for (src of d.sources; track src.id) {
+          @for (src of d.sources; track src.url) {
             <li>
               <app-external-link [href]="src.url">{{ src.label || src.url }}</app-external-link>
             </li>
@@ -306,10 +306,11 @@
       </div>
     }
 
-    <!-- Source provenance -->
+    <!-- Source provenance: the derived CT.gov registry link for a trial-anchored
+         detected change (registry_url is derived server-side, never stored). -->
     <app-detail-panel-section label="Source">
-      @if (item.source_url) {
-        <app-external-link [href]="item.source_url">ClinicalTrials.gov</app-external-link>
+      @if (item.registry_url) {
+        <app-external-link [href]="item.registry_url">ClinicalTrials.gov</app-external-link>
       } @else {
         <span class="text-[12px] text-slate-500">Analyst</span>
       }

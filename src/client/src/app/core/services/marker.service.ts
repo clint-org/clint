@@ -47,7 +47,9 @@ export class MarkerService {
         p_end_date_precision: marker.end_date_precision ?? 'exact',
         p_is_ongoing: marker.is_ongoing ?? false,
         p_description: marker.description ?? null,
-        p_source_url: marker.source_url ?? null,
+        // The manage form has one Source URL field -> one citation. Writes go
+        // through event_sources (p_sources), never the legacy scalar.
+        p_sources: marker.source_url ? [{ url: marker.source_url, label: null }] : null,
       })
       .throwOnError();
 
@@ -86,7 +88,6 @@ export class MarkerService {
       'end_date_precision',
       'is_ongoing',
       'description',
-      'source_url',
       'metadata',
       'significance',
       'visibility',
@@ -102,6 +103,19 @@ export class MarkerService {
       .select()
       .single()
       .throwOnError();
+
+    // source_url is no longer an events column: route the single Source URL
+    // field to the citations via update_event_sources (replace-all to one
+    // citation, or clear when blank).
+    if (changes.source_url !== undefined) {
+      await this.supabase.client
+        .rpc('update_event_sources', {
+          p_event_id: id,
+          p_urls: changes.source_url ? [changes.source_url] : [],
+          p_labels: changes.source_url ? [null] : [],
+        })
+        .throwOnError();
+    }
 
     const row = data as Record<string, unknown>;
     const spaceId = row['space_id'] as string;

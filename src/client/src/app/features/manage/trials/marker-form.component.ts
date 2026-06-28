@@ -655,7 +655,9 @@ export class MarkerFormComponent implements OnInit {
         }
       }
       this.description.set(existing.description ?? '');
-      this.sourceUrl.set(existing.source_url ?? '');
+      // Prefer the first attached citation; fall back to the legacy scalar
+      // until S5 drops source_url. The single field maps back to one citation.
+      this.sourceUrl.set(existing.sources?.[0]?.url ?? existing.source_url ?? '');
       this.regulatoryPathway.set(
         (existing.metadata as Record<string, string> | null)?.['pathway'] ?? '',
       );

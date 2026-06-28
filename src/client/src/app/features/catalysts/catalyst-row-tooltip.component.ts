@@ -132,9 +132,14 @@ export class CatalystRowTooltipComponent {
     return p ? phaseShortLabel(p) : null;
   });
 
-  /** Source host for the provenance line, when the row carries a source URL. */
+  /**
+   * Source host for the provenance line. Primary-source rule: the derived
+   * CT.gov registry link wins, else the first attached citation (the order the
+   * RPC returned), else the legacy source_url (mid-transition fallback).
+   */
   protected readonly sourceDomain = computed<string | null>(() => {
-    const url = this.catalyst()?.source_url;
+    const c = this.catalyst();
+    const url = c?.registry_url ?? c?.sources?.[0]?.url ?? c?.source_url;
     if (!url) return null;
     try {
       return new URL(url).hostname.replace(/^www\./, '');

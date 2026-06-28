@@ -95,7 +95,7 @@
         [projection]="marker().projection"
         [categoryName]="markerType()?.marker_categories?.name ?? ''"
         [description]="marker().description"
-        [sourceUrl]="marker().source_url"
+        [sourceUrl]="primarySourceUrl()"
         [metadata]="marker().metadata"
         [noLongerExpected]="isNle()"
         [shape]="markerType()?.shape ?? ''"

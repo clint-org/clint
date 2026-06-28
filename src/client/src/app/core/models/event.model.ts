@@ -111,7 +111,22 @@ export interface FeedItem {
   has_thread: boolean;
   thread_id: string | null;
   description: string | null;
+  /**
+   * Legacy single citation column. Retained until S5 drops it. The detected
+   * Source block prefers `registry_url`; this is the mid-transition fallback.
+   */
   source_url: string | null;
+  /**
+   * Attached citations from `event_sources` ({url, label}), emitted by
+   * get_events_page_data. Optional for forward-compat with rows built without
+   * the embed.
+   */
+  sources?: { url: string; label: string | null }[];
+  /**
+   * Derived ClinicalTrials.gov link for trial-anchored items, emitted by
+   * get_events_page_data from the anchor trial's identifier. Never stored.
+   */
+  registry_url?: string | null;
   change_event_type: ChangeEventType | null;
   change_payload: Record<string, unknown> | null;
   change_source: ChangeEventSource | null;

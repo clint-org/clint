@@ -56,7 +56,25 @@ export interface Marker {
   end_date_precision: DatePrecision;
   is_ongoing: boolean;
   description: string | null;
+  /**
+   * Legacy single citation column. Retained until S5 drops it. New writes go
+   * through `event_sources` (see `sources`); displays prefer `sources` /
+   * `registry_url` and fall back to this only mid-transition.
+   */
   source_url: string | null;
+  /**
+   * Attached citations from `event_sources`, ordered by `sort_order`. Present
+   * on reads that embed the citations (e.g. `EVENTS_SELECT` via
+   * `mapEventToMarker`). The manage form maps its single Source URL field to
+   * one entry here.
+   */
+  sources?: { url: string; label: string | null }[];
+  /**
+   * Derived ClinicalTrials.gov link for trial-anchored events, emitted by the
+   * read RPCs from the anchor trial's identifier. Never stored; absent on read
+   * paths (like `get_dashboard_data`) that do not yet derive it.
+   */
+  registry_url?: string | null;
   metadata: Record<string, unknown> | null;
   is_projected: boolean;
   no_longer_expected: boolean;
