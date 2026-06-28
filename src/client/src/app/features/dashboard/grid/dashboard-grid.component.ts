@@ -7,7 +7,6 @@ import {
   ElementRef,
   inject,
   input,
-  OnDestroy,
   output,
   signal,
 } from '@angular/core';
@@ -21,7 +20,7 @@ import { deriveTrialPhaseSpan, TrialPhaseSpan } from '../../../core/models/trial
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { markerPeriodLabel, markerStartCaption } from '../../../core/models/marker-date-precision';
 import { MARKER_ICON_SIZE } from '../../../shared/utils/grid-constants';
-import { computeInitialScrollLeft, hasScrolledAwayFromAnchor } from './initial-scroll';
+import { computeInitialScrollLeft } from './initial-scroll';
 import {
   CaptionInterval,
   estimateCaptionWidthPx,
@@ -72,12 +71,10 @@ export interface FlattenedTrial {
   templateUrl: './dashboard-grid.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardGridComponent implements AfterViewInit, OnDestroy {
+export class DashboardGridComponent implements AfterViewInit {
   private readonly timeline = inject(TimelineService);
   private readonly elRef = inject(ElementRef);
   private readonly landscapeState = inject(LandscapeStateService, { optional: true });
-  private scrollListener: (() => void) | null = null;
-  private scrollRafId: number | null = null;
   private readonly scrollContainerEl = signal<HTMLElement | null>(null);
 
   readonly companies = input.required<Company[]>();
@@ -106,12 +103,13 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly companyClick = output<string>();
   readonly assetClick = output<string>();
 
-  readonly isScrolled = signal(false);
-  // The scroll position the timeline auto-anchors to on load ("today"). The
-  // company column collapses to a logo only once the user scrolls AWAY from
-  // this home position, so the default today view keeps the company name (and
-  // its intelligence mark) visible rather than collapsing immediately.
-  private homeScrollLeft = 0;
+  /**
+   * Whether the company column is collapsed to logos (the default) or expanded
+   * to full names. Toggled only by the header control, never by scrolling, so
+   * the state stays fully predictable. When collapsed, each logo keeps its
+   * intelligence mark and reveals the company name on hover.
+   */
+  readonly companyColumnCollapsed = signal(true);
   readonly showMoaColumn = computed(() => this.landscapeState?.showMoaColumn() ?? true);
   readonly showRoaColumn = computed(() => this.landscapeState?.showRoaColumn() ?? true);
   readonly showIndicationColumn = computed(
@@ -141,11 +139,6 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
           viewportWidth: Math.max(0, el.clientWidth - frozenWidth),
           contentWidth,
         });
-        // Record where "home" landed (read back the clamped value) and treat it
-        // as not-scrolled, so the company column stays expanded at the default
-        // today anchor and only collapses once the user scrolls away from here.
-        this.homeScrollLeft = el.scrollLeft;
-        this.isScrolled.set(false);
       });
     });
   }
@@ -336,29 +329,6 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     ) as HTMLElement | null;
     if (scrollEl) {
       this.scrollContainerEl.set(scrollEl);
-      this.scrollListener = () => {
-        if (this.scrollRafId !== null) return;
-        this.scrollRafId = requestAnimationFrame(() => {
-          // Collapse once the user makes a clear scroll away from the auto-anchored
-          // home position (in either direction), not from absolute 0, so the initial
-          // programmatic scroll-to-today does not count as "scrolled". The threshold
-          // is sized so small wheel/trackpad nudges don't collapse it, but a
-          // deliberate scroll away from today reclaims the company column.
-          this.isScrolled.set(hasScrolledAwayFromAnchor(scrollEl.scrollLeft, this.homeScrollLeft));
-          this.scrollRafId = null;
-        });
-      };
-      scrollEl.addEventListener('scroll', this.scrollListener, { passive: true });
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (this.scrollListener) {
-      const scrollEl = this.elRef.nativeElement.querySelector('.overflow-x-auto');
-      scrollEl?.removeEventListener('scroll', this.scrollListener);
-    }
-    if (this.scrollRafId !== null) {
-      cancelAnimationFrame(this.scrollRafId);
     }
   }
 

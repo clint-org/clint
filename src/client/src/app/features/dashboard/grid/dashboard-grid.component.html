@@ -20,13 +20,43 @@
         <div class="flex border-b border-slate-300 bg-slate-800 h-8 items-center">
           @if (!hideCompanyColumn()) {
             <div
-              class="hidden lg:block px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 transition-all duration-200"
-              [class.w-36]="!isScrolled()"
-              [class.w-10]="isScrolled()"
+              class="hidden lg:flex items-center h-full text-[10px] font-bold uppercase tracking-widest text-slate-400 transition-all duration-200"
+              [class.w-36]="!companyColumnCollapsed()"
+              [class.w-10]="companyColumnCollapsed()"
+              [class.px-3]="!companyColumnCollapsed()"
+              [class.justify-between]="!companyColumnCollapsed()"
+              [class.justify-center]="companyColumnCollapsed()"
             >
-              @if (!isScrolled()) {
-                Company
+              @if (!companyColumnCollapsed()) {
+                <span>Company</span>
               }
+              <button
+                type="button"
+                class="flex shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:text-slate-100"
+                (click)="companyColumnCollapsed.set(!companyColumnCollapsed())"
+                [pTooltip]="companyColumnCollapsed() ? 'Expand company names' : 'Collapse to logos'"
+                tooltipPosition="bottom"
+                [attr.aria-label]="
+                  companyColumnCollapsed()
+                    ? 'Expand company column to names'
+                    : 'Collapse company column to logos'
+                "
+                [attr.aria-pressed]="companyColumnCollapsed()"
+              >
+                <svg
+                  class="h-3 w-3 transition-transform duration-200"
+                  [class.rotate-180]="!companyColumnCollapsed()"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
             </div>
           }
           @if (!hideAssetColumn()) {
@@ -70,8 +100,8 @@
             @if (!hideCompanyColumn()) {
               <div
                 class="hidden lg:block px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
-                [class.w-36]="!isScrolled()"
-                [class.w-10]="isScrolled()"
+                [class.w-36]="!companyColumnCollapsed()"
+                [class.w-10]="companyColumnCollapsed()"
               >
                 &nbsp;
               </div>
@@ -125,13 +155,13 @@
             @if (!hideCompanyColumn()) {
               <div
                 class="group relative hidden lg:flex items-center transition-all duration-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700"
-                [class.w-36]="!isScrolled()"
-                [class.px-3]="!isScrolled()"
-                [class.gap-1.5]="!isScrolled()"
-                [class.w-10]="isScrolled()"
-                [class.justify-center]="isScrolled()"
-                [class.gap-1]="isScrolled()"
-                [class.truncate]="!isScrolled()"
+                [class.w-36]="!companyColumnCollapsed()"
+                [class.px-3]="!companyColumnCollapsed()"
+                [class.gap-1.5]="!companyColumnCollapsed()"
+                [class.w-10]="companyColumnCollapsed()"
+                [class.justify-center]="companyColumnCollapsed()"
+                [class.gap-1]="companyColumnCollapsed()"
+                [class.truncate]="!companyColumnCollapsed()"
                 [title]="row.companyName"
                 role="button"
                 tabindex="0"
@@ -149,7 +179,7 @@
                       imgClass="h-5 w-5 rounded object-contain flex-none"
                     />
                   }
-                  @if (!isScrolled()) {
+                  @if (!companyColumnCollapsed()) {
                     <div class="flex min-w-0 flex-col justify-center">
                       <span class="flex min-w-0 items-center gap-1">
                         <span
