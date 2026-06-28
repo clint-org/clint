@@ -456,3 +456,68 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 - **Ordering rationale:** A0 unblocks A1/A7/A8 (link entity_type + change-event column). Phase A is independently shippable (RPCs return correct data even before the frontend services are repointed, since the frontend still gets valid shapes). Phase B makes the app visibly clean. Phase C (producers) can lag because the seed.sql event block already feeds the demo space; dev gets event data when C5 lands or via manual create_event.
 - **Testing in every phase (per the spec's first-class-testing rule):** Phase 0 builds the QA fixture; each subsequent phase ends with a backtest task (A9, B4, C6, D2) that asserts behavior against that fixture and the Acceptance Matrix, plus the within-phase TDD pairing; E3 is the full-suite/advisor gate and E4 is the authoritative all-14-rows cloud-dev visual artifact. No phase is "done" until its matrix rows are green.
 - **Session model:** each phase is executed in its own fresh session (clear context between phases). The plan + this doctrine are the only context a phase session needs; its kickoff prompt names the phase, the worktree setup, and the backtest-before-done rule.
+
+---
+
+## Phase A backtest results
+
+Task A9 capstone, run 2026-06-28 against `seed_events_model_qa` seeded into the
+personas space on a clean `supabase db reset`. New spec:
+`src/client/integration/tests/event-read-rpcs.integration.spec.ts` (13 tests,
+all green). Migrated firewall specs: `role-access.spec.ts`,
+`events-hierarchical-scope.spec.ts` (+ the shared `integration/fixtures/scratch.ts`
+cleanup, which still deleted the dropped `public.markers` table).
+
+### Data-correctness matrix rows (RPC / data layer)
+
+| Row | Scenario | Layer (RPC) | Status | Proving assertion |
+|---|---|---|---|---|
+| 1 | Clinical event on trial timeline | `get_dashboard_data` | pass | Topline (type `…013`) present in `trial.markers` under the auto-derived indication |
+| 2 | High-sig commercial event on asset lane | `get_dashboard_data` + admin `events`/`event_types` | pass | Distribution (type `…040`) on `asset.events`; stored significance null + `event_types.default_significance='high'` (effective high) |
+| 3 | Pinned -> band; feed-only flagged | `get_dashboard_data` + admin `events` | pass | Strategic on band with `visibility='pinned'`; Leadership returned with `visibility=null` (feed-only); Leadership stored sig null + type default `low` |
+| 4 | Projected event | `get_dashboard_data` + `get_events_page_data` + admin `events` | pass | `is_projected=true` on both RPCs; `event_date='2026-10-01'`; admin row `projection='primary'`, `date_precision='quarter'` |
+| 11 | Phase bar regression on event-sourced trial | `get_dashboard_data` | pass | `trial.phase='Phase 3'`, `phase_data={phase_type:'P3'}`, 4 clinical events present in `trial.markers` |
+| 12 | Hidden high-sig not on timeline | `get_dashboard_data` + admin `events` | pass | LOE (type `…020`) returned with `visibility='hidden'`; admin row `visibility='hidden'`, `significance='high'` |
+| 5 (setup) | Activity = detected changes only | `get_activity_feed` | pass | Feed returns 0 rows; the 10 authored events do NOT appear (no `trial_change_events` seeded) |
+| Bullseye | Envelope shape (A4 limit) | `get_bullseye_assets` | pass (shape only) | `assets` + `companies_with_intelligence` are arrays, no error; both empty because the fixture seeds no indications/`asset_indications` (documented A4 limitation; `recent_markers` data deferred to E4) |
+
+Notes on the two rows where the read RPC does not filter server-side: for the
+feed-only Leadership (row 3) and the hidden LOE (row 12), `get_dashboard_data`
+returns the event WITH its `visibility` flag rather than stripping it. The
+band-vs-feed and hidden-timeline exclusion are applied by the Stage 2c
+`effectiveVisibility` logic (client-side, unit-proven). The backtest asserts the
+correct flag is present so the client has what it needs; the rows are NOT
+weakened. `date_precision` is not exposed by any read-RPC item shape, so row 4's
+precision is verified by a direct `adminClient` events query (called out in a
+spec comment).
+
+### Cross-space read firewall (previously-dark assertions now live)
+
+| Firewall assertion | Layer | Status | Result |
+|---|---|---|---|
+| Viewer cannot INSERT events | `events` RLS (role-access) | pass | reader INSERT -> 42501 (migrated `eventBody` to `event_type_id`/`anchor_type='space'`) |
+| Non-member (tenant/agency/platform admin) cannot INSERT on a non-member space | `events` RLS (role-access) | pass | tenant_owner / agency_owner / platform_admin INSERT -> 42501; admin read-bypass stays read-only |
+| Non-member cannot READ another space's events (dashboard) | `get_dashboard_data` (INVOKER, RLS) | pass | `no_memberships` -> empty company array |
+| Non-member cannot READ another space's events (future-events) | `get_events_page_data` (INVOKER, RLS) | pass | `no_memberships` -> `total=0`, no items |
+| Non-member cannot READ activity | `get_activity_feed` (DEFINER, has_space_access) | pass | `no_memberships` -> 0 rows |
+| Non-member cannot READ landing stats | `get_space_landing_stats` (DEFINER, has_space_access) | pass | `no_memberships` -> `null` |
+| Sibling-product no-leak (A2 scope) | `get_events_page_data` entity-level scope | pass | product scope returns only its own + descendant-trial events; sibling asset's event excluded -> **no A2 leak** |
+
+The four `events-hierarchical-scope` scope tests (trial direct-match, product =
+product + its trials, company = whole subtree, sibling no-leak) all pass: the A2
+`entity_level`/`entity_id` resolution does not leak across the hierarchy.
+
+### Known-failing (Phase C, left red intentionally)
+
+`role-access.spec.ts` has exactly 3 remaining failures, all `seed_demo_data`
+(space_owner x2 + platform_admin), which still references the dropped
+`public.markers` table. `seed_demo_data` is a Phase C producer not yet repointed
+(Task C5); these are expected red and out of scope for A9. All `events` RLS
+tests in the file pass.
+
+### Deferred matrix rows (per the matrix -> phase mapping)
+
+Rows 6, 7, 8, 9, 10, 13, 14 and the full row-5 (edit -> Activity) are not
+data-layer assertions: they are covered by C6 (producer backtest), B4 (frontend
+service backtest), and E4 (authoritative all-14-rows visual artifact on cloud
+dev).
