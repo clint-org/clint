@@ -4,12 +4,15 @@ name: Mirror materials buckets
 # off-cloud copy. Detection signal for the materials durability domain in
 # docs/runbook/14-disaster-recovery.md.
 on:
-  # Daily add-only mirror. Runs from the default branch (main) once merged.
-  # Per-env, bucket-scoped B2 keys (B2_MATERIALS_{PROD,DEV}_*) and the reused
-  # worker R2 read creds (R2_MATERIALS_{PROD,DEV}_*) live in Infisical
-  # shared/backups and auto-sync to GitHub Actions.
-  schedule:
-    - cron: "30 9 * * *"
+  # Secrets are wired and the mirror is verified end-to-end (manual dispatch
+  # 2026-06-28: 3 prod + 12 dev objects landed in B2). Cron stays paused until
+  # the seed/prefix reconciliation lands -- prod has 304 finalized seed
+  # materials (4 demo spaces) whose materials/-prefixed file_paths have no R2
+  # objects, which would make the reconcile job a weekly false-divergence. The
+  # mirror itself is independent of that, but we activate the three crons
+  # together once reconcile is clean. Re-enable as the last step then.
+  # schedule:
+  #   - cron: "30 9 * * *"
   workflow_dispatch:
 
 permissions:

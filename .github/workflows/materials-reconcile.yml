@@ -5,11 +5,15 @@ name: Reconcile materials inventory
 # no row), and mirror_gap (in R2, not yet in B2). Detection signal for the
 # materials durability domain in docs/runbook/14-disaster-recovery.md.
 on:
-  # Weekly three-way reconciliation. Runs from the default branch (main) once
-  # merged. Per-env secrets (R2_MATERIALS_{PROD,DEV}_*, B2_MATERIALS_{PROD,DEV}_*)
-  # live in Infisical shared/backups and auto-sync to GitHub Actions.
-  schedule:
-    - cron: "0 8 * * 1"
+  # Cron paused until the seed/prefix reconciliation lands. Prod has 304
+  # finalized seed materials across 4 demo spaces whose file_paths carry a
+  # legacy materials/ prefix the live upload path never produces (canonical key
+  # is <space>/<material>/<file>), and they have no backing R2 objects -- so a
+  # scheduled reconcile would open a divergence issue every week dominated by
+  # 304 false danglers. Secrets are wired (per-env, bucket-scoped). Re-enable
+  # once the seed data is consistent and this job runs clean.
+  # schedule:
+  #   - cron: "0 8 * * 1"
   workflow_dispatch:
 
 permissions:
