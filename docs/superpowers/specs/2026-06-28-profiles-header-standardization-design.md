@@ -83,38 +83,43 @@ COMPANIES   42                                   [+ Add company]  [...]
 (table)
 ```
 
-**Detail pages** -- back link + eyebrow + title + count + actions:
+**Detail pages** -- hierarchy-crumb eyebrow + title + count + actions:
 
 ```
-<- Companies
 COMPANY  .  5 assets                             [+ Add asset]   [...]
 Eli Lilly
 -------------------------------------------------------------------------
 
-<- Trials
-TRIAL  .  NCT06081894                                            [...]
+Eli Lilly / Tirzepatide / TRIAL  .  NCT06081894                 [...]
 ACACIA-HCM
 ```
 
-All three detail pages now share one topbar and one header skeleton. The only
-thing the old trial layout loses is the topbar back button -- it moves into the
-content header as `<- Trials` (a fixed link to the list, exactly its current
-behavior; not browser-back).
+All three detail pages now share one topbar and one header skeleton. The
+eyebrow row IS the existing parent-hierarchy crumb (see next section).
 
-### Back affordance: explicit link in the content header
+### Navigation affordances: hierarchy crumb (up the tree) + topbar tab (to the grid)
 
-Detail pages render an explicit `<- {ListName}` link as part of the content
-header, left of / above the eyebrow. Rationale:
+There are two distinct "up" axes, and both are already solved -- no new back
+link is added:
 
-- Detail pages are reached from many places (the list, a company timeline,
-  search, the command palette, an intelligence link). "Click the active tab to
-  go back" would always send the user to the type's list regardless of origin,
-  and an active tab reads as "you are here," not "click to go up" -- poor
-  discoverability.
-- It preserves trial detail's current behavior verbatim (`<- Trials` already
-  means "go to the list," a fixed destination), only relocated.
+- **Up the entity tree** is the existing parent-hierarchy crumb that the detail
+  pages already render in their eyebrow, and which becomes the eyebrow of the
+  standardized header:
+  - Company detail: `Company` (top of the tree, no parent).
+  - Asset detail: `{Company} / Asset` -- company links to the company record
+    (`asset-detail.component.html:13-31`).
+  - Trial detail: `{Company} / {Asset} / Trial` -- both link up
+    (`trial-detail.component.html:46-81`).
+- **To the type's grid** is the topbar category tab. On a trial detail the
+  active `Trials` tab navigates to the trials grid; this is already how company
+  and asset detail reach their grids today.
 
-List pages omit the back link (they are top-level within the category).
+A separate `<- {List}` back link is therefore deliberately NOT added: it would
+duplicate the topbar tab and clutter a header that already carries the
+hierarchy crumb. Trial detail's old topbar `<- Trials` is subsumed by the
+restored `Trials` tab and its richer crumb; it loses nothing real. List pages
+have no eyebrow crumb (they are top-level); their header is just label + count
++ actions.
 
 ## Component changes
 
@@ -125,14 +130,23 @@ provides: `label`, `detail`, `bordered`, and an `[actions]` projection slot. It
 backs the Intelligence tabs. Extend it to also serve detail pages without
 breaking existing consumers:
 
-- Add optional inputs: `eyebrow` (uppercase structural eyebrow, e.g. `COMPANY`),
-  `titleText` (the large entity name, e.g. `Eli Lilly`), `backLabel` +
-  `backLink` (or a `backClick` output) for the `<- {List}` affordance.
-- When `titleText` is set, render the detail shape (back link, eyebrow on top,
-  large title below); otherwise render today's list shape (mono uppercase
-  `label` + muted `detail`). Existing Intelligence usages pass only
-  `label`/`detail` and are unchanged.
-- Keep `[actions]` as the single right-aligned slot for both shapes.
+- **List shape (unchanged):** `label` + `detail` inputs, `[actions]` slot.
+  Existing Intelligence usages pass only `label`/`detail` and are untouched.
+- **Detail shape (new):** the eyebrow crumb and the title carry per-page markup
+  (links, brand logos, the asset MoA/route chips, the trial identifier), so they
+  are PROJECTION SLOTS, not string inputs. Add an `[eyebrow]` slot (the page
+  supplies its existing hierarchy-crumb markup) and a `[title]` slot (the large
+  `h1` + any inline adornments). The shared `[actions]` slot stays on the right.
+- A `variant` input (`'list' | 'detail'`, default `'list'`) or simply the
+  presence of projected `[title]` content selects the layout: list = single
+  baseline row; detail = eyebrow row on top, title row below, actions
+  right-aligned and bottom-anchored. No back-link input -- see the navigation
+  section above.
+
+Because the detail shape is mostly projection, this stays a thin layout shell
+rather than a component that branches heavily on inputs; if it still grows
+awkward, fall back to a sibling `entity-detail-header` shell instead. (Decision:
+extend first.)
 
 Confirm the two current consumers (`materials-browse-page`,
 `intelligence-browse`) still render identically after the change.
@@ -155,12 +169,17 @@ Each stops pushing to `TopbarStateService` and instead renders
 
 - `companies/company-list` -- header `COMPANIES` + count + `[+ Add company]` +
   list kebab (if any).
-- `companies/company-detail` -- the existing `<header>` card already shows
-  `Company / {name} / {n} assets`; fold it into the shared header and add
-  `[+ Add asset]` + the entity kebab + `<- Companies`.
-- `assets/asset-list`, `assets/asset-detail` -- same pattern.
-- `trials/trial-list`, `trials/trial-detail` -- same pattern; trial detail gains
-  `<- Trials` in the header and drops its reliance on the `detail` topbar.
+- `companies/company-detail` -- the existing `<header>` card already shows the
+  `Company` eyebrow + `{name}` + `{n} assets`; fold it into the shared header's
+  `[eyebrow]` / `[title]` slots and project `[+ Add asset]` + the entity kebab
+  into `[actions]`.
+- `assets/asset-list`, `assets/asset-detail` -- same pattern; asset detail's
+  existing `{Company} / Asset` crumb and inline MoA/route chips move verbatim
+  into the `[eyebrow]` / `[title]` slots.
+- `trials/trial-list`, `trials/trial-detail` -- same pattern; trial detail's
+  existing `{Company} / {Asset} / Trial` crumb moves into `[eyebrow]`, and it
+  drops its reliance on the `detail` topbar (the restored `Trials` tab covers
+  grid navigation).
 
 Reuse the existing action builders (`buildEntityActionMenu`,
 `runEntityDelete`) -- only the *render location* of the resulting menu changes,
@@ -171,15 +190,18 @@ topbar state, so they no longer need to clear it (remove the now-dead
 ## Edge cases
 
 - **Viewer role.** Actions are already gated (`spaceRole.canEdit()`); the header
-  shows only the back link / title / count for viewers, no action buttons. Keep
-  the same guard, just at the new render site.
+  shows only the eyebrow crumb / title / count for viewers, no action buttons.
+  Keep the same guard, just at the new render site.
 - **Loading / empty.** Detail pages render the header only once the entity
   resolves (today's pattern: header lives inside the `@if (entity())` block).
   List pages render the header above the table regardless, with count blank
   until loaded.
-- **Deep-link to a detail page.** The `<- {List}` link is a fixed
-  `routerLink` to the category list, so it works even with no navigation
-  history.
+- **Long detail records / scroll (decision 1a).** The content header scrolls
+  away with the page; we deliberately do NOT pin it. The active topbar category
+  tab still indicates the entity type while scrolled. (A sticky header was
+  considered and declined for simplicity.)
+- **Grid navigation from a detail page.** Handled by the topbar category tab
+  (e.g. `Trials` on a trial detail), not a per-page back link.
 - **Other pages during transition.** Space/tenant admin and viz pages still use
   the topbar action slot. Because we are not removing `TopbarStateService`,
   those are unaffected.
@@ -189,8 +211,9 @@ topbar state, so they no longer need to clear it (remove the now-dead
 Per project convention, pair tests with each change (no deferred test phase):
 
 - `section-header.component.spec.ts` -- extend to cover the new detail shape:
-  renders eyebrow + title + back link when `titleText`/`backLabel` set; renders
-  the original list shape when they are absent (guards the existing consumers).
+  renders the projected `[eyebrow]` + `[title]` + `[actions]` content in the
+  detail layout; renders the original list shape (`label` + `detail`) when no
+  `[title]` is projected (guards the existing consumers).
 - Each of the 6 Profiles components -- update/extend its spec to assert the
   action menu and title now render in the content header (not via
   `TopbarStateService`), and that `canEdit()` still gates the actions.
@@ -198,7 +221,8 @@ Per project convention, pair tests with each change (no deferred test phase):
   topbar (no `detail` pageType) and that the topbar exposes no action buttons for
   Profiles routes.
 - Manual: exercise all three detail pages + three list pages in the browser;
-  confirm identical topbar, working back links, and actions in the header.
+  confirm identical topbar, working hierarchy-crumb links, grid navigation via
+  the active topbar tab, and actions in the header.
 
 ## Verification
 
