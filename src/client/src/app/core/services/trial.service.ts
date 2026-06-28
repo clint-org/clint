@@ -6,35 +6,75 @@ import { DeleteCountBreakdown } from '../../shared/utils/confirm-delete';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
-const TRIAL_SELECT = `
+export const TRIAL_SELECT = `
   *,
-  assets!trials_asset_id_fkey(id, name, companies(id, name, logo_url)),
-  marker_assignments(
-    id,
-    marker_id,
-    trial_id,
-    created_at,
-    markers(
-      *,
-      marker_types(*, marker_categories(*))
-    )
-  )
+  assets!trials_asset_id_fkey(id, name, companies(id, name, logo_url))
 `;
+
+const EVENTS_SELECT = `*, event_types(*, event_type_categories(*))`;
 
 const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
 
-/** Flatten marker_assignments[].markers into trial.markers[] */
-function normalizeTrial(raw: Record<string, unknown>): Trial {
-  const assignments = (raw['marker_assignments'] as { markers: Marker }[] | null) ?? [];
-  const markers: Marker[] = assignments.map((a) => a.markers).filter((m): m is Marker => !!m);
-  const { marker_assignments: _unused, ...rest } = raw;
-  return { ...rest, markers } as unknown as Trial;
+/**
+ * Maps a raw events-table row to the Marker interface shape.
+ * The only renames are:
+ *   event_type_id  -> marker_type_id
+ *   event_types    -> marker_types (with event_type_categories -> marker_categories inside)
+ * All other column names are already 1:1 with Marker fields.
+ * Exported as a pure function so it can be unit-tested without Supabase.
+ */
+export function mapEventToMarker(event: Record<string, unknown>): Marker {
+  const { event_type_id, event_types, ...rest } = event;
+  const eventTypes = (event_types ?? null) as Record<string, unknown> | null;
+  return {
+    ...rest,
+    marker_type_id: event_type_id,
+    marker_types: eventTypes
+      ? {
+          ...eventTypes,
+          marker_categories:
+            (eventTypes['event_type_categories'] as Record<string, unknown> | null) ?? null,
+        }
+      : null,
+  } as unknown as Marker;
+}
+
+/** Attach a pre-fetched events array to a trial row as trial.markers[]. */
+function normalizeTrial(raw: Record<string, unknown>, events: Record<string, unknown>[]): Trial {
+  const markers = events.map(mapEventToMarker);
+  return { ...raw, markers } as unknown as Trial;
 }
 
 @Injectable({ providedIn: 'root' })
 export class TrialService {
   private supabase = inject(SupabaseService);
   private cache = inject(RpcCache);
+
+  /**
+   * Fetch all events anchored to the given trial ids and group them by
+   * anchor_id. Returns an empty Map when the id list is empty (avoids a
+   * pointless round trip).
+   */
+  private async fetchEventsByTrialIds(
+    trialIds: string[],
+  ): Promise<Map<string, Record<string, unknown>[]>> {
+    if (trialIds.length === 0) return new Map();
+    const { data } = await this.supabase.client
+      .from('events')
+      .select(EVENTS_SELECT)
+      .eq('anchor_type', 'trial')
+      .in('anchor_id', trialIds)
+      .throwOnError();
+    const rows = (data as Record<string, unknown>[] | null) ?? [];
+    const map = new Map<string, Record<string, unknown>[]>();
+    for (const event of rows) {
+      const anchorId = event['anchor_id'] as string;
+      const existing = map.get(anchorId) ?? [];
+      existing.push(event);
+      map.set(anchorId, existing);
+    }
+    return map;
+  }
 
   async listByAsset(assetId: string): Promise<Trial[]> {
     return this.cache.get(
@@ -50,7 +90,12 @@ export class TrialService {
             .eq('asset_id', assetId)
             .order('display_order')
             .throwOnError();
-          return (data as Record<string, unknown>[]).map(normalizeTrial);
+          const trialRows = (data as Record<string, unknown>[]);
+          const trialIds = trialRows.map((r) => r['id'] as string);
+          const eventsByTrial = await this.fetchEventsByTrialIds(trialIds);
+          return trialRows.map((t) =>
+            normalizeTrial(t, eventsByTrial.get(t['id'] as string) ?? []),
+          );
         },
       }
     );
@@ -79,20 +124,32 @@ export class TrialService {
             query = query.or('phase_type.is.null,phase_type.neq.PRECLIN');
           }
           const { data } = await query.order('display_order').throwOnError();
-          return (data as Record<string, unknown>[]).map(normalizeTrial);
+          const trialRows = (data as Record<string, unknown>[]);
+          const trialIds = trialRows.map((r) => r['id'] as string);
+          const eventsByTrial = await this.fetchEventsByTrialIds(trialIds);
+          return trialRows.map((t) =>
+            normalizeTrial(t, eventsByTrial.get(t['id'] as string) ?? []),
+          );
         },
       }
     );
   }
 
   async getById(id: string): Promise<Trial> {
-    const { data } = await this.supabase.client
+    const { data: trialData } = await this.supabase.client
       .from('trials')
       .select(TRIAL_SELECT)
       .eq('id', id)
       .single()
       .throwOnError();
-    return normalizeTrial(data as Record<string, unknown>);
+    const { data: eventsData } = await this.supabase.client
+      .from('events')
+      .select(EVENTS_SELECT)
+      .eq('anchor_type', 'trial')
+      .eq('anchor_id', id)
+      .throwOnError();
+    const events = (eventsData as Record<string, unknown>[] | null) ?? [];
+    return normalizeTrial(trialData as Record<string, unknown>, events);
   }
 
   /**
@@ -277,9 +334,9 @@ export class TrialService {
 
   /**
    * Read-only preview of the cascade footprint of deleting this trial.
-   * Returns a jsonb count breakdown matching what the FK cascade + T3 / T4
-   * triggers will remove (trial_notes, events, material_links, PI, PIL,
-   * marker_assignments, markers_removed_entirely, markers_unlinked_only).
+   * Returns a jsonb count breakdown matching what the FK cascade and triggers
+   * will remove: trial_notes, events, material_links, primary_intelligence,
+   * primary_intelligence_links, trials.
    * Backed by public.preview_trial_delete (cascade-safety T7).
    */
   async previewDelete(id: string): Promise<DeleteCountBreakdown> {
