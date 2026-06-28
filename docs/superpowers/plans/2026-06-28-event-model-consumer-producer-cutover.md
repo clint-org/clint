@@ -37,6 +37,44 @@ Anchoring note: a marker could be assigned to multiple trials via `marker_assign
 
 ---
 
+## Testing doctrine (every phase backtests against the parent spec)
+
+Testing is a first-class deliverable, not a trailing phase (parent spec, "Testing and verification"). Three layers, and **EVERY phase ends with a backtest task** that proves the phase against the spec's Acceptance Matrix before the next phase starts:
+
+- **Unit (Vitest `npm run test:units`):** pure logic, paired with (ideally before) each behavior-bearing task. No separate tests phase.
+- **Integration (local Supabase, service-role):** the repointed RPCs return the CORRECT rows/shape against the QA fixture (Phase 0) -- not merely "without error." Run in isolation (the local DB is shared across worktrees; a parallel `db reset` can wipe functions mid-run -- see the memory note). Export `SUPABASE_SERVICE_ROLE_KEY` from `supabase status` first.
+- **Visual (Chrome MCP, local serve + injected demo/QA session):** the affected surface renders the expected glyphs/rows; screenshot + pass/fail per matrix row. The authoritative cloud-dev visual artifact (all 14 rows on `dev.clintapp.com`, every toggle state) is produced at the end (Task E4), per the spec's "Visual confirmation artifact."
+
+**Backtest rule:** every phase's final task names the Acceptance Matrix rows it proves and records pass/fail. The cutover is not "done" until all 14 rows are green at their stated layers, the full pre-existing suite + drift gates are green, and the surfaces are visually confirmed. Treat the matrix as the definition of done -- this is how we stay authoritative that the result meets the parent spec's vision.
+
+**Acceptance Matrix -> phase mapping** (rows are from the parent spec's matrix):
+- Rows 1,2,3,4,12 (event-to-row/feed membership, significance defaulting, fuzzy/projected, hidden) -> RPC-layer data correctness in **A9**; unit already covered by Stage 2c (`effectiveVisibility`, gridRows); visual in **B4** / **E4**.
+- Rows 7,8,13,14 (default-view regression, Compare preset, company lane, pinned company band) -> visual in **B4** (local) + **E4** (dev); rows 8,12,13 also unit (Stage 2c).
+- Rows 5,6 (event edit -> Activity not Intelligence feed; brief cites an event) -> integration in **C6** once producers + Activity wiring are on events.
+- Row 11 (phase-bar derivation regression) -> unit + integration in **A9** / **C6**.
+- Rows 9,10 (asset expanded, two-asset comparison gap) -> visual in **E4**.
+
+## Phase 0: Deterministic QA fixture (the backtest backbone)
+
+### Task 0.1: Build the "Events model QA" fixture
+
+**Files:**
+- Create: `supabase/migrations/<ts>_events_model_qa_fixture.sql` -- a SECURITY DEFINER seed `seed_events_model_qa(p_space_id uuid)`, gated/idempotent like `seed_demo_data`.
+- Test: `src/client/integration/events-model-qa-fixture.spec.ts` (integration) asserting the fixture composition.
+
+**Interfaces:**
+- Produces: `seed_events_model_qa(uuid)` populating one space with EVERY acceptance-matrix scenario, built via `create_event` (no inline inserts): a trial with clinical events (Trial Start / PCD / Topline / Approval); an asset with an approval + a high-significance commercial Distribution (hexagon) event; a company with a low-significance leadership event (feed-only) AND a pinned company event (band glyph); a fuzzy-dated projected event (`~Q4 2026`, `projection='primary'`); an Intelligence brief that cites an event (a link); a `visibility='hidden'` high-significance event; and a SECOND company/asset so the comparison view has two stacked rows.
+
+- [ ] **Step 1: Write the failing integration test** asserting `seed_events_model_qa` yields the exact scenario set: counts per `anchor_type`, exactly one pinned company event, one hidden event, one projected event, one brief-with-event-citation, two companies/assets.
+- [ ] **Step 2:** Run it -> FAIL (function absent).
+- [ ] **Step 3:** Implement `seed_events_model_qa` via `create_event` calls (+ brief + citation link), mirroring `supabase/seed.sql`'s event block; idempotent (skip if already seeded). In-file smoke seeds a scratch space, asserts the composition, cleans up.
+- [ ] **Step 4:** Run the integration test -> PASS; `supabase db reset` clean; advisors clean.
+- [ ] **Step 5: Commit** `git commit -m "test(events): deterministic Events model QA fixture"`
+
+This fixture is the dataset every Phase A and Phase C backtest asserts against.
+
+---
+
 ## Phase A: Read-path RPCs (restores the app on the new schema)
 
 ### Task A0: Schema prerequisites (link entity_type + change-event column)
@@ -190,6 +228,19 @@ Expected: returns without error.
 - [ ] **Step 4:** `supabase db reset`; call all three via psql for the seed trial/asset/company.
 - [ ] **Step 5: Commit** `git commit -m "feat(events): delete previews count anchored events"`
 
+### Task A9: Phase A backtest -- read RPCs against the QA fixture
+
+**Files:**
+- Create: `src/client/integration/event-read-rpcs.integration.spec.ts`
+
+**Backtest target:** Acceptance Matrix rows 1, 2, 3, 4, 11, 12 at the RPC/data layer.
+
+- [ ] **Step 1:** Seed a fresh space via `seed_events_model_qa`. Write integration assertions: `get_events_page_data` returns the projected `~Q4 2026` event with its period/precision + `projection='primary'` fields and orders by date (rows 4); the hidden high-significance event never appears in any timeline-membership read (row 12); `get_space_landing_stats` counts equal the fixture's event counts (rows 1-2); `get_bullseye_assets.recent_markers` reflect anchored events; `get_activity_feed` carries detected changes, not analyst-authored events (sets up row 5).
+- [ ] **Step 2:** Run -> the assertions encode expected values; confirm PASS against the repointed RPCs.
+- [ ] **Step 3: Regression (row 11):** `get_dashboard_data` on the QA space still derives phase bars from clinical events and renders trial/asset/company events (Stage 2c) unchanged.
+- [ ] **Step 4:** Record pass/fail per matrix row in `docs/superpowers/plans/2026-06-28-event-model-consumer-producer-cutover.md` under a "Phase A backtest results" note (or the PR body).
+- [ ] **Step 5: Commit** `git commit -m "test(events): Phase A read-RPC backtest against QA fixture"`
+
 ---
 
 ## Phase B: Frontend read services (the timeline + manage pages stop erroring)
@@ -237,12 +288,15 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 - [ ] **Step 4:** Run the specs; `cd src/client && ng build`.
 - [ ] **Step 5: Commit** `git commit -m "feat(events): delete dialogs + export read event-shaped counts"`
 
-### Task B4: Verify the app loads clean
+### Task B4: Phase B backtest -- visual + load-clean against the QA fixture
 
-- [ ] **Step 1:** `cd src/client && ng lint && ng build` -> clean.
-- [ ] **Step 2:** `npm run test:units` -> full suite green.
-- [ ] **Step 3:** Serve local + inject the demo session (see the Stage 2c recipe in `project_event_model_rewrite` memory); load the timeline route; read console -> the `marker_assignments` PostgrestError is gone; load the engagement landing + Activity + Future Events routes -> no dropped-table errors.
-- [ ] **Step 4:** No commit (verification only); note any residual errors as new tasks.
+**Backtest target:** Acceptance Matrix rows 1, 2, 3, 7, 8, 13, 14 (local visual); plus the load-clean regression.
+
+- [ ] **Step 1:** `cd src/client && ng lint && ng build` -> clean; `npm run test:units` -> full suite green.
+- [ ] **Step 2:** Seed a local space via `seed_events_model_qa`; serve local + inject the demo session (Stage 2c recipe in the `project_event_model_rewrite` memory note; serve on a free port, e.g. :8100).
+- [ ] **Step 3: Console regression:** load the timeline, engagement landing, Activity, and Future Events routes; read console -> the `marker_assignments` PostgrestError and all dropped-table errors are gone.
+- [ ] **Step 4: Visual acceptance (screenshot each, assert + record pass/fail):** timeline default view shows trial rows + phase bars + the asset-lane hexagon + the pinned company-band glyph and NOT the feed-only leadership event (rows 1,2,3,7,13,14); Compare preset hides trials and shows the asset lead-phase chip (row 8); Future Events lists the projected event; Activity shows detected changes only.
+- [ ] **Step 5:** Record pass/fail per matrix row in the plan's "Phase B backtest results" note. No code commit (verification only); file any residual error as a new task.
 
 ---
 
@@ -315,6 +369,19 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 - [ ] **Step 4:** `supabase db reset`; run `seed_demo_data` against a scratch space; spot-check `get_dashboard_data`.
 - [ ] **Step 5: Commit** `git commit -m "feat(events): /seed-demo producers emit events"`
 
+### Task C6: Phase C backtest -- producers + Activity wiring
+
+**Files:**
+- Create: `src/client/integration/event-producers.integration.spec.ts`
+
+**Backtest target:** Acceptance Matrix rows 5, 6, 11 (integration).
+
+- [ ] **Step 1:** Integration: `seed_demo_data(<fresh space>)` and `seed_events_model_qa` both produce events (not markers); `get_dashboard_data` renders them. Edit an event via `update_event` -> the change appears in Activity (`get_activity_feed`) and does NOT appear in the Intelligence feed (row 5). An Intelligence brief citing an event resolves its citation (row 6). A CT.gov re-sync updates clinical events in place with no duplicates (drift behavior).
+- [ ] **Step 2: Regression (row 11):** clinical events from the producers derive the phase bar identically to the pre-cutover markers on the same fixture.
+- [ ] **Step 3:** Run the import dedup + ctgov integration specs -> green.
+- [ ] **Step 4:** Record pass/fail per matrix row in the plan's "Phase C backtest results" note.
+- [ ] **Step 5: Commit** `git commit -m "test(events): Phase C producer + Activity backtest"`
+
 ---
 
 ## Phase D: Cleanup + admin
@@ -331,6 +398,13 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 - [ ] **Step 3:** In-file smoke (self-cleaning): create scratch space + event, run delete, assert gone.
 - [ ] **Step 4:** `supabase db reset` + advisors.
 - [ ] **Step 5: Commit** `git commit -m "feat(events): admin cleanup paths drop marker references"`
+
+### Task D2: Phase D backtest -- destructive paths leave no orphans
+
+- [ ] **Step 1:** Integration (self-cleaning scratch space): `seed_events_model_qa` then `permanently_delete_space` -> the space's `events`, `event_changes`, and links are all gone (cascade), no orphan rows; the audit event is recorded.
+- [ ] **Step 2:** `redact_user` on a scratch user nulls `events.created_by/updated_by` it authored; audit recorded.
+- [ ] **Step 3:** Record pass/fail in the plan's "Phase D backtest results" note.
+- [ ] **Step 4: Commit** `git commit -m "test(events): Phase D admin-cleanup backtest"`
 
 ---
 
@@ -364,6 +438,15 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 - [ ] **Step 4:** Visual: serve + demo session; load timeline, landing, Activity, Future Events, bullseye, a manage trial page, the command palette -> all render without console dropped-table errors.
 - [ ] **Step 5:** No commit (gate); fix-forward any failure as a new task.
 
+### Task E4: Authoritative visual artifact -- all 14 matrix rows on cloud dev
+
+**Backtest target:** the FULL Acceptance Matrix (rows 1-14) at the visual layer, per the spec's "Visual confirmation artifact." This is the final authoritativeness gate.
+
+- [ ] **Step 1:** Merge `feat/event-model` -> `develop` (user-gated dev deploy); `supabase db push` applies the cutover migrations to dev. Seed a dev "Events model QA" space via `seed_events_model_qa` (or manual `create_event`).
+- [ ] **Step 2:** Drive `dev.clintapp.com` with Chrome MCP using the pre-authenticated dev profile (clear Turnstile: chrome-channel + automation-flag fingerprint per the memory note). Capture a screenshot per matrix scenario at each toggle state (default / Compare preset / full detail).
+- [ ] **Step 3:** Produce a verification report: screenshots + pass/fail for every one of rows 1-14. Any fail becomes a fix-forward task; the cutover is authoritative-done only when all 14 are green.
+- [ ] **Step 4:** Save the report under `docs/notes/` and link it from the plan.
+
 ---
 
 ## Self-Review notes
@@ -371,3 +454,5 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 - **Coverage:** every function from the discovery inventory (33) maps to a task: A1 (get_activity_feed, get_trial_activity), A2 (get_events_page_data, get_key_catalysts), A3 (get_space_landing_stats), A4 (get_bullseye_assets/_data), A5 (search_palette, palette_empty_state), A6 (get_space_inventory_snapshot, get_ai_call_detail, get_ai_usage_rollup), A7 (get_primary_intelligence_history, build_intelligence_payload_for_row, list_materials x3), A8 (preview_* x3), C1 (4 trigger/changelog fns), C2 (update_marker_assignments), C3 (create_trial, _create_trial_date_markers, _seed_ctgov x2), C4 (commit_source_import), C5 (_seed_demo x4 + seed_demo_data), D1 (permanently_delete_space, redact_user). Plus A0 schema prereqs and the frontend services (B1-B3).
 - **Out of scope (separate plans):** the IA/terminology rename (Intelligence/Activity/Event route + label renames, merged Event form, taxonomy admin) = Stage 3; the `stout-intro.html` deck refresh = Stage 5.
 - **Ordering rationale:** A0 unblocks A1/A7/A8 (link entity_type + change-event column). Phase A is independently shippable (RPCs return correct data even before the frontend services are repointed, since the frontend still gets valid shapes). Phase B makes the app visibly clean. Phase C (producers) can lag because the seed.sql event block already feeds the demo space; dev gets event data when C5 lands or via manual create_event.
+- **Testing in every phase (per the spec's first-class-testing rule):** Phase 0 builds the QA fixture; each subsequent phase ends with a backtest task (A9, B4, C6, D2) that asserts behavior against that fixture and the Acceptance Matrix, plus the within-phase TDD pairing; E3 is the full-suite/advisor gate and E4 is the authoritative all-14-rows cloud-dev visual artifact. No phase is "done" until its matrix rows are green.
+- **Session model:** each phase is executed in its own fresh session (clear context between phases). The plan + this doctrine are the only context a phase session needs; its kickoff prompt names the phase, the worktree setup, and the backtest-before-done rule.
