@@ -80,16 +80,23 @@ In-migration smoke (assertion-style, fails the migration on violation):
 
 - `is_sample` column exists and is `not null default false`.
 - After backfill, no row has a `file_path` matching `materials/%`.
-- The count of `is_sample = true` rows on a freshly seeded local DB is greater
-  than zero (guards against a seed function that forgets the flag).
+- The trigger works: inserting a row with a `materials/`-prefixed path yields
+  `is_sample = true` and a stripped path; inserting a no-prefix path yields
+  `is_sample = false` and an unchanged path. (Tested directly in the migration,
+  then cleaned up, since seed.sql has not run at migration time.)
 
-### 2. Seed functions emit the flag
+### 2. A BEFORE INSERT trigger normalizes seed rows
 
-`public._seed_demo_materials` (and any persona or playground seed that inserts
-materials) sets `is_sample = true` and uses the canonical no-prefix key
-`<space>/<material>/<file>`. Redefined via `create or replace` based on the
-live `pg_get_functiondef` body, not an old migration copy, to avoid reverting
-newer logic.
+Rather than rewrite the large, volatile `_seed_demo_materials` body (around 40
+inline inserts) and every future seed, a `before insert` trigger on
+`public.materials` encodes the convention in one place: when an inserted
+`file_path` starts with `materials/` (which only seed and playground inserts
+produce, never the live upload path), the trigger sets `is_sample = true` and
+strips the prefix to the canonical `<space>/<material>/<file>` form. Live
+uploads (no prefix) are a no-op. This auto-covers existing and future seeds
+without touching any seed function, and avoids the stale-base clobber risk of
+redefining a frequently-edited function. The legacy `materials/` prefix becomes
+the deliberate, documented sample marker.
 
 ### 3. `is_sample` reaches the client
 
@@ -158,18 +165,19 @@ Update `docs/runbook/14-disaster-recovery.md` reconcile section to describe the
 
 - Backfill over-reaches: mitigated because the `materials/` prefix is provably
   absent from live-upload paths; the smoke asserts no prefixed paths remain.
-- A future seed forgets the flag: the in-migration smoke asserting a positive
-  `is_sample` count on a freshly seeded DB catches a seed that regresses.
+- A future seed uses the prefix convention: auto-flagged by the trigger, so a
+  new seed needs no special handling as long as it follows the documented
+  `materials/`-prefix convention. A seed that wants a sample without the prefix
+  would set `is_sample` explicitly; this is called out in the trigger comment.
 - Orphan enqueue trips the volume guard: expected and handled by the existing
   approve workflow; the cleanup is a one-time, signed-off batch.
 
 ## Rollout order
 
-1. Schema + backfill migration.
-2. Seed function migration.
-3. List/detail RPC migration (adds `is_sample`).
-4. `reconcile.mjs` change + tests.
-5. Client model + sample-download alert.
-6. One-time orphan enqueue on dev and prod (signed off).
-7. Baseline verify, uncomment crons, release.
-8. Runbook update.
+1. Schema + backfill + normalizing trigger migration.
+2. List RPC migration (adds `is_sample` to the three list RPCs).
+3. `reconcile.mjs` change + tests.
+4. Client model + sample-download alert.
+5. One-time orphan enqueue on dev and prod (signed off).
+6. Baseline verify, uncomment crons, release.
+7. Runbook update.
