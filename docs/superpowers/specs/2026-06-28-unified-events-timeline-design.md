@@ -387,9 +387,9 @@ exists, which is why that level is in v1 (there is no roll-down).
 | Surface | Shows |
 | --- | --- |
 | **Intelligence feed** (`/intelligence`) | Briefs + events, **recency-descending** ("what's the latest"). The one curated stream. |
-| **Future Events** (was Future Catalysts) | Events only, **future-date ascending** ("what's coming, soonest first"). A scannable planning table; distinct job from the feed (different direction + form). |
+| **Future Events** (`/future-events`, was Future Catalysts) | Events only, **future-date ascending** ("what's coming, soonest first"). A scannable planning table; distinct job from the feed (different direction + form). |
 | **Timeline** | Events at three row levels: trial-anchored on trial rows, asset-anchored on asset lanes, company-anchored on the company band. Phase bars derived from clinical events. Per-level visibility toggles + Compare preset. |
-| **Activity** (renamed from Events page) | Detected record changes only (CT.gov diffs, event edit history). High-volume, low-signal. No briefs, no analyst-authored events. |
+| **Activity** (`/activity`, renamed from the Events page) | Detected record changes only (CT.gov diffs, event edit history). High-volume, low-signal. No briefs, no analyst-authored events. The old Events page's authored-event content moves to the feed + Future Events + timeline. |
 | **Profile pages** | Per-entity events + the entity's intelligence; trial pages keep an Activity (detected changes) card. |
 
 ## Testing and verification
@@ -574,8 +574,12 @@ state**; the implementation plan sequences it. A likely ordering:
 - **Company band:** quiet by default (only high-significance or pinned company
   events).
 - **Naming:** table `events`, `event_types`, change log `event_changes`, RPCs
-  `create_event` / `update_event`; route `/activity` (was Events), `/intelligence`
-  stays; "Intelligence" sidebar group holds "Activity" + "Intelligence Feed."
+  `create_event` / `update_event`; routes `/activity` (was Events), `/future-events`
+  (was `/catalysts`), `/intelligence` stays; "Intelligence" sidebar group holds
+  "Activity" + "Intelligence Feed." The detailed route/label/string rename
+  inventory and the merged-form / taxonomy designs live in the **Stage 3 spec**
+  (`docs/superpowers/specs/2026-06-28-event-model-stage-3-ia-rename.md`). The event
+  sources model (A-derived) is delivered by the cutover.
 - **Intelligence feed:** briefs + events interleaved by recency with type filter
   chips.
 - **Pin scope:** pin/hide global on the event in v1 (per-view with the placement
@@ -591,11 +595,22 @@ state**; the implementation plan sequences it. A likely ordering:
 
 - **Merged Event form** (replaces the separate marker and event forms): type
   picker across all categories, the fuzzy / range / ongoing date control,
-  provenance, significance, an anchor selector (space / company / asset / trial),
-  pin/hide, and source.
-- **Merged taxonomy config** (replaces marker-types + marker-categories +
-  event-categories admin): one `event_types` screen managing name, category,
-  default significance, and glyph + color.
+  provenance, significance, a **single anchor** selector (space / company / asset /
+  trial), pin/hide, and **multiple labeled sources** (`event_sources`; the derived
+  CT.gov registry link shows alongside). Detailed field-to-column mapping in the
+  Stage 3 spec.
+- **Event authoring is contextual** (Stage 3): "Log event" / "Add event" launches
+  the merged form from the entity in view (company / asset / trial profiles, the
+  timeline, manage/trials). Edit/delete move onto the surviving surfaces (the feed
+  item detail + the timeline detail panel) since the old Events page management UI
+  is retired. There is no standalone events-management table; per-entity discovery
+  is the profile pages + the feed's type/entity filters.
+- **Merged taxonomy config** (Stage 3, replaces the standalone marker-types +
+  marker-categories screens): **Event Types** and **Event Categories** become two
+  tabs on the existing tabbed Taxonomies screen (`/settings/taxonomies`, alongside
+  Indications / MOA / ROA), preserving the system-vs-space-custom read-only locking.
+  The standalone "Marker Types" nav item is retired; old `/settings/marker-types`
+  and `/settings/marker-categories` deep links redirect to the new tabs.
 - **Intelligence marks stay visible** on every surface that shows them today
   (company / asset / trial cells and landscape views); the rename must not drop
   them.
@@ -633,6 +648,12 @@ is lost, with a one-line rationale and the seam each one builds on:
   assets and scenarios).
 - **Scenario templates / overlays** (goal C): a reusable set of typed placements
   with relative offsets stamped onto any asset.
+- **Event threads (storylines)** (Stage 3 follow-up, designed not built in v1): a
+  named group of events (`event_threads`, one `thread_id` per event, read in
+  chronological order, no manual ordering) that the timeline can highlight / filter
+  as a connected narrative across rows. Chosen primitive over pairwise event links
+  (a thread subsumes "see related" while giving the storyline a name and a
+  highlightable set). Designed in the Stage 3 spec; ships as a fast-follow.
 
 ## Goals traceability
 
