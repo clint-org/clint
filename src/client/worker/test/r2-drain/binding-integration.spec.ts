@@ -15,6 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { drainR2DeleteQueue, type R2DeleteClient } from '../../r2-drain/queue';
 
 const SUPABASE_URL = 'https://stub.supabase.co';
+const RPC_GATE = `${SUPABASE_URL}/rest/v1/rpc/r2_drain_gate`;
 const RPC_CLAIM = `${SUPABASE_URL}/rest/v1/rpc/claim_pending_r2_deletes`;
 const RPC_SUCCEEDED = `${SUPABASE_URL}/rest/v1/rpc/mark_r2_delete_succeeded`;
 const RPC_FAILED = `${SUPABASE_URL}/rest/v1/rpc/mark_r2_delete_failed`;
@@ -60,6 +61,16 @@ function installRpcMock(rows: FixtureRow[]): {
         status: 403,
         headers: { 'content-type': 'application/json' },
       });
+    }
+    if (url === RPC_GATE) {
+      // Volume gate allows the drain. PostgREST wraps the single TABLE
+      // row in an array; the worker reads element [0].
+      return new Response(
+        JSON.stringify([
+          { allowed: true, unattempted_count: 0, effective_cap: 1000, reason: 'within cap' },
+        ]),
+        { status: 200, headers: { 'content-type': 'application/json' } }
+      );
     }
     if (url === RPC_CLAIM) {
       const claimed = rows
@@ -120,7 +131,15 @@ describe('r2 drain against Miniflare R2 binding', () => {
 
     const summary = await drainR2DeleteQueue(envFor(), bindingClient());
 
-    expect(summary).toEqual({ drained: 1, succeeded: 1, failed: 0, max_attempts_hit: 0 });
+    expect(summary).toEqual({
+      drained: 1,
+      succeeded: 1,
+      failed: 0,
+      max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
+    });
     expect(await env.MATERIALS_BUCKET.head('materials/space-a/m-1/brief.pdf')).toBeNull();
     expect(marked['row-1']).toBe('succeeded');
   });
@@ -138,7 +157,15 @@ describe('r2 drain against Miniflare R2 binding', () => {
 
     const summary = await drainR2DeleteQueue(envFor(), bindingClient());
 
-    expect(summary).toEqual({ drained: 3, succeeded: 3, failed: 0, max_attempts_hit: 0 });
+    expect(summary).toEqual({
+      drained: 3,
+      succeeded: 3,
+      failed: 0,
+      max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
+    });
     const list = await env.MATERIALS_BUCKET.list();
     expect(list.objects).toHaveLength(0);
   });
@@ -151,7 +178,15 @@ describe('r2 drain against Miniflare R2 binding', () => {
     const summary = await drainR2DeleteQueue(envFor(), bindingClient());
 
     // R2 binding's delete is idempotent: deleting a missing key resolves.
-    expect(summary).toEqual({ drained: 1, succeeded: 1, failed: 0, max_attempts_hit: 0 });
+    expect(summary).toEqual({
+      drained: 1,
+      succeeded: 1,
+      failed: 0,
+      max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
+    });
     expect(marked['row-1']).toBe('succeeded');
   });
 

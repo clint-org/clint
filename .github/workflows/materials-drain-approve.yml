@@ -1,0 +1,43 @@
+name: Materials drain approve
+# WS1 materials durability: operator action that authorizes a SINGLE over-cap
+# drain run after the volume guard paused the materials R2 pending-delete drain.
+# Sets an override on public.r2_drain_control; the override is consumed on the
+# next gate evaluation (one run only) and expires after 48h if unused. Use only
+# after confirming via the drain-monitor issue that the queued deletions are
+# legitimate. Detection signal context: docs/runbook/14-disaster-recovery.md.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options:
+          - prod
+          - dev
+      max:
+        description: Max deletes to authorize for the next single drain run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# Two explicit steps gated by the chosen environment so each secret is
+# referenced statically (CodeQL: actions/excessive-secrets-exposure).
+jobs:
+  approve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authorize prod over-cap drain
+        if: ${{ inputs.environment == 'prod' }}
+        env:
+          POOLER_URL: ${{ secrets.SUPABASE_PROD_DB_POOLER_URL }}
+        run: |
+          psql "$POOLER_URL" -v max="${{ inputs.max }}" -c "update public.r2_drain_control set override_max = :'max'::int, override_set_at = now(), override_consumed_at = null where id = 1 returning id, override_max, override_set_at, override_consumed_at;"
+      - name: Authorize dev over-cap drain
+        if: ${{ inputs.environment == 'dev' }}
+        env:
+          POOLER_URL: ${{ secrets.SUPABASE_DEV_DB_POOLER_URL }}
+        run: |
+          psql "$POOLER_URL" -v max="${{ inputs.max }}" -c "update public.r2_drain_control set override_max = :'max'::int, override_set_at = now(), override_consumed_at = null where id = 1 returning id, override_max, override_set_at, override_consumed_at;"

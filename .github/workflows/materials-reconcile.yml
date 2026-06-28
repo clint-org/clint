@@ -1,0 +1,146 @@
+name: Reconcile materials inventory
+# WS1 materials durability: weekly three-way reconciliation of the DB pointer set
+# (public.materials.file_path) against the R2 object set and the B2 object set.
+# Surfaces three divergence classes: dangling (row, no object), orphan (object,
+# no row), and mirror_gap (in R2, not yet in B2). Detection signal for the
+# materials durability domain in docs/runbook/14-disaster-recovery.md.
+on:
+  # Cron disabled until WS1 Phase 6 provisions the B2 buckets and the
+  # R2_MATERIALS_*/B2_MATERIALS_* secrets; until then a scheduled run would only
+  # fail and open noise issues. Re-enable this cron as the last Phase 6 step.
+  # schedule:
+  #   - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: materials-reconcile
+  cancel-in-progress: false
+
+# Two explicit jobs (not a matrix) so every secret is referenced statically.
+# Indexing `secrets[...]` with a dynamic key forces GitHub to pass the entire
+# secrets context to the runner (CodeQL: actions/excessive-secrets-exposure).
+# Each job captures the script's JSON stdout into a step output so the
+# notify-failure job can embed the divergence summary directly in the issue.
+jobs:
+  prod:
+    runs-on: ubuntu-latest
+    outputs:
+      summary: ${{ steps.run.outputs.summary }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconcile prod
+        id: run
+        env:
+          DB_POOLER_URL: ${{ secrets.SUPABASE_PROD_DB_POOLER_URL }}
+          R2_BUCKET: clint-materials
+          R2_S3_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_MATERIALS_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_MATERIALS_SECRET_ACCESS_KEY }}
+          B2_BUCKET: clint-materials-backup
+          B2_S3_ENDPOINT: ${{ secrets.B2_S3_ENDPOINT }}
+          B2_KEY_ID: ${{ secrets.B2_MATERIALS_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_MATERIALS_APP_KEY }}
+        run: |
+          set -o pipefail
+          status=0
+          node scripts/materials/reconcile.mjs | tee summary.json || status=$?
+          {
+            echo 'summary<<RECONCILE_EOF'
+            cat summary.json
+            echo 'RECONCILE_EOF'
+          } >> "$GITHUB_OUTPUT"
+          exit $status
+
+  dev:
+    runs-on: ubuntu-latest
+    outputs:
+      summary: ${{ steps.run.outputs.summary }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconcile dev
+        id: run
+        env:
+          DB_POOLER_URL: ${{ secrets.SUPABASE_DEV_DB_POOLER_URL }}
+          R2_BUCKET: clint-materials-dev
+          R2_S3_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_MATERIALS_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_MATERIALS_SECRET_ACCESS_KEY }}
+          B2_BUCKET: clint-materials-backup-dev
+          B2_S3_ENDPOINT: ${{ secrets.B2_S3_ENDPOINT }}
+          B2_KEY_ID: ${{ secrets.B2_MATERIALS_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_MATERIALS_APP_KEY }}
+        run: |
+          set -o pipefail
+          status=0
+          node scripts/materials/reconcile.mjs | tee summary.json || status=$?
+          {
+            echo 'summary<<RECONCILE_EOF'
+            cat summary.json
+            echo 'RECONCILE_EOF'
+          } >> "$GITHUB_OUTPUT"
+          exit $status
+
+  # A non-zero exit means divergence was detected. Open or update a deduplicated
+  # GitHub issue with the per-env JSON summary. Least-privilege: only this job
+  # gets issues: write. always() so the summary is embedded even when a job fails.
+  notify-failure:
+    needs: [prod, dev]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          PROD_SUMMARY: ${{ needs.prod.outputs.summary }}
+          DEV_SUMMARY: ${{ needs.dev.outputs.summary }}
+        with:
+          script: |
+            const label = 'materials-reconcile-divergence';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const prod = process.env.PROD_SUMMARY || '(no summary captured; see run log)';
+            const dev = process.env.DEV_SUMMARY || '(no summary captured; see run log)';
+            const body = [
+              'The weekly materials reconciliation found divergence between the DB pointer set, R2, and B2.',
+              '',
+              `Run: ${runUrl}`,
+              '',
+              'Divergence classes: dangling (row, no object), orphan (object, no row), mirror_gap (in R2, not yet in B2).',
+              '',
+              '### prod',
+              '```json',
+              prod,
+              '```',
+              '',
+              '### dev',
+              '```json',
+              dev,
+              '```',
+              '',
+              'Detection signal for the materials durability domain in docs/runbook/14-disaster-recovery.md.',
+            ].join('\n');
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Materials reconciliation divergence',
+                body,
+                labels: [label],
+              });
+            }

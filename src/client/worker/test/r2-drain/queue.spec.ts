@@ -12,8 +12,15 @@ const RPC_BASE = `${SUPABASE_URL}/rest/v1/rpc`;
 const RPC_CLAIM = `${RPC_BASE}/claim_pending_r2_deletes`;
 const RPC_SUCCEEDED = `${RPC_BASE}/mark_r2_delete_succeeded`;
 const RPC_FAILED = `${RPC_BASE}/mark_r2_delete_failed`;
+const RPC_DEFERRED = `${RPC_BASE}/mark_r2_delete_deferred`;
+const RPC_GATE = `${RPC_BASE}/r2_drain_gate`;
 const ANON_KEY = 'anon-key';
 const WORKER_SECRET = 'r2-worker-secret';
+
+// A bucket lock rejection from R2 (error code 10069). The drain must
+// reschedule (defer) these instead of burning an attempt as a failure.
+const BUCKET_LOCK_MESSAGE =
+  'delete: Object is protected by a bucket lock rule and cannot be modified or deleted. (10069)';
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -29,10 +36,31 @@ function makeEnv(over: Partial<R2DrainEnv> = {}): R2DrainEnv {
 }
 
 interface FetchTap {
-  rpc: 'claim' | 'succeeded' | 'failed' | 'other';
+  rpc: 'gate' | 'claim' | 'succeeded' | 'failed' | 'deferred' | 'other';
   url: string;
   body: Record<string, unknown>;
   headers: Headers;
+}
+
+interface GateRow {
+  allowed: boolean;
+  unattempted_count: number;
+  effective_cap: number;
+  reason: string;
+}
+
+// Default gate response: allow the drain, mirroring the live RPC's
+// single-row TABLE-returning shape (PostgREST wraps it in an array).
+function allowGate(over: Partial<GateRow> = {}): GateRow[] {
+  return [
+    {
+      allowed: true,
+      unattempted_count: 0,
+      effective_cap: 1000,
+      reason: 'within cap',
+      ...over,
+    },
+  ];
 }
 
 interface QueueRow {
@@ -53,7 +81,10 @@ interface QueueFixture {
  * the fixture and returns the same shape PostgREST would return. Every
  * request is recorded into `taps` so tests can pin the wire shape.
  */
-function installRpcMock(fixture: QueueFixture): { taps: FetchTap[]; r2: MockR2 } {
+function installRpcMock(
+  fixture: QueueFixture,
+  gate: GateRow[] = allowGate()
+): { taps: FetchTap[]; r2: MockR2 } {
   const taps: FetchTap[] = [];
   const r2 = new MockR2();
 
@@ -65,13 +96,17 @@ function installRpcMock(fixture: QueueFixture): { taps: FetchTap[]; r2: MockR2 }
       const body = bodyText ? (JSON.parse(bodyText) as Record<string, unknown>) : {};
 
       const rpc: FetchTap['rpc'] =
-        url === RPC_CLAIM
-          ? 'claim'
-          : url === RPC_SUCCEEDED
-            ? 'succeeded'
-            : url === RPC_FAILED
-              ? 'failed'
-              : 'other';
+        url === RPC_GATE
+          ? 'gate'
+          : url === RPC_CLAIM
+            ? 'claim'
+            : url === RPC_SUCCEEDED
+              ? 'succeeded'
+              : url === RPC_FAILED
+                ? 'failed'
+                : url === RPC_DEFERRED
+                  ? 'deferred'
+                  : 'other';
       taps.push({ rpc, url, body, headers: req.headers });
 
       if (rpc === 'other') {
@@ -88,8 +123,15 @@ function installRpcMock(fixture: QueueFixture): { taps: FetchTap[]; r2: MockR2 }
         });
       }
 
+      if (rpc === 'gate') {
+        return new Response(JSON.stringify(gate), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
       if (rpc === 'claim') return handleClaim(body, fixture);
       if (rpc === 'succeeded') return handleMarkSucceeded(body, fixture);
+      if (rpc === 'deferred') return handleMarkDeferred(body, fixture);
       return handleMarkFailed(body, fixture);
     }
   );
@@ -127,6 +169,18 @@ function handleMarkFailed(body: Record<string, unknown>, fixture: QueueFixture):
   if (row) {
     row.attempt_count = body['p_attempt_count'] as number;
     row.last_error = body['p_error'] as string;
+  }
+  return new Response('', { status: 200 });
+}
+
+// mark_r2_delete_deferred reschedules a row without burning an attempt:
+// it records the reason but does NOT touch attempt_count (the RPC bumps
+// next_attempt_at server-side). Mirror that here -- only last_error moves.
+function handleMarkDeferred(body: Record<string, unknown>, fixture: QueueFixture): Response {
+  const id = body['p_id'] as string;
+  const row = fixture.rows.find((r) => r.id === id);
+  if (row) {
+    row.last_error = body['p_reason'] as string;
   }
   return new Response('', { status: 200 });
 }
@@ -180,6 +234,9 @@ describe('drainR2DeleteQueue (worker-secret + RPC pattern)', () => {
       succeeded: 3,
       failed: 0,
       max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
     });
 
     expect(r2.deleted.sort()).toEqual([
@@ -226,6 +283,9 @@ describe('drainR2DeleteQueue (worker-secret + RPC pattern)', () => {
       succeeded: 0,
       failed: 1,
       max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
     });
 
     const row = fixture.rows[0];
@@ -251,6 +311,9 @@ describe('drainR2DeleteQueue (worker-secret + RPC pattern)', () => {
       succeeded: 0,
       failed: 1,
       max_attempts_hit: 1,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
     });
     expect(fixture.rows[0].attempt_count).toBe(5);
     expect(fixture.rows[0].last_error).toBe('r2: permanent failure');
@@ -264,6 +327,9 @@ describe('drainR2DeleteQueue (worker-secret + RPC pattern)', () => {
       succeeded: 0,
       failed: 0,
       max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
     });
   });
 
@@ -282,6 +348,9 @@ describe('drainR2DeleteQueue (worker-secret + RPC pattern)', () => {
       succeeded: 2,
       failed: 0,
       max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
     });
     expect(r2.deleted).toHaveLength(2);
 
@@ -292,6 +361,9 @@ describe('drainR2DeleteQueue (worker-secret + RPC pattern)', () => {
       succeeded: 0,
       failed: 0,
       max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
     });
     expect(r2.deleted).toHaveLength(2);
   });
@@ -306,6 +378,9 @@ describe('drainR2DeleteQueue (worker-secret + RPC pattern)', () => {
       succeeded: 0,
       failed: 0,
       max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
     });
     // No mark_* calls; the lone request is the empty claim.
     expect(taps.filter((t) => t.rpc === 'succeeded')).toHaveLength(0);
@@ -326,6 +401,9 @@ describe('drainR2DeleteQueue (worker-secret + RPC pattern)', () => {
       succeeded: 0,
       failed: 1,
       max_attempts_hit: 1,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
     });
     expect(fixture.rows[0].attempt_count).toBe(2);
 
@@ -362,6 +440,120 @@ describe('drainR2DeleteQueue (worker-secret + RPC pattern)', () => {
 
     await expect(
       drainR2DeleteQueue(makeEnv({ R2_WORKER_SECRET: 'wrong' }), new MockR2())
-    ).rejects.toThrow(/claim_pending_r2_deletes failed/);
+    ).rejects.toThrow(/r2_drain_gate failed/);
+  });
+
+  it('BUCKET LOCK DEFER: a 10069 rejection reschedules via mark_r2_delete_deferred, not failed', async () => {
+    const fixture: QueueFixture = {
+      rows: [makeRow('row-1', 'materials/space-a/mat-locked/a.pdf', 0)],
+    };
+    const { taps, r2 } = installRpcMock(fixture);
+    r2.failOn('materials/space-a/mat-locked/a.pdf', BUCKET_LOCK_MESSAGE);
+
+    const summary = await drainR2DeleteQueue(makeEnv(), r2);
+
+    assertSummary(summary, {
+      drained: 1,
+      succeeded: 0,
+      failed: 0,
+      max_attempts_hit: 0,
+      deferred: 1,
+      paused: false,
+      unattempted: 0,
+    });
+
+    // Routed to the defer RPC, never the failure RPC.
+    expect(taps.filter((t) => t.rpc === 'deferred')).toHaveLength(1);
+    expect(taps.filter((t) => t.rpc === 'failed')).toHaveLength(0);
+
+    const deferCall = taps.find((t) => t.rpc === 'deferred')!;
+    expect(deferCall.body['p_id']).toBe('row-1');
+    expect(deferCall.body['p_reason']).toBe(BUCKET_LOCK_MESSAGE);
+
+    // A deferral does NOT burn an attempt; the RPC handles next_attempt_at.
+    expect(fixture.rows[0].attempt_count).toBe(0);
+    expect(fixture.rows[0].succeeded_at).toBeNull();
+  });
+
+  it('NON-LOCK FAILURE: a non-lock error still routes to mark_r2_delete_failed', async () => {
+    const fixture: QueueFixture = {
+      rows: [makeRow('row-1', 'materials/space-a/mat-net/a.pdf', 0)],
+    };
+    const { taps, r2 } = installRpcMock(fixture);
+    r2.failOn('materials/space-a/mat-net/a.pdf', 'network');
+
+    const summary = await drainR2DeleteQueue(makeEnv(), r2);
+
+    assertSummary(summary, {
+      drained: 1,
+      succeeded: 0,
+      failed: 1,
+      max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 0,
+    });
+
+    expect(taps.filter((t) => t.rpc === 'failed')).toHaveLength(1);
+    expect(taps.filter((t) => t.rpc === 'deferred')).toHaveLength(0);
+    expect(fixture.rows[0].attempt_count).toBe(1);
+    expect(fixture.rows[0].last_error).toBe('network');
+  });
+
+  it('GATE DENY: a denied volume gate short-circuits before claiming -- deletes nothing', async () => {
+    const fixture: QueueFixture = {
+      rows: [makeRow('row-1', 'materials/space-a/mat-1/a.pdf')],
+    };
+    const { taps, r2 } = installRpcMock(fixture, [
+      {
+        allowed: false,
+        unattempted_count: 5000,
+        effective_cap: 1000,
+        reason: 'unattempted backlog exceeds cap',
+      },
+    ]);
+
+    const summary = await drainR2DeleteQueue(makeEnv(), r2);
+
+    assertSummary(summary, {
+      drained: 0,
+      succeeded: 0,
+      failed: 0,
+      max_attempts_hit: 0,
+      deferred: 0,
+      paused: true,
+      unattempted: 5000,
+    });
+
+    // Gate denial means: no claim, no R2 delete, no mark_* of any kind.
+    expect(taps.filter((t) => t.rpc === 'gate')).toHaveLength(1);
+    expect(taps.filter((t) => t.rpc === 'claim')).toHaveLength(0);
+    expect(taps.filter((t) => t.rpc === 'succeeded')).toHaveLength(0);
+    expect(taps.filter((t) => t.rpc === 'failed')).toHaveLength(0);
+    expect(taps.filter((t) => t.rpc === 'deferred')).toHaveLength(0);
+    expect(r2.deleted).toHaveLength(0);
+  });
+
+  it('GATE ALLOW: an allowed gate drains normally and reports paused=false', async () => {
+    const fixture: QueueFixture = {
+      rows: [makeRow('row-1', 'materials/space-a/mat-1/a.pdf')],
+    };
+    const { taps, r2 } = installRpcMock(fixture, allowGate({ unattempted_count: 2 }));
+
+    const summary = await drainR2DeleteQueue(makeEnv(), r2);
+
+    assertSummary(summary, {
+      drained: 1,
+      succeeded: 1,
+      failed: 0,
+      max_attempts_hit: 0,
+      deferred: 0,
+      paused: false,
+      unattempted: 2,
+    });
+
+    expect(taps.filter((t) => t.rpc === 'gate')).toHaveLength(1);
+    expect(taps.filter((t) => t.rpc === 'claim')).toHaveLength(1);
+    expect(r2.deleted).toEqual(['materials/space-a/mat-1/a.pdf']);
   });
 });

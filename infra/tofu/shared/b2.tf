@@ -41,3 +41,52 @@ resource "b2_bucket" "db_backups" {
     file_name_prefix                                       = ""
   }
 }
+
+# Off-cloud copy of tenant materials (WS1). Separate from clint-db-backups so the
+# db-backups 365-day lifecycle never reaps live materials. Compliance Object Lock
+# (30 days) is the anti-ransomware floor on the freshest copies; the mirror is
+# add-only so nothing is ever pruned here in v1 (see WS1 spec). No lifecycle_rules
+# on purpose: live materials must persist indefinitely.
+resource "b2_bucket" "materials_backup" {
+  bucket_info = {}
+  bucket_name = "clint-materials-backup"
+  bucket_type = "allPrivate"
+
+  default_server_side_encryption {
+    algorithm = "AES256"
+    mode      = "SSE-B2"
+  }
+
+  file_lock_configuration {
+    is_file_lock_enabled = true
+    default_retention {
+      mode = "compliance"
+      period {
+        duration = 30
+        unit     = "days"
+      }
+    }
+  }
+}
+
+resource "b2_bucket" "materials_backup_dev" {
+  bucket_info = {}
+  bucket_name = "clint-materials-backup-dev"
+  bucket_type = "allPrivate"
+
+  default_server_side_encryption {
+    algorithm = "AES256"
+    mode      = "SSE-B2"
+  }
+
+  file_lock_configuration {
+    is_file_lock_enabled = true
+    default_retention {
+      mode = "compliance"
+      period {
+        duration = 30
+        unit     = "days"
+      }
+    }
+  }
+}
