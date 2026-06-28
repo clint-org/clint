@@ -291,6 +291,14 @@ export class MaterialsBrowsePageComponent implements OnInit, OnDestroy {
   }
 
   protected async onDownloadClick(material: Material): Promise<void> {
+    if (material.is_sample) {
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Sample material',
+        detail: 'This is a sample. No file is attached to download.',
+      });
+      return;
+    }
     try {
       const { url } = await this.materialService.getDownloadUrl(material.id);
       const a = document.createElement('a');

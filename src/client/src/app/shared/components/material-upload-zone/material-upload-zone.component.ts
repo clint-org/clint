@@ -496,6 +496,7 @@ export class MaterialUploadZoneComponent {
         material_type: this.materialType(),
         title: this.title().trim() || file.name,
         uploaded_at: new Date().toISOString(),
+        is_sample: false,
         links,
       });
 
