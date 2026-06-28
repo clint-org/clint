@@ -20,11 +20,13 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - ai_resolve_model
     - ai_estimate_cost_cents
     - get_space_inventory_snapshot
+    - source_duplicate_check
     - _verify_extract_source_worker_secret
   tables:
     - ai_calls
     - ai_config
     - ai_model_pricing
+    - source_documents
   related:
     - source-import-commit
   user_facing: false

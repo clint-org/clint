@@ -35,16 +35,19 @@ test.describe('Entity-page timeline + events panel', () => {
   });
 
   test('trial detail page renders Timeline + Events panel', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/trials/${trialId}`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/trials/${trialId}`, {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.locator('app-timeline-view')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('app-entity-events-panel')).toBeVisible();
-    await expect(page.locator('app-entity-events-panel')).toContainText('Events');
+    // The "Events" label lives on the surrounding section-card header (the panel
+    // itself is body-only since the card shell was standardized), so assert the
+    // card heading rather than text inside the panel.
+    await expect(page.getByRole('heading', { name: 'Events' })).toBeVisible();
   });
 
   test('asset detail page renders Timeline + Events panel', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/assets/${productId}`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/assets/${productId}`, {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.locator('app-timeline-view')).toBeVisible({ timeout: 15000 });
@@ -52,7 +55,7 @@ test.describe('Entity-page timeline + events panel', () => {
   });
 
   test('company detail page renders forward-windowed Timeline + Events panel', async () => {
-    await page.goto(`/t/${tenantId}/s/${spaceId}/manage/companies/${companyId}`, {
+    await page.goto(`/t/${tenantId}/s/${spaceId}/profiles/companies/${companyId}`, {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.locator('app-timeline-view')).toBeVisible({ timeout: 15000 });

@@ -61,7 +61,7 @@ Helper methods in the sync service handle phase mapping, masking conversion, spo
 - id: ctgov-manual-trial-sync
   summary: Single-trial sync trigger for ad-hoc refresh of a single NCT.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
   rpcs:
     - trigger_single_trial_sync
   tables:
@@ -94,6 +94,23 @@ Helper methods in the sync service handle phase mapping, masking conversion, spo
     - trials
   related:
     - manage-trials
+  user_facing: false
+  role: viewer
+  status: active
+- id: ctgov-trial-date-markers
+  summary: Trial dates (start, end) live as Trial Start / Trial End markers. Partial dates are resolved to full dates with a precision label; seeding uses a source-aware UPSERT with an adoption step. A BEFORE UPDATE/DELETE trigger enforces ct.gov ownership on markers.
+  routes: []
+  rpcs:
+    - _ctgov_resolve_partial_date
+    - _seed_ctgov_marker_upsert
+    - _create_trial_date_markers
+    - _guard_ctgov_locked_markers
+  tables:
+    - markers
+    - marker_assignments
+  related:
+    - ctgov-snapshot-history
+    - ctgov-field-mapping
   user_facing: false
   role: viewer
   status: active

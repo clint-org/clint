@@ -14,7 +14,6 @@ A full CRUD interface for managing all data within a space:
 | Trials | Clinical studies with all metadata + CT.gov dimensions |
 | Trial Phases | Phase records with phase_type, start_date, end_date, color, label |
 | Trial Markers | Event markers with event_date, end_date, tooltip_text, is_projected |
-| Trial Notes | Free-text annotations on trials |
 | Marker Types | Custom marker types beyond the 10 system defaults (each assigned to a category) |
 | Indications | Disease indications with optional hierarchy (name, abbreviation, parent) |
 | Conditions | Granular disease conditions mapped to indications |
@@ -25,8 +24,8 @@ A full CRUD interface for managing all data within a space:
 - id: manage-companies
   summary: CRUD interface for pharma/biotech company records (name, logo_url, display_order, color).
   routes:
-    - /t/:tenantId/s/:spaceId/manage/companies
-    - /t/:tenantId/s/:spaceId/manage/companies/:id
+    - /t/:tenantId/s/:spaceId/profiles/companies
+    - /t/:tenantId/s/:spaceId/profiles/companies/:id
   rpcs: []
   tables:
     - companies
@@ -37,8 +36,8 @@ A full CRUD interface for managing all data within a space:
 - id: manage-assets
   summary: CRUD interface for drug/therapy assets (formerly products) linked to a company.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/assets
-    - /t/:tenantId/s/:spaceId/manage/assets/:id
+    - /t/:tenantId/s/:spaceId/profiles/assets
+    - /t/:tenantId/s/:spaceId/profiles/assets/:id
   rpcs:
     - link_asset_moa_roa
   tables:
@@ -51,16 +50,15 @@ A full CRUD interface for managing all data within a space:
   role: editor
   status: active
 - id: manage-trials
-  summary: CRUD interface for clinical studies with full metadata plus CT.gov dimensions, including phase records, notes, and indication assignment.
+  summary: CRUD interface for clinical studies with full metadata plus CT.gov dimensions, including phase records and indication assignment.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
   rpcs:
     - set_trial_indications
     - get_trial_indications
   tables:
     - trials
-    - trial_notes
     - trial_conditions
     - trial_assets
     - conditions
@@ -76,7 +74,7 @@ A full CRUD interface for managing all data within a space:
 - id: manage-markers
   summary: Edit event markers (event_date, end_date, tooltip_text, is_projected) attached to trials. On the trial detail page, clicking a marker title opens the read-only detail drawer (Field, Date type, Last synced, source link) shared with the timeline; its Edit action (editors only) and "View detail" links on catalyst rows both deep-link via ?marker=<id>, which opens the inline editor reactively (also closes the drawer). The row kebab still offers a direct Edit. Markers no longer have their own detail page. Trial-assignment changes go through update_marker_assignments, an atomic RPC that keeps the AFTER DELETE orphan-cleanup trigger from dropping a single-assignment marker mid-edit.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
   rpcs:
     - update_marker_assignments
     - _cleanup_orphan_marker
@@ -91,7 +89,7 @@ A full CRUD interface for managing all data within a space:
 - id: manage-marker-types
   summary: Define custom marker types beyond the 10 system defaults, each assigned to a category.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/marker-types
+    - /t/:tenantId/s/:spaceId/settings/marker-types
     - /t/:tenantId/s/:spaceId/settings/marker-types
   rpcs: []
   tables:
@@ -119,7 +117,7 @@ A full CRUD interface for managing all data within a space:
 - id: manage-mechanisms-of-action
   summary: Manage mechanism-of-action taxonomy attached to assets.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/mechanisms-of-action
+    - /t/:tenantId/s/:spaceId/settings/taxonomies
   rpcs:
     - update_asset_mechanisms
   tables:
@@ -133,7 +131,7 @@ A full CRUD interface for managing all data within a space:
 - id: manage-routes-of-administration
   summary: Manage route-of-administration taxonomy attached to assets.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/routes-of-administration
+    - /t/:tenantId/s/:spaceId/settings/taxonomies
   rpcs:
     - update_asset_routes
   tables:
@@ -147,7 +145,7 @@ A full CRUD interface for managing all data within a space:
 - id: manage-engagement-overview
   summary: Engagement-level management dashboard linking to all data-management sections.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/engagement
+    - /t/:tenantId/s/:spaceId/profiles/engagement
   rpcs: []
   tables:
     - spaces

@@ -16,7 +16,7 @@ flowchart TB
     subgraph SPA["Angular 19 SPA (src/client/)"]
       direction LR
       Dashboard["Dashboard<br/>(timeline)"]
-      Manage["Manage<br/>(CRUD UI)"]
+      Profiles["Profiles<br/>(browse + edit)"]
       Auth["Auth /<br/>Onboard"]
       Agency["Agency<br/>/admin/*"]
       SuperAdmin["Super-admin<br/>/super-admin"]

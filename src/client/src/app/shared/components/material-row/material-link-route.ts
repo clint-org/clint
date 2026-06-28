@@ -27,17 +27,17 @@ export function routeForLink(
   const base = ['/t', tenant, 's', space];
   switch (link.entity_type) {
     case 'company':
-      return { commands: [...base, 'manage', 'companies', link.entity_id] };
+      return { commands: [...base, 'profiles', 'companies', link.entity_id] };
     case 'product':
-      return { commands: [...base, 'manage', 'assets', link.entity_id] };
+      return { commands: [...base, 'profiles', 'assets', link.entity_id] };
     case 'trial':
-      return { commands: [...base, 'manage', 'trials', link.entity_id] };
+      return { commands: [...base, 'profiles', 'trials', link.entity_id] };
     case 'space':
       return { commands: base };
     case 'marker':
       return link.trial_id
         ? {
-            commands: [...base, 'manage', 'trials', link.trial_id],
+            commands: [...base, 'profiles', 'trials', link.trial_id],
             queryParams: { markerId: link.entity_id },
           }
         : null;

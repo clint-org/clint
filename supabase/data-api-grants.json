@@ -86,8 +86,8 @@
       "justification": "client: marker.service reads assignments for cache invalidation and trial detail embeds them via TRIAL_SELECT; integration: marker-edit-flow.spec contributor direct delete expects ok (orphan-cleanup contract). Assignment writes go through the update_marker_assignments SECURITY DEFINER RPC; the only direct authenticated insert test expects 42501."
     },
     "marker_categories": {
-      "authenticated": ["select"],
-      "justification": "client: marker-category.service lists categories; marker-type and trial selects embed marker_categories."
+      "authenticated": ["select", "insert", "update", "delete"],
+      "justification": "client: marker-category.service full CRUD (manage surface: create/rename/reorder/delete) plus inline create from the marker-type form; marker-type and trial selects embed marker_categories. RLS restricts writes to space owners/editors."
     },
     "marker_types": {
       "authenticated": ["select", "insert", "update", "delete"],
@@ -112,6 +112,10 @@
     "primary_intelligence": {
       "authenticated": ["select"],
       "justification": "client: primary-intelligence.service reads scope rows for cache invalidation and listing. Writes go through upsert_primary_intelligence and related RPCs; e2e fixtures use the service-role key."
+    },
+    "primary_intelligence_anchors": {
+      "authenticated": ["select"],
+      "justification": "client: primary-intelligence.service reads anchors for cache invalidation and brief lists via list_intelligence_for_entity. Writes go through upsert_primary_intelligence / set_intelligence_lead / reorder_intelligence (SECURITY DEFINER); e2e fixtures use the service-role key."
     },
     "primary_intelligence_links": {
       "authenticated": ["select"],

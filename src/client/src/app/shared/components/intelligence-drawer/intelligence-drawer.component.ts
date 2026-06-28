@@ -38,7 +38,6 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
  */
 @Component({
   selector: 'app-intelligence-drawer',
-  standalone: true,
   imports: [
     FormsModule,
     ButtonModule,
@@ -227,6 +226,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
   private messageService = inject(MessageService);
 
   readonly visible = input<boolean>(false);
+  readonly anchorId = input<string | null>(null);
   readonly spaceId = input.required<string>();
   readonly entityType = input.required<IntelligenceEntityType>();
   readonly entityId = input.required<string>();
@@ -382,8 +382,15 @@ export class IntelligenceDrawerComponent implements OnDestroy {
   }
 
   private applyBundle(bundle: IntelligenceDetailBundle | null): void {
-    const draft = bundle?.draft ?? null;
-    const pub = bundle?.published ?? null;
+    const aid = this.anchorId();
+    // For new-brief mode (anchorId null) show a blank form; never seed from
+    // an existing brief so the author starts fresh.
+    const brief =
+      aid != null
+        ? (bundle?.briefs.find((b) => b.anchor_id === aid) ?? null)
+        : null;
+    const draft = brief?.draft ?? null;
+    const pub = brief?.published ?? null;
     const source = draft ?? pub;
 
     this.hasPublishedVersion.set(pub !== null);
@@ -432,6 +439,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
     this.saveState.set('saving');
     const input: UpsertIntelligenceInput = {
       id: this.currentId(),
+      anchor_id: this.anchorId(),
       space_id: this.spaceId(),
       entity_type: this.entityType(),
       entity_id: this.entityId(),

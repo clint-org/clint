@@ -15,26 +15,14 @@
     }
   </app-section-header>
 
-  <app-grid-toolbar [state]="grid" searchPlaceholder="Search events...">
+  <app-grid-toolbar
+    [state]="grid"
+    searchPlaceholder="Search events..."
+    [leadingChip]="scopeChip()"
+    (leadingChipRemove)="clearScope()"
+  >
     <app-export-button gridToolbarEnd [actions]="exportActions" />
   </app-grid-toolbar>
-
-  @if (scope(); as s) {
-    <div
-      class="mb-3 flex items-center justify-between gap-3 border border-brand-200 bg-brand-50 px-3 py-2"
-    >
-      <span class="text-xs text-slate-600">
-        Scoped to this {{ s.entityLevel | entityNoun }} and everything beneath it.
-      </span>
-      <button
-        type="button"
-        class="font-mono text-xs uppercase tracking-wider text-brand-700 hover:text-brand-800"
-        (click)="clearScope()"
-      >
-        View all events
-      </button>
-    </div>
-  }
 
   <div class="flex gap-0" [class.divide-x]="selectedItem()">
     <!-- Table area -->
@@ -375,7 +363,10 @@
           [catalystDetail]="selectedCatalystDetail()"
           [selectedFeedItem]="selectedItem()"
           [canEdit]="spaceRole.canEdit()"
-          [feedItems]="feedItems()"
+          [distribution]="overviewDistribution()"
+          [recentItems]="overviewRecent()"
+          [overviewTotal]="serverTotal()"
+          [overviewHighPriority]="overviewHighPriority()"
           [spaceId]="spaceId()"
           [tenantId]="tenantId"
           (edit)="onEditSelected()"

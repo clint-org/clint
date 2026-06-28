@@ -19,7 +19,7 @@ const ts = readFileSync(join(__dirname, 'dashboard-grid.component.ts'), 'utf8');
 
 describe('trial-row primary-intelligence mark', () => {
   it('renders the bookmark mark whenever the trial owns intelligence', () => {
-    expect(html).toContain('@if (row.trial.has_intelligence) {');
+    expect(html).toContain('row.trial.has_intelligence');
     expect(html).toContain('<app-pi-mark [size]="11"');
   });
 

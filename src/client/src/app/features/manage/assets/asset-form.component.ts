@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   input,
   OnInit,
@@ -23,6 +24,8 @@ import { RouteOfAdministrationService } from '../../../core/services/route-of-ad
 import { extractConstraintMessage } from '../../../core/util/db-error';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 import { AssetEditFormComponent } from './asset-edit-form.component';
+import { resolveCreateCompanyId } from './asset-form-company';
+import type { CreateFn } from '../shared/taxonomy-multiselect/taxonomy-create-controller';
 
 const ASSET_FIELD_LABELS: Record<string, string> = {
   name: 'Name',
@@ -38,9 +41,19 @@ const ASSET_FIELD_LABELS: Record<string, string> = {
 })
 export class AssetFormComponent implements OnInit {
   readonly asset = input<Asset | null>(null);
+  /**
+   * When set (and not editing), the company is pre-selected and locked. Used
+   * when the create form is opened from a company's detail page so the new
+   * asset is bound to that company without the user re-picking it.
+   */
+  readonly lockedCompanyId = input<string | null>(null);
 
   readonly saved = output<Asset>();
   readonly cancelled = output<void>();
+
+  protected readonly companyLocked = computed(
+    () => this.asset() === null && !!this.lockedCompanyId()
+  );
 
   readonly name = signal('');
   readonly genericName = signal('');
@@ -62,6 +75,35 @@ export class AssetFormComponent implements OnInit {
   private roaService = inject(RouteOfAdministrationService);
   private route = inject(ActivatedRoute);
 
+  // Inline-create handlers for the MOA/ROA multiselects: persist a name-only
+  // value, register it in the option list so it renders selected, and surface
+  // failures through the form's error banner. Re-throws so the multiselect
+  // keeps the typed text for retry.
+  protected readonly createMoa: CreateFn = (name) =>
+    this.createTaxonomy(name, this.moaService, this.moaOptions, 'mechanism');
+  protected readonly createRoa: CreateFn = (name) =>
+    this.createTaxonomy(name, this.roaService, this.roaOptions, 'route');
+
+  private async createTaxonomy<T extends { id: string; name: string }>(
+    name: string,
+    service: { create(spaceId: string, value: { name: string }): Promise<T> },
+    options: { update(fn: (list: T[]) => T[]): void },
+    label: string
+  ): Promise<T> {
+    this.error.set(null);
+    try {
+      const spaceId = this.route.snapshot.paramMap.get('spaceId')!;
+      const created = await service.create(spaceId, { name });
+      options.update((list) => [...list, created]);
+      return created;
+    } catch (err) {
+      this.error.set(
+        extractConstraintMessage(err, { name: label }) ?? `Could not add ${label} "${name}".`
+      );
+      throw err;
+    }
+  }
+
   async ngOnInit(): Promise<void> {
     const p = this.asset();
     if (p) {
@@ -82,8 +124,13 @@ export class AssetFormComponent implements OnInit {
       this.companies.set(list);
       this.moaOptions.set(moas);
       this.roaOptions.set(roas);
-      if (!p && list.length > 0) {
-        this.companyId.set(list[0].id);
+      if (!p) {
+        this.companyId.set(
+          resolveCreateCompanyId({
+            lockedCompanyId: this.lockedCompanyId(),
+            companyIds: list.map((c) => c.id),
+          })
+        );
       }
       if (p) {
         this.selectedMoaIds.set((p.mechanisms_of_action ?? []).map((m) => m.id));

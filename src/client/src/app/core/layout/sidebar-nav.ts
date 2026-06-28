@@ -5,7 +5,7 @@ import { NAV_ICONS } from '../../shared/constants/nav-icons';
  * `Section` union in `app-shell.component.ts` and the `NAV_SECTIONS` array
  * below.
  */
-export type SidebarSectionId = 'landscape' | 'intelligence' | 'manage' | 'settings';
+export type SidebarSectionId = 'landscape' | 'intelligence' | 'profiles' | 'settings' | 'reference';
 
 export interface NavItem {
   label: string;
@@ -18,6 +18,20 @@ export interface NavItem {
    * by `spaceOwnerGuard` / `auditSpaceGuard` so a deep-link is denied too.
    */
   ownerOnly?: boolean;
+  /**
+   * When true, the item is hidden from non-editors (viewers). Used for the
+   * reference-settings management pages (Taxonomies, Marker Types); the route
+   * is also guarded by `editGuard` so a deep-link is denied too. Viewers get
+   * the read-only guides in the Reference group instead.
+   */
+  editorOnly?: boolean;
+  /**
+   * When true, the item is hidden for every role until the current space has
+   * an engagement write-up (published or draft). Used for the Engagement item:
+   * with no write-up there is nothing to show, and editors can still author
+   * the first one from the Intelligence Feed ("Publish intelligence" -> Space).
+   */
+  requiresEngagement?: boolean;
 }
 
 export interface NavSection {
@@ -51,23 +65,28 @@ export const NAV_SECTIONS: NavSection[] = [
     id: 'intelligence',
     label: 'Intelligence',
     items: [
-      { label: 'Engagement', route: 'manage/engagement', icon: NAV_ICONS['engagement'] },
       {
         label: 'Intelligence Feed',
         route: 'intelligence',
         icon: NAV_ICONS['intelligence-feed'],
       },
-      { label: 'Materials', route: 'materials', icon: NAV_ICONS['materials'] },
+      {
+        label: 'Engagement',
+        route: 'profiles/engagement',
+        icon: NAV_ICONS['engagement'],
+        requiresEngagement: true,
+      },
       { label: 'Events', route: 'events', icon: NAV_ICONS['events'] },
+      { label: 'Materials', route: 'materials', icon: NAV_ICONS['materials'] },
     ],
   },
   {
-    id: 'manage',
-    label: 'Manage',
+    id: 'profiles',
+    label: 'Profiles',
     items: [
-      { label: 'Companies', route: 'manage/companies', icon: NAV_ICONS['companies'] },
-      { label: 'Assets', route: 'manage/assets', icon: NAV_ICONS['assets'] },
-      { label: 'Trials', route: 'manage/trials', icon: NAV_ICONS['trials'] },
+      { label: 'Companies', route: 'profiles/companies', icon: NAV_ICONS['companies'] },
+      { label: 'Assets', route: 'profiles/assets', icon: NAV_ICONS['assets'] },
+      { label: 'Trials', route: 'profiles/trials', icon: NAV_ICONS['trials'] },
     ],
   },
   {
@@ -78,15 +97,34 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'General', route: 'settings/general', icon: NAV_ICONS['general'], ownerOnly: true },
       { label: 'Members', route: 'settings/members', icon: NAV_ICONS['members'], ownerOnly: true },
       { label: 'Fields', route: 'settings/fields', icon: NAV_ICONS['fields'], ownerOnly: true },
-      // Reference settings: read-only, visible to all space roles.
-      { label: 'Taxonomies', route: 'settings/taxonomies', icon: NAV_ICONS['taxonomies'] },
-      { label: 'Marker Types', route: 'settings/marker-types', icon: NAV_ICONS['marker-types'] },
+      {
+        label: 'Taxonomies',
+        route: 'settings/taxonomies',
+        icon: NAV_ICONS['taxonomies'],
+        editorOnly: true,
+      },
+      {
+        label: 'Marker Types',
+        route: 'settings/marker-types',
+        icon: NAV_ICONS['marker-types'],
+        editorOnly: true,
+      },
       {
         label: 'Audit log',
         route: 'settings/audit-log',
         icon: NAV_ICONS['audit-log'],
         ownerOnly: true,
       },
+    ],
+  },
+  {
+    id: 'reference',
+    label: 'Reference',
+    bottom: true,
+    items: [
+      { label: 'Taxonomies guide', route: 'help/taxonomies', icon: NAV_ICONS['taxonomies'] },
+      { label: 'Markers guide', route: 'help/markers', icon: NAV_ICONS['marker-types'] },
+      { label: 'Phases guide', route: 'help/phases', icon: NAV_ICONS['phases'] },
     ],
   },
 ];
@@ -96,23 +134,28 @@ export const ORG_ONLY_SECTIONS: NavSection[] = [];
 /**
  * Filter the nav sections for the current space role. Pure (no Angular deps)
  * so it can be unit-tested directly:
- * - non-editors lose the `manage` section entirely,
- * - non-owners lose owner-only items (General, Members, Fields, Audit log)
- *   but keep the reference items (Taxonomies, Marker Types). A section with
- *   only reference items left is kept, not dropped.
+ * - `ownerOnly` items (General, Members, Fields, Audit log) drop for non-owners,
+ * - `editorOnly` items (Taxonomies / Marker Types management) drop for viewers,
+ * - `requiresEngagement` items (Engagement) drop for every role when the space
+ *   has no engagement write-up (`hasEngagement` false),
+ * - the Profiles and Reference sections carry no flags, so they survive for all
+ *   roles. A section left with no items is dropped.
  */
 export function filterNavSections(
   sections: NavSection[],
   canEdit: boolean,
-  isOwner: boolean
+  isOwner: boolean,
+  hasEngagement: boolean
 ): NavSection[] {
   return sections
-    .filter((section) => canEdit || section.id !== 'manage')
-    .map((section) => {
-      if (isOwner || !section.items.some((item) => item.ownerOnly)) {
-        return section;
-      }
-      return { ...section, items: section.items.filter((item) => !item.ownerOnly) };
-    })
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) =>
+          (isOwner || !item.ownerOnly) &&
+          (canEdit || !item.editorOnly) &&
+          (hasEngagement || !item.requiresEngagement)
+      ),
+    }))
     .filter((section) => section.items.length > 0);
 }

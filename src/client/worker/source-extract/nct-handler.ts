@@ -8,6 +8,7 @@ import { toStudyRecord, applyNctTrialNames } from './nct-study-record';
 import { validateExtraction } from './response-validator';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
 import { applyLogoEnrichment, resolveProposalNames } from './post-extract';
+import { extractionTemperature } from './temperature';
 import type { NctResolveRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
 
 const NCT_REGEX = /^NCT\d{8}$/i;
@@ -185,7 +186,8 @@ export async function handleNctResolve(
   const prompt = buildNctPrompt(studyRecords, inventory);
   // Captured into ai_calls.output at close for exact replay/analysis.
   const promptText = `${prompt.system}\n\n${prompt.user}`;
-  const aiParams = { model: preflight.model, max_tokens: 8192 };
+  const temperature = extractionTemperature(preflight.model);
+  const aiParams = { model: preflight.model, max_tokens: 8192, temperature };
 
   let rawOutput: string;
   let promptTokens = 0;
@@ -200,6 +202,7 @@ export async function handleNctResolve(
         // Use the tenant's configured model (resolved server-side in preflight).
         model: preflight.model,
         max_tokens: 8192,
+        ...(temperature !== undefined ? { temperature } : {}),
         system: prompt.system,
         messages: [{ role: 'user', content: prompt.user }],
       },

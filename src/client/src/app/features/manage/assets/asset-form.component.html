@@ -12,8 +12,11 @@
     [(roaIds)]="selectedRoaIds"
     [(displayOrder)]="displayOrder"
     [companyOptions]="companies()"
+    [companyLocked]="companyLocked()"
     [moaOptions]="moaOptions()"
     [roaOptions]="roaOptions()"
+    [moaCreateFn]="createMoa"
+    [roaCreateFn]="createRoa"
     [nameInvalid]="nameInvalid"
     (nameBlur)="nameBlurred.set(true)"
   />

@@ -305,7 +305,9 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 | `palette_recents` | yes | 1 |
 | `platform_admins` | yes | 0 |
 | `primary_intelligence` | yes | 4 |
+| `primary_intelligence_anchors` | yes | 4 |
 | `primary_intelligence_links` | yes | 4 |
+| `r2_drain_control` | **no** | 0 |
 | `r2_pending_deletes` | yes | 0 |
 | `retired_hostnames` | yes | 1 |
 | `routes_of_administration` | yes | 4 |

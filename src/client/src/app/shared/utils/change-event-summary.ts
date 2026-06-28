@@ -1,4 +1,5 @@
 import type { ChangeEvent, ChangeEventType } from '../../core/models/change-event.model';
+import type { FeedItem } from '../../core/models/event.model';
 import {
   DEVELOPMENT_STATUS_COLORS,
   type DevelopmentStatus,
@@ -546,4 +547,50 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
     default:
       return { color: null, segments: [{ kind: 'plain', text: e.event_type as ChangeEventType }] };
   }
+}
+
+/**
+ * Build a minimal ChangeEvent from a detected (CT.gov) feed row so it can be
+ * passed to summaryFor / summarySegmentsFor. The marker-context fields the
+ * marker_* summaries need (marker_title, marker_type_name, ...) live in the
+ * change payload, so they are read from there -- a detected row never carries
+ * them as top-level columns. Shared by the Events table, the events overview
+ * "most recent" list, and the detected detail hero so all three render the
+ * same composed summary instead of the raw "Marker Added" event-type label.
+ */
+export function feedItemToChangeEvent(fi: FeedItem, spaceId = ''): ChangeEvent {
+  const p = (fi.change_payload ?? {}) as Record<string, unknown>;
+  const str = (key: string): string | null =>
+    typeof p[key] === 'string' ? (p[key] as string) : null;
+  return {
+    id: fi.id,
+    trial_id: fi.entity_id ?? '',
+    space_id: spaceId,
+    event_type: fi.change_event_type as ChangeEventType,
+    source: fi.change_source ?? 'ctgov',
+    payload: fi.change_payload ?? {},
+    occurred_at: fi.event_date,
+    observed_at: fi.feed_ts ?? fi.observed_at ?? fi.event_date,
+    marker_id: null,
+    trial_name: fi.entity_name,
+    trial_identifier: null,
+    asset_name: fi.asset_name,
+    company_name: fi.company_name,
+    company_logo_url: fi.company_logo_url,
+    marker_title: str('marker_title'),
+    marker_color: str('marker_color'),
+    marker_type_name: str('marker_type_name'),
+    from_marker_type_name: str('from_marker_type_name'),
+    to_marker_type_name: str('to_marker_type_name'),
+  };
+}
+
+/**
+ * Flatten rich summary segments to a single plain string (arrows become "→").
+ * For surfaces that show the composed summary as truncated single-line text
+ * (the events overview "most recent" list, the Excel export cell) rather than
+ * the styled segment row.
+ */
+export function flattenSummarySegments(segments: SummarySegment[]): string {
+  return segments.map((seg) => (seg.kind === 'arrow' ? '→' : seg.text)).join('');
 }

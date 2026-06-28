@@ -13,6 +13,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { mapDashboardCompanies } from './dashboard.service';
+import {
+  deriveTrialPhaseSpan,
+  TRIAL_START_MARKER_TYPE_ID,
+  TRIAL_END_MARKER_TYPE_ID,
+} from '../models/trial-phase-span';
 
 describe('mapDashboardCompanies', () => {
   it('surfaces the indication entity id as _indications[].indication_id on nested trials', () => {
@@ -80,6 +85,69 @@ describe('mapDashboardCompanies', () => {
     ]);
   });
 
+  it('preserves the flat marker_type_id so the phase bar derives a span', () => {
+    // Regression guard: get_dashboard_data emits each marker with BOTH a flat
+    // marker_type_id and a nested marker_type object. mapDashboardCompanies maps
+    // the marker with a `...m` spread, so the flat field must survive. The client
+    // phase bar derives its span via deriveTrialPhaseSpan, which matches markers
+    // on the flat marker_type_id; if the RPC (or this mapping) dropped it, every
+    // phase bar on the dashboard / landscape / pptx-export would render nothing.
+    const raw = [
+      {
+        id: 'co1',
+        name: 'Acme',
+        assets: [
+          {
+            id: 'as1',
+            name: 'DrugX',
+            indications: [
+              {
+                id: 'ind-onc',
+                name: 'Oncology',
+                trials: [
+                  {
+                    id: 't1',
+                    name: 'Trial One',
+                    markers: [
+                      {
+                        id: 'm-start',
+                        marker_type_id: TRIAL_START_MARKER_TYPE_ID,
+                        event_date: '2023-01-15',
+                        date_precision: 'exact',
+                        marker_type: { id: TRIAL_START_MARKER_TYPE_ID, name: 'Trial Start' },
+                      },
+                      {
+                        id: 'm-end',
+                        marker_type_id: TRIAL_END_MARKER_TYPE_ID,
+                        event_date: '2024-12-15',
+                        date_precision: 'exact',
+                        marker_type: { id: TRIAL_END_MARKER_TYPE_ID, name: 'Trial End' },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const companies = mapDashboardCompanies(raw);
+    const trial = companies[0].assets[0].trials[0];
+
+    // The flat marker_type_id survives the `...m` spread.
+    expect(trial.markers.map((m: { marker_type_id: string }) => m.marker_type_id)).toEqual([
+      TRIAL_START_MARKER_TYPE_ID,
+      TRIAL_END_MARKER_TYPE_ID,
+    ]);
+
+    // And the phase bar span derives correctly from the mapped markers.
+    const span = deriveTrialPhaseSpan(trial.markers);
+    expect(span.start).toBe('2023-01-15');
+    expect(span.end).toBe('2024-12-15');
+  });
+
   it('falls back to asset.trials when an asset has no indication grouping', () => {
     const raw = [
       {
@@ -130,6 +198,26 @@ describe('mapDashboardCompanies', () => {
     expect(trials.find((t: { id: string }) => t.id === 't2').ctgov_withdrawn_at).toBeNull();
   });
 
+  it('maps company and asset intelligence presence + headline through', () => {
+    const out = mapDashboardCompanies([
+      {
+        id: 'c1', name: 'Novo', logo_url: null,
+        has_intelligence: true, intelligence_headline: 'Co headline',
+        assets: [
+          {
+            id: 'a1', name: 'Sema',
+            has_intelligence: true, intelligence_headline: 'Asset headline',
+            indications: [], trials: [],
+          },
+        ],
+      },
+    ]);
+    expect(out[0].has_intelligence).toBe(true);
+    expect(out[0].intelligence_headline).toBe('Co headline');
+    expect(out[0].assets[0].has_intelligence).toBe(true);
+    expect(out[0].assets[0].intelligence_headline).toBe('Asset headline');
+  });
+
   it('threads has_intelligence and intelligence_headline from the RPC onto the trial', () => {
     const raw = [
       {
@@ -171,4 +259,75 @@ describe('mapDashboardCompanies', () => {
     expect(withoutPi.has_intelligence).toBe(false);
     expect(withoutPi.intelligence_headline).toBeNull();
   });
+});
+
+describe('mapDashboardCompanies — unspecified node', () => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const data = [
+    {
+      id: 'co1',
+      name: 'Co',
+      logo_url: null,
+      assets: [
+        {
+          id: 'a1',
+          name: 'Asset',
+          indications: [
+            {
+              id: 'ind1',
+              name: 'Obesity',
+              is_unspecified: false,
+              trials: [{ id: 't1', name: 'Classified', markers: [] }],
+            },
+            {
+              id: null,
+              name: 'Unspecified',
+              is_unspecified: true,
+              trials: [{ id: 't2', name: 'Orphan', markers: [] }],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  it('folds orphan trials into the flat list', () => {
+    const out = mapDashboardCompanies(data);
+    const ids = out[0].assets[0].trials.map((t: any) => t.id);
+    expect(ids).toEqual(['t1', 't2']);
+  });
+
+  it('gives orphan trials an empty _indications (no fake chip)', () => {
+    const out = mapDashboardCompanies(data);
+    const orphan = out[0].assets[0].trials.find((t: any) => t.id === 't2');
+    expect(orphan._indications).toEqual([]);
+  });
+
+  it('keeps real indication refs on classified trials', () => {
+    const out = mapDashboardCompanies(data);
+    const classified = out[0].assets[0].trials.find((t: any) => t.id === 't1');
+    expect(classified._indications).toEqual([
+      { id: 'ind1', indication_id: 'ind1', indication_name: 'Obesity' },
+    ]);
+  });
+
+  it('strips the synthetic node from the asset indications passthrough', () => {
+    // The RPC emits the synthetic node inside p.indications. A future consumer
+    // iterating asset.indications (e.g. track ind.id) must never see a null-keyed
+    // entry. Only real indications should survive the passthrough; orphan trials
+    // must still appear in the flat trials list with empty _indications.
+    const out = mapDashboardCompanies(data);
+    const asset = out[0].assets[0];
+
+    // Passthrough includes only real indications (id !== null, is_unspecified !== true).
+    expect(asset.indications).toHaveLength(1);
+    expect(asset.indications[0].id).toBe('ind1');
+
+    // Orphan trial is still present in the flat list.
+    expect(asset.trials.map((t: any) => t.id)).toContain('t2');
+    // Orphan trial carries empty _indications (no fake chip).
+    const orphan = asset.trials.find((t: any) => t.id === 't2');
+    expect(orphan._indications).toEqual([]);
+  });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 });

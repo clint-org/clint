@@ -28,6 +28,7 @@ import { PngExportService } from '../dashboard/export/png-export.service';
 import { LegendComponent } from '../dashboard/legend/legend.component';
 import { LandscapeStateService } from './landscape-state.service';
 import { TimelineInsightStripComponent } from './timeline-insight-strip.component';
+import { deriveTrialPhaseSpan } from '../../core/models/trial-phase-span';
 
 @Component({
   selector: 'app-timeline-view',
@@ -60,7 +61,6 @@ export class TimelineViewComponent {
   readonly hideMoaColumn = input<boolean>(false);
   readonly hideRoaColumn = input<boolean>(false);
   readonly hideIndicationColumn = input<boolean>(false);
-  readonly hideNotesColumn = input<boolean>(false);
   readonly hideLegend = input<boolean>(false);
   readonly legendVisible = input<boolean>(false);
   readonly columnsOnly = input<boolean>(false);
@@ -144,12 +144,13 @@ export class TimelineViewComponent {
       for (const company of companies) {
         for (const product of company.assets ?? []) {
           for (const trial of product.trials ?? []) {
-            if (trial.phase_start_date) {
-              const sy = new Date(trial.phase_start_date).getFullYear();
+            const trialSpan = deriveTrialPhaseSpan(trial.markers ?? []);
+            if (trialSpan.start) {
+              const sy = new Date(trialSpan.start).getFullYear();
               if (sy < minYear) minYear = sy;
             }
-            if (trial.phase_end_date) {
-              const ey = new Date(trial.phase_end_date).getFullYear();
+            if (trialSpan.end) {
+              const ey = new Date(trialSpan.end).getFullYear();
               if (ey > maxYear) maxYear = ey;
             }
             for (const marker of trial.markers ?? []) {
@@ -195,7 +196,6 @@ export class TimelineViewComponent {
       showMoaColumn: this.state.showMoaColumn(),
       showRoaColumn: this.state.showRoaColumn(),
       showIndicationColumn: this.state.showIndicationColumn(),
-      showNotesColumn: this.state.showNotesColumn(),
       tenant,
       filename: await this.exportFilename('pptx'),
     });
@@ -215,7 +215,6 @@ export class TimelineViewComponent {
         hideMoaColumn: this.hideMoaColumn(),
         hideRoaColumn: this.hideRoaColumn(),
         hideIndicationColumn: this.hideIndicationColumn(),
-        hideNotesColumn: this.hideNotesColumn(),
         spaceId: this.spaceId(),
         tenantName: tenant?.name ?? '',
         tenantLogoUrl: tenant?.logoUrl ?? null,
@@ -235,7 +234,7 @@ export class TimelineViewComponent {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'trials',
       trial.id,
     ]);
@@ -272,7 +271,7 @@ export class TimelineViewComponent {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'trials',
       trial.id,
     ]);
@@ -285,7 +284,7 @@ export class TimelineViewComponent {
       this.tenantId(),
       's',
       this.spaceId(),
-      'manage',
+      'profiles',
       'companies',
       companyId,
     ]);
@@ -293,7 +292,7 @@ export class TimelineViewComponent {
 
   onAssetClick(assetId: string): void {
     if (!assetId) return;
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'manage', 'assets', assetId]);
+    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'profiles', 'assets', assetId]);
   }
 
   retry(): void {

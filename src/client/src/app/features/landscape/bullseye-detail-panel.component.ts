@@ -83,7 +83,6 @@ export class BullseyeDetailPanelComponent {
 
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();
-  readonly openInTimeline = output<{ assetId: string; therapeuticAreaId: string }>();
   readonly openMarker = output<string>();
   readonly openIntelligence = output<{ entityType: IntelligenceEntityType; entityId: string }>();
   readonly ringHighlightToggle = output<RingPhase | null>();
@@ -149,17 +148,24 @@ export class BullseyeDetailPanelComponent {
   private readonly perSpacePaths = signal<string[] | null>(null);
   private readonly snapshotByTrial = signal<Map<string, unknown>>(new Map());
   readonly intelligenceNotes = signal<AssetIntelligenceNote[]>([]);
+  readonly companyIntelligenceRefs = signal<PiReference[]>([]);
 
-  /** Asset PI notes mapped to the shared PiDetailSection reference shape. */
-  protected readonly intelligenceReferences = computed<PiReference[]>(() =>
-    this.intelligenceNotes().map((n) => ({
+  /**
+   * Asset/trial PI notes plus the asset's company-level briefs, mapped to the
+   * shared PiDetailSection reference shape. Company briefs carry entity_type
+   * 'company' so they render with a "Company" tag in the same list rather than
+   * a separate section.
+   */
+  protected readonly intelligenceReferences = computed<PiReference[]>(() => [
+    ...this.intelligenceNotes().map((n) => ({
       id: n.id,
       entity_type: n.entity_type,
       entity_id: n.entity_id,
       entity_name: n.entity_name,
       headline: n.headline,
-    }))
-  );
+    })),
+    ...this.companyIntelligenceRefs(),
+  ]);
   private lastVisibilitySpaceId: string | null = null;
   private resolvedSpaceId: string | null = null;
 
@@ -247,6 +253,40 @@ export class BullseyeDetailPanelComponent {
         }
       })();
     });
+
+    // Fetch company-level intelligence for the selected asset's parent company.
+    // Shown as a separate "Company intelligence" section below the asset PI block.
+    // Runs on every asset selection change; guards against stale responses.
+    effect(() => {
+      const asset = this.selectedAsset();
+      this.companyIntelligenceRefs.set([]);
+      if (!asset) return;
+      const spaceId = this.resolvedSpaceId;
+      if (!spaceId) return;
+      const capturedAsset = asset;
+      void (async () => {
+        try {
+          const briefs = await this.intelligenceService.listIntelligenceForEntity(
+            spaceId,
+            'company',
+            asset.company_id
+          );
+          if (this.selectedAsset() !== capturedAsset) return;
+          const refs: PiReference[] = briefs
+            .filter((br) => br.published !== null)
+            .map((br) => ({
+              id: br.published!.record.id,
+              entity_type: 'company' as IntelligenceEntityType,
+              entity_id: asset.company_id,
+              entity_name: asset.company_name,
+              headline: br.published!.record.headline,
+            }));
+          this.companyIntelligenceRefs.set(refs);
+        } catch {
+          if (this.selectedAsset() === capturedAsset) this.companyIntelligenceRefs.set([]);
+        }
+      })();
+    });
   }
 
   snapshotFor(trialId: string): unknown | null {
@@ -326,14 +366,6 @@ export class BullseyeDetailPanelComponent {
   protected onCompanyClick(): void {
     const p = this.selectedAsset();
     if (p) this.openCompany.emit(p.company_id);
-  }
-
-  protected onOpenTimeline(): void {
-    const p = this.selectedAsset();
-    const d = this.data();
-    if (p && d?.scope) {
-      this.openInTimeline.emit({ assetId: p.id, therapeuticAreaId: d.scope.id });
-    }
   }
 
   protected onRingRowClick(phase: RingPhase): void {

@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 
@@ -20,7 +19,7 @@ interface CapabilityRow {
 @Component({
   selector: 'app-roles-help',
   standalone: true,
-  imports: [RouterLink, ManagePageShellComponent],
+  imports: [ManagePageShellComponent],
   template: `
     <app-manage-page-shell>
       <div class="max-w-3xl">
@@ -126,19 +125,12 @@ interface CapabilityRow {
             }
           </div>
         </section>
-
-        <p class="mt-8 text-xs text-slate-400">
-          <a [routerLink]="backLink()" class="text-brand-700 hover:underline"
-            >Back to space members</a
-          >
-        </p>
       </div>
     </app-manage-page-shell>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RolesHelpComponent {
-  private readonly route = inject(ActivatedRoute);
   private readonly brand = inject(BrandContextService);
 
   // Individual-person slot ("a new {teammate}", "Most {teammates} working").
@@ -296,10 +288,5 @@ export class RolesHelpComponent {
     return value === 'yes'
       ? 'inline-block min-w-[2.5rem] text-xs font-semibold text-brand-700'
       : 'inline-block min-w-[2.5rem] text-xs font-semibold text-slate-300';
-  }
-
-  protected backLink(): string[] {
-    const tenantId = this.route.snapshot.paramMap.get('tenantId');
-    return tenantId ? ['/t', tenantId, 'spaces'] : ['/'];
   }
 }

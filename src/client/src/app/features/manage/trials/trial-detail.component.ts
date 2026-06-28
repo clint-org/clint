@@ -5,7 +5,6 @@ import {
   computed,
   effect,
   inject,
-  OnDestroy,
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -20,7 +19,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
 import { SourceProvenanceLineComponent } from '../../../shared/components/source-provenance/source-provenance-line.component';
 import { sectionHashUrl } from './section-hash-url';
-import { Trial, TrialNote } from '../../../core/models/trial.model';
+import { Trial } from '../../../core/models/trial.model';
 import { Marker } from '../../../core/models/marker.model';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
@@ -28,35 +27,35 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
 import { shouldShowTrialSecondaryName } from '../../../core/utils/display-fallbacks';
 import { TrialService } from '../../../core/services/trial.service';
 import { MarkerService } from '../../../core/services/marker.service';
-import { TrialNoteService } from '../../../core/services/trial-note.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
 import {
   IntelligenceDetailBundle,
-  ReferencedInRow,
+  IntelligenceHistoryPayload,
 } from '../../../core/models/primary-intelligence.model';
-import { buildEntityRouterLink } from '../../../shared/utils/intelligence-router-link';
 import { ChangeEvent } from '../../../core/models/change-event.model';
 import {
   CTGOV_DETAIL_DEFAULT_PATHS,
   CTGOV_FIELD_CATALOGUE,
 } from '../../../core/models/ctgov-field.model';
+import { deriveTrialPhaseSpan } from '../../../core/models/trial-phase-span';
+import { selectTrialStartMarker, selectTrialEndMarker, isCtgovOwnedMarker } from '../../../core/models/trial-date-marker';
+import { markerStartCaption } from '../../../core/models/marker-date-precision';
 
 import { MarkerFormComponent } from './marker-form.component';
-import { NoteFormComponent } from './note-form.component';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
+import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.component';
+import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
 import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
-import { IntelligenceBlockComponent } from '../../../shared/components/intelligence-block/intelligence-block.component';
+import { IntelligenceStackComponent } from '../../../shared/components/intelligence-stack/intelligence-stack.component';
 import { IntelligenceEmptyComponent } from '../../../shared/components/intelligence-empty/intelligence-empty.component';
 import { IntelligenceDrawerComponent } from '../../../shared/components/intelligence-drawer/intelligence-drawer.component';
-import { IntelligenceHistoryPanelComponent } from '../../../shared/components/intelligence-history-panel/intelligence-history-panel.component';
 import { WithdrawIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/withdraw-dialog.component';
 import { PurgeIntelligenceDialogComponent } from '../../../shared/components/intelligence-history-panel/purge-dialog.component';
-import { IntelligenceHistoryHost } from '../../../shared/components/intelligence-history-panel/history-panel-host';
 import { MaterialsSectionComponent } from '../../../shared/components/materials-section/materials-section.component';
 import { CtgovFieldRendererComponent } from '../../../shared/components/ctgov-field-renderer/ctgov-field-renderer.component';
 import { CtgovSourceTagComponent } from '../../../shared/components/ctgov-source-tag.component';
@@ -66,7 +65,6 @@ import { TrialEditDialogComponent } from './trial-edit-dialog.component';
 import { fetchIndicationsSafe } from './trial-indications';
 import { ctgovRemovedChip } from './ctgov-removed-chip';
 import { confirmDelete } from '../../../shared/utils/confirm-delete';
-import { TopbarStateService } from '../../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { TimelineViewComponent } from '../../landscape/timeline-view.component';
 import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
@@ -87,16 +85,16 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     SkeletonComponent,
     SourceProvenanceLineComponent,
     MarkerFormComponent,
-    NoteFormComponent,
     SectionCardComponent,
+    PiMarkComponent,
+    ReferencedInPanelComponent,
     ManagePageShellComponent,
     RowActionsComponent,
     StatusTagComponent,
     BrandLogoComponent,
-    IntelligenceBlockComponent,
+    IntelligenceStackComponent,
     IntelligenceEmptyComponent,
     IntelligenceDrawerComponent,
-    IntelligenceHistoryPanelComponent,
     WithdrawIntelligenceDialogComponent,
     PurgeIntelligenceDialogComponent,
     MaterialsSectionComponent,
@@ -113,7 +111,7 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
   templateUrl: './trial-detail.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TrialDetailComponent implements OnDestroy {
+export class TrialDetailComponent {
   protected phaseLabel(p: string | null | undefined): string {
     return p ? phaseShortLabel(p) : '';
   }
@@ -127,41 +125,27 @@ export class TrialDetailComponent implements OnDestroy {
   private router = inject(Router);
   private trialService = inject(TrialService);
   private markerService = inject(MarkerService);
-  private noteService = inject(TrialNoteService);
   private intelligenceService = inject(PrimaryIntelligenceService);
   private readonly changeEventService = inject(ChangeEventService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
-  private readonly topbarState = inject(TopbarStateService);
   protected spaceRole = inject(SpaceRoleService);
 
-  // Stable menu-item references per row id, keyed with a prefix so markers
-  // and notes don't collide (see CompanyListComponent comment).
+  // Stable menu-item references per marker id, keyed with a prefix
+  // (see CompanyListComponent comment).
   private readonly menuCache = new Map<string, MenuItem[]>();
 
-  private readonly trialEffect = effect(() => {
-    const t = this.trial();
-    this.topbarState.entityTitle.set(t?.name ?? '');
-    this.topbarState.entityContext.set(t?.identifier ?? '');
-  });
-
-  private readonly topbarActionsEffect = effect(() => {
-    // Edit details (opens trial-edit-dialog) and Delete share the topbar
-    // overflow kebab, matching the grid-row idiom. Inline per-field editing
-    // is still the planned future state.
+  // Entity overflow menu (Edit details / Delete), rendered in the content
+  // section-header instead of the topbar. Empty for viewers.
+  protected readonly entityMenu = computed<MenuItem[]>(() => {
     const trial = this.trial();
-    if (!trial || !this.spaceRole.canEdit()) {
-      this.topbarState.overflowActions.set([]);
-      return;
-    }
-    this.topbarState.overflowActions.set(
-      buildEntityActionMenu({
-        canEdit: true,
-        editLabel: 'Edit details',
-        onEdit: () => this.editingTrial.set(true),
-        onDelete: () => void this.deleteTrial(trial),
-      })
-    );
+    if (!trial || !this.spaceRole.canEdit()) return [];
+    return buildEntityActionMenu({
+      canEdit: true,
+      editLabel: 'Edit details',
+      onEdit: () => this.editingTrial.set(true),
+      onDelete: () => void this.deleteTrial(trial),
+    });
   });
 
   private async deleteTrial(trial: Trial): Promise<void> {
@@ -183,7 +167,7 @@ export class TrialDetailComponent implements OnDestroy {
           this.tenantIdSig(),
           's',
           this.spaceIdSig(),
-          'manage',
+          'profiles',
           'trials',
         ]),
       errorFallback: 'Could not delete trial. Check your connection and try again.',
@@ -248,15 +232,19 @@ export class TrialDetailComponent implements OnDestroy {
 
   readonly addingMarker = signal(false);
   readonly editingMarker = signal<Marker | null>(null);
-  readonly addingNote = signal(false);
-  readonly editingNote = signal<TrialNote | null>(null);
 
   // Primary intelligence
   readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
   readonly intelligenceDrawerOpen = signal(false);
+  // anchor_id of the brief currently open in the drawer; null = new brief
+  protected readonly drawerAnchorId = signal<string | null>(null);
+
+  // Per-anchor history map; populated lazily via onRequestHistory.
+  protected readonly histories = signal<Record<string, IntelligenceHistoryPayload>>({});
+  // Stores the published record id surfaced by the stack's withdraw output.
+  protected readonly withdrawTargetId = signal<string | null>(null);
 
   // Intelligence history (version list, withdraw / purge dialogs)
-  protected readonly historyHost = new IntelligenceHistoryHost(this.intelligenceService);
   protected readonly withdrawDialogOpen = signal(false);
   protected readonly purgeDialogOpen = signal(false);
   protected readonly purgeAnchorMode = signal(false);
@@ -279,9 +267,39 @@ export class TrialDetailComponent implements OnDestroy {
   );
   readonly allCatalogPaths = CTGOV_FIELD_CATALOGUE.map((f) => f.path);
 
-  protected readonly hasIntelligence = computed(() => {
-    const i = this.intelligence();
-    return !!(i?.published || i?.draft);
+  protected readonly hasIntelligence = computed(() =>
+    (this.intelligence()?.briefs.length ?? 0) > 0
+  );
+
+  protected readonly phaseSpan = computed(() => deriveTrialPhaseSpan(this.trial()?.markers ?? []));
+
+  protected readonly phaseStartMarker = computed(() =>
+    selectTrialStartMarker(this.trial()?.markers ?? [])
+  );
+  protected readonly phaseEndMarker = computed(() =>
+    selectTrialEndMarker(this.trial()?.markers ?? [])
+  );
+
+  protected readonly phaseStartSource = computed<'ctgov' | 'analyst' | null>(() => {
+    const m = this.phaseStartMarker();
+    if (!m) return null;
+    return isCtgovOwnedMarker(m) ? 'ctgov' : 'analyst';
+  });
+  protected readonly phaseEndSource = computed<'ctgov' | 'analyst' | null>(() => {
+    const m = this.phaseEndMarker();
+    if (!m) return null;
+    return isCtgovOwnedMarker(m) ? 'ctgov' : 'analyst';
+  });
+
+  protected readonly phaseStartLabel = computed(() => {
+    const span = this.phaseSpan();
+    if (!span.start) return null;
+    return markerStartCaption(span.start, span.startPrecision);
+  });
+  protected readonly phaseEndLabel = computed(() => {
+    const span = this.phaseSpan();
+    if (!span.end) return null;
+    return markerStartCaption(span.end, span.endPrecision);
   });
 
   protected readonly spaceIdSig = computed(() => this.trial()?.space_id ?? '');
@@ -289,17 +307,10 @@ export class TrialDetailComponent implements OnDestroy {
     () => this.route.snapshot.paramMap.get('tenantId') ?? this.findAncestorParam('tenantId')
   );
 
-  /** Router link to the anchor entity whose intelligence references this trial. */
-  protected referencedRouterLink(ref: ReferencedInRow): unknown[] {
-    return (
-      buildEntityRouterLink(
-        this.tenantIdSig(),
-        this.spaceIdSig(),
-        ref.entity_type,
-        ref.entity_id
-      ) ?? []
-    );
-  }
+  // Header count badges for the events / materials cards, fed by each panel's
+  // (loaded) output since those counts are fetched inside the child component.
+  protected readonly eventsCount = signal(0);
+  protected readonly materialsCount = signal(0);
 
   private readonly landscape = inject(LandscapeStateService);
 
@@ -313,7 +324,7 @@ export class TrialDetailComponent implements OnDestroy {
   private async initLandscape(spaceId: string, trialId: string): Promise<void> {
     await this.landscape.init(spaceId, {
       disablePersistence: true,
-      columnDefaults: { showMoaColumn: false, showRoaColumn: false, showNotesColumn: true },
+      columnDefaults: { showMoaColumn: false, showRoaColumn: false },
     });
     this.landscape.filters.set({ ...EMPTY_LANDSCAPE_FILTERS, trialIds: [trialId] });
   }
@@ -483,23 +494,6 @@ export class TrialDetailComponent implements OnDestroy {
     return items;
   }
 
-  noteMenu(note: TrialNote): MenuItem[] {
-    const key = `note:${note.id}`;
-    const cached = this.menuCache.get(key);
-    if (cached) return cached;
-    const items = buildEntityActionMenu({
-      canEdit: this.spaceRole.canEdit(),
-      editLabel: 'Edit',
-      onEdit: () => {
-        this.editingNote.set(note);
-        this.addingNote.set(false);
-      },
-      onDelete: () => void this.deleteNote(note.id),
-    });
-    this.menuCache.set(key, items);
-    return items;
-  }
-
   async onTrialEdited(updated: Trial): Promise<void> {
     // The dialog returns the bare row from PostgREST without the embedded
     // markers / notes / TA join, so reload through the full select instead
@@ -523,9 +517,6 @@ export class TrialDetailComponent implements OnDestroy {
       this.trial.set(trial);
       this.menuCache.clear();
       this.indications.set(await fetchIndicationsSafe(() => this.trialService.listIndications(id)));
-      // History panel depends on the loaded trial's space_id; refresh once
-      // the trial resolves so the inline panel reflects the latest versions.
-      await this.refreshHistory();
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to load trial');
     } finally {
@@ -546,27 +537,14 @@ export class TrialDetailComponent implements OnDestroy {
     }
   }
 
-  private async refreshHistory(): Promise<void> {
-    const t = this.trial();
-    if (!t) return;
-    try {
-      await this.historyHost.load(t.space_id, 'trial', t.id);
-    } catch {
-      // History panel mirrors the intelligence-block: load failures should
-      // not block the page. The panel renders an empty state on its own.
-    }
-  }
-
   protected async onWithdrawConfirmed(reason: string): Promise<void> {
-    const id = this.historyHost.payload().current?.id;
+    const id = this.withdrawTargetId();
     if (!id) return;
     try {
-      await this.historyHost.withdraw(id, reason);
+      await this.intelligenceService.withdraw(id, reason);
       this.withdrawDialogOpen.set(false);
-      // Refresh the intelligence bundle for IntelligenceBlock and reload the
-      // trial bundle (which also refreshes history) so the page reflects the
-      // new state end-to-end.
       await Promise.all([this.loadIntelligence(), this.loadTrial()]);
+      this.histories.set({});
       this.messageService.add({
         severity: 'success',
         summary: 'Intelligence withdrawn.',
@@ -593,9 +571,10 @@ export class TrialDetailComponent implements OnDestroy {
     const id = this.purgeTargetId();
     if (!id) return;
     try {
-      await this.historyHost.purge(id, confirmation, this.purgeAnchorMode());
+      await this.intelligenceService.purge(id, confirmation, this.purgeAnchorMode());
       this.purgeDialogOpen.set(false);
       await Promise.all([this.loadIntelligence(), this.loadTrial()]);
+      this.histories.set({});
       this.messageService.add({
         severity: 'success',
         summary: 'Intelligence purged.',
@@ -672,38 +651,94 @@ export class TrialDetailComponent implements OnDestroy {
     }
   }
 
-  async onNoteSaved(): Promise<void> {
-    this.addingNote.set(false);
-    this.editingNote.set(null);
-    await this.loadTrial();
-    this.messageService.add({ severity: 'success', summary: 'Note saved.', life: 3000 });
+  /** Lazily loads version history for one anchor card; called by the stack on first expand. */
+  protected async onRequestHistory(anchorId: string): Promise<void> {
+    const t = this.trial();
+    if (!t) return;
+    try {
+      const payload = await this.intelligenceService.loadHistory(anchorId, 'trial', t.id);
+      this.histories.update((m) => ({ ...m, [anchorId]: payload }));
+    } catch {
+      // Per-card history load failure must not block the page; the card keeps
+      // its loading line and the user can collapse/expand to retry.
+    }
   }
 
-  async deleteNote(id: string): Promise<void> {
-    const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete note',
-      message: 'Delete this note?',
-      // Unnamed-item path: require the literal word 'delete'.
-      requireTypedConfirmation: true,
-      typedConfirmationValue: 'delete',
+  protected onWithdrawRequested(e: { anchorId: string; id: string; headline: string }): void {
+    this.withdrawTargetId.set(e.id);
+    this.withdrawDialogOpen.set(true);
+  }
+
+  protected onDiscardDraft(anchorId: string): void {
+    const brief = this.intelligence()?.briefs.find((b) => b.anchor_id === anchorId);
+    const id = brief?.draft?.record.id;
+    if (!id) return;
+    this.confirmation.confirm({
+      header: 'Discard draft?',
+      message: 'This permanently removes the unpublished draft. This cannot be undone.',
+      acceptLabel: 'Discard draft',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectLabel: 'Cancel',
+      accept: async () => {
+        try {
+          await this.intelligenceService.delete(id);
+          this.messageService.add({ severity: 'success', summary: 'Draft discarded.', life: 3000 });
+          await this.loadIntelligence();
+          this.histories.set({});
+        } catch (err) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Discard failed',
+            detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+            life: 4000,
+          });
+        }
+      },
     });
-    if (!ok) return;
+  }
+
+  protected openDrawerForNewBrief(): void {
+    this.drawerAnchorId.set(null);
+    this.intelligenceDrawerOpen.set(true);
+  }
+
+  protected openBriefInDrawer(anchorId: string): void {
+    this.drawerAnchorId.set(anchorId);
+    this.intelligenceDrawerOpen.set(true);
+  }
+
+  protected async onBriefPin(anchorId: string): Promise<void> {
+    const i = this.intelligence();
+    if (!i) return;
     try {
-      await this.noteService.delete(id);
-      await this.loadTrial();
-      this.messageService.add({ severity: 'success', summary: 'Note deleted.', life: 3000 });
-    } catch (e) {
+      await this.intelligenceService.setLead(anchorId, i.space_id, i.entity_type, i.entity_id);
+      await this.loadIntelligence();
+      this.histories.set({});
+    } catch (err) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Could not delete note',
-        detail: e instanceof Error ? e.message : 'Check your connection and try again.',
+        summary: 'Could not set lead entry',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
         life: 4000,
       });
     }
   }
 
-  onIntelligenceEdit(): void {
-    this.intelligenceDrawerOpen.set(true);
+  protected async onBriefReorder(anchorIds: string[]): Promise<void> {
+    const i = this.intelligence();
+    if (!i) return;
+    try {
+      await this.intelligenceService.reorder(i.space_id, i.entity_type, i.entity_id, anchorIds);
+      await this.loadIntelligence();
+      this.histories.set({});
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not reorder entries',
+        detail: err instanceof Error ? err.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+    }
   }
 
   async onIntelligenceClosed(): Promise<void> {
@@ -714,45 +749,12 @@ export class TrialDetailComponent implements OnDestroy {
   async onIntelligencePublished(): Promise<void> {
     this.intelligenceDrawerOpen.set(false);
     await this.loadIntelligence();
+    this.histories.set({});
     this.messageService.add({
       severity: 'success',
       summary: 'Intelligence published.',
       life: 3000,
     });
-  }
-
-  onIntelligenceDelete(): void {
-    const i = this.intelligence();
-    const id = i?.published?.record.id ?? i?.draft?.record.id;
-    if (!id) return;
-    this.confirmation.confirm({
-      header: 'Delete this intelligence?',
-      message: 'This cannot be undone.',
-      acceptLabel: 'Delete',
-      acceptButtonStyleClass: 'p-button-danger',
-      rejectLabel: 'Cancel',
-      accept: async () => {
-        try {
-          await this.intelligenceService.delete(id);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Deleted',
-            detail: 'Intelligence removed.',
-          });
-          await this.loadIntelligence();
-        } catch (err) {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Delete failed',
-            detail: (err as Error).message,
-          });
-        }
-      },
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.topbarState.clear();
   }
 
   goBack(): void {

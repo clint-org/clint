@@ -16,7 +16,7 @@ guessed.
 ## Severity levels
 | Level | Definition | Example | Response time |
 |-------|-----------|---------|---------------|
-| SEV1  | Full outage or unrecoverable data loss. All tenants blocked, or data lost beyond its RPO. | Supabase prod project deleted; materials bucket purged (currently unrecoverable, see domain 2); Cloudflare account suspended (app + DNS + materials + primary DB backups in one blast radius). | Acknowledge < 15 min; incident lead engaged immediately; customer/status comms within 1h. |
+| SEV1  | Full outage or unrecoverable data loss. All tenants blocked, or data lost beyond its RPO. | Supabase prod project deleted; both materials buckets and the B2 mirror lost (see domain 2); Cloudflare account suspended (app + DNS + materials + primary DB backups in one blast radius). | Acknowledge < 15 min; incident lead engaged immediately; customer/status comms within 1h. |
 | SEV2  | Major feature down or scoped to one tenant. Product still usable for most. | A bad migration wrote wrong values to prod (recoverable via restore); one tenant custom domain TLS broken; login via one OAuth provider down; CT.gov ingest failing for days; AI extraction down. | Acknowledge < 2h; same-day mitigation. |
 | SEV3  | Degraded, a workaround exists. | Brandfetch down (manual logo entry); CT.gov snapshot stale for a day; invite email delayed; slow queries. | Next business day. |
 
@@ -35,7 +35,7 @@ goal, "actual" is what evidence supports today.
 | # | Domain | What fails | Blast radius | Detection | RPO / RTO | Current mitigation | Top gap |
 |---|--------|-----------|--------------|-----------|-----------|--------------------|---------|
 | 1 | Database (Postgres) | data loss or corruption | all prod data | weekly `backup-verify` (no failure alert); no live uptime check | ~24h / ~1h (cloud drill 2026-06-10: ~29s) | off-site R2 + B2, pre-migration snapshot, restore proven into a cloud project. See `13-backup-and-restore.md` | DNS repoint to a restored project still untested; verify failures are silent |
-| 2 | Materials / object storage (R2) | bucket delete, object corruption, account loss, bad `r2_pending_deletes` drain | every tenant's uploaded files | none | unrecoverable today / unrecoverable today | none. DB backup stores only the pointers | single copy: no versioning, no Object Lock, no off-cloud copy |
+| 2 | Materials / object storage (R2) | bucket delete, object corruption, account loss, bad `r2_pending_deletes` drain | every tenant's uploaded files | weekly reconciliation + drain monitor | 24h / 4h | R2 7-day lock + add-only B2 mirror (30d compliance) + reconciliation | residual: B2 lagged-prune, event-driven mirror for sub-24h RPO |
 | 3 | Secrets and encryption keys | key lost or leaked; Infisical unavailable | varies by secret; age key loss blocks all DB restores | weekly break-glass export (opens an issue on failure) | n/a / minutes (edit in Infisical) | Infisical Cloud is the source of truth, syncing to GHA + Workers + tofu; weekly age-encrypted break-glass export to R2 + B2 | automated rotation still manual (own spec); a few provider secrets (OAuth, Resend) not yet migrated |
 | 4 | DNS and domains | registrar lapse, zone change, custom-domain or TLS misconfig | one tenant (custom domain) up to all tenants (apex zone) | none (no cert-expiry or uptime alert) | n/a / minutes to days | Cloudflare-managed certs; brand resolution by host | DNS sits in the same single Cloudflare account; zone/records + prod platform domains/route now in IaC, per-tenant custom domains still manual |
 | 5 | Identity and auth | OAuth client deleted/expired, redirect drift, Auth config loss | nobody can log in (provider-scoped or total) | user reports / login failures | n/a / ~1h | Google + Microsoft providers; live redirect allow-list codified in `infra/tofu/{dev,prod}/supabase.tf` | provider client secrets stay console-only by design (API returns them hashed) |
@@ -45,10 +45,12 @@ goal, "actual" is what evidence supports today.
 | 9 | Third-party vendors and billing | vendor outage, account termination, billing lapse, free-tier auto-pause | degrade (most) to hard-down (Supabase, Cloudflare) | in-app `/api/ai/health` for Anthropic only | varies | feature gates; non-blocking design for Brandfetch/Resend/CT.gov | Supabase free-tier auto-pause and project quota are live failure modes |
 | 10| Detection and monitoring | a failure goes unnoticed | every domain above | backup/verify failures + 6-hourly uptime/cert check open GitHub issues (Phase 0.2); in-app AI health poll | n/a | issue-based alerting on backup, edge reachability, cert expiry | no app-level error monitoring (Sentry); no materials/pointer reconciliation; issue sink is baseline |
 | 11| People and process | bus factor, no reachable runbook, no comms plan | recovery stalls regardless of tooling | n/a | n/a | runbook in repo | single-operator risk; no confirmed contact tree or status page |
-| 12| Security incident | credential leak, RLS bypass / exfiltration, ransomware | data breach or destructive action | none active | n/a / hours | write-only backup creds; Object Lock on backups; Tier-1 audit log | no intrusion detection; materials bucket has no immutable copy to restore from |
+| 12| Security incident | credential leak, RLS bypass / exfiltration, ransomware | data breach or destructive action | none active | n/a / hours | write-only backup creds; Object Lock on DB + materials backups; R2 materials lock; Tier-1 audit log | no intrusion detection |
 
 ## Concentration risks
-Two dependencies turn an otherwise recoverable incident into an unrecoverable one.
+Two dependencies still widen the blast radius of an incident: the single Cloudflare
+account (which holds the app, DNS, both materials buckets, and the primary DB backup
+at once) and the single age private key (no key, no decrypt of any backup).
 
 1. **The single Cloudflare account.** Confirmed: prod and dev Workers, both
    materials buckets (`clint-materials`, `clint-materials-dev`), the primary DB
@@ -58,10 +60,12 @@ Two dependencies turn an otherwise recoverable incident into an unrecoverable on
    every uploaded file inaccessible, removes DNS for every tenant, and removes the
    primary copy of the database backups. The only things outside it are the
    Backblaze B2 copy of the DB backups, the Supabase project (the data itself),
-   and the GitHub repo (the code). So a total Cloudflare loss is survivable for the
-   *database* (restore from B2 into a new Supabase project, repoint DNS once a new
-   zone exists) but is currently **unsurvivable for materials**, which have no copy
-   anywhere else.
+   and the GitHub repo (the code), plus the daily B2 mirror of materials. So a total
+   Cloudflare loss is survivable for the *database* (restore from B2 into a new
+   Supabase project, repoint DNS once a new zone exists) and now also for
+   *materials*: the daily add-only mirror to the B2 `clint-materials-backup` bucket
+   (30-day compliance Object Lock) is a copy outside the Cloudflare account, so
+   materials rehydrate from B2 into a fresh R2 bucket with a 24h RPO (domain 2).
 
 2. **The single age private key.** No key, no DB restore, for any scenario.
    `13-backup-and-restore.md` already names this as its single point of failure.
@@ -76,12 +80,13 @@ migrations and deploy workflows).
 flowchart TD
   subgraph CF[Cloudflare account - one login, one blast radius]
     W[Workers: clint + clint-dev]
-    M[(R2: clint-materials<br/>+ dev - SINGLE COPY)]
+    M[(R2: clint-materials<br/>+ dev - 7-day lock)]
     RB[(R2: clint-db-backups<br/>primary)]
     DNS[clintapp.com zone + registrar + TLS]
   end
   subgraph OUT[Outside the Cloudflare account]
     B2[(B2: clint-db-backups<br/>cross-cloud copy)]
+    MB[(B2: clint-materials-backup<br/>30d compliance)]
     SB[(Supabase project<br/>Postgres + Auth + config)]
     GH[GitHub repo<br/>migrations + deploy workflows]
     AGE{{age private key<br/>offline; decrypts backups + break-glass}}
@@ -91,6 +96,7 @@ flowchart TD
   W --> SB
   DNS --> W
   RB -. mirror .-> B2
+  M -. daily add-only mirror .-> MB
   GH -- deploy --> W
   GH -- db push --> SB
   INF -- syncs secrets --> W
@@ -98,7 +104,6 @@ flowchart TD
   INF -. weekly break-glass<br/>age-encrypted .-> RB
   AGE -- decrypts --> RB
   AGE -- decrypts --> B2
-  M -. NO BACKUP .-> X[lost if CF account<br/>or bucket is lost]
 ```
 
 ## Recovery procedures by domain
@@ -119,33 +124,72 @@ every prod deploy), and the daily off-site bundle in R2 or B2. RPO ~24h, RTO ~1h
   (`worker/r2-drain/queue.ts`) to delete live objects. Files are keyed
   `{space_id}/{material_id}/{file_name}`; the DB row in `public.materials`
   (`file_path`, `file_name`, `finalized_at`) is only the pointer.
-- Blast radius: every tenant and space that has uploaded materials. Loss is total
-  and customer-visible (briefings, decks, PDFs). The DB still lists the files, so
-  the app shows download links that 404, which is worse than an honest empty state.
-- Detection: none today. There is no integrity check, no object-count reconciliation
-  against `public.materials`, and no alert on the drain deleting more than expected.
-- Current mitigation: **none.** Confirmed: the bucket has no versioning, no Object
-  Lock, and no cross-cloud copy. The DB backup explicitly stores only the pointers
-  (`13-backup-and-restore.md`, "What the DB backup does NOT cover"). This is the
-  single largest data-loss gap in the system.
-- RPO / RTO: target RPO 24h / RTO 4h once protection exists. Actual today:
-  **unrecoverable.** A delete or account loss is permanent.
-- Recovery procedure (today, honest):
-  1. There is no restore source for the blobs. If only the DB was lost, restore it
-     (domain 1); the pointers return but the files they point to are intact only if
-     the bucket itself survived.
-  2. If the bucket or its objects were lost, recovery is not possible. Identify the
-     affected `space_id`s from `public.materials`, mark those materials as missing
-     in-app, and notify the affected tenants. Treat as SEV1.
-- Recovery procedure (target state, after the action-register items land):
-  1. Enable R2 versioning and Object Lock on `clint-materials`, plus a scheduled
-     cross-cloud copy to B2 (mirror the DB backup posture).
-  2. On accidental delete or overwrite within the lock window, restore the prior
-     object version.
-  3. On bucket or account loss, rehydrate from the B2 copy into a fresh bucket and
-     repoint `R2_BUCKET` / `MATERIALS_BUCKET`.
-- Known gaps: no backup, no versioning, no Object Lock, no off-cloud copy, no
-  drain guardrail, no pointer/object reconciliation. See action register P1 and P3.
+- Blast radius: every tenant and space that has uploaded materials. Loss would be
+  total and customer-visible (briefings, decks, PDFs). A dangling pointer (DB row
+  present, object gone) shows a download link that 404s, which is worse than an
+  honest empty state; reconciliation now catches that case (below).
+- Detection: a weekly reconciliation job compares `public.materials` to the live
+  R2 listing and the B2 mirror, and opens a GitHub issue on any divergence
+  (dangling pointer: a row with no R2 object; orphan object: an R2 object with no
+  row; mirror gap: an R2 object missing from B2). The lock-aware drain also carries
+  a deny-by-default volume guard that refuses to run and opens a
+  `materials-drain-paused` issue when an anomalous number of brand-new deletes are
+  queued, so a runaway enqueue is surfaced before any byte is purged.
+- Current mitigation: R2 objects in `clint-materials` / `clint-materials-dev` carry
+  a **7-day bucket lock**, making every object immutable in-account for 7 days after
+  write (R2 has no versioning; the protection is immutability, not a prior-version
+  restore). A daily **add-only mirror** copies new objects into the dedicated B2
+  buckets `clint-materials-backup` / `clint-materials-backup-dev` under a **30-day
+  compliance Object Lock**; this is the only copy off Cloudflare and survives total
+  account loss. The weekly reconciliation plus the lock-aware, volume-guarded drain
+  close the loop. The DB backup still stores only the pointers
+  (`13-backup-and-restore.md`, "What the DB backup does NOT cover"); the bytes are
+  protected by the lock and the B2 mirror, not by the DB backup.
+- Delete semantics: a delete is honored for **access** instantly (the
+  `public.materials` row is removed, so the file disappears from the app
+  immediately). Only the **byte-purge** in R2 is deferred behind the 7-day lock
+  window, which is what makes a wrongful delete recoverable.
+- RPO / RTO: RPO 24h (the B2 mirror runs daily), RTO 4h.
+- Recovery procedure:
+  1. Accidental in-account delete within 7 days: nothing to recover. The bucket
+     lock blocks the byte-purge for 7 days, so the object is still in `clint-materials`.
+     If the pointer row was also removed, restore it from the latest DB backup
+     (domain 1) and the existing object resolves again.
+  2. Older object (past the 7-day lock window), or bucket/account loss: rehydrate
+     from the B2 copy. Stand up a fresh R2 bucket, copy the affected keys (or the
+     whole prefix) from `clint-materials-backup` into it, and repoint the Worker's
+     `MATERIALS_BUCKET` binding at the new bucket. Restore any missing pointer rows
+     from the latest DB backup so the app resolves the rehydrated objects.
+- Known gaps: the B2 mirror is add-only with no lagged prune (deletes legitimately
+  past their retention are not yet pruned from B2); the mirror is daily, so RPO is
+  24h until an event-driven mirror lands. See action register, domain 2.
+
+#### Recovery from a wrongful bulk delete
+A faulty or malicious enqueue into `r2_pending_deletes` (or a bug that mass-removes
+`public.materials` rows) is the worst materials case. The lock and the volume guard
+are designed so this is recoverable rather than catastrophic.
+
+1. **Stop the bleeding.** Disable the drain trigger (the daily cron / the queue
+   processor). In most cases the volume guard has already paused the drain on its
+   own, since a bulk enqueue trips the deny-by-default cap and opens the
+   `materials-drain-paused` issue instead of running.
+2. **List the affected keys** from three sources: (a) the guard's
+   `materials-drain-paused` issue, which records the over-cap batch; (b) the
+   `r2_pending_deletes` ledger, where succeeded rows are retained and timestamped,
+   so you can read exactly which keys were already drained; (c) reconciliation's
+   dangling-pointer list (rows whose objects are gone).
+3. **Sort legitimate from erroneous.** Separate keys that belong to a real
+   offboarding (a tenant or space that was intentionally deleted) from keys removed
+   in error. Only the erroneous set needs restoring.
+4. **Restore the erroneous keys from B2.** For keys deleted within the last 7 days,
+   nothing is needed: the bucket lock blocked the byte-purge, so the object is still
+   in R2. For older keys, `aws s3 cp` the key from `clint-materials-backup` back into
+   `clint-materials`. If the pointer row was also deleted, restore it from the latest
+   DB backup (domain 1) so the app resolves the object again.
+5. **Root-cause and re-enable.** Find what produced the bad enqueue, delete the
+   offending rows from `r2_pending_deletes`, confirm the queue is clean, then close
+   the `materials-drain-paused` issue (or run the operator-approved single over-cap
+   run via the manual workflow) and re-enable the drain.
 
 ### 3. Secrets and encryption keys
 As of WS4, **Infisical Cloud is the canonical source of truth** for every live
@@ -319,7 +363,8 @@ the edge function and its secrets, and OAuth setup.
 - Blast radius: a bad deploy briefly affects all tenants (one prod Worker serves
   every host). Account loss is the worst case in this document: app, DNS,
   materials, and the primary DB backup bucket all go at once (see Concentration
-  risks). Only the B2 DB copy, the Supabase project, and the GitHub repo survive.
+  risks). The B2 DB copy, the B2 materials mirror, the Supabase project, and the
+  GitHub repo survive.
 - Detection: no uptime check on `clintapp.com` or a tenant host (see domains 4/10).
   Configuration drift of the IaC-managed Cloudflare resources (the `clintapp.com`
   zone + records, both R2 buckets, the prod Worker custom domains + tenant-wildcard
@@ -338,10 +383,11 @@ the edge function and its secrets, and OAuth setup.
   cross-cloud copy with its compliance Object Lock), and the prod Worker custom
   domains + tenant-wildcard route (shared / prod / dev roots). Re-add every per-tenant custom
   domain (domain 4, still manual), re-deploy both Workers via wrangler, re-add Worker
-  runtime secrets via `wrangler secret put`, and restore the DB from B2. The buckets
-  recreate empty: materials contents are not recoverable in this path under the
-  current single-copy posture. Engage Cloudflare support for account recovery in
-  parallel.
+  runtime secrets via `wrangler secret put`, and restore the DB from B2. The R2
+  buckets recreate empty: rehydrate materials by copying from the B2
+  `clint-materials-backup` bucket into the new `clint-materials` bucket (domain 2),
+  then point `MATERIALS_BUCKET` at it. Engage Cloudflare support for account recovery
+  in parallel.
 - Known gap: the account is the largest single blast radius; account-recovery
   contacts, MFA/hardware-key enrollment, and a break-glass second-admin are
   UNKNOWN - needs owner confirmation.
@@ -396,15 +442,17 @@ highest-leverage cross-cutting gap.
   `uptime-check.yml` runs a 6-hourly synthetic reachability + TLS-expiry check on
   the apex hosts (`clintapp.com`, `dev.clintapp.com`) that also opens an issue on
   failure.
+- Exists (materials, WS1): a weekly reconciliation job compares `public.materials`
+  to R2 and the B2 mirror and opens an issue on any divergence (dangling pointer,
+  orphan object, mirror gap); the lock-aware drain's deny-by-default volume guard
+  opens a `materials-drain-paused` issue and refuses to run on an anomalous batch of
+  brand-new deletes (domain 2).
 - Missing: error monitoring (no Sentry or equivalent) in the Worker or the Angular
-  app; no reconciliation of `public.materials` rows against R2 objects; no alarm on
-  an abnormally deep `r2_pending_deletes` queue (the circuit breaker in 0.3
-  addresses the deletion side; queue-depth alerting is still open). The
-  issue-based alert sink is a baseline; richer routing (Slack/PagerDuty) is a later
-  upgrade. Tenant custom domains are not yet covered by the synthetic check.
-- Consequence: backup and edge failures now surface as issues rather than silent
-  Actions-tab failures. The remaining blind spots are app-level errors and silent
-  materials/pointer divergence (action register, lowered priority).
+  app. The issue-based alert sink is a baseline; richer routing (Slack/PagerDuty) is
+  a later upgrade. Tenant custom domains are not yet covered by the synthetic check.
+- Consequence: backup, edge, and now materials/pointer divergence and runaway-drain
+  failures surface as issues rather than silent Actions-tab failures. The remaining
+  blind spot is app-level errors (action register, lowered priority).
 
 ### 11. People and process
 - Bus factor: roles in this document are largely UNKNOWN - needs owner confirmation,
@@ -430,10 +478,12 @@ highest-leverage cross-cutting gap.
   attacker cannot delete or overwrite existing DB backups (scenario D in
   `13-backup-and-restore.md`). Restore from the immutable copy into a clean project,
   then rotate all credentials and the age keypair.
-- The materials gap also applies here: because `clint-materials` has no immutable
-  copy, an attacker who reaches the bucket (or the account) can destroy every
-  uploaded file with no restore source. Materials Object Lock (action register P1)
-  closes the destructive-actor case for files, not just the accidental one.
+- Materials are now covered here too (WS1): the 7-day R2 bucket lock blocks an
+  in-account byte-purge for 7 days, and the daily add-only mirror to the B2
+  `clint-materials-backup` bucket under a 30-day compliance Object Lock is an
+  immutable copy outside the account. An attacker who reaches the bucket (or the
+  account) cannot destroy the off-Cloudflare copy, so files restore from B2 the same
+  way DB backups do.
 - Known gap: no intrusion detection and no anomaly alerting on auth or data access.
 
 ## Drill log
@@ -446,24 +496,25 @@ drill of a non-DB domain per quarter.
 UNKNOWN - needs owner confirmation: no non-DB drill has been run yet. First
 candidates, cheapest first: (1) a project re-provision dry run into a throwaway
 Supabase project, timing steps 1 to 7 of domain 6; (2) a materials restore drill,
-which is currently blocked because there is no backup to restore from (it becomes
-possible once P1 lands).
+now possible against the B2 `clint-materials-backup` mirror: rehydrate a sample
+prefix into a throwaway R2 bucket and confirm the app resolves it after a
+`MATERIALS_BUCKET` repoint (domain 2).
 
 ## Action register (prioritized)
 Likelihood x impact, with effort and free-tier constraints flagged.
 
 | Priority | Gap | Domain | Likelihood x impact | Effort / cost | Free-tier constrained? | Owner | Status |
 |----------|-----|--------|---------------------|---------------|------------------------|-------|--------|
-| 1 | Materials bucket has no backup, versioning, or Object Lock; single copy in one account. Permanent customer data loss on delete or account loss. | 2 | medium x catastrophic | low for versioning + Object Lock; medium for B2 cross-cloud copy | no (R2 feature) | UNKNOWN | open |
+| done | Materials had no backup, versioning, or Object Lock; single copy in one account. WS1: a 7-day R2 bucket lock makes objects immutable in-account, a daily add-only mirror copies them to a B2 `clint-materials-backup` bucket under a 30-day compliance Object Lock (the off-Cloudflare copy), a weekly reconciliation opens issues on `public.materials`<->R2<->B2 divergence, and the drain is lock-aware with a deny-by-default volume guard. RPO 24h / RTO 4h. | 2 | medium x catastrophic | done | no (R2 feature) | UNKNOWN | done |
 | done | Backup/verify failure alerting + synthetic uptime/cert check. Landed in Phase 0.2 (`backup-db.yml`/`backup-verify.yml` notify-on-failure, `uptime-check.yml`). | 10 | high x high | low | no | UNKNOWN | done |
-| 3 | No app-level error monitoring (Sentry/Logpush) and no `public.materials`-to-R2 reconciliation; issue-based alert sink is a baseline, no Slack/PagerDuty routing. | 10 | medium x medium | medium | no | UNKNOWN | open |
+| 3 | No app-level error monitoring (Sentry/Logpush); issue-based alert sink is a baseline, no Slack/PagerDuty routing. (`public.materials`<->R2<->B2 reconciliation now exists, WS1 domain 2.) | 10 | medium x medium | medium | no | UNKNOWN | open |
 | 2 | Cloudflare account is one blast radius (app + materials + DNS + primary DB backups). | 7 | low x catastrophic | medium: enforce hardware-key MFA, add a break-glass second admin, confirm account-recovery contacts; consider moving backup R2 or DNS out of the account | no | UNKNOWN | open |
 | done | Secrets escrow was partial and unaudited. WS4: Infisical Cloud is now the source of truth, syncing to GHA + Cloudflare Workers + tofu (`infisical run`), with a weekly read-only-OIDC break-glass export age-encrypted to R2 + B2. Re-provision after account loss is one restore + re-populate. | 3 | medium x high | done | no | UNKNOWN | done |
 | done | No way to tell if live infra drifted from the IaC. WS3 Phase E: a daily `iac-drift.yml` runs `tofu plan` across all roots (read-only, `-lock=false`; OIDC->Infisical creds, read-only Scalr token) and opens an `iac-drift` issue on divergence; PRs touching `infra/tofu/` or `supabase/config.toml` are gated by `iac-pr-check.yml` (fmt, validate, `config.toml`<->tofu auth-policy parity). Satisfies the WS3 "drift-check command exists" criterion; WS3 complete. | 4,6,7 | low x medium | done | no | UNKNOWN | done |
 | 3 | Automated secret rotation is still manual (WS4 deferred it to a follow-on spec), and a few provider secrets (Google/Microsoft OAuth, Resend) are not yet migrated into Infisical. | 3 | low x medium | medium: write the rotation spec; migrate the remaining provider secrets | no | UNKNOWN | open |
 | 2 | Supabase auth config (redirect allow-list + OAuth setup) is now codified in `infra/tofu/{dev,prod}/supabase.tf` (WS3 Phase D, create-path partial management). Residual dashboard-only: OAuth client secrets (intentional -- API returns them hashed; from Google/Azure console), edge function secrets, and the invite DB webhook definition. | 6 | low x medium | low: document the edge secrets + webhook; secrets stay console-sourced by design | no | UNKNOWN | partial |
 | 3 | Cloud-target restore is now proven (drill 2026-06-10, ~29s into a real cloud project); the one step still untested end-to-end is the DNS repoint to a restored project (the drill tore down the throwaway before repoint). | 1 | low x medium | low | no | UNKNOWN | open |
-| 3 | `r2_pending_deletes` drain has no guardrail or alert; a bad enqueue deletes live materials with no backup to recover from. | 2 | low x high | low: add a per-run delete cap and an alert | no | UNKNOWN | open |
+| done | `r2_pending_deletes` drain had no guardrail or alert. WS1: the drain is now lock-aware (reschedules a delete R2 rejects with error 10069 instead of failing) and carries a deny-by-default volume guard that refuses to run and opens a `materials-drain-paused` issue on an anomalous batch of brand-new deletes; an operator clears it with a single approved over-cap run via a manual workflow. Combined with the 7-day lock and B2 mirror, a bad enqueue is recoverable. | 2 | low x high | done | no | UNKNOWN | done |
 | 3 | Single age key, custodians unconfirmed. | 3 | low x catastrophic | low: confirm both custodians can retrieve it; consider a second recipient key | no | UNKNOWN | open |
 | 3 | Per-tenant custom-domain / custom-hostname config is manual with no IaC; that part of a zone rebuild is a hand walk of the DB domain list. (WS3 Phase C: `clintapp.com` zone + records in `infra/tofu/shared/dns.tf`, the prod Worker platform custom domains + `*.clintapp.com` route + `clint-materials` in `infra/tofu/prod/`, and the dev routes + `clint-materials-dev` in `infra/tofu/dev/`; per-tenant custom domains still pending.) | 4 | low x medium | medium: script the rebuild from `tenants`/`agencies` rows | no | UNKNOWN | open |
 | 3 | No defined incident roles, contact tree, or status-comms channel; likely single-operator. | 11 | medium x high | low: name roles, write a contact tree, pick an out-of-band status channel | no | UNKNOWN | open |

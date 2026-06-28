@@ -11,3 +11,17 @@ resource "cloudflare_r2_bucket" "materials_dev" {
   location      = "ENAM"
   storage_class = "Standard"
 }
+
+# WS1 materials durability: 7-day in-account immutability (dev). See prod/r2.tf.
+resource "cloudflare_r2_bucket_lock" "materials_dev" {
+  account_id  = var.cloudflare_account_id
+  bucket_name = cloudflare_r2_bucket.materials_dev.name
+  rules = [{
+    id      = "materials-7day-immutability"
+    enabled = true
+    condition = {
+      type            = "Age"
+      max_age_seconds = 604800
+    }
+  }]
+}

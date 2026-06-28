@@ -155,7 +155,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
 - id: trial-change-feed-trial-detail
   summary: Per-trial change log section on the trial detail page.
   routes:
-    - /t/:tenantId/s/:spaceId/manage/trials/:id
+    - /t/:tenantId/s/:spaceId/profiles/trials/:id
   rpcs:
     - get_trial_activity
   tables:

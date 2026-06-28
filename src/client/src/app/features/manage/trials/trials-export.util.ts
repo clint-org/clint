@@ -5,6 +5,7 @@ import {
   EXPORT_DATE_FMT,
   type ExportColumn,
 } from '../../../shared/export/grid-sheet.util';
+import { deriveTrialPhaseSpan } from '../../../core/models/trial-phase-span';
 
 /** Structural slice of the trial list's row model that the export reads. */
 export interface TrialExportRow {
@@ -23,7 +24,7 @@ export interface TrialExtraColumn {
  * Explicit export surface for the trials grid: every visible column (trial,
  * NCT ID, asset, company, status, markers, the per-space CT.gov columns) plus
  * the trial detail's row-model fields (acronym, phase + window, recruitment
- * status, study type, notes). The CT.gov extras resolve through the page's
+ * status, study type). The CT.gov extras resolve through the page's
  * already-loaded snapshot map (one batched fetch per space, no per-row calls).
  *
  * Detail fields that need a per-row fetch are intentionally excluded:
@@ -34,6 +35,20 @@ export function buildTrialExportColumns(
   extras: TrialExtraColumn[],
   extraValue: (trialId: string, path: string) => string
 ): ExportColumn<TrialExportRow>[] {
+  // The export framework calls each column's value closure once per row, so the
+  // Phase start and Phase end closures would each re-derive the span. Memoize
+  // per trial so deriveTrialPhaseSpan runs once per row regardless of how many
+  // columns read it.
+  const spanCache = new WeakMap<Trial, ReturnType<typeof deriveTrialPhaseSpan>>();
+  const spanFor = (trial: Trial): ReturnType<typeof deriveTrialPhaseSpan> => {
+    let span = spanCache.get(trial);
+    if (!span) {
+      span = deriveTrialPhaseSpan(trial.markers ?? []);
+      spanCache.set(trial, span);
+    }
+    return span;
+  };
+
   const columns: ExportColumn<TrialExportRow>[] = [
     { header: 'Trial', value: (r) => r.trial.name, width: 30 },
     { header: 'Acronym', value: (r) => r.trial.acronym ?? '', width: 14 },
@@ -48,20 +63,19 @@ export function buildTrialExportColumns(
     },
     {
       header: 'Phase start',
-      value: (r) => dateCell(r.trial.phase_start_date),
+      value: (r) => dateCell(spanFor(r.trial).start),
       numFmt: EXPORT_DATE_FMT,
       width: 12,
     },
     {
       header: 'Phase end',
-      value: (r) => dateCell(r.trial.phase_end_date),
+      value: (r) => dateCell(spanFor(r.trial).end),
       numFmt: EXPORT_DATE_FMT,
       width: 12,
     },
     { header: 'Recruitment status', value: (r) => r.trial.recruitment_status ?? '', width: 20 },
     { header: 'Study type', value: (r) => r.trial.study_type ?? '', width: 16 },
     { header: 'Markers', value: (r) => r.markerCount, width: 9 },
-    { header: 'Notes', value: (r) => r.trial.notes ?? '', width: 40 },
   ];
   for (const extra of extras) {
     columns.push({

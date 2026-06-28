@@ -8,15 +8,15 @@ import {
   type DatePrecision,
 } from '../models/marker-date-precision';
 import type { ZoomLevel } from '../models/dashboard.model';
+import { deriveTrialPhaseSpan } from '../models/trial-phase-span';
 
 export interface ColumnVisibility {
   showMoa: boolean;
   showRoa: boolean;
   showIndication: boolean;
-  showNotes: boolean;
 }
 
-export type ColumnKey = 'company' | 'asset' | 'moa' | 'roa' | 'indication' | 'trial' | 'notes';
+export type ColumnKey = 'company' | 'asset' | 'moa' | 'roa' | 'indication' | 'trial';
 
 export interface ColumnDef {
   key: ColumnKey;
@@ -38,7 +38,6 @@ export interface ExportOptions {
   showMoaColumn: boolean;
   showRoaColumn: boolean;
   showIndicationColumn: boolean;
-  showNotesColumn: boolean;
   /** Workspace tenant for the export footer's "Prepared for" segment. */
   tenant?: { name: string; logoUrl: string | null } | null;
   /** Download filename; defaults to the generic dashboard name when omitted. */
@@ -54,7 +53,6 @@ export interface FlatRow {
   moa: string;
   roa: string;
   indications: string;
-  hasNotes: boolean;
   trial: Trial;
   isFirstInCompany: boolean;
   isFirstInAsset: boolean;
@@ -83,7 +81,6 @@ export function flattenTrials(companies: Company[]): FlatRow[] {
           moa,
           roa,
           indications,
-          hasNotes: !!(trial.notes || (trial.trial_notes?.length ?? 0) > 0),
           trial,
           isFirstInCompany,
           isFirstInAsset,
@@ -107,23 +104,24 @@ export interface TrialExportRow {
   phase: string;
   phaseStart: string | null;
   phaseEnd: string | null;
-  notes: string;
 }
 
 export function buildTrialExportRows(companies: Company[]): TrialExportRow[] {
-  return flattenTrials(companies).map((r) => ({
-    company: r.companyName,
-    asset: r.assetName,
-    moa: r.moa,
-    roa: r.roa,
-    indication: r.indications,
-    trial: r.trialName,
-    nctId: r.nctId ?? '',
-    phase: r.trial.phase_type ? phaseShortLabel(r.trial.phase_type) : '',
-    phaseStart: r.trial.phase_start_date ?? null,
-    phaseEnd: r.trial.phase_end_date ?? null,
-    notes: r.trial.notes ?? '',
-  }));
+  return flattenTrials(companies).map((r) => {
+    const span = deriveTrialPhaseSpan(r.trial.markers ?? []);
+    return {
+      company: r.companyName,
+      asset: r.assetName,
+      moa: r.moa,
+      roa: r.roa,
+      indication: r.indications,
+      trial: r.trialName,
+      nctId: r.nctId ?? '',
+      phase: r.trial.phase_type ? phaseShortLabel(r.trial.phase_type) : '',
+      phaseStart: span.start,
+      phaseEnd: span.end,
+    };
+  });
 }
 
 const COLUMN_WIDTHS: Record<ColumnKey, number> = {
@@ -133,7 +131,6 @@ const COLUMN_WIDTHS: Record<ColumnKey, number> = {
   roa: 0.45,
   indication: 0.9,
   trial: 1.05,
-  notes: 0.35,
 };
 
 export function computeLeftColumns(v: ColumnVisibility): ColumnLayout {
@@ -142,7 +139,6 @@ export function computeLeftColumns(v: ColumnVisibility): ColumnLayout {
   if (v.showRoa) keys.push('roa');
   if (v.showIndication) keys.push('indication');
   keys.push('trial');
-  if (v.showNotes) keys.push('notes');
 
   const columns: ColumnDef[] = [];
   let x = 0;

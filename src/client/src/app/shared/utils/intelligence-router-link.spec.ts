@@ -11,7 +11,7 @@ test.describe('buildEntityRouterLink', () => {
       T,
       's',
       S,
-      'manage',
+      'profiles',
       'trials',
       'trial-1',
     ]);
@@ -23,7 +23,7 @@ test.describe('buildEntityRouterLink', () => {
       T,
       's',
       S,
-      'manage',
+      'profiles',
       'companies',
       'co-1',
     ]);
@@ -35,7 +35,7 @@ test.describe('buildEntityRouterLink', () => {
       T,
       's',
       S,
-      'manage',
+      'profiles',
       'assets',
       'prod-1',
     ]);
@@ -51,7 +51,7 @@ test.describe('buildEntityRouterLink', () => {
       T,
       's',
       S,
-      'manage',
+      'profiles',
       'engagement',
     ]);
   });

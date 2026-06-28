@@ -7,7 +7,6 @@ import {
   ElementRef,
   inject,
   input,
-  OnDestroy,
   output,
   signal,
 } from '@angular/core';
@@ -17,6 +16,7 @@ import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { Marker } from '../../../core/models/marker.model';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
+import { deriveTrialPhaseSpan, TrialPhaseSpan } from '../../../core/models/trial-phase-span';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
 import { markerPeriodLabel, markerStartCaption } from '../../../core/models/marker-date-precision';
 import { MARKER_ICON_SIZE } from '../../../shared/utils/grid-constants';
@@ -35,7 +35,6 @@ import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.comp
 import { GridHeaderComponent } from './grid-header.component';
 import { MarkerComponent } from './marker.component';
 import { PhaseBarComponent } from './phase-bar.component';
-import { RowNotesComponent } from './row-notes.component';
 
 export interface FlattenedTrial {
   companyName: string;
@@ -48,9 +47,14 @@ export interface FlattenedTrial {
   assetRoas: { id: string; name: string; abbreviation: string | null }[];
   trialIndications: { id: string; name: string }[];
   trial: Trial;
+  phaseSpan: TrialPhaseSpan;
   isFirstInCompany: boolean;
   isFirstInAsset: boolean;
   isLastInCompany: boolean;
+  companyHasIntelligence: boolean;
+  companyIntelligenceHeadline: string | null;
+  assetHasIntelligence: boolean;
+  assetIntelligenceHeadline: string | null;
 }
 
 @Component({
@@ -62,18 +66,15 @@ export interface FlattenedTrial {
     MarkerComponent,
     PhaseBarComponent,
     PiMarkComponent,
-    RowNotesComponent,
     TooltipModule,
   ],
   templateUrl: './dashboard-grid.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardGridComponent implements AfterViewInit, OnDestroy {
+export class DashboardGridComponent implements AfterViewInit {
   private readonly timeline = inject(TimelineService);
   private readonly elRef = inject(ElementRef);
   private readonly landscapeState = inject(LandscapeStateService, { optional: true });
-  private scrollListener: (() => void) | null = null;
-  private scrollRafId: number | null = null;
   private readonly scrollContainerEl = signal<HTMLElement | null>(null);
 
   readonly companies = input.required<Company[]>();
@@ -87,7 +88,6 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly hideMoaColumn = input<boolean>(false);
   readonly hideRoaColumn = input<boolean>(false);
   readonly hideIndicationColumn = input<boolean>(false);
-  readonly hideNotesColumn = input<boolean>(false);
 
   /**
    * Timeline-scoped density control (default on). When on, a trial that owns
@@ -103,11 +103,18 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
   readonly companyClick = output<string>();
   readonly assetClick = output<string>();
 
-  readonly isScrolled = signal(false);
+  /**
+   * Whether the company column is collapsed to logos (the default) or expanded
+   * to full names. Toggled only by the header control, never by scrolling, so
+   * the state stays fully predictable. When collapsed, each logo keeps its
+   * intelligence mark and reveals the company name on hover.
+   */
+  readonly companyColumnCollapsed = signal(true);
   readonly showMoaColumn = computed(() => this.landscapeState?.showMoaColumn() ?? true);
   readonly showRoaColumn = computed(() => this.landscapeState?.showRoaColumn() ?? true);
-  readonly showIndicationColumn = computed(() => this.landscapeState?.showIndicationColumn() ?? false);
-  readonly showNotesColumn = computed(() => this.landscapeState?.showNotesColumn() ?? true);
+  readonly showIndicationColumn = computed(
+    () => this.landscapeState?.showIndicationColumn() ?? false
+  );
 
   constructor() {
     // On load (and when the data/range changes) anchor the horizontal scroll on
@@ -156,17 +163,13 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     return x >= 0 && x <= this.totalWidth() ? x : null;
   });
 
-  /** Pixel x-position of the latest phase start or marker across all trials. */
+  /** Pixel x-position of the latest marker event across all trials. */
   private readonly lastEventX = computed<number | null>(() => {
     const trials = this.flattenedTrials();
     if (trials.length === 0) return null;
 
     let latestMs = -Infinity;
     for (const row of trials) {
-      if (row.trial.phase_start_date) {
-        const t = new Date(row.trial.phase_start_date).getTime();
-        if (t > latestMs) latestMs = t;
-      }
       for (const marker of row.trial.markers ?? []) {
         const t = new Date(marker.event_date).getTime();
         if (t > latestMs) latestMs = t;
@@ -202,9 +205,14 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
               name: i.indication_name,
             })),
             trial,
+            phaseSpan: deriveTrialPhaseSpan(trial.markers ?? []),
             isFirstInCompany,
             isFirstInAsset,
             isLastInCompany: false,
+            companyHasIntelligence: company.has_intelligence ?? false,
+            companyIntelligenceHeadline: company.intelligence_headline ?? null,
+            assetHasIntelligence: asset.has_intelligence ?? false,
+            assetIntelligenceHeadline: asset.intelligence_headline ?? null,
           });
           isFirstInCompany = false;
           isFirstInAsset = false;
@@ -321,24 +329,6 @@ export class DashboardGridComponent implements AfterViewInit, OnDestroy {
     ) as HTMLElement | null;
     if (scrollEl) {
       this.scrollContainerEl.set(scrollEl);
-      this.scrollListener = () => {
-        if (this.scrollRafId !== null) return;
-        this.scrollRafId = requestAnimationFrame(() => {
-          this.isScrolled.set(scrollEl.scrollLeft > 50);
-          this.scrollRafId = null;
-        });
-      };
-      scrollEl.addEventListener('scroll', this.scrollListener, { passive: true });
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (this.scrollListener) {
-      const scrollEl = this.elRef.nativeElement.querySelector('.overflow-x-auto');
-      scrollEl?.removeEventListener('scroll', this.scrollListener);
-    }
-    if (this.scrollRafId !== null) {
-      cancelAnimationFrame(this.scrollRafId);
     }
   }
 

@@ -240,6 +240,7 @@ const DRAFTS_LIMIT = 200;
             [spaceId]="sid"
             [entityType]="target.entityType"
             [entityId]="target.entityId"
+            [anchorId]="target.anchorId"
             (closed)="onDrawerClosed()"
             (published)="onIntelligencePublished()"
           />

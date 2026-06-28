@@ -7,35 +7,46 @@
   } @else if (company()) {
     @let c = company()!;
     <header class="mb-4 border border-slate-200 bg-white px-4 py-3">
-      <div
-        class="mb-1.5 flex items-center gap-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-500"
-      >
-        <span class="text-slate-400">Company</span>
-        @if ((c.assets?.length ?? 0) > 0) {
-          <span class="ml-auto tabular-nums text-slate-500">
-            {{ c.assets?.length }} {{ c.assets?.length === 1 ? 'asset' : 'assets' }}
-          </span>
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div
+            class="mb-1.5 flex items-center gap-2 font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-slate-500"
+          >
+            <span class="text-slate-400">Company</span>
+            @if ((c.assets?.length ?? 0) > 0) {
+              <span class="tabular-nums text-slate-500">
+                &middot; {{ c.assets?.length }} {{ c.assets?.length === 1 ? 'asset' : 'assets' }}
+              </span>
+            }
+          </div>
+          <div class="flex items-center gap-3">
+            @if (c.logo_url) {
+              <app-brand-logo
+                [url]="c.logo_url"
+                [alt]="c.name + ' logo'"
+                [width]="128"
+                [height]="24"
+                imgClass="h-6 w-auto max-w-[8rem] object-contain"
+              />
+            }
+            <h1 class="text-lg font-bold tracking-[-0.01em] text-slate-900">{{ c.name }}</h1>
+          </div>
+        </div>
+        @if (spaceRole.canEdit()) {
+          <div class="flex shrink-0 items-center gap-2">
+            <p-button
+              label="Add asset"
+              icon="fa-solid fa-plus"
+              size="small"
+              [text]="true"
+              (onClick)="creatingAsset.set(true)"
+            />
+            <app-row-actions [items]="entityMenu()" ariaLabel="Company actions" />
+          </div>
         }
-      </div>
-      <div class="flex items-center gap-3">
-        @if (c.logo_url) {
-          <app-brand-logo
-            [url]="c.logo_url"
-            [alt]="c.name + ' logo'"
-            [width]="128"
-            [height]="24"
-            imgClass="h-6 w-auto max-w-[8rem] object-contain"
-          />
-        }
-        <h1 class="text-lg font-bold tracking-[-0.01em] text-slate-900">
-          {{ c.name }}
-        </h1>
       </div>
       <div class="mt-1.5">
-        <app-source-provenance-line
-          [sourceDocId]="c.source_doc_id"
-          [canView]="spaceRole.canEdit()"
-        />
+        <app-source-provenance-line [sourceDocId]="c.source_doc_id" [canView]="spaceRole.canEdit()" />
       </div>
     </header>
 
@@ -66,40 +77,47 @@
       <!-- Main column: the intelligence as a document. -->
       <div class="min-w-0 flex-1">
         @if (hasIntelligence()) {
-          <app-intelligence-block
-            [published]="intelligence()?.published ?? null"
-            [draft]="intelligence()?.draft ?? null"
-            [agencyView]="spaceRole.canAuthorIntelligence()"
+          <h2
+            class="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-slate-700"
+          >
+            Intelligence ({{ intelligence()?.briefs?.length ?? 0 }})
+          </h2>
+          <app-intelligence-stack
+            [briefs]="intelligence()?.briefs ?? []"
+            [canManage]="spaceRole.canAuthorIntelligence()"
             [canPurge]="spaceRole.canPurgeIntelligence()"
+            [authorMap]="intelligence()?.authors ?? {}"
             [tenantId]="tenantIdSig()"
             [spaceId]="spaceIdSig()"
-            (edit)="onIntelligenceEdit()"
-            (discardDraft)="onIntelligenceDelete()"
-            (withdraw)="withdrawDialogOpen.set(true)"
-            (purge)="
-              onPurgeRequested(
-                {
-                  id: historyHost.payload().current?.id ?? '',
-                  headline: historyHost.payload().current?.headline ?? '',
-                },
-                false
-              )
-            "
+            [histories]="histories()"
+            (edit)="openBriefInDrawer($event)"
+            (pin)="onBriefPin($event)"
+            (reorderTo)="onBriefReorder($event)"
+            (requestHistory)="onRequestHistory($event)"
+            (withdraw)="onWithdrawRequested($event)"
+            (discardDraft)="onDiscardDraft($event)"
+            (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
+            (purgeEntry)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
           />
+          @if (spaceRole.canAuthorIntelligence()) {
+            <div class="mt-2 flex justify-end">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-600 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                (click)="openDrawerForNewBrief()"
+              >
+                <i class="fa-solid fa-plus text-[10px]" aria-hidden="true"></i>
+                Add entry
+              </button>
+            </div>
+          }
         } @else {
           <app-intelligence-empty
             [canEdit]="spaceRole.canAuthorIntelligence()"
             entityLabel="company"
-            (add)="onIntelligenceEdit()"
+            (add)="openDrawerForNewBrief()"
           />
         }
-        <app-intelligence-history-panel
-          [payload]="historyHost.payload()"
-          [currentUserCanEdit]="spaceRole.canAuthorIntelligence()"
-          (withdraw)="withdrawDialogOpen.set(true)"
-          (purgeVersion)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, false)"
-          (purgeAnchor)="onPurgeRequested({ id: $event.id, headline: $event.confirmation }, true)"
-        />
         <app-withdraw-intelligence-dialog
           [visible]="withdrawDialogOpen()"
           (cancelled)="withdrawDialogOpen.set(false)"
@@ -116,92 +134,64 @@
 
       <!-- Rail: everything referential (events, referenced-in, materials). -->
       <div class="w-full flex-none lg:w-80">
-        <section class="mb-4 border border-slate-200 bg-white" aria-label="Change events">
-          <header
-            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
-          >
-            <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-              Events
-            </h2>
-          </header>
+        <app-section-card
+          title="Events"
+          description="External intelligence scoped to this company."
+          [count]="eventsCount()"
+          countNoun="event"
+          [flush]="true"
+          [scrollBody]="true"
+        >
           @if (company(); as c) {
             <app-entity-events-panel
               [spaceId]="spaceIdSig()"
               [tenantId]="tenantIdSig()"
               entityLevel="company"
               [entityId]="c.id"
+              (loaded)="eventsCount.set($event)"
             />
           }
-        </section>
+        </app-section-card>
 
-        <section
-          class="mb-4 border border-slate-200 bg-white"
-          aria-label="Intelligence referencing this company"
+        <app-section-card
+          title="Referenced in"
+          description="Intelligence entries that cite this company."
+          [count]="(intelligence()?.referenced_in ?? []).length"
+          countNoun="entry"
+          countNounPlural="entries"
+          [flush]="true"
+          [scrollBody]="true"
         >
-          <header
-            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
-          >
-            <h2
-              class="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500"
-            >
-              <app-pi-mark [size]="12" />
-              Referenced in
-            </h2>
-            <span class="font-mono text-[10px] tabular-nums text-slate-400">
-              {{ (intelligence()?.referenced_in ?? []).length }}
-              {{ (intelligence()?.referenced_in ?? []).length === 1 ? 'entry' : 'entries' }}
-            </span>
-          </header>
-          <div class="px-4 py-3">
-            @if ((intelligence()?.referenced_in ?? []).length === 0) {
-              <p class="text-xs italic text-slate-400">Not referenced by any intelligence yet.</p>
-            } @else {
-              <ul class="divide-y divide-slate-100">
-                @for (ref of intelligence()?.referenced_in ?? []; track ref.id) {
-                  <li
-                    class="group relative -mx-2 flex flex-wrap items-baseline gap-2 px-2 py-2 transition-colors hover:bg-slate-50"
-                  >
-                    <span
-                      class="rounded-sm border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-500"
-                    >
-                      {{ ref.entity_type }}
-                    </span>
-                    <a
-                      [routerLink]="referencedRouterLink(ref)"
-                      class="text-sm text-slate-800 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
-                    >
-                      {{ ref.headline }}
-                    </a>
-                  </li>
-                }
-              </ul>
-            }
-          </div>
-        </section>
+          <app-pi-mark icon [size]="12" />
+          <app-referenced-in-panel
+            [rows]="intelligence()?.referenced_in ?? []"
+            [tenantId]="tenantIdSig()"
+            [spaceId]="spaceIdSig()"
+          />
+        </app-section-card>
 
-        <section
-          class="materials-section mb-4 border border-slate-200 bg-white"
-          aria-label="Space materials"
+        <app-section-card
+          title="Materials"
+          description="Files and decks attached to this company."
+          [count]="materialsCount()"
+          countNoun="material"
+          [flush]="true"
         >
-          <header
-            class="flex items-center justify-between border-b border-slate-200 bg-slate-50/60 px-4 py-2"
-          >
-            <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-              Materials
-            </h2>
-          </header>
           <app-materials-section
             entityType="company"
             [entityId]="companyId()"
             [spaceId]="spaceIdSig()"
+            [scrollList]="true"
+            (loaded)="materialsCount.set($event)"
           />
-        </section>
+        </app-section-card>
       </div>
     </div>
 
     @if (spaceIdSig()) {
       <app-intelligence-drawer
         [visible]="drawerOpen()"
+        [anchorId]="drawerAnchorId()"
         [spaceId]="spaceIdSig()"
         entityType="company"
         [entityId]="companyId()"
@@ -226,6 +216,22 @@
       [company]="company()"
       (saved)="onCompanyEdited()"
       (cancelled)="editingCompany.set(false)"
+    />
+  }
+</p-dialog>
+
+<p-dialog
+  header="Add asset"
+  [(visible)]="creatingAsset"
+  [modal]="true"
+  styleClass="!w-[32rem]"
+  (onHide)="creatingAsset.set(false)"
+>
+  @if (creatingAsset() && company(); as c) {
+    <app-asset-form
+      [lockedCompanyId]="c.id"
+      (saved)="onAssetCreated($event)"
+      (cancelled)="creatingAsset.set(false)"
     />
   }
 </p-dialog>

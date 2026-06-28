@@ -61,7 +61,7 @@ export class ChangeEventRowComponent {
       return ['/t', t, 's', s, 'catalysts'];
     }
     if (e.trial_id) {
-      return ['/t', t, 's', s, 'manage', 'trials', e.trial_id];
+      return ['/t', t, 's', s, 'profiles', 'trials', e.trial_id];
     }
     return null;
   });

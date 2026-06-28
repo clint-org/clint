@@ -224,6 +224,52 @@ describe('TrialService.listByAsset', () => {
   });
 });
 
+describe('TrialService.create', () => {
+  function setup(newId = 'new-trial-id') {
+    const captured: Record<string, unknown> = {};
+    const rpc = vi.fn((name: string, params: Record<string, unknown>) => {
+      if (name === 'create_trial') Object.assign(captured, params);
+      return makeRpcResult(newId);
+    });
+    // getById round-trip after create.
+    const getByIdQb = makeQueryBuilder({
+      id: newId,
+      space_id: 'space-1',
+      asset_id: 'asset-1',
+      marker_assignments: [],
+    });
+    const from = vi.fn().mockReturnValue(getByIdQb);
+    const service = makeService(
+      { from, rpc, auth: { getUser: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+    return { service, captured };
+  }
+
+  it('passes the explicit phase dates as p_phase_start_date / p_phase_end_date', async () => {
+    const { service, captured } = setup();
+    await service.create(
+      'space-1',
+      { asset_id: 'asset-1', name: 'Trial', identifier: 'NCT00000001', phase_type: 'P2' },
+      '2024-01-01',
+      '2025-06-30',
+    );
+    expect(captured['p_space_id']).toBe('space-1');
+    expect(captured['p_asset_id']).toBe('asset-1');
+    expect(captured['p_name']).toBe('Trial');
+    expect(captured['p_phase_type']).toBe('P2');
+    expect(captured['p_phase_start_date']).toBe('2024-01-01');
+    expect(captured['p_phase_end_date']).toBe('2025-06-30');
+  });
+
+  it('defaults phase dates to null when omitted', async () => {
+    const { service, captured } = setup();
+    await service.create('space-1', { asset_id: 'asset-1', name: 'Trial' });
+    expect(captured['p_phase_start_date']).toBeNull();
+    expect(captured['p_phase_end_date']).toBeNull();
+  });
+});
+
 describe('TrialService.update with phase fields', () => {
   function setup(updateReturn: Record<string, unknown> = { id: 't1', space_id: 'space-1' }) {
     const captured: Record<string, unknown> = {};
@@ -248,24 +294,21 @@ describe('TrialService.update with phase fields', () => {
     expect(captured['phase_type_source']).toBe('analyst');
   });
 
-  it('writes all three sources when caller supplies all three fields', async () => {
+  it('never writes the dropped trial-date columns or their source columns', async () => {
     const { service, captured } = setup();
-    await service.update('t1', {
-      phase_type: 'P3',
-      phase_start_date: '2024-01-01',
-      phase_end_date: '2025-06-30',
-    });
+    // Trial dates are markers now; update must not touch them even by name.
+    await service.update('t1', { phase_type: 'P3', name: 'renamed' });
     expect(captured['phase_type_source']).toBe('analyst');
-    expect(captured['phase_start_date_source']).toBe('analyst');
-    expect(captured['phase_end_date_source']).toBe('analyst');
+    expect(captured).not.toHaveProperty('phase_start_date');
+    expect(captured).not.toHaveProperty('phase_end_date');
+    expect(captured).not.toHaveProperty('phase_start_date_source');
+    expect(captured).not.toHaveProperty('phase_end_date_source');
   });
 
   it('does not touch source columns when caller omits phase fields', async () => {
     const { service, captured } = setup();
     await service.update('t1', { name: 'renamed' });
     expect(captured).not.toHaveProperty('phase_type_source');
-    expect(captured).not.toHaveProperty('phase_start_date_source');
-    expect(captured).not.toHaveProperty('phase_end_date_source');
   });
 
   it('respects caller-provided source over default analyst', async () => {

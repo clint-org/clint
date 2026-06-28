@@ -8,6 +8,7 @@ import { validateExtraction } from './response-validator';
 import { enrichWithCtgov } from './ctgov-enrichment';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
 import { applyLogoEnrichment, resolveProposalNames } from './post-extract';
+import { extractionTemperature } from './temperature';
 import type { ExtractRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
 
 const MAX_SOURCE_BYTES = 500_000;
@@ -143,6 +144,33 @@ export async function handleSourceExtract(
 
   const textHash = await sha256(sourceText);
 
+  // Pre-extraction duplicate guard: if this exact source was already committed
+  // in this space, short-circuit before spending a Claude call. Mirrors the
+  // commit-stage text_hash check in commit_source_import. "Continue anyway"
+  // re-sends with allow_duplicate to bypass this and re-extract.
+  if (!body.allow_duplicate) {
+    let existingDocId: string | null = null;
+    try {
+      existingDocId = await callRpc<string | null>(cfg, null, 'source_duplicate_check', {
+        p_secret: env.EXTRACT_SOURCE_WORKER_SECRET,
+        p_space_id: body.space_id,
+        p_text_hash: textHash,
+      });
+    } catch {
+      // Non-fatal: if the guard lookup fails, fall through to extraction rather
+      // than blocking a legitimate import. The commit-stage guard still applies.
+      existingDocId = null;
+    }
+    if (existingDocId) {
+      return jsonErrorWithCode(
+        409,
+        'duplicate_source',
+        'This exact source was already imported. Continue anyway to extract it again.',
+        cors
+      );
+    }
+  }
+
   const tenantId = await fetchTenantId(cfg, auth, body.space_id);
   if (!tenantId) return jsonError(403, 'forbidden', cors);
 
@@ -203,7 +231,8 @@ export async function handleSourceExtract(
   const prompt = buildPrompt(sourceText, inventory);
   // Captured into ai_calls.output at close for exact replay/analysis.
   const promptText = `${prompt.system}\n\n${prompt.user}`;
-  const aiParams = { model: preflight.model, max_tokens: 8192 };
+  const temperature = extractionTemperature(preflight.model);
+  const aiParams = { model: preflight.model, max_tokens: 8192, temperature };
   const totalTokens = estimateTokens(prompt.system + prompt.user);
   if (totalTokens > 190_000) {
     await closeAiCall(
@@ -238,6 +267,7 @@ export async function handleSourceExtract(
         // Use the tenant's configured model (resolved server-side in preflight).
         model: preflight.model,
         max_tokens: 8192,
+        ...(temperature !== undefined ? { temperature } : {}),
         system: prompt.system,
         messages: [{ role: 'user', content: prompt.user }],
       },

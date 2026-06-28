@@ -16,7 +16,7 @@ describe('buildServerQuery', () => {
       dateTo: null,
       entityLevel: null,
       entityId: null,
-      categoryIds: [],
+      categoryNames: [],
       tags: [],
       priority: null,
       sourceType: null,
@@ -36,12 +36,12 @@ describe('buildServerQuery', () => {
     expect(q.filters.priority).toBe('high');
   });
 
-  it('reads category ids from a multi-value select as strings', () => {
+  it('reads category names from a multi-value select as strings', () => {
     const filters: Record<string, FilterValue> = {
-      category_name: { kind: 'select', values: ['cat-a', 'cat-b'] },
+      category_name: { kind: 'select', values: ['Regulatory', 'Catalyst lifecycle'] },
     };
     const q = buildServerQuery(filters, SORT, PAGE, '', null, 's');
-    expect(q.filters.categoryIds).toEqual(['cat-a', 'cat-b']);
+    expect(q.filters.categoryNames).toEqual(['Regulatory', 'Catalyst lifecycle']);
   });
 
   it('reads the feed_ts date range', () => {
@@ -54,7 +54,14 @@ describe('buildServerQuery', () => {
   });
 
   it('carries entity scope when present and omits it when absent', () => {
-    const scoped = buildServerQuery({}, SORT, PAGE, '', { entityLevel: 'product', entityId: 'a1' }, 's');
+    const scoped = buildServerQuery(
+      {},
+      SORT,
+      PAGE,
+      '',
+      { entityLevel: 'product', entityId: 'a1' },
+      's'
+    );
     expect(scoped.filters.entityLevel).toBe('product');
     expect(scoped.filters.entityId).toBe('a1');
     const unscoped = buildServerQuery({}, SORT, PAGE, '', null, 's');
@@ -68,11 +75,15 @@ describe('buildServerQuery', () => {
   });
 
   it('maps sort order: -1 -> desc, 1 -> asc, null -> nulls', () => {
-    expect(buildServerQuery({}, { field: 'title', order: 1 }, PAGE, '', null, 's').filters).toMatchObject({
+    expect(
+      buildServerQuery({}, { field: 'title', order: 1 }, PAGE, '', null, 's').filters
+    ).toMatchObject({
       sortField: 'title',
       sortDir: 'asc',
     });
-    expect(buildServerQuery({}, { field: 'title', order: -1 }, PAGE, '', null, 's').filters).toMatchObject({
+    expect(
+      buildServerQuery({}, { field: 'title', order: -1 }, PAGE, '', null, 's').filters
+    ).toMatchObject({
       sortField: 'title',
       sortDir: 'desc',
     });

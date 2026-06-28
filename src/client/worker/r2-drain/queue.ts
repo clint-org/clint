@@ -67,6 +67,20 @@ export interface DrainSummary {
   succeeded: number;
   failed: number;
   max_attempts_hit: number;
+  // Rows whose R2 delete was rejected by a bucket lock rule and rescheduled
+  // via mark_r2_delete_deferred (NOT a failure -- no attempt was burned).
+  deferred: number;
+  // True when the volume gate denied the run; nothing was claimed.
+  paused: boolean;
+  // The gate's reported count of unattempted rows in the queue.
+  unattempted: number;
+}
+
+export interface GateResult {
+  allowed: boolean;
+  unattempted_count: number;
+  effective_cap: number;
+  reason: string;
 }
 
 const DEFAULT_MAX_ATTEMPTS = 5;
@@ -79,11 +93,28 @@ export async function drainR2DeleteQueue(
   const maxAttempts = env.MAX_ATTEMPTS ?? DEFAULT_MAX_ATTEMPTS;
   const batchSize = env.BATCH_SIZE ?? DEFAULT_BATCH_SIZE;
 
+  // Volume gate first: a deny-by-default guard that refuses to drain when
+  // the queue's unattempted backlog exceeds the configured cap. When denied
+  // we claim nothing -- the run is paused for ops review.
+  const gate = await callGate(env);
+  if (!gate.allowed) {
+    return {
+      drained: 0,
+      succeeded: 0,
+      failed: 0,
+      max_attempts_hit: 0,
+      deferred: 0,
+      paused: true,
+      unattempted: gate.unattempted_count,
+    };
+  }
+
   const pending = await claimPending(env, batchSize, maxAttempts);
 
   let succeeded = 0;
   let failed = 0;
   let maxAttemptsHit = 0;
+  let deferred = 0;
 
   for (const row of pending) {
     try {
@@ -92,6 +123,14 @@ export async function drainR2DeleteQueue(
       succeeded += 1;
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
+      // A bucket lock rule (R2 error 10069) is not a delete failure: the
+      // object cannot be removed until the lock window passes. Reschedule
+      // the row without burning an attempt so it is retried later.
+      if (isLockError(message)) {
+        await markDeferred(env, row.id, message);
+        deferred += 1;
+        continue;
+      }
       const nextAttempt = row.attempt_count + 1;
       await markFailed(env, row.id, nextAttempt, message);
       failed += 1;
@@ -109,7 +148,39 @@ export async function drainR2DeleteQueue(
     succeeded,
     failed,
     max_attempts_hit: maxAttemptsHit,
+    deferred,
+    paused: false,
+    unattempted: gate.unattempted_count,
   };
+}
+
+// R2 rejects deletes of objects under an active bucket lock rule with
+// error code 10069. Detect that class so the drain reschedules instead of
+// counting it as a failure.
+function isLockError(message: string): boolean {
+  return message.includes('10069') || /bucket lock/i.test(message);
+}
+
+/**
+ * r2_drain_gate: a deny-by-default volume guard. Returns a single-row
+ * TABLE result (PostgREST wraps it in a JSON array) describing whether the
+ * drain is allowed to proceed, the current unattempted backlog, the
+ * effective cap, and a human-readable reason. The worker reads element [0].
+ */
+async function callGate(env: R2DrainEnv): Promise<GateResult> {
+  try {
+    const rows = await callRpc<GateResult[]>(
+      { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY },
+      null,
+      'r2_drain_gate',
+      {
+        p_secret: env.R2_WORKER_SECRET,
+      }
+    );
+    return rows[0];
+  } catch (e) {
+    throw new Error(`r2_drain_gate failed: ${describeRpcError(e)}`);
+  }
 }
 
 /**
@@ -151,6 +222,23 @@ async function markSucceeded(env: R2DrainEnv, id: string): Promise<void> {
     );
   } catch (e) {
     throw new Error(`mark_r2_delete_succeeded failed: ${describeRpcError(e)}`);
+  }
+}
+
+async function markDeferred(env: R2DrainEnv, id: string, reason: string): Promise<void> {
+  try {
+    await callRpc<null>(
+      { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY },
+      null,
+      'mark_r2_delete_deferred',
+      {
+        p_secret: env.R2_WORKER_SECRET,
+        p_id: id,
+        p_reason: truncateError(reason),
+      }
+    );
+  } catch (e) {
+    throw new Error(`mark_r2_delete_deferred failed: ${describeRpcError(e)}`);
   }
 }
 

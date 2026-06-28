@@ -1,4 +1,22 @@
 <app-manage-page-shell>
+  <app-section-header
+    label="Assets"
+    [detail]="grid.totalRecords() ? grid.totalRecords().toString() : ''"
+    class="mb-3 block"
+  >
+    <div actions>
+      @if (spaceRole.canEdit()) {
+        <p-button
+          label="Add asset"
+          icon="fa-solid fa-plus"
+          size="small"
+          [text]="true"
+          (onClick)="openCreateModal()"
+        />
+      }
+    </div>
+  </app-section-header>
+
   <app-grid-toolbar [state]="grid" searchPlaceholder="Search assets...">
     <app-export-button gridToolbarEnd [actions]="exportActions" />
   </app-grid-toolbar>
@@ -53,7 +71,7 @@
       <tr>
         <td>
           <a
-            [routerLink]="['/t', tenantId, 's', spaceId, 'manage', 'assets', row.asset.id]"
+            [routerLink]="['/t', tenantId, 's', spaceId, 'profiles', 'assets', row.asset.id]"
             class="text-left text-brand-700 hover:text-brand-800 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <span [innerHTML]="row.asset.name | highlight: grid.debouncedGlobalSearch()"></span>
@@ -76,7 +94,7 @@
                 tenantId,
                 's',
                 spaceId,
-                'manage',
+                'profiles',
                 'companies',
                 row.asset.company_id,
               ]"
@@ -155,8 +173,10 @@
         <td colspan="8">
           @if (grid.isFiltered()) {
             No assets match your filters.
-          } @else {
+          } @else if (spaceRole.canEdit()) {
             No assets yet. Add one to get started.
+          } @else {
+            No assets yet.
           }
         </td>
       </tr>

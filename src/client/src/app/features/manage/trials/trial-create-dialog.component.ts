@@ -11,11 +11,13 @@ import {
 import { Dialog } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
-import { MultiSelect } from 'primeng/multiselect';
 import { DatePicker } from 'primeng/datepicker';
 import { Tooltip } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
+
+import { TaxonomyMultiselectComponent } from '../shared/taxonomy-multiselect/taxonomy-multiselect.component';
+import type { CreateFn } from '../shared/taxonomy-multiselect/taxonomy-create-controller';
 
 import { TrialService } from '../../../core/services/trial.service';
 import { AssetService } from '../../../core/services/asset.service';
@@ -38,7 +40,7 @@ interface SelectOption {
     Dialog,
     InputTextModule,
     Select,
-    MultiSelect,
+    TaxonomyMultiselectComponent,
     DatePicker,
     Tooltip,
     FormsModule,
@@ -59,6 +61,12 @@ export class TrialCreateDialogComponent {
   readonly visible = input<boolean>(false);
   readonly visibleChange = output<boolean>();
   readonly spaceId = input.required<string>();
+  /**
+   * When set, the asset is pre-selected and locked. Used when the dialog is
+   * opened from an asset's detail page so the new trial is bound to that asset
+   * without the user re-picking it.
+   */
+  readonly lockedAssetId = input<string | null>(null);
   readonly saved = output<{ trialId: string }>();
 
   // Form fields are signals because they participate in the isValid() computed
@@ -74,12 +82,13 @@ export class TrialCreateDialogComponent {
   readonly phaseStart = signal<string | null>(null);
   readonly phaseEnd = signal<string | null>(null);
 
-  // tracks whether each value was pre-filled by the ct.gov lookup. when true,
-  // the field renders disabled and saves with source='ctgov'. when false, the
-  // analyst typed it and the save uses source='analyst'.
+  // tracks whether the phase value was pre-filled by the ct.gov lookup. when
+  // true, the Phase select renders disabled (clear the NCT to override). The
+  // phase start/end dates are only ever prefilled values now: every manual
+  // create produces analyst-owned Trial Start / Trial End markers (ct.gov
+  // adoption happens on first sync if an NCT is present), so there is no
+  // source distinction to carry on the date fields.
   protected readonly phaseTypeFromCtgov = signal(false);
-  protected readonly phaseStartFromCtgov = signal(false);
-  protected readonly phaseEndFromCtgov = signal(false);
 
   // p-datepicker binds Date objects; the phaseStart/phaseEnd signals stay
   // YYYY-MM-DD strings (the save payload + ct.gov prefill use strings).
@@ -107,6 +116,16 @@ export class TrialCreateDialogComponent {
 
   readonly products = signal<SelectOption[]>([]);
   readonly indications = signal<SelectOption[]>([]);
+
+  /** True when opened from an asset page: the asset picker is fixed. */
+  protected readonly assetLocked = computed(() => !!this.lockedAssetId());
+
+  /** Display name for the locked asset, resolved from the loaded options. */
+  protected readonly lockedAssetName = computed(() => {
+    const id = this.lockedAssetId();
+    if (!id) return null;
+    return this.products().find((p) => p.id === id)?.name ?? null;
+  });
 
   readonly saving = signal(false);
 
@@ -164,6 +183,8 @@ export class TrialCreateDialogComponent {
     );
   });
 
+  protected readonly showNoIndicationNote = computed(() => this.indicationIds().length === 0);
+
   constructor() {
     // Load product + therapeutic-area options whenever spaceId changes.
     effect(() => {
@@ -176,12 +197,19 @@ export class TrialCreateDialogComponent {
         .catch(() => this.showPreclinical.set(false));
     });
 
-    // Reset form when the dialog is closed.
+    // When a locked asset is supplied, force the selection to it.
+    effect(() => {
+      const locked = this.lockedAssetId();
+      if (locked) this.assetId.set(locked);
+    });
+
+    // Reset form when the dialog is closed. The asset resets to the locked
+    // value (null when unlocked) so reopening from an asset page keeps it.
     effect(() => {
       if (!this.visible()) {
         this.name.set('');
         this.identifier.set(null);
-        this.assetId.set(null);
+        this.assetId.set(this.lockedAssetId());
         this.indicationIds.set([]);
         this.nctLookupState.set('idle');
         this.nctLookupAcronym.set(null);
@@ -190,8 +218,6 @@ export class TrialCreateDialogComponent {
         this.phaseStart.set(null);
         this.phaseEnd.set(null);
         this.phaseTypeFromCtgov.set(false);
-        this.phaseStartFromCtgov.set(false);
-        this.phaseEndFromCtgov.set(false);
       }
     });
   }
@@ -212,15 +238,11 @@ export class TrialCreateDialogComponent {
     }
     if (!value) {
       this.phaseTypeFromCtgov.set(false);
-      this.phaseStartFromCtgov.set(false);
-      this.phaseEndFromCtgov.set(false);
       return;
     }
     const trimmed = value.trim();
     if (!/^NCT\d{8}$/i.test(trimmed)) {
       this.phaseTypeFromCtgov.set(false);
-      this.phaseStartFromCtgov.set(false);
-      this.phaseEndFromCtgov.set(false);
       return;
     }
 
@@ -272,12 +294,14 @@ export class TrialCreateDialogComponent {
           this.phaseType.set(derivedPhase);
           this.phaseTypeFromCtgov.set(true);
         }
+        // Prefill the date VALUES only (the analyst can edit them). They become
+        // analyst-owned Trial Start / Trial End markers on create; ct.gov takes
+        // ownership on first sync via adoption, so no source tag is set here.
         const startDate = study.protocolSection?.statusModule?.startDateStruct?.date;
         if (startDate) {
           // ct.gov returns YYYY-MM or YYYY-MM-DD; normalize to YYYY-MM-DD
           const normalized = /^\d{4}-\d{2}$/.test(startDate) ? `${startDate}-01` : startDate;
           this.phaseStart.set(normalized);
-          this.phaseStartFromCtgov.set(true);
         }
         const endDate =
           study.protocolSection?.statusModule?.primaryCompletionDateStruct?.date ??
@@ -285,7 +309,6 @@ export class TrialCreateDialogComponent {
         if (endDate) {
           const normalized = /^\d{4}-\d{2}$/.test(endDate) ? `${endDate}-01` : endDate;
           this.phaseEnd.set(normalized);
-          this.phaseEndFromCtgov.set(true);
         }
       } catch (e) {
         if ((e as { name?: string })?.name === 'AbortError') return;
@@ -303,6 +326,25 @@ export class TrialCreateDialogComponent {
   protected onIndicationsChange(ids: string[] | null): void {
     this.indicationIds.set(ids ?? []);
   }
+
+  // Inline-create handler for the Indication multiselect: persist a name-only
+  // indication, register it in the option list, and surface failures as a toast.
+  // Re-throws so the multiselect keeps the typed text for retry.
+  protected readonly createIndication: CreateFn = async (name) => {
+    try {
+      const created = await this.indicationService.create(this.spaceId(), { name });
+      this.indications.update((list) => [...list, { id: created.id, name: created.name }]);
+      return created;
+    } catch (e) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Could not add indication',
+        detail: e instanceof Error ? e.message : 'Check your connection and try again.',
+        life: 4000,
+      });
+      throw e;
+    }
+  };
 
   private async loadOptions(spaceId: string): Promise<void> {
     const [products, indications] = await Promise.all([
@@ -351,15 +393,14 @@ export class TrialCreateDialogComponent {
         payload.phase_type = this.phaseType();
         payload.phase_type_source = this.phaseTypeFromCtgov() ? 'ctgov' : 'analyst';
       }
-      if (this.phaseStart()) {
-        payload.phase_start_date = this.phaseStart();
-        payload.phase_start_date_source = this.phaseStartFromCtgov() ? 'ctgov' : 'analyst';
-      }
-      if (this.phaseEnd()) {
-        payload.phase_end_date = this.phaseEnd();
-        payload.phase_end_date_source = this.phaseEndFromCtgov() ? 'ctgov' : 'analyst';
-      }
-      const trial = await this.trialService.create(this.spaceId(), payload);
+      // Phase start/end flow to create_trial as explicit args; the server
+      // creates the analyst-owned Trial Start / Trial End markers from them.
+      const trial = await this.trialService.create(
+        this.spaceId(),
+        payload,
+        this.phaseStart(),
+        this.phaseEnd()
+      );
       if (this.indicationIds().length) {
         await this.trialService.setIndications(trial.id, this.indicationIds(), this.spaceId());
       }

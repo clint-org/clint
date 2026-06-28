@@ -6,6 +6,7 @@ import {
   inject,
   input,
   OnInit,
+  output,
   signal,
 } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -69,6 +70,17 @@ export class MaterialsSectionComponent implements OnInit {
    * add the first material. Default false keeps every other host unchanged.
    */
   readonly hideWhenEmpty = input<boolean>(false);
+  /**
+   * When true, the material list caps its height and scrolls internally so a
+   * long list never pushes the pinned upload zone off-screen. Used by the
+   * fixed-width sidebar cards (asset / trial / company); full-width hosts leave
+   * it false so the list grows naturally.
+   */
+  readonly scrollList = input<boolean>(false);
+
+  /** Emits the loaded material count after each fetch (0 on empty or error) so
+   *  the surrounding section-card can show it in the header badge. */
+  readonly loaded = output<number>();
 
   protected readonly materials = signal<Material[]>([]);
   protected readonly loading = signal(true);
@@ -139,9 +151,11 @@ export class MaterialsSectionComponent implements OnInit {
         entityId: this.entityId(),
       });
       this.materials.set(result.rows ?? []);
+      this.loaded.emit(this.materials().length);
     } catch (e) {
       this.error.set(errorMessage(e));
       this.materials.set([]);
+      this.loaded.emit(0);
     } finally {
       this.loading.set(false);
     }

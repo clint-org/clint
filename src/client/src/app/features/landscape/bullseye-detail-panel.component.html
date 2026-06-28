@@ -195,9 +195,11 @@
         </div>
       }
 
-      @if (asset.intelligence_count > 0) {
+      @if (asset.intelligence_count > 0 || companyIntelligenceRefs().length > 0) {
         <app-detail-panel-section
-          [label]="'Intelligence (' + asset.intelligence_count + ')'"
+          [label]="
+            'Intelligence (' + (asset.intelligence_count + companyIntelligenceRefs().length) + ')'
+          "
           [piMark]="true"
         >
           @if (intelligenceReferences().length > 0) {
@@ -354,18 +356,5 @@
         </app-detail-panel-section>
       </app-detail-panel-empty-state>
     }
-  }
-
-  @if (selectedAsset()) {
-    <div footer class="border-t border-slate-100 px-5 py-3">
-      <button
-        type="button"
-        class="inline-flex w-full items-center justify-center gap-1.5 rounded-sm border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-brand-600 hover:text-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
-        (click)="onOpenTimeline()"
-      >
-        Open in timeline
-        <i class="fa-solid fa-arrow-right text-[10px]" aria-hidden="true"></i>
-      </button>
-    </div>
   }
 </app-detail-panel-shell>

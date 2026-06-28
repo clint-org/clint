@@ -35,7 +35,7 @@
         <span class="text-slate-400">
           @if (d.company_id && tenantId() && spaceId()) {
             <a
-              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'companies', d.company_id]"
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'companies', d.company_id]"
               appDetailPanelEntityLink
               entityLinkTone="muted"
               >{{ d.company_name }}</a
@@ -47,7 +47,7 @@
             <span class="text-slate-300"> / </span>
             @if (d.asset_id && tenantId() && spaceId()) {
               <a
-                [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', d.asset_id]"
+                [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'assets', d.asset_id]"
                 appDetailPanelEntityLink
                 entityLinkTone="muted"
                 >{{ d.entity_name }}</a
@@ -336,7 +336,7 @@
                   tenantId(),
                   's',
                   spaceId(),
-                  'manage',
+                  'profiles',
                   'companies',
                   item.company_id,
                 ]"
@@ -350,7 +350,7 @@
           }
           @if (item.asset_id && tenantId() && spaceId()) {
             <a
-              [routerLink]="['/t', tenantId(), 's', spaceId(), 'manage', 'assets', item.asset_id]"
+              [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'assets', item.asset_id]"
               appDetailPanelEntityLink
               >{{ item.entity_name }}</a
             >
@@ -449,7 +449,7 @@
     <app-detail-panel-empty-state prompt="Click an event to see details">
       <p class="mt-2 text-[13px] text-slate-700">
         <span class="text-base font-semibold tabular-nums text-slate-900">{{
-          feedItems().length
+          overviewTotal()
         }}</span>
         in window
         @if (highPriorityCount() > 0) {

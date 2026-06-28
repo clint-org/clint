@@ -14,3 +14,21 @@ resource "cloudflare_r2_bucket" "materials" {
   location      = "ENAM"
   storage_class = "Standard"
 }
+
+# WS1 materials durability: 7-day in-account immutability. Objects cannot be
+# deleted or overwritten for 604800s (7 days) after they are written. The clock
+# starts at write; the lock is a floor on lifetime, not a ceiling. This blocks the
+# drain's legitimate deletes during the window too, so the drain is made lock-aware
+# (reschedules on error 10069) BEFORE this is applied (see rollout order).
+resource "cloudflare_r2_bucket_lock" "materials" {
+  account_id  = var.cloudflare_account_id
+  bucket_name = cloudflare_r2_bucket.materials.name
+  rules = [{
+    id      = "materials-7day-immutability"
+    enabled = true
+    condition = {
+      type            = "Age"
+      max_age_seconds = 604800
+    }
+  }]
+}

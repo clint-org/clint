@@ -53,7 +53,7 @@ export const PHASE_DESCRIPTORS: PhaseDescriptor[] = [
     shortLabel: 'PH 3',
     color: '#2dd4bf',
     description:
-      'Pivotal trials -- the hero color. Where investment, partnership, and approval narratives are decided.',
+      'Pivotal trials, the hero color. Where investment, partnership, and approval decisions are made.',
   },
   {
     key: 'P4',
