@@ -222,10 +222,14 @@ only to trials (36px rows, single lane, phase bar at y=8, markers at y=4-22).
 
 ### The altitude model
 
-Rows can render at trial, asset, or (later) company altitude. The same `events`
-table and resolver feed all altitudes; **altitude is just a significance
+Rows can render at trial, asset, or company altitude (all three in v1). The same
+`events` table and resolver feed all altitudes; **altitude is just a significance
 threshold plus anchor roll-up**, which is what makes this tractable rather than a
-phase-aggregation rewrite.
+phase-aggregation rewrite. Company altitude is the same mechanism one level up,
+and is in fact simpler: a company has no phase, so a company row is just catalysts
+on a lane (no lead-phase chip). It is also necessary, not optional: roll-*down* is
+out of scope (a company event does not cascade onto its asset/trial rows), so a
+company-anchored event has **no timeline home unless a company track exists**.
 
 ```mermaid
 flowchart TB
@@ -253,6 +257,15 @@ flowchart TB
 - **No aggregate phase bar** at asset altitude. Aggregating concurrent trials at
   different phases into one bar is lossy and discards the indication dimension, so
   we show a compact lead-phase chip and put phase detail one expand away.
+- **Company altitude** collapses each company to one row: company-anchored
+  catalysts plus rolled-up headline catalysts from its assets and trials (two
+  roll-up levels, gated harder by the threshold). No phase chip. This is the
+  company-vs-company cadence comparison.
+- **Company band.** When viewing at asset or trial altitude, a thin company band
+  sits at the top of each company group to host company-anchored catalysts (for
+  example a pinned leadership event), so company-level events are visible without
+  leaving the detailed view. Same resolver ("catalysts for company C"), rendered
+  as a group-header lane instead of a standalone row.
 
 ## v1 scope
 
@@ -264,8 +277,10 @@ flowchart TB
 - Terminology / IA cleanup: **Primary Intelligence -> Intelligence**; the
   **Events page -> Activity** (detected changes); a single **Intelligence feed**
   carrying briefs + events.
-- **Asset rows with a collapse toggle and altitude-driven significance**: the
-  collapse/comparison view, reached directly in v1.
+- **Trial / asset / company altitudes** with a collapse toggle and
+  altitude-driven significance: the collapse/comparison view, reached directly in
+  v1. Includes the company band (a group-header lane hosting company-anchored
+  catalysts) in the asset/trial views.
 - **Updating the data-producing paths that write markers/events today**, so they
   emit the unified Event model: the **`/seed-demo`** seed/demo data, and the **AI
   import / extraction** pipeline (`commit_source_import` and the extract worker)
@@ -286,7 +301,6 @@ flowchart TB
   span objects. v1 comparison is "collapse to asset altitude and read the gaps in
   stacked rows," not a normalized overlay.
 - Scenario templates / overlays (C).
-- Company altitude (phase 3; same mechanism one level up).
 
 ## Locked decisions
 
@@ -303,7 +317,7 @@ flowchart TB
 | Surface | Shows |
 | --- | --- |
 | **Intelligence feed** (`/intelligence`) | Briefs + events, recency-ordered, filterable. The one curated stream. |
-| **Timeline** | Catalysts (trial-anchored on trial rows; asset-anchored on asset lanes), phase bars derived from clinical events. Altitude toggle. |
+| **Timeline** | Catalysts at three altitudes: trial-anchored on trial rows, asset-anchored on asset lanes, company-anchored on company rows / the company band. Phase bars derived from clinical events. Altitude toggle. |
 | **Activity** (renamed from Events page) | Detected record changes (CT.gov diffs, event edit history). High-volume, low-signal. |
 | **Profile pages** | Per-entity events + the entity's intelligence; trial pages keep an Activity (detected changes) card. |
 
@@ -349,9 +363,8 @@ testing is a first-class deliverable, not a trailing phase. Two rules:
 | 10 | Comparison view | Two asset rows stacked; approval-to-distribution gap is visible | e2e (visual) |
 | 11 | Phase-bar derivation post-merge | Bar derives from clinical events (regression) | unit + integration |
 | 12 | `visibility = hidden` on a high-significance event | Not a catalyst on any altitude | unit |
-
-(If company altitude is pulled into v1, add: company altitude renders company
-rows with company-anchored catalysts.)
+| 13 | Company altitude | Company rows render company-anchored catalysts + rolled-up headline catalysts; no phase chip | unit (roll-up) + e2e |
+| 14 | Company band in asset/trial view | A pinned company-level event renders on the company group-header band | e2e |
 
 ### Fixture
 
