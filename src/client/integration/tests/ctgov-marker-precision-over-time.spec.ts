@@ -473,44 +473,32 @@ describe('precision over time, date slip event, and ct.gov marker lock', () => {
     });
   });
 
-  // --- Group 3: date_moved change-feed emission (RE-SCOPED, see comment) ---
+  // --- Group 3: date_moved change-feed emission (RESTORED by task CA) ---
   //
-  // These assertions exercised the trial_change_events Activity-feed emission of
-  // `date_moved`, NOT the marker date-drift that C3 repoints. In the marker era
-  // there were two emitters: _classify_change (in ingest_ctgov_snapshot) and the
-  // marker UPSERT audit trigger. A prior de-dup deliberately SUPPRESSED
-  // _classify_change for the three CT.gov date fields so the marker audit became
-  // the single date_moved emitter (spec A3). That marker audit trigger lived on
-  // the now-dropped public.markers table and was retired in Phase B / task C1
-  // (_log_marker_change + _emit_events_from_marker_change), and _classify_change
-  // still defers those three date fields. So in the event model NO producer emits
-  // date_moved for a CT.gov date change yet.
-  //
-  // Restoring date_moved emission belongs to the deferred change-feed / Activity-
-  // feed producer cutover (the plan defers the Activity/feed surfaces), NOT to
-  // the C3 marker->event date-drift repoint, whose enumerated scope is the two
-  // marker-write functions. Per the C3 brief ("do not fix unrelated pre-existing
-  // issues"), this spec does not re-add that emitter. The assertions below are
-  // re-scoped to (a) document the current event-model reality and (b) preserve
-  // the invariant that whatever date_moved events DO exist are ctgov-sourced, so
-  // the later change-feed task flips the count assertion back without losing the
-  // source-tagging guard.
-  describe('group 3: date_moved change-feed emission (deferred to change-feed cutover)', () => {
-    it('no date_moved events yet: change-feed emitter retired with markers (pending repoint)', async () => {
-      // KNOWN GAP, tracked: the marker-audit date_moved emitter was retired in
-      // C1 and _classify_change still defers the three CT.gov date fields. When
-      // the change-feed producer cutover repoints emission onto the events model,
-      // restore the prior expectation: exactly 3 date_moved events for v2/v3/v4.
+  // These assertions exercise the trial_change_events Activity-feed emission of
+  // `date_moved` on a CT.gov registry-date drift. In the marker era there were
+  // two emitters: _classify_change (in ingest_ctgov_snapshot) and the marker
+  // UPSERT audit trigger; a de-dup SUPPRESSED _classify_change for the three
+  // CT.gov date fields so the marker audit became the single emitter (spec A3).
+  // That marker audit trigger lived on the now-dropped public.markers table and
+  // was retired in Phase B / task C1, leaving NO producer for date_moved. Task
+  // CA (migration 20260628300000) un-suppressed _classify_change for the three
+  // date fields, so it is once again the single date_moved emitter and
+  // ingest_ctgov_snapshot inserts the row into trial_change_events (source=
+  // 'ctgov'). The Trial-A setup drifts startDateStruct.date across v2/v3/v4
+  // (2026 -> 2026-11 -> 2026-11-03 -> 2027-01-15), so exactly 3 date_moved rows
+  // are expected (v1 is the first snapshot, no prior to diff against).
+  describe('group 3: date_moved change-feed emission (restored by task CA)', () => {
+    it('emits exactly 3 ctgov date_moved events for the v2/v3/v4 start-date drift', async () => {
       const events = await queryEvents(trialAId, 'date_moved');
-      expect(events).toHaveLength(0);
+      expect(events).toHaveLength(3);
     });
 
-    it('any date_moved events that exist are source === ctgov (not analyst)', async () => {
-      // Preserved invariant: vacuously true today (zero events), but guards
-      // against analyst-sourced leakage once emission is restored.
+    it('every date_moved event is source === ctgov (not analyst) and which_date === start', async () => {
       const events = await queryEvents(trialAId, 'date_moved');
       for (const ev of events) {
         expect(ev.source).toBe('ctgov');
+        expect(ev.payload['which_date']).toBe('start');
       }
     });
   });
