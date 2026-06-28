@@ -521,3 +521,58 @@ Rows 6, 7, 8, 9, 10, 13, 14 and the full row-5 (edit -> Activity) are not
 data-layer assertions: they are covered by C6 (producer backtest), B4 (frontend
 service backtest), and E4 (authoritative all-14-rows visual artifact on cloud
 dev).
+
+---
+
+## Phase B backtest results
+
+Run 2026-06-28. Tasks B1 (trial.service reads anchored events), B2
+(marker-category.service reads event_type_categories), B3 (delete dialogs +
+export util consume renamed keys, drop dead marker reads) implemented + reviewed
+(Approved). Plus a discovered Phase A gap remediated this phase: B-a7fix
+(`list_recent_materials_for_space` was missed by A7 because the plan named it
+`list_materials_recent`, which does not exist; it still read `public.markers` /
+`marker_assignments` and threw on the engagement-landing RECENT MATERIALS widget).
+
+Gate: `ng lint` clean, `ng build` clean (only pre-existing CSS-budget + CommonJS
+warnings), `npm run test:units` 1427/1427 green, `supabase db reset` clean from
+the worktree, advisors clean.
+
+Visual: local serve (`ng serve --configuration local --port 8123`) from the
+worktree + injected demo session; QA space `00000000-0000-0000-0000-0000000d0199`
+("Events QA", demo-user owned) seeded via `seed_events_model_qa` (10 events:
+asset 4 incl. 1 hidden + 1 projected, company 2 incl. 1 pinned, trial 4 clinical).
+
+### Acceptance Matrix rows (local visual)
+
+| Row | Scenario | Status | Evidence |
+|---|---|---|---|
+| 1 | Clinical event on trial row | pass | Trial Start / PCD / Topline (green) / Approval glyphs on the "QA Trial Alpha Phase 3" row; REST: 4 trial-anchored events return 200 |
+| 2 | High-sig commercial event on asset lane | pass | Distribution **hexagon** glyph on the "QA Asset Alpha" lane (~Q1 '25), distinct from circle/flag glyphs |
+| 3 | Low-sig leadership feed-only (no glyph) + pinned -> company band glyph | pass | Pinned Strategic event renders as a circle on the "QA PHARMA ALPHA" band (~Apr '24); the feed-only Leadership event is NOT drawn on any row |
+| 7 | Default view regression (trial rows + phase bars) | pass | PH3 phase bar + clinical glyphs render on the trial row exactly as pre-cutover |
+| 8 | Compare preset (Assets on, Trials off) | pass | Clicking COMPARE unchecks Trials, hides the trial row, shows the "PH 3" lead-phase chip on the asset lane, and renders asset-anchored events only |
+| 13 | Company events lane (company-anchored only, no phase chip) | pass | Company band shows only the company-anchored pinned event; no phase chip on the band |
+| 14 | Pinned company band glyph in asset/trial view | pass | The ~Apr '24 pinned-event circle renders on the company group-header band while asset + trial rows are shown |
+
+### Load-clean regression (the cutover acceptance for Phase B)
+
+| Surface | Status | Evidence |
+|---|---|---|
+| Timeline | pass | Console has only Vite/Angular dev messages; zero PostgrestError / dropped-table errors. REST probe: OLD `trials?select=...marker_assignments(...)` -> 400 "Could not find a relationship"; NEW `events?...&anchor_type=eq.trial` -> 200 (4 rows); `event_type_categories` -> 200; dropped `marker_categories` -> 404 |
+| Future Events (catalysts) | pass | Loads clean; normal empty state "No upcoming catalysts match your filters" (not an error state) |
+| Engagement landing (Home) | pass (after B-a7fix) | Before the fix, RECENT MATERIALS showed `relation "public.markers" does not exist`; after B-a7fix, `list_recent_materials_for_space` returns 200 `{rows: []}` and the page renders clean (hero band, Stout intelligence post, Next 90 Days, What Changed) |
+
+### Notes / deferrals
+
+- The projected `~Q4 2026` event renders on the timeline (asset-lane diamond,
+  fuzzy "~Q4 '26" label) but does NOT appear in the default Future Catalysts
+  list, which is a next-90-days window (Q4 2026 is beyond it). The RPC returns it
+  (A9 row 4); the projected-in-Future-Events visual at a widened period is an E4
+  concern. No regression.
+- Rows 4, 9, 10, 12 are not in Phase B's target set (row 4/12 are data-layer in
+  A9 + Stage 2c unit; rows 9/10 two-asset comparison are E4). The QA space does
+  carry a second company/asset and a hidden event for E4.
+- The shared local DB was `db reset` during B-a7fix, which wipes the manually
+  created QA space; re-seed `seed_events_model_qa` into a demo-user-owned space
+  before re-verifying.
