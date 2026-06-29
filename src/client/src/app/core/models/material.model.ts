@@ -40,6 +40,12 @@ export interface Material {
   material_type: MaterialType;
   title: string;
   uploaded_at: string;
+  /**
+   * True for intentionally-fileless seed/demo/playground materials with no
+   * backing R2 object. The UI skips the download (which would 404) and shows
+   * an informational message instead.
+   */
+  is_sample: boolean;
   links: MaterialLink[];
 }
 

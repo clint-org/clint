@@ -79,7 +79,12 @@
 				"CTGOV_PARALLEL_FETCHES": "10"
 			},
 			"triggers": {
-				"crons": []
+				// Daily drain of dev's r2_pending_deletes queue, for parity with
+				// prod (which drains via its "0 7 * * *" cron). 08:00 is used
+				// deliberately instead of 07:00 so the scheduled handler does NOT
+				// also run the CT.gov sync on dev (that handler keys CT.gov on the
+				// exact "0 7 * * *" string); the R2 drain runs on every fire.
+				"crons": ["0 8 * * *"]
 			},
 			"r2_buckets": [
 				{

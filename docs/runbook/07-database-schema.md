@@ -1045,4 +1045,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260627200000_events_rpc_category_name_filter.sql`
 - `20260627210000_landscape_multilevel_intelligence.sql`
 - `20260627220000_events_overview_full_set_aggregates.sql`
+- `20260628100000_materials_is_sample.sql`
+- `20260628110000_materials_list_rpcs_is_sample.sql`
 <!-- /AUTO-GEN:DRIFT -->

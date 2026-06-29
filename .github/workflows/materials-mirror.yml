@@ -4,11 +4,12 @@ name: Mirror materials buckets
 # off-cloud copy. Detection signal for the materials durability domain in
 # docs/runbook/14-disaster-recovery.md.
 on:
-  # Cron disabled until WS1 Phase 6 provisions the B2 buckets and the
-  # R2_MATERIALS_*/B2_MATERIALS_* secrets; until then a scheduled run would only
-  # fail and open noise issues. Re-enable this cron as the last Phase 6 step.
-  # schedule:
-  #   - cron: "30 9 * * *"
+  # Daily add-only mirror of each R2 materials bucket to its B2 backup. Activated
+  # 2026-06-28 after the sample-aware reconciliation landed and reconcile ran
+  # clean on dev and prod. Per-env, bucket-scoped secrets live in Infisical
+  # shared/backups and auto-sync to GitHub Actions.
+  schedule:
+    - cron: "30 9 * * *"
   workflow_dispatch:
 
 permissions:
@@ -30,12 +31,12 @@ jobs:
         env:
           R2_SRC_BUCKET: clint-materials
           R2_S3_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_MATERIALS_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_MATERIALS_SECRET_ACCESS_KEY }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_MATERIALS_PROD_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_MATERIALS_PROD_SECRET_ACCESS_KEY }}
           B2_DST_BUCKET: clint-materials-backup
           B2_S3_ENDPOINT: ${{ secrets.B2_S3_ENDPOINT }}
-          B2_KEY_ID: ${{ secrets.B2_MATERIALS_KEY_ID }}
-          B2_APP_KEY: ${{ secrets.B2_MATERIALS_APP_KEY }}
+          B2_KEY_ID: ${{ secrets.B2_MATERIALS_PROD_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_MATERIALS_PROD_APP_KEY }}
         run: scripts/materials/mirror.sh
 
   dev:
@@ -46,12 +47,12 @@ jobs:
         env:
           R2_SRC_BUCKET: clint-materials-dev
           R2_S3_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_MATERIALS_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_MATERIALS_SECRET_ACCESS_KEY }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_MATERIALS_DEV_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_MATERIALS_DEV_SECRET_ACCESS_KEY }}
           B2_DST_BUCKET: clint-materials-backup-dev
           B2_S3_ENDPOINT: ${{ secrets.B2_S3_ENDPOINT }}
-          B2_KEY_ID: ${{ secrets.B2_MATERIALS_KEY_ID }}
-          B2_APP_KEY: ${{ secrets.B2_MATERIALS_APP_KEY }}
+          B2_KEY_ID: ${{ secrets.B2_MATERIALS_DEV_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_MATERIALS_DEV_APP_KEY }}
         run: scripts/materials/mirror.sh
 
   # A failed mirror must not be silent. On any failure open or update a

@@ -167,6 +167,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `mark_r2_delete_failed` | r2_pending_deletes | - |
 | `mark_r2_delete_succeeded` | r2_pending_deletes | - |
 | `mark_trials_ctgov_withdrawn` | trial_change_events, trials | - |
+| `normalize_sample_material` | - | materials |
 | `palette_empty_state` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
 | `palette_set_pinned` | palette_pinned | - |
 | `palette_touch_recent` | palette_recents | - |
@@ -768,6 +769,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `mark_trials_ctgov_withdrawn`
 - `member_guard_mark_cascade_end`
 - `member_guard_mark_cascade_start`
+- `normalize_sample_material`
 - `palette_empty_state`
 - `palette_set_pinned`
 - `palette_touch_recent`

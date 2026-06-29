@@ -9,18 +9,37 @@ export function diff(db, r2, b2) {
   return { dangling, orphan, mirror_gap: mirrorGap };
 }
 
+// Severity: a real upload that lost its file (dangling) or a backup that has
+// fallen behind (mirror_gap) fail the job. An orphan (R2 object with no DB row)
+// is wasted storage, not data loss; it is reported but does not fail.
+export function failsOn(summary) {
+  return summary.dangling.length > 0 || summary.mirror_gap.length > 0;
+}
+
+// Parse `aws s3api ... --query 'Contents[].Key' --output json` into a Set.
+// Must use JSON, not text: an object key can contain spaces (e.g.
+// "another pdf.pdf") or parens, and splitting text output on whitespace would
+// mangle such keys into false danglers and orphans. Empty buckets yield the
+// JSON literal `null`. Exported for unit testing.
+export function parseS3Keys(jsonText) {
+  const keys = JSON.parse(jsonText) || [];
+  return new Set(keys.filter(Boolean));
+}
+
 function s3Keys(bucket, endpoint, accessKeyId, secretAccessKey) {
   const out = execFileSync(
     'aws',
     ['s3api', 'list-objects-v2', '--bucket', bucket, '--endpoint-url', endpoint,
-     '--query', 'Contents[].Key', '--output', 'text'],
+     '--query', 'Contents[].Key', '--output', 'json'],
     { env: { ...process.env, AWS_ACCESS_KEY_ID: accessKeyId, AWS_SECRET_ACCESS_KEY: secretAccessKey }, encoding: 'utf8' }
   );
-  return new Set(out.split(/\s+/).filter(Boolean));
+  return parseS3Keys(out);
 }
 
 function dbPaths(poolerUrl) {
-  const out = execFileSync('psql', [poolerUrl, '-At', '-c', 'select file_path from public.materials'], { encoding: 'utf8' });
+  // Exclude is_sample rows: seed/demo/playground materials intentionally have no
+  // backing R2 object, so they must not count as dangling.
+  const out = execFileSync('psql', [poolerUrl, '-At', '-c', 'select file_path from public.materials where not is_sample'], { encoding: 'utf8' });
   return new Set(out.split('\n').filter(Boolean));
 }
 
@@ -30,8 +49,7 @@ function main() {
   const b2 = s3Keys(process.env.B2_BUCKET, process.env.B2_S3_ENDPOINT, process.env.B2_KEY_ID, process.env.B2_APP_KEY);
   const summary = diff(db, r2, b2);
   console.log(JSON.stringify(summary, null, 2));
-  const total = summary.dangling.length + summary.orphan.length + summary.mirror_gap.length;
-  process.exit(total === 0 ? 0 : 1);
+  process.exit(failsOn(summary) ? 1 : 0);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

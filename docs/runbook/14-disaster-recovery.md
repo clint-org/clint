@@ -43,7 +43,7 @@ goal, "actual" is what evidence supports today.
 | 7 | Cloudflare account and Workers | bad deploy, wrangler config loss, account compromise/suspension | bad deploy: all tenants briefly. Account loss: app + DNS + materials + primary DB backups | none (no uptime check) | n/a / minutes (deploy) to days (account) | GHA deploy with prod approval gate; rollback via redeploy | account is the largest single blast radius; B2 is the only DB backup outside it |
 | 8 | CI/CD and source (GitHub) | repo/account loss, GHA secrets loss | cannot deploy via the normal path | push failures, workflow errors | n/a / minutes to hours | local `wrangler deploy` + `supabase db push` work without GitHub | deploy secrets live in GHA; partial offline copy only |
 | 9 | Third-party vendors and billing | vendor outage, account termination, billing lapse, free-tier auto-pause | degrade (most) to hard-down (Supabase, Cloudflare) | in-app `/api/ai/health` for Anthropic only | varies | feature gates; non-blocking design for Brandfetch/Resend/CT.gov | Supabase free-tier auto-pause and project quota are live failure modes |
-| 10| Detection and monitoring | a failure goes unnoticed | every domain above | backup/verify failures + 6-hourly uptime/cert check open GitHub issues (Phase 0.2); in-app AI health poll | n/a | issue-based alerting on backup, edge reachability, cert expiry | no app-level error monitoring (Sentry); no materials/pointer reconciliation; issue sink is baseline |
+| 10| Detection and monitoring | a failure goes unnoticed | every domain above | backup/verify failures + 6-hourly uptime/cert check + weekly materials reconciliation + daily drain monitor open GitHub issues (Phase 0.2, WS1); in-app AI health poll | n/a | issue-based alerting on backup, edge reachability, cert expiry, materials divergence | no app-level error monitoring (Sentry); issue sink is baseline |
 | 11| People and process | bus factor, no reachable runbook, no comms plan | recovery stalls regardless of tooling | n/a | n/a | runbook in repo | single-operator risk; no confirmed contact tree or status page |
 | 12| Security incident | credential leak, RLS bypass / exfiltration, ransomware | data breach or destructive action | none active | n/a / hours | write-only backup creds; Object Lock on DB + materials backups; R2 materials lock; Tier-1 audit log | no intrusion detection |
 
@@ -129,9 +129,16 @@ every prod deploy), and the daily off-site bundle in R2 or B2. RPO ~24h, RTO ~1h
   present, object gone) shows a download link that 404s, which is worse than an
   honest empty state; reconciliation now catches that case (below).
 - Detection: a weekly reconciliation job compares `public.materials` to the live
-  R2 listing and the B2 mirror, and opens a GitHub issue on any divergence
-  (dangling pointer: a row with no R2 object; orphan object: an R2 object with no
-  row; mirror gap: an R2 object missing from B2). The lock-aware drain also carries
+  R2 listing and the B2 mirror. It classifies three divergences: dangling pointer
+  (a row with no R2 object), orphan object (an R2 object with no row), and mirror
+  gap (an R2 object missing from B2). Severity is tiered: a dangling pointer (a
+  real upload that lost its file) or a mirror gap (the off-cloud copy has fallen
+  behind) fail the job and open a GitHub issue; an orphan is reported in the run
+  summary but does not fail the job, since it is wasted storage rather than data
+  loss. Materials flagged `is_sample` (intentionally-fileless seed, demo, and
+  playground rows, which never have a backing object) are excluded from the
+  dangling check so they do not produce a standing weekly false alarm. The
+  lock-aware drain also carries
   a deny-by-default volume guard that refuses to run and opens a
   `materials-drain-paused` issue when an anomalous number of brand-new deletes are
   queued, so a runaway enqueue is surfaced before any byte is purged.
