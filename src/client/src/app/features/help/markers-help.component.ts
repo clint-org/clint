@@ -68,25 +68,24 @@ const MARKER_DEFINITIONS: Record<string, string> = {
         <header class="mb-6">
           <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Help</p>
           <h1 class="mt-1 text-lg font-semibold tracking-tight text-slate-900">
-            Markers and what they mean
+            Event glyphs and what they mean
           </h1>
           <p class="mt-1 max-w-xl text-sm text-slate-500">
-            Markers show the events {{ analystSubject() }} and executives scan for on the timeline.
-            Read each marker by its shape (event family), color (editorial role), inner mark
-            (variant of that shape), and fill style (actual or projected). The list shows the
-            marker types set up for this space.
+            Events render as glyphs on the timeline. Read each glyph by its shape (event family),
+            color (editorial role), inner mark (variant of that shape), and fill style (actual or
+            projected). The list shows the event types set up for this space.
           </p>
         </header>
 
         <div class="lg:grid lg:grid-cols-2 lg:items-start lg:gap-10">
           <section class="mb-8 lg:mb-0">
             <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Marker types in this space
+              Event types in this space
             </h2>
             @if (loading()) {
-              <app-loader [size]="20" label="Loading marker types" />
+              <app-loader [size]="20" label="Loading event types" />
             } @else if (groupedMarkerTypes().length === 0) {
-              <p class="text-sm text-slate-500">No marker types configured.</p>
+              <p class="text-sm text-slate-500">No event types configured.</p>
             } @else {
               <div class="border border-slate-200 bg-white">
                 @for (group of groupedMarkerTypes(); track group.label) {
@@ -391,12 +390,12 @@ export class MarkersHelpComponent implements OnInit {
         a: 'The inner mark tells you which variant. Circles: dot = topline, dash = interim, plain = full data. Diamonds: dot = filing, plain = submission, check = acceptance. Squares: x = LOE, plain = generic entry.',
       },
       {
-        q: 'Can I add a custom marker type?',
-        a: 'Yes. Space owners can add custom marker types from Settings > Marker Types. The list above shows the shared system markers plus any custom ones added for this space.',
+        q: 'Can I add a custom event type?',
+        a: 'Yes. Space owners and editors can add custom event types from Settings > Taxonomies (Event Types tab). The list above shows the shared system types plus any custom ones added for this space.',
       },
       {
-        q: 'Can I add my own marker categories?',
-        a: 'Yes. Space owners and editors can add categories from Settings > Marker Categories, then file custom marker types under them. New categories appear as their own group in this legend.',
+        q: 'Can I add my own event categories?',
+        a: 'Yes. Space owners and editors can add categories from Settings > Taxonomies (Event Categories tab), then file custom event types under them. New categories appear as their own group in this legend.',
       },
     ];
   });

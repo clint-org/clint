@@ -45,7 +45,7 @@ const SURFACES: SurfaceTab[] = [
   { key: 'timeline_detail', label: 'Timeline detail', defaults: CTGOV_TIMELINE_DEFAULT_PATHS },
   {
     key: 'key_catalysts_panel',
-    label: 'Key catalysts',
+    label: 'Key events',
     defaults: CTGOV_KEY_CATALYSTS_DEFAULT_PATHS,
   },
   { key: 'trial_list_columns', label: 'Trial list', defaults: CTGOV_TRIAL_LIST_DEFAULT_PATHS },
