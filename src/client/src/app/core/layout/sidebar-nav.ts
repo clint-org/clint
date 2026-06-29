@@ -20,7 +20,7 @@ export interface NavItem {
   ownerOnly?: boolean;
   /**
    * When true, the item is hidden from non-editors (viewers). Used for the
-   * reference-settings management pages (Taxonomies, Marker Types); the route
+   * reference-settings management pages (Taxonomies); the route
    * is also guarded by `editGuard` so a deep-link is denied too. Viewers get
    * the read-only guides in the Reference group instead.
    */
@@ -128,7 +128,7 @@ export const ORG_ONLY_SECTIONS: NavSection[] = [];
  * Filter the nav sections for the current space role. Pure (no Angular deps)
  * so it can be unit-tested directly:
  * - `ownerOnly` items (General, Members, Fields, Audit log) drop for non-owners,
- * - `editorOnly` items (Taxonomies / Marker Types management) drop for viewers,
+ * - `editorOnly` items (Taxonomies management) drop for viewers,
  * - `requiresEngagement` items (Engagement) drop for every role when the space
  *   has no engagement write-up (`hasEngagement` false),
  * - the Profiles and Reference sections carry no flags, so they survive for all

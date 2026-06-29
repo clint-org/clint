@@ -298,18 +298,11 @@
               <div actions>
                 @if (spaceRole.canEdit()) {
                   <p-button
-                    label="Add marker"
-                    icon="fa-solid fa-plus"
-                    [text]="true"
-                    size="small"
-                    (onClick)="addingMarker.set(true); editingMarker.set(null)"
-                  />
-                  <p-button
                     label="Add event"
                     icon="fa-solid fa-calendar-plus"
                     [text]="true"
                     size="small"
-                    (onClick)="eventDialogOpen.set(true)"
+                    (onClick)="editingEventId.set(null); eventDialogOpen.set(true)"
                   />
                 }
               </div>
@@ -317,21 +310,13 @@
                 <app-event-form-dialog
                   [(visible)]="eventDialogOpen"
                   [spaceId]="sid"
+                  [mode]="eventDialogMode()"
+                  [eventId]="editingEventId()"
                   [presetAnchorType]="'trial'"
                   [presetAnchorId]="trialId()"
+                  [ctgovLocked]="editingEventCtgovLocked()"
                   (saved)="onMarkerSaved()"
                 />
-              }
-
-              @if (addingMarker() || editingMarker()) {
-                <div class="mb-4 border border-slate-200 bg-slate-50 p-3">
-                  <app-marker-form
-                    [marker]="editingMarker()"
-                    [trialId]="trialId()"
-                    (saved)="onMarkerSaved()"
-                    (cancelled)="onMarkerEditClosed()"
-                  />
-                </div>
               }
 
               <p-table

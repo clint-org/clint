@@ -167,21 +167,21 @@ export class RolesHelpComponent {
   protected readonly capabilityRows: CapabilityRow[] = [
     {
       group: 'Space data',
-      capability: 'View companies, assets, trials, catalysts, events',
+      capability: 'View companies, assets, trials, events',
       owner: 'yes',
       contributor: 'yes',
       reader: 'yes',
     },
     {
       group: 'Space data',
-      capability: 'Add or edit catalysts, markers, trials, trial notes',
+      capability: 'Add or edit events, trials, trial notes',
       owner: 'yes',
       contributor: 'yes',
       reader: 'no',
     },
     {
       group: 'Space data',
-      capability: 'Add or edit events, sources, threads, links',
+      capability: 'Add or edit event sources, threads, links',
       owner: 'yes',
       contributor: 'yes',
       reader: 'no',
@@ -253,7 +253,7 @@ export class RolesHelpComponent {
       },
       {
         q: 'When is Reader the right role?',
-        a: 'When the person consumes the intelligence but should not change it. Typical cases: a client stakeholder who reviews findings, an executive who reads catalysts, an auditor.',
+        a: 'When the person consumes the intelligence but should not change it. Typical cases: a client stakeholder who reviews findings, an executive who reviews events, an auditor.',
       },
       {
         q: 'What happens when I add an agency colleague to a space?',
