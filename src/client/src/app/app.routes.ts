@@ -425,22 +425,9 @@ export const routes: Routes = [
               ),
           },
           // Settings routes (moved from manage)
-          {
-            path: 'settings/marker-types',
-            canActivate: [editGuard],
-            loadComponent: () =>
-              import('./features/manage/marker-types/marker-type-list.component').then(
-                (m) => m.MarkerTypeListComponent
-              ),
-          },
-          {
-            path: 'settings/marker-categories',
-            canActivate: [editGuard],
-            loadComponent: () =>
-              import('./features/manage/marker-categories/marker-category-list.component').then(
-                (m) => m.MarkerCategoryListComponent
-              ),
-          },
+          // marker-types and marker-categories routes removed: de-routed in
+          // Stage-3 cutover (feat/event-model). The components remain as dead
+          // code and will be rebuilt in Stage 3 against the unified taxonomy.
           {
             path: 'settings/taxonomies',
             canActivate: [editGuard],
@@ -481,11 +468,8 @@ export const routes: Routes = [
                 (m) => m.SpaceAuditLogComponent
               ),
           },
-          {
-            path: 'events',
-            loadComponent: () =>
-              import('./features/events/events-page.component').then((m) => m.EventsPageComponent),
-          },
+          // 'events' route removed: de-routed in Stage-3 cutover (feat/event-model).
+          // Stage 3 will add /activity as its replacement.
           {
             path: 'seed-demo',
             loadComponent: () =>

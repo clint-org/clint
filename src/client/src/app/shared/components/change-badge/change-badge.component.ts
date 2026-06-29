@@ -1,8 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { resolveScopeFromRoute } from '../../../core/utils/route-scope';
 import { badgeTooltip } from './change-badge.logic';
 
 /**
@@ -23,17 +21,9 @@ import { badgeTooltip } from './change-badge.logic';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChangeBadgeComponent {
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
-
   readonly count = input.required<number>();
   readonly type = input<string | null>(null);
   readonly eventId = input<string | null>(null);
-  // Optional entity scope. When both are set, the feed is scoped to this entity
-  // and filtered to detected changes; otherwise the badge deep-links the single
-  // event into the global feed (unchanged for callers that omit them).
-  readonly entityLevel = input<string | null>(null);
-  readonly entityId = input<string | null>(null);
 
   readonly dotClass = 'inline-block w-2 h-2 rounded-full bg-slate-400';
   readonly tooltip = computed(() => badgeTooltip(this.count(), this.type()));
@@ -41,17 +31,6 @@ export class ChangeBadgeComponent {
 
   protected openEvent(event: MouseEvent): void {
     event.stopPropagation();
-    const eid = this.eventId();
-    if (!eid) return;
-    const { tenantId, spaceId } = resolveScopeFromRoute(this.route);
-    if (!tenantId || !spaceId) return;
-    const level = this.entityLevel();
-    const id = this.entityId();
-    void this.router.navigate(['/t', tenantId, 's', spaceId, 'events'], {
-      queryParams: {
-        detectedId: eid,
-        ...(level && id ? { entityLevel: level, entityId: id, source: 'detected' } : {}),
-      },
-    });
+    // navigation to /events removed (Stage-3 cutover); Stage 3 will re-route to /activity
   }
 }

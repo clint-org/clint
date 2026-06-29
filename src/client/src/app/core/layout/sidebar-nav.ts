@@ -76,7 +76,6 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: NAV_ICONS['engagement'],
         requiresEngagement: true,
       },
-      { label: 'Events', route: 'events', icon: NAV_ICONS['events'] },
       { label: 'Materials', route: 'materials', icon: NAV_ICONS['materials'] },
     ],
   },
@@ -101,12 +100,6 @@ export const NAV_SECTIONS: NavSection[] = [
         label: 'Taxonomies',
         route: 'settings/taxonomies',
         icon: NAV_ICONS['taxonomies'],
-        editorOnly: true,
-      },
-      {
-        label: 'Marker Types',
-        route: 'settings/marker-types',
-        icon: NAV_ICONS['marker-types'],
         editorOnly: true,
       },
       {

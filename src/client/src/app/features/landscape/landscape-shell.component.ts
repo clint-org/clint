@@ -65,7 +65,6 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
               [references]="state.selectedMarkerReferences()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"
-              (eventClick)="onEventClick($event)"
               (trialClick)="onTrialClick($event)"
               (openIntelligence)="onOpenIntelligence($event)"
               (editMarkerClick)="onEditMarker($event)"
@@ -167,10 +166,6 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
 
   private spaceBase(): string[] {
     return ['/t', this.tenantId(), 's', this.spaceId()];
-  }
-
-  onEventClick(eventId: string): void {
-    this.router.navigate([...this.spaceBase(), 'events'], { queryParams: { eventId } });
   }
 
   onTrialClick(trialId: string): void {

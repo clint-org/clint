@@ -20,8 +20,8 @@ export class MarkerTypeService {
         tags: ['markers:types'],
         fetch: async () => {
           let query = this.supabase.client
-            .from('marker_types')
-            .select('*, marker_categories(*)')
+            .from('event_types')
+            .select('*, event_type_categories(*)')
             .order('display_order');
 
           if (spaceId) {
@@ -29,7 +29,7 @@ export class MarkerTypeService {
           }
 
           const { data } = await query.throwOnError();
-          return data as MarkerType[];
+          return this.mapRows(data as Record<string, unknown>[]);
         },
       }
     );
@@ -44,8 +44,8 @@ export class MarkerTypeService {
         tags: ['markers:types'],
         fetch: async () => {
           let query = this.supabase.client
-            .from('marker_types')
-            .select('*, marker_categories(*)')
+            .from('event_types')
+            .select('*, event_type_categories(*)')
             .eq('category_id', categoryId)
             .order('display_order');
 
@@ -54,7 +54,7 @@ export class MarkerTypeService {
           }
 
           const { data } = await query.throwOnError();
-          return data as MarkerType[];
+          return this.mapRows(data as Record<string, unknown>[]);
         },
       }
     );
@@ -62,7 +62,7 @@ export class MarkerTypeService {
 
   async create(spaceId: string, markerType: Partial<MarkerType>): Promise<MarkerType> {
     const { data } = await this.supabase.client
-      .from('marker_types')
+      .from('event_types')
       .insert({ ...markerType, space_id: spaceId, is_system: false })
       .select()
       .single()
@@ -73,7 +73,7 @@ export class MarkerTypeService {
 
   async update(id: string, changes: Partial<MarkerType>): Promise<MarkerType> {
     const { data } = await this.supabase.client
-      .from('marker_types')
+      .from('event_types')
       .update(changes)
       .eq('id', id)
       .select()
@@ -84,7 +84,18 @@ export class MarkerTypeService {
   }
 
   async delete(id: string): Promise<void> {
-    await this.supabase.client.from('marker_types').delete().eq('id', id).throwOnError();
+    await this.supabase.client.from('event_types').delete().eq('id', id).throwOnError();
     this.cache.invalidateTags(['markers:types']);
+  }
+
+  /**
+   * Renames the `event_type_categories` embed key to `marker_categories` so all
+   * consumers of MarkerType continue to see the expected shape.
+   */
+  private mapRows(rows: Record<string, unknown>[]): MarkerType[] {
+    return rows.map((row) => {
+      const { event_type_categories, ...rest } = row;
+      return { ...rest, marker_categories: event_type_categories ?? null } as MarkerType;
+    });
   }
 }

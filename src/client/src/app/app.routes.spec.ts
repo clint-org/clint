@@ -34,11 +34,9 @@ describe('app.routes profiles rename', () => {
     }
   });
 
-  it('reuses editGuard on the two reference-settings routes', () => {
+  it('reuses editGuard on the taxonomies reference-settings route', () => {
     const tax = find('settings/taxonomies')!;
-    const markers = find('settings/marker-types')!;
     expect(tax.route.canActivate ?? []).toContain(editGuard);
-    expect(markers.route.canActivate ?? []).toContain(editGuard);
   });
 
   it('adds a space-level taxonomies guide route', () => {

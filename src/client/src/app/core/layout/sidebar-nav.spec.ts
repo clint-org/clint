@@ -15,10 +15,10 @@ describe('filterNavSections role gating', () => {
     expect(ids(out)).not.toContain('settings');
   });
 
-  it('editor: keeps profiles + reference + taxonomies/marker-types settings, no owner items', () => {
+  it('editor: keeps profiles + reference + taxonomies settings (marker-types de-routed), no owner items', () => {
     const out = filterNavSections(NAV_SECTIONS, true, false, true);
     expect(ids(out)).toContain('profiles');
-    expect(settingsItems(out)).toEqual(['settings/taxonomies', 'settings/marker-types']);
+    expect(settingsItems(out)).toEqual(['settings/taxonomies']);
   });
 
   it('owner: keeps everything', () => {
@@ -29,7 +29,6 @@ describe('filterNavSections role gating', () => {
         'settings/members',
         'settings/fields',
         'settings/taxonomies',
-        'settings/marker-types',
         'settings/audit-log',
       ])
     );
@@ -53,12 +52,11 @@ describe('filterNavSections role gating', () => {
 });
 
 describe('Intelligence section ordering and engagement gating', () => {
-  it('orders Feed first, then Engagement, then Events before Materials (when engagement exists)', () => {
+  it('orders Feed first, then Engagement, then Materials (when engagement exists)', () => {
     const out = filterNavSections(NAV_SECTIONS, true, true, true);
     expect(intelligenceItems(out)).toEqual([
       'intelligence',
       'profiles/engagement',
-      'events',
       'materials',
     ]);
   });
@@ -70,8 +68,9 @@ describe('Intelligence section ordering and engagement gating', () => {
       [true, true],
     ] as const) {
       const out = filterNavSections(NAV_SECTIONS, canEdit, isOwner, false);
-      expect(intelligenceItems(out)).toEqual(['intelligence', 'events', 'materials']);
+      expect(intelligenceItems(out)).toEqual(['intelligence', 'materials']);
       expect(intelligenceItems(out)).not.toContain('profiles/engagement');
+      expect(intelligenceItems(out)).not.toContain('events');
     }
   });
 

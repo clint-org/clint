@@ -55,13 +55,6 @@ export class PaletteCommandRegistry {
         run: () =>
           void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/catalysts`),
       },
-      {
-        id: 'go-events',
-        label: 'Go to Events',
-        hint: 'Navigation',
-        run: () =>
-          void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/events`),
-      },
       ...this.topbarState.exportActions().map((action) => ({
         id: `export-${action.format}`,
         label: `Export current view: ${action.label}`,

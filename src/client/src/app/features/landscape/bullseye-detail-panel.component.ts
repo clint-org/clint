@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import {
   BullseyeData,
@@ -27,7 +27,6 @@ import {
   PiReference,
 } from '../../core/models/primary-intelligence.model';
 import { DEVELOPMENT_STATUS_LABELS, phaseShortLabel } from '../../core/models/phase-colors';
-import { resolveScopeFromRoute } from '../../core/utils/route-scope';
 import { recentChangeLabel } from '../../shared/components/change-badge/change-badge.logic';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
@@ -116,23 +115,6 @@ export class BullseyeDetailPanelComponent {
   });
 
   protected readonly recentChangeLabel = recentChangeLabel;
-
-  private readonly router = inject(Router);
-
-  protected openChangeEvent(changeEventId: string): void {
-    const { tenantId, spaceId } = resolveScopeFromRoute(this.route);
-    if (!tenantId || !spaceId) return;
-    // Scope the events feed to this asset and filter to detected changes, so
-    // the list is the asset's recent changes (its trials roll up) rather than
-    // the global feed -- while still opening the most-recent one in the panel.
-    const assetId = this.selectedAsset()?.id ?? null;
-    void this.router.navigate(['/t', tenantId, 's', spaceId, 'events'], {
-      queryParams: {
-        detectedId: changeEventId,
-        ...(assetId ? { entityLevel: 'product', entityId: assetId, source: 'detected' } : {}),
-      },
-    });
-  }
 
   private readonly showAllTrials = signal(false);
 
