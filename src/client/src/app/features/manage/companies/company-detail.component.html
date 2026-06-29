@@ -130,29 +130,20 @@
           (cancelled)="purgeDialogOpen.set(false)"
           (confirmed)="onPurgeConfirmed($event)"
         />
+
+        <div id="events" class="mt-4">
+          <app-entity-events-section
+            [spaceId]="spaceIdSig()"
+            anchorType="company"
+            [anchorId]="c.id"
+            [events]="events()"
+            (changed)="loadEvents()"
+          />
+        </div>
       </div>
 
-      <!-- Rail: everything referential (events, referenced-in, materials). -->
+      <!-- Rail: everything referential (referenced-in, materials). -->
       <div class="w-full flex-none lg:w-80">
-        <app-section-card
-          title="Events"
-          description="External intelligence scoped to this company."
-          [count]="eventsCount()"
-          countNoun="event"
-          [flush]="true"
-          [scrollBody]="true"
-        >
-          @if (company(); as c) {
-            <app-entity-events-panel
-              [spaceId]="spaceIdSig()"
-              [tenantId]="tenantIdSig()"
-              entityLevel="company"
-              [entityId]="c.id"
-              (loaded)="eventsCount.set($event)"
-            />
-          }
-        </app-section-card>
-
         <app-section-card
           title="Referenced in"
           description="Intelligence entries that cite this company."
