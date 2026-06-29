@@ -17,18 +17,22 @@ import { Select } from 'primeng/select';
 import { ColorPicker } from 'primeng/colorpicker';
 import { MessageModule } from 'primeng/message';
 
-import { MarkerType, MarkerCategory } from '../../../core/models/marker.model';
+import { InnerMark, MarkerType, MarkerCategory } from '../../../core/models/marker.model';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { MarkerCategoryService } from '../../../core/services/marker-category.service';
+import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker-icon.component';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
+import { taxonomyDuplicateNameMessage } from '../taxonomies/taxonomy-tabs.logic';
 import {
   createInlineCategory,
   shouldOfferCategoryCreate,
-} from './marker-type-form.inline-category';
+} from './event-type-form.inline-category';
+
+type Significance = 'high' | 'low' | null;
 
 @Component({
-  selector: 'app-marker-type-form',
+  selector: 'app-event-type-form',
   standalone: true,
   imports: [
     FormsModule,
@@ -37,14 +41,15 @@ import {
     Select,
     ColorPicker,
     MessageModule,
+    MarkerIconComponent,
     FormFieldComponent,
     FormActionsComponent,
   ],
-  templateUrl: './marker-type-form.component.html',
+  templateUrl: './event-type-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MarkerTypeFormComponent implements OnInit {
-  readonly markerType = input<MarkerType | null>(null);
+export class EventTypeFormComponent implements OnInit {
+  readonly eventType = input<MarkerType | null>(null);
   readonly saved = output<void>();
   readonly cancelled = output<void>();
 
@@ -60,7 +65,8 @@ export class MarkerTypeFormComponent implements OnInit {
     { label: 'Flag', value: 'flag' },
     { label: 'Triangle', value: 'triangle' },
     { label: 'Square', value: 'square' },
-    { label: 'Dashed Line', value: 'dashed-line' },
+    { label: 'Hexagon', value: 'hexagon' },
+    { label: 'Dashed line', value: 'dashed-line' },
   ];
 
   readonly fillStyleOptions = [
@@ -68,11 +74,27 @@ export class MarkerTypeFormComponent implements OnInit {
     { label: 'Outline', value: 'outline' },
   ];
 
+  readonly innerMarkOptions: { label: string; value: InnerMark }[] = [
+    { label: 'None', value: 'none' },
+    { label: 'Dot', value: 'dot' },
+    { label: 'Dash', value: 'dash' },
+    { label: 'Check', value: 'check' },
+    { label: 'Cross', value: 'x' },
+  ];
+
+  readonly significanceOptions: { label: string; value: Significance }[] = [
+    { label: 'None', value: null },
+    { label: 'High', value: 'high' },
+    { label: 'Low', value: 'low' },
+  ];
+
   readonly categoryId = signal('');
   readonly name = signal('');
   readonly shape = signal<MarkerType['shape']>('circle');
   readonly fillStyle = signal<MarkerType['fill_style']>('filled');
   readonly color = signal('#14b8a6');
+  readonly innerMark = signal<InnerMark>('none');
+  readonly defaultSignificance = signal<Significance>(null);
   readonly displayOrder = signal<number | null>(0);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
@@ -99,12 +121,14 @@ export class MarkerTypeFormComponent implements OnInit {
       /* categories will be empty */
     }
 
-    const existing = this.markerType();
+    const existing = this.eventType();
     if (existing) {
       this.name.set(existing.name);
       this.shape.set(existing.shape);
       this.fillStyle.set(existing.fill_style);
       this.color.set(existing.color);
+      this.innerMark.set(existing.inner_mark ?? 'none');
+      this.defaultSignificance.set(existing.default_significance ?? null);
       this.displayOrder.set(existing.display_order);
       this.categoryId.set(existing.category_id);
     }
@@ -131,11 +155,7 @@ export class MarkerTypeFormComponent implements OnInit {
       this.categoryFilter.set('');
       this.categorySelect()?.hide();
     } catch (e) {
-      this.error.set(
-        e && typeof e === 'object' && 'message' in e && typeof e.message === 'string'
-          ? e.message
-          : 'Could not create the category.'
-      );
+      this.error.set(taxonomyDuplicateNameMessage(e, 'event category'));
     } finally {
       this.creatingCategory.set(false);
     }
@@ -154,15 +174,17 @@ export class MarkerTypeFormComponent implements OnInit {
 
     try {
       const payload: Partial<MarkerType> = {
-        name: this.name(),
+        name,
         shape: this.shape(),
         fill_style: this.fillStyle(),
         color: this.color(),
+        inner_mark: this.innerMark(),
+        default_significance: this.defaultSignificance(),
         display_order: this.displayOrder() ?? 0,
         category_id: categoryId,
       };
 
-      const existing = this.markerType();
+      const existing = this.eventType();
       if (existing) {
         await this.markerTypeService.update(existing.id, payload);
       } else {
@@ -171,11 +193,7 @@ export class MarkerTypeFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (e) {
-      const message =
-        e && typeof e === 'object' && 'message' in e && typeof e.message === 'string'
-          ? e.message
-          : 'Could not save marker type. Check your connection and try again.';
-      this.error.set(message);
+      this.error.set(taxonomyDuplicateNameMessage(e, 'event type'));
     } finally {
       this.saving.set(false);
     }
