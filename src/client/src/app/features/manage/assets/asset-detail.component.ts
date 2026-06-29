@@ -34,6 +34,7 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 
 import { AssetService } from '../../../core/services/asset.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
+import { BrandContextService } from '../../../core/services/brand-context.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { Asset } from '../../../core/models/asset.model';
 import type { Marker } from '../../../core/models/marker.model';
@@ -86,6 +87,7 @@ export class AssetDetailComponent {
   private router = inject(Router);
   private assetService = inject(AssetService);
   private intelligenceService = inject(PrimaryIntelligenceService);
+  protected readonly brand = inject(BrandContextService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);

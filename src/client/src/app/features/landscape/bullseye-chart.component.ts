@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+
+import { BrandContextService } from '../../core/services/brand-context.service';
 
 import {
   BullseyeData,
@@ -121,6 +131,14 @@ const DIMMED_OPACITY = 0.55;
   `,
 })
 export class BullseyeChartComponent {
+  private readonly brand = inject(BrandContextService);
+
+  /** Agency-aware aria labels for the PI bookmark badges on the chart. */
+  protected readonly companyPiAriaLabel = computed(
+    () => `Company has ${this.brand.intelligenceLabel()}`,
+  );
+  protected readonly assetPiAriaLabel = computed(() => `Has ${this.brand.intelligenceLabel()}`);
+
   readonly data = input.required<BullseyeData | null>();
   readonly selectedAssetId = input<string | null>(null);
   readonly hoveredAssetId = input<string | null>(null);

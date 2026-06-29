@@ -18,7 +18,7 @@ import { PiMarkComponent } from '../pi-mark/pi-mark.component';
     @if (canEdit()) {
       <section
         class="rounded-sm border border-dashed border-slate-300 bg-slate-50/40 px-5 py-6"
-        aria-label="No primary intelligence yet"
+        [attr.aria-label]="'No ' + brand.intelligenceLabel() + ' yet'"
       >
         <div class="flex items-center justify-between gap-4">
           <div class="min-w-0">
@@ -26,7 +26,7 @@ import { PiMarkComponent } from '../pi-mark/pi-mark.component';
               class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
             >
               <app-pi-mark [size]="12" />
-              Primary intelligence
+              {{ brand.intelligenceLabel() }}
             </h3>
             <p class="mt-1 text-sm text-slate-600">
               No intelligence yet. Capture {{ agencyName() }}'s summary and implications for this
@@ -48,7 +48,7 @@ import { PiMarkComponent } from '../pi-mark/pi-mark.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IntelligenceEmptyComponent {
-  private readonly brand = inject(BrandContextService);
+  protected readonly brand = inject(BrandContextService);
 
   readonly canEdit = input<boolean>(false);
   readonly entityLabel = input<string>('entity');

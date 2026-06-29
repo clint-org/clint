@@ -28,7 +28,7 @@ describe('PiMark shape constants', () => {
 describe('PiMark template contract', () => {
   it('renders an accessible svg whose label and size come from inputs', () => {
     expect(src).toContain('role="img"');
-    expect(src).toContain('[attr.aria-label]="label()"');
+    expect(src).toContain('[attr.aria-label]="effectiveLabel()"');
     expect(src).toContain('[attr.width]="size()"');
     expect(src).toContain('[attr.height]="size()"');
   });
@@ -41,8 +41,9 @@ describe('PiMark template contract', () => {
     expect(src).not.toMatch(/fill="#[0-9a-fA-F]{6}"/);
   });
 
-  it('defaults to an 11px mark labelled for primary intelligence', () => {
+  it('defaults to an 11px mark with an agency-aware aria-label', () => {
     expect(src).toContain('input<number>(11)');
-    expect(src).toContain(`input<string>('Has primary intelligence')`);
+    // Default aria-label composes the resolved agency label: "Has {Agency} intelligence".
+    expect(src).toContain('`Has ${this.brand.intelligenceLabel()}`');
   });
 });

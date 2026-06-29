@@ -23,6 +23,7 @@ import {
   UpsertIntelligenceInput,
 } from '../../../core/models/primary-intelligence.model';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
+import { BrandContextService } from '../../../core/services/brand-context.service';
 import { isPermissionDenied } from '../../../core/util/db-error';
 import { ProseMirrorEditorComponent } from '../prose-mirror-editor/prose-mirror-editor.component';
 import { LinkedEntitiesPickerComponent } from '../linked-entities-picker/linked-entities-picker.component';
@@ -57,7 +58,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
       [modal]="true"
       [dismissible]="false"
       [closeOnEscape]="true"
-      header="Primary intelligence"
+      [header]="brand.intelligenceLabel()"
       (onHide)="closed.emit()"
     >
       @if (loading()) {
@@ -224,6 +225,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 export class IntelligenceDrawerComponent implements OnDestroy {
   private intelligence = inject(PrimaryIntelligenceService);
   private messageService = inject(MessageService);
+  protected readonly brand = inject(BrandContextService);
 
   readonly visible = input<boolean>(false);
   readonly anchorId = input<string | null>(null);
@@ -473,7 +475,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
         severity: 'error',
         summary: isPermission ? 'Not allowed to publish intelligence' : 'Save failed',
         detail: isPermission
-          ? 'Primary intelligence is the agency deliverable. Ask an agency member of this space to publish it.'
+          ? `${this.brand.intelligenceLabel()} is the agency deliverable. Ask an agency member of this space to publish it.`
           : error instanceof Error
             ? error.message
             : 'Unknown error',

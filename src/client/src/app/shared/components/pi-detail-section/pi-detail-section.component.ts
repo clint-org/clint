@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import {
   ENTITY_TYPE_LABEL,
@@ -6,6 +6,7 @@ import {
   IntelligenceLinkEntityType,
   PiReference,
 } from '../../../core/models/primary-intelligence.model';
+import { BrandContextService } from '../../../core/services/brand-context.service';
 import { PiMarkComponent } from '../pi-mark/pi-mark.component';
 
 /**
@@ -26,7 +27,7 @@ import { PiMarkComponent } from '../pi-mark/pi-mark.component';
           <app-pi-mark [size]="12" class="mt-0.5" />
           <div class="min-w-0 flex-1">
             <p class="text-[10px] font-semibold uppercase tracking-wider text-brand-700">
-              Primary intelligence
+              {{ brand.intelligenceLabel() }}
             </p>
             <p class="mt-1 text-[13px] font-medium leading-snug text-slate-800">
               {{ headline() }}
@@ -76,6 +77,8 @@ import { PiMarkComponent } from '../pi-mark/pi-mark.component';
   `,
 })
 export class PiDetailSectionComponent {
+  protected readonly brand = inject(BrandContextService);
+
   readonly headline = input<string | null>(null);
   readonly summary = input<string | null>(null);
   readonly references = input<PiReference[]>([]);

@@ -20,7 +20,7 @@ const src = readFileSync(join(__dirname, 'pi-detail-section.component.ts'), 'utf
 describe('PiDetailSection owned-PI block', () => {
   it('renders the brand-tinted PI block gated on a headline', () => {
     expect(src).toContain('@if (hasOwned())');
-    expect(src).toContain('Primary intelligence');
+    expect(src).toContain('{{ brand.intelligenceLabel() }}');
     expect(src).toContain('{{ headline() }}');
     expect(src).toContain('{{ summary() }}');
     expect(src).toContain('<app-pi-mark');
