@@ -44,6 +44,7 @@ import { selectTrialStartMarker, selectTrialEndMarker, isCtgovOwnedMarker } from
 import { markerStartCaption } from '../../../core/models/marker-date-precision';
 
 import { MarkerFormComponent } from './marker-form.component';
+import { EventFormDialogComponent } from '../../events/event-form/event-form-dialog.component';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
 import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.component';
 import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
@@ -85,6 +86,7 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     SkeletonComponent,
     SourceProvenanceLineComponent,
     MarkerFormComponent,
+    EventFormDialogComponent,
     SectionCardComponent,
     PiMarkComponent,
     ReferencedInPanelComponent,
@@ -232,6 +234,7 @@ export class TrialDetailComponent {
 
   readonly addingMarker = signal(false);
   readonly editingMarker = signal<Marker | null>(null);
+  readonly eventDialogOpen = signal(false);
 
   // Primary intelligence
   readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
