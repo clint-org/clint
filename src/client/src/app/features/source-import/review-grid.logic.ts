@@ -161,9 +161,9 @@ export function deriveFuzzyFlag(alternateCount: number): ReviewFlag | null {
   return alternateCount > 0 ? { id: 'fuzzy', tier: 'attention', label: 'Uncertain match' } : null;
 }
 
-// Display fields for a marker or event leaf row in the review grid. Markers and
-// events have no place in the trial-shaped columns (phase, MOA/ROA, indication),
-// so their identity is carried in the entity cell: a category chip and a date.
+// Display fields for an event leaf row in the review grid. Events have no place
+// in the trial-shaped columns (phase, MOA/ROA, indication), so their identity is
+// carried in the entity cell: a category chip and a date.
 export interface LeafDisplay {
   category: string | null;
   date: string | null;
@@ -174,15 +174,11 @@ function cleanText(v: unknown): string | null {
   return s.length > 0 ? s : null;
 }
 
-// A marker's category chip is its marker_type name (resolved to a color by the
-// commit RPC); its date is event_date. Both are optional in a proposal.
-export function markerLeafDisplay(marker: Entity): LeafDisplay {
-  return { category: cleanText(marker['marker_type']), date: cleanText(marker['event_date']) };
-}
-
-// The visual fields the review grid needs to render a marker's real glyph
-// (app-marker-icon), a structural subset of MarkerType.
-export interface MarkerTypeLite {
+// The visual fields the review grid needs to render an event's real glyph
+// (app-marker-icon), a structural subset of MarkerType. The glyph primitive types
+// (MarkerShape, FillStyle, InnerMark) are still sourced from marker.model since
+// "Marker" survives as the glyph primitive after the event-model cutover.
+export interface EventTypeLite {
   name: string;
   shape: MarkerShape;
   color: string;
@@ -194,15 +190,15 @@ export interface MarkerTypeLite {
 
 // Space-scoped types win over the system defaults of the same name (commit
 // orders `space_id nulls last`, i.e. is_system last).
-function preferSpaceScoped(matches: MarkerTypeLite[]): MarkerTypeLite {
+function preferSpaceScoped(matches: EventTypeLite[]): EventTypeLite {
   return [...matches].sort((a, b) => Number(a.is_system) - Number(b.is_system))[0];
 }
 
-// Resolve a proposal marker's `marker_type` name to the marker type whose glyph
-// it will actually receive on commit, mirroring commit_source_import: exact name
+// Resolve a proposal event's `event_type` name to the event type whose glyph it
+// will actually receive on commit, mirroring commit_source_import: exact name
 // match, then case-insensitive, then the lowest-ordered system default. Returns
 // null only when no types are loaded yet (the caller falls back to an icon).
-export function pickMarkerType(name: string | null, types: MarkerTypeLite[]): MarkerTypeLite | null {
+export function pickEventType(name: string | null, types: EventTypeLite[]): EventTypeLite | null {
   if (types.length === 0) return null;
   if (name) {
     const exact = types.filter((t) => t.name === name);
@@ -217,16 +213,15 @@ export function pickMarkerType(name: string | null, types: MarkerTypeLite[]): Ma
   return systemDefaults[0] ?? types[0];
 }
 
-// An event's category chip is its category name; its date is event_date.
+// An event's category chip is its event_type name; its date is event_date.
 export function eventLeafDisplay(event: Entity): LeafDisplay {
-  return { category: cleanText(event['category']), date: cleanText(event['event_date']) };
+  return { category: cleanText(event['event_type']), date: cleanText(event['event_date']) };
 }
 
 export interface SelectionCounts {
   companies: number;
   assets: number;
   trials: number;
-  markers: number;
   events: number;
 }
 
@@ -234,7 +229,6 @@ const LABELS: Record<keyof SelectionCounts, [string, string]> = {
   companies: ['company', 'companies'],
   assets: ['asset', 'assets'],
   trials: ['trial', 'trials'],
-  markers: ['marker', 'markers'],
   events: ['event', 'events'],
 };
 
@@ -286,15 +280,15 @@ export function blockingReason(b: { noAsset: number; duplicates: number }): stri
   return null;
 }
 
-// Marker and event rows are leaf nodes attached to parent entities. When a
-// leaf is already matched to an existing record, re-importing it is a no-op,
-// so these rows default to deselected. Parent entities (companies, assets,
-// trials) remain selected even when matched because the commit needs the full
-// hierarchy to attach leaf rows.
-const LEAF_ENTITY_TYPES = new Set(['markers', 'events']);
+// Event rows are leaf nodes attached to parent entities. When a leaf is already
+// matched to an existing record, re-importing it is a no-op, so these rows
+// default to deselected. Parent entities (companies, assets, trials) remain
+// selected even when matched because the commit needs the full hierarchy to
+// attach leaf rows.
+const LEAF_ENTITY_TYPES = new Set(['events']);
 
 // Produce the initial Record<key, boolean> that backs the selections signal.
-// Keys follow the pattern `${type}_${index}`. Matched markers and events are
+// Keys follow the pattern `${type}_${index}`. Matched events are
 // set to false; everything else is set to true. Non-array fields (source_summary,
 // source_title, source_date) are silently skipped.
 export function defaultSelections(proposals: Record<string, unknown>): Record<string, boolean> {

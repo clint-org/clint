@@ -17,8 +17,10 @@ function makeInventory(overrides: Partial<InventorySnapshot> = {}): InventorySna
     assets: [{ id: A1, name: 'Paxlovid', company_id: C1, generic_name: 'nirmatrelvir' }],
     trials: [{ id: T1, name: 'ATTAIN-1', asset_id: A1 }],
     indications: [],
-    marker_types: [{ id: 'mt1', name: 'Topline Data' }],
-    event_categories: [{ id: 'ec1', name: 'Clinical' }],
+    event_types: [{ id: 'et1', name: 'Topline Data' }],
+    event_type_categories: [{ id: 'etc1', name: 'Clinical' }],
+    mechanisms_of_action: [],
+    routes_of_administration: [],
     hash: 'h1',
     ...overrides,
   };
@@ -63,25 +65,12 @@ function validJson(): string {
         evidence: 'ATTAIN-1',
       },
     ],
-    markers: [
-      {
-        marker_type: 'data_readout',
-        title: 'Interim',
-        event_date: '2026-09-01',
-        end_date: null,
-        projection: 'company',
-        description: null,
-        trial_refs: [0],
-        evidence: 'interim',
-      },
-    ],
     events: [
       {
-        category: 'earnings',
+        event_type: 'Clinical',
         title: 'Q1 call',
         event_date: '2026-04-28',
         description: null,
-        priority: 'high',
         tags: [],
         anchor: { level: 'company', ref: 0 },
         evidence: 'Q1 call',
@@ -205,7 +194,7 @@ describe('validateExtraction', () => {
     }
   });
 
-  it('drops marker with no grounded trial refs', () => {
+  it('drops event with ungrounded trial anchor (trial not in source text)', () => {
     const json = JSON.parse(validJson());
     json.trials = [
       {
@@ -223,22 +212,19 @@ describe('validateExtraction', () => {
         evidence: 'phantom',
       },
     ];
-    json.markers = [
+    json.events = [
       {
-        marker_type: 'data_readout',
+        event_type: 'Topline Data',
         title: 'Phantom readout',
         event_date: '2026-09-01',
-        end_date: null,
-        projection: 'actual',
-        description: null,
-        trial_refs: [0],
+        anchor: { level: 'trial', ref: 0 },
         evidence: 'phantom',
       },
     ];
     const r = validateExtraction(JSON.stringify(json), makeInventory(), SOURCE_TEXT);
     expect(r.ok).toBe(true);
     if (r.ok) {
-      const drop = r.dropped.find((d) => d.type === 'marker' && d.name === 'Phantom readout');
+      const drop = r.dropped.find((d) => d.type === 'event' && d.name === 'Phantom readout');
       expect(drop).toBeDefined();
     }
   });
@@ -250,11 +236,10 @@ describe('validateExtraction', () => {
       evidence: 'none',
     });
     json.events.push({
-      category: 'conference',
+      event_type: 'Clinical',
       title: 'Invisible conf',
       event_date: '2026-05-01',
       description: null,
-      priority: 'low',
       tags: [],
       anchor: { level: 'company', ref: 2 },
       evidence: 'invisible',

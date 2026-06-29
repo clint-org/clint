@@ -1079,4 +1079,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260629040100_get_event_detail.sql`
 - `20260629040200_get_event_detail_audit_fields.sql`
 - `20260629040300_event_taxonomy_name_uniqueness.sql`
+- `20260629050100_commit_source_import_unified_events.sql`
 <!-- /AUTO-GEN:DRIFT -->
