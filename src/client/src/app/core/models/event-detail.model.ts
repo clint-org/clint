@@ -106,7 +106,10 @@ export interface CatalystDetail {
      */
     ctgov_last_synced_at: string | null;
   };
+  /** Future events sharing this event's anchor (parent asset / company / space), soonest first. */
   upcoming_markers: UpcomingMarker[];
+  /** Past events sharing this event's anchor, most-recent first. Symmetric with upcoming_markers. */
+  recent_markers: UpcomingMarker[];
   related_events: RelatedEvent[];
 }
 

@@ -50,6 +50,7 @@ function wrapper(overrides: Partial<CatalystDetail['catalyst']> = {}): CatalystD
       ...overrides,
     },
     upcoming_markers: [],
+    recent_markers: [],
     related_events: [],
   } as CatalystDetail;
 }

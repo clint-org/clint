@@ -1092,4 +1092,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260629160000_list_intelligence_feed.sql`
 - `20260629170000_feed_excludes_ctgov_events.sql`
 - `20260629180000_feed_excludes_structural_clinical.sql`
+- `20260629190000_event_detail_upcoming_recent_markers.sql`
 <!-- /AUTO-GEN:DRIFT -->

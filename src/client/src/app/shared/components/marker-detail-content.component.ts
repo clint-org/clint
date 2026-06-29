@@ -336,10 +336,13 @@ interface CtgovProvenanceBlock {
         </app-detail-panel-section>
       }
 
-      @if (d.upcoming_markers.length > 0) {
-        <app-detail-panel-section label="Upcoming for this trial">
+      <!-- Program context: future then past events sharing this event's anchor
+           (parent asset / company / space), mirroring the bullseye drawer's
+           symmetric Upcoming / Recent split. -->
+      @if (upcomingMarkers().length > 0) {
+        <app-detail-panel-section label="Upcoming events">
           <app-detail-panel-entity-list>
-            @for (um of d.upcoming_markers; track um.marker_id) {
+            @for (um of upcomingMarkers(); track um.marker_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(um.marker_id)">
                 <app-marker-icon
                   class="shrink-0"
@@ -351,12 +354,41 @@ interface CtgovProvenanceBlock {
                   [isNle]="um.no_longer_expected"
                 />
                 <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
-                  um.event_date | date: 'MMM yyyy'
+                  um.event_date | date: 'mediumDate'
                 }}</span>
                 <span class="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-700">{{
                   um.marker_type_name
                 }}</span>
                 @if (um.is_projected) {
+                  <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
+                }
+              </app-detail-panel-entity-row>
+            }
+          </app-detail-panel-entity-list>
+        </app-detail-panel-section>
+      }
+
+      @if (recentMarkers().length > 0) {
+        <app-detail-panel-section label="Recent events">
+          <app-detail-panel-entity-list>
+            @for (rm of recentMarkers(); track rm.marker_id) {
+              <app-detail-panel-entity-row (rowClick)="markerClick.emit(rm.marker_id)">
+                <app-marker-icon
+                  class="shrink-0"
+                  [shape]="rm.marker_type_shape"
+                  [color]="rm.marker_type_color"
+                  [size]="12"
+                  [fillStyle]="rm.is_projected ? 'outline' : 'filled'"
+                  [innerMark]="rm.marker_type_inner_mark"
+                  [isNle]="rm.no_longer_expected"
+                />
+                <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
+                  rm.event_date | date: 'mediumDate'
+                }}</span>
+                <span class="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-700">{{
+                  rm.marker_type_name
+                }}</span>
+                @if (rm.is_projected) {
                   <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
               </app-detail-panel-entity-row>
@@ -627,6 +659,11 @@ export class MarkerDetailContentComponent {
   protected readonly citations = computed<{ url: string; label: string | null }[]>(
     () => this.detail()?.catalyst.sources ?? []
   );
+
+  /** Future events sharing this event's anchor (parent asset / company / space). */
+  protected readonly upcomingMarkers = computed(() => this.detail()?.upcoming_markers ?? []);
+  /** Past events sharing the same anchor, most-recent first. Symmetric with upcoming. */
+  protected readonly recentMarkers = computed(() => this.detail()?.recent_markers ?? []);
 
   protected isAutoDescription(desc: string): boolean {
     return desc.toLowerCase().startsWith('auto-derived from');
