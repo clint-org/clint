@@ -121,15 +121,7 @@ describe('materials linked to events', () => {
     expect(eventLink!.entity_name).toBe('TRIUMPH-1 strategic update');
   });
 
-  // SKIPPED: the _cleanup_polymorphic_refs_event AFTER DELETE trigger was on
-  // the PRE-CUTOVER events table and was cascade-dropped when migration
-  // 20260628070739_drop_marker_event_tables.sql ran DROP TABLE public.events CASCADE.
-  // The new events table created in 20260628071042 does not have the trigger.
-  // Fix: a migration must re-add:
-  //   CREATE TRIGGER _cleanup_polymorphic_refs_event AFTER DELETE ON public.events
-  //   FOR EACH ROW EXECUTE FUNCTION public._cleanup_polymorphic_refs('event');
-  // This test remains here as the spec contract; re-enable once the trigger is restored.
-  it.skip('removes the material_link when the event is deleted, leaving the material row', async () => {
+  it('removes the material_link when the event is deleted, leaving the material row', async () => {
     const eventId = await createEvent('Event to delete');
     const materialId = await registerEventMaterial(eventId, 'Orphan-check briefing');
 
