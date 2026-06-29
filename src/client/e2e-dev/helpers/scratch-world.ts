@@ -35,6 +35,17 @@ export interface RoleUser {
   session: Session;
 }
 
+export interface ProvisionerUser {
+  /** Separate platform_admin user that called the provision_* RPCs; it is also
+   *  the agency owner (provision_agency p_owner_email = prov.email). Use it to
+   *  reach /admin (agencyGuard / auditAgencyGuard) and /super-admin (superAdminGuard).
+   *  NOTE: platform admin carries an RLS read bypass, so never use it for
+   *  space-level firewall assertions -- only for admin-surface access. */
+  userId: string;
+  email: string;
+  session: Session;
+}
+
 export interface ScratchWorld {
   id: string;
   /** `pwreg-<id>.dev.clintapp.com` -- the tenant brand host. */
@@ -45,6 +56,8 @@ export interface ScratchWorld {
   spaceId: string;
   /** Role users with live sessions (only the roles requested at creation). */
   users: Partial<Record<RoleName, RoleUser>>;
+  /** The platform_admin + agency-owner that provisioned this world (admin surfaces). */
+  provisioner: ProvisionerUser;
   cleanup: () => Promise<void>;
 }
 
@@ -242,7 +255,17 @@ export async function createScratchWorld(opts: ScratchWorldOptions = {}): Promis
       users[role] = { role, ...u };
     }
 
-    const world: ScratchWorld = { id, host, baseURL, agencyId, tenantId, spaceId, users, cleanup };
+    const world: ScratchWorld = {
+      id,
+      host,
+      baseURL,
+      agencyId,
+      tenantId,
+      spaceId,
+      users,
+      provisioner: prov,
+      cleanup,
+    };
     return world;
   } catch (e) {
     await cleanup();

@@ -72,6 +72,14 @@ e2e-dev/
 
 ## Tags
 
-`@smoke @firewall @nav @landscape @intelligence @help @anon @seeded @crud @taxonomy @export`
-run today. `@event @external @admin` are scaffolds (`test.fixme`) pending a
-verification pass or harness extension (AI-enabled tenant, agency/super-admin host).
+Verified green: `@smoke @firewall @nav @landscape @intelligence @help @anon @seeded
+@crud @taxonomy @export @contract @adversarial @security`. The `@contract` test
+(`rpc-contract.spec.ts`) is pooler-only (no browser) and asserts every client `.rpc()`
+call resolves against the deployed signature -- run it first; it is the fastest
+regression net and catches the client↔DB PGRST202 class.
+
+Scaffolds (`test.fixme`, authored + harness-ready) pending a verification pass:
+`entity-crud-events` (`@crud @event` -- edit half blocked by the live `update_event`
+bug), `ai-import`/`ai-usage` (`@external`, live AI), `admin-portals` (`@admin`,
+agency + `admin.dev.clintapp.com` super-admin hosts). See the Phase 2 section of
+`docs/notes/dev-regression-suite.md`.
