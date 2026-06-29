@@ -73,7 +73,7 @@ export interface CatalystHoverEvent {
               </ng-template>
             </p-column-filter>
           </th>
-          <th>Catalyst</th>
+          <th>Event</th>
           <th class="col-company">
             Company / Asset
             <p-column-filter
@@ -244,7 +244,7 @@ export interface CatalystHoverEvent {
       <ng-template #emptymessage>
         <tr>
           <td colspan="5" class="py-8 text-center text-sm text-slate-400">
-            No upcoming catalysts match your filters.
+            No upcoming events match your filters.
           </td>
         </tr>
       </ng-template>

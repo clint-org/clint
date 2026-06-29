@@ -58,7 +58,7 @@ export const NAV_SECTIONS: NavSection[] = [
         route: 'heatmap',
         icon: NAV_ICONS['heatmap'],
       },
-      { label: 'Future Catalysts', route: 'catalysts', icon: NAV_ICONS['catalysts'] },
+      { label: 'Future Events', route: 'future-events', icon: NAV_ICONS['catalysts'] },
     ],
   },
   {
@@ -116,7 +116,7 @@ export const NAV_SECTIONS: NavSection[] = [
     bottom: true,
     items: [
       { label: 'Taxonomies guide', route: 'help/taxonomies', icon: NAV_ICONS['taxonomies'] },
-      { label: 'Markers guide', route: 'help/markers', icon: NAV_ICONS['marker-types'] },
+      { label: 'Event glyphs guide', route: 'help/markers', icon: NAV_ICONS['marker-types'] },
       { label: 'Phases guide', route: 'help/phases', icon: NAV_ICONS['phases'] },
     ],
   },

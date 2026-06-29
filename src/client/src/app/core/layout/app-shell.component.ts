@@ -484,9 +484,9 @@ export class AppShellComponent implements OnInit {
     if (route.startsWith('profiles/')) return 'profiles';
     if (route.startsWith('settings/')) return 'settings';
     if (route.startsWith('help/')) return 'reference';
-    if (route === 'events' || route === 'intelligence' || route === 'materials')
+    if (route === 'activity' || route === 'intelligence' || route === 'materials')
       return 'intelligence';
-    if (route === 'catalysts') return 'landscape';
+    if (route === 'future-events') return 'landscape';
     return 'landscape';
   });
 
@@ -500,10 +500,10 @@ export class AppShellComponent implements OnInit {
       route === 'timeline' ||
       route.startsWith('bullseye') ||
       route.startsWith('heatmap') ||
-      route === 'events' ||
+      route === 'activity' ||
       route === 'intelligence' ||
       route === 'materials' ||
-      route === 'catalysts' ||
+      route === 'future-events' ||
       route.startsWith('profiles/')
     ) {
       return 'landscape';
@@ -561,9 +561,9 @@ export class AppShellComponent implements OnInit {
             icon: NAV_ICONS['heatmap'],
           },
           {
-            label: 'Future Catalysts',
-            value: 'catalysts',
-            active: route === 'catalysts',
+            label: 'Future Events',
+            value: 'future-events',
+            active: route === 'future-events',
             icon: NAV_ICONS['catalysts'],
           },
         ];
@@ -586,9 +586,9 @@ export class AppShellComponent implements OnInit {
               ]
             : []),
           {
-            label: 'Events',
-            value: 'events',
-            active: route === 'events',
+            label: 'Activity',
+            value: 'activity',
+            active: route === 'activity',
             icon: NAV_ICONS['events'],
           },
           {
@@ -631,10 +631,9 @@ export class AppShellComponent implements OnInit {
       'profiles/companies': 'Companies',
       'profiles/assets': 'Assets',
       'profiles/trials': 'Trials',
-      events: 'Events',
-      catalysts: 'Future Catalysts',
+      activity: 'Activity',
+      'future-events': 'Future Events',
       'settings/taxonomies': 'Taxonomies',
-      'settings/marker-types': 'Marker Types',
       'settings/spaces': 'Spaces',
       'settings/general': 'General',
       'settings/members': 'Members',
@@ -792,8 +791,8 @@ export class AppShellComponent implements OnInit {
           case 'heatmap':
             this.navigateToSpaceRoute('heatmap/by-moa');
             break;
-          case 'catalysts':
-            this.navigateToSpaceRoute('catalysts');
+          case 'future-events':
+            this.navigateToSpaceRoute('future-events');
             break;
         }
         break;

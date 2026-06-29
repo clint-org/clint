@@ -44,7 +44,7 @@ export class SeedDemoComponent implements OnInit {
     }
     try {
       await this.dashboardService.seedDemoData(spaceId);
-      await this.router.navigate(['/t', this.tenantId, 's', spaceId, 'catalysts']);
+      await this.router.navigate(['/t', this.tenantId, 's', spaceId, 'future-events']);
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to seed demo data.');
     }

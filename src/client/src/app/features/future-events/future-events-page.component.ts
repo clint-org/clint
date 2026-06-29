@@ -21,6 +21,7 @@ import { ExportButtonComponent, type ExportAction } from '../../shared/export/ex
 import { GridExcelExportService } from '../../shared/export/grid-excel-export.service';
 import { ExportNamingService } from '../../shared/export/export-naming.service';
 import { CATALYST_EXPORT_COLUMNS } from './future-events-export.util';
+import { resolveDeepLinkEventId } from './event-deep-link';
 
 @Component({
   selector: 'app-future-events-page',
@@ -72,7 +73,7 @@ export class FutureEventsPageComponent {
     columns: [
       { field: 'category_name', header: 'Category', filter: { kind: 'text' } },
       { field: 'company_name', header: 'Company', filter: { kind: 'text' } },
-      { field: 'title', header: 'Catalyst', filter: { kind: 'text' } },
+      { field: 'title', header: 'Event', filter: { kind: 'text' } },
       { field: 'asset_name', header: 'Asset', filter: { kind: 'text' } },
     ],
     globalSearchFields: ['title', 'company_name', 'asset_name', 'category_name'],
@@ -89,10 +90,10 @@ export class FutureEventsPageComponent {
       format: 'xlsx',
       run: async () =>
         this.excel.export({
-          sheetName: 'Catalysts',
+          sheetName: 'Events',
           filename: await this.exportNaming.stem(
             this.route.snapshot.paramMap.get('spaceId') ?? '',
-            'catalysts',
+            'future-events',
           ),
           columns: CATALYST_EXPORT_COLUMNS,
           rows: this.flatCatalysts(),
@@ -137,12 +138,14 @@ export class FutureEventsPageComponent {
   constructor() {
     this.destroyRef.onDestroy(() => this.topbarState.clear());
 
-    // Honor ?markerId=<id> from the URL (command-palette deep link or
-    // activity-feed row). openMarker (not selectMarker) so a previously
-    // restored selection of the same marker does not toggle the drawer closed.
-    const markerId = this.route.snapshot.queryParamMap.get('markerId');
-    if (markerId) {
-      void this.state.openMarker(markerId);
+    // Honor ?eventId=<id> from the URL (command-palette deep link or
+    // activity-feed row). The legacy ?markerId= param is still accepted for one
+    // release so old links keep resolving; eventId wins when both are present.
+    // openMarker (not selectMarker) so a previously restored selection of the
+    // same event does not toggle the drawer closed.
+    const eventId = resolveDeepLinkEventId(this.route.snapshot.queryParamMap);
+    if (eventId) {
+      void this.state.openMarker(eventId);
     }
   }
 

@@ -59,7 +59,7 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
               mode="drawer"
               [detail]="state.selectedDetail()"
               [spaceId]="state.spaceIdSig()"
-              [surfaceKey]="viewMode() === 'catalysts' ? 'key_catalysts_panel' : 'timeline_detail'"
+              [surfaceKey]="viewMode() === 'future-events' ? 'key_catalysts_panel' : 'timeline_detail'"
               [showEditAction]="true"
               [open]="!!state.selectedMarkerId()"
               [references]="state.selectedMarkerReferences()"
@@ -240,8 +240,8 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       if (groupParam && ['company', 'indication', 'moa', 'roa', 'asset'].includes(groupParam)) {
         this.state.spokeGrouping.set(groupParam as SpokeGrouping);
       }
-    } else if (allSegments.includes('catalysts')) {
-      this.viewMode.set('catalysts');
+    } else if (allSegments.includes('future-events')) {
+      this.viewMode.set('future-events');
       this.entityId.set(null);
     } else if (allSegments.includes('timeline')) {
       this.viewMode.set('timeline');

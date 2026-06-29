@@ -7,9 +7,9 @@ import { buildExportSheet, type ExportColumn } from './grid-sheet.util';
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 export interface GridExcelRequest<T> {
-  /** Worksheet name, e.g. 'Catalysts'. */
+  /** Worksheet name, e.g. 'Events'. */
   sheetName: string;
-  /** Download filename without extension, e.g. 'catalysts'. */
+  /** Download filename without extension, e.g. 'future-events'. */
   filename: string;
   /** Explicit export surface: visible columns plus detail-pane fields. */
   columns: ExportColumn<T>[];
