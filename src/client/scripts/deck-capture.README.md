@@ -41,9 +41,15 @@ PNG basenames):
 ONLY=timeline,materials,bullseye node scripts/capture-deck-shots.mjs
 ```
 
-Shot names: `whitelabel-stout-login`, `engagement-landing`, `timeline`,
-`heatmap`, `activity`, `bullseye`, `catalysts`, `events`, `source-import`,
+Shot names: `whitelabel-stout-login`, `engagement-landing`, `intelligence-feed`,
+`timeline`, `heatmap`, `bullseye`, `catalysts`, `events`, `source-import`,
 `command-palette`, `materials`, `intelligence`, `trial-detail`.
+
+`intelligence-feed` is the space-level Intelligence Feed ("Latest from Stout",
+recency-ordered) at `/intelligence`; `intelligence` is the per-trial published
+read on a trial-detail page. `whitelabel-stout-login` only captures when logged
+out, and the script now skips it (rather than overwriting the committed shot) if
+the login lands on a Cloudflare challenge instead of the branded page.
 
 ## Editing what a shot shows
 
@@ -80,7 +86,10 @@ also written).
 ## Other options
 
 - `HIDE=0` keep the env banner + AI-incident banner visible (hidden by default)
-- `HEADLESS=1` run headless (only works once a login profile exists)
+- `HEADLESS=1` run headless. Unreliable against prod whitelabel hosts: the
+  cookie-based `sb-auth` session is not reliably reused headless, so the run can
+  land on `/login` and stall. Prefer the default headed run, which reuses the
+  persisted profile without a re-login.
 - `SYNC=1` click CT.gov "Sync" on the intelligence/trial-detail trials first
   (needed right after a fresh space reseed; see above)
 - `INTEL_TRIAL_ID=<uuid>` / `DETAIL_TRIAL_ID=<uuid>` pin the intelligence /
