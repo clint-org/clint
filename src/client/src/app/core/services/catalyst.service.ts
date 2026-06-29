@@ -13,15 +13,15 @@ export class CatalystService {
 
   async getCatalystDetail(markerId: string): Promise<CatalystDetail> {
     return this.cache.get(
-      'get_catalyst_detail',
+      'get_event_detail',
       { markerId },
       {
         ttl: HEAVY_TTL,
-        tags: [`catalyst:${markerId}:detail`],
+        tags: [`event:${markerId}:detail`],
         fetch: async () => {
           const { data } = await this.supabase.client
-            .rpc('get_catalyst_detail', {
-              p_marker_id: markerId,
+            .rpc('get_event_detail', {
+              p_event_id: markerId,
             })
             .throwOnError();
           return data as CatalystDetail;
