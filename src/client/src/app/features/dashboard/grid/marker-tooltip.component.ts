@@ -13,6 +13,7 @@ import { CompanyTileComponent } from '../../../shared/components/company-tile.co
 import { CtgovSourceTagComponent } from '../../../shared/components/ctgov-source-tag.component';
 import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker-icon.component';
 import { DatePrecision, FillStyle, InnerMark, MarkerShape } from '../../../core/models/marker.model';
+import { ProjectionBadge } from '../../../core/models/marker-visual';
 import { markerExtentLabel, markerPeriodLabel } from '../../../core/models/marker-date-precision';
 import { phaseShortLabel } from '../../../core/models/phase-colors';
 
@@ -40,6 +41,8 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
           [fillStyle]="typedFillStyle()"
           [innerMark]="typedInnerMark()"
           [isNle]="noLongerExpected()"
+          [projectionBadge]="projectionBadge()"
+          [outlineDash]="outlineDash()"
         />
         <span
           class="min-w-0 flex-1 truncate font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500"
@@ -183,6 +186,13 @@ export class MarkerTooltipComponent implements AfterViewInit {
   readonly shape = input<string>('');
   readonly fillStyle = input<string>('filled');
   readonly innerMark = input<string>('none');
+  /**
+   * Projection tier badge + forecast dashed outline, passed pre-computed from the
+   * grid marker's `visual()` so the tooltip glyph matches the timeline row exactly
+   * (same `app-marker-icon`, same inputs) rather than dropping the tier letter.
+   */
+  readonly projectionBadge = input<ProjectionBadge>(null);
+  readonly outlineDash = input<boolean>(false);
 
   readonly trialName = input<string>('');
   readonly trialPhase = input<string>('');
