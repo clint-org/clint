@@ -45,20 +45,29 @@
                 class="flex items-baseline gap-3.5 font-mono text-[10px] tracking-[0.08em] tabular-nums text-slate-400"
                 aria-label="Engagement inventory"
               >
-                <span
-                  ><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trial{{
-                    inv.trials === 1 ? '' : 's'
-                  }}</span
-                >
-                <span
-                  ><b class="font-semibold text-slate-600">{{ inv.companies }}</b>
-                  {{ inv.companies === 1 ? 'company' : 'companies' }}</span
-                >
-                <span
-                  ><b class="font-semibold text-slate-600">{{ inv.assets }}</b> asset{{
-                    inv.assets === 1 ? '' : 's'
-                  }}</span
-                >
+                <span class="inline-flex items-center gap-1.5">
+                  <i [class]="entityIcon['trial']" aria-hidden="true"></i>
+                  <span
+                    ><b class="font-semibold text-slate-600">{{ inv.trials }}</b> trial{{
+                      inv.trials === 1 ? '' : 's'
+                    }}</span
+                  >
+                </span>
+                <span class="inline-flex items-center gap-1.5">
+                  <i [class]="entityIcon['company']" aria-hidden="true"></i>
+                  <span
+                    ><b class="font-semibold text-slate-600">{{ inv.companies }}</b>
+                    {{ inv.companies === 1 ? 'company' : 'companies' }}</span
+                  >
+                </span>
+                <span class="inline-flex items-center gap-1.5">
+                  <i [class]="entityIcon['product']" aria-hidden="true"></i>
+                  <span
+                    ><b class="font-semibold text-slate-600">{{ inv.assets }}</b> asset{{
+                      inv.assets === 1 ? '' : 's'
+                    }}</span
+                  >
+                </span>
               </div>
             }
             @if (spaceRole.canEdit() && aiEnabled()) {
@@ -291,14 +300,22 @@
                 @for (f of feedFilters(); track trackFilter($index, f)) {
                   <button
                     type="button"
-                    class="cursor-pointer border px-2.5 py-[5px] font-mono text-[10px] uppercase tracking-[0.08em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-                    [ngClass]="
-                      feedFilter() === f.key
-                        ? 'border-brand-600 bg-brand-50 font-semibold text-brand-700'
-                        : 'border-slate-200 bg-white font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700'
-                    "
+                    class="inline-flex cursor-pointer items-center gap-1.5 border px-2.5 py-[5px] font-mono text-[10px] uppercase tracking-[0.08em] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                    [class.border-brand-600]="feedFilter() === f.key"
+                    [class.bg-brand-50]="feedFilter() === f.key"
+                    [class.font-semibold]="feedFilter() === f.key"
+                    [class.text-brand-700]="feedFilter() === f.key"
+                    [class.border-slate-200]="feedFilter() !== f.key"
+                    [class.bg-white]="feedFilter() !== f.key"
+                    [class.font-medium]="feedFilter() !== f.key"
+                    [class.text-slate-500]="feedFilter() !== f.key"
+                    [class.hover:border-slate-300]="feedFilter() !== f.key"
+                    [class.hover:text-slate-700]="feedFilter() !== f.key"
                     (click)="setFeedFilter(f.key)"
                   >
+                    @if (f.icon) {
+                      <i [class]="f.icon" aria-hidden="true"></i>
+                    }
                     {{ f.label }}
                   </button>
                 }
