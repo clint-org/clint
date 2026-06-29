@@ -1094,4 +1094,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260629180000_feed_excludes_structural_clinical.sql`
 - `20260629190000_event_detail_upcoming_recent_markers.sql`
 - `20260629200000_bullseye_materialize_intel_activity_ctes.sql`
+- `20260629210000_event_detail_context_trial_label.sql`
 <!-- /AUTO-GEN:DRIFT -->

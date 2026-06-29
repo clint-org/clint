@@ -389,9 +389,16 @@ interface CtgovProvenanceBlock {
                 <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   um.event_date | date: 'mediumDate'
                 }}</span>
-                <span class="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-700">{{
-                  um.marker_type_name
-                }}</span>
+                <span class="flex min-w-0 flex-1 flex-col">
+                  <span class="truncate text-[12px] font-medium text-slate-700">{{
+                    um.marker_type_name
+                  }}</span>
+                  @if (um.trial_acronym ?? um.trial_name; as trialLabel) {
+                    <span class="truncate font-mono text-[10px] uppercase tracking-wide text-slate-400">{{
+                      trialLabel
+                    }}</span>
+                  }
+                </span>
                 @if (um.is_projected) {
                   <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
@@ -418,9 +425,16 @@ interface CtgovProvenanceBlock {
                 <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   rm.event_date | date: 'mediumDate'
                 }}</span>
-                <span class="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-700">{{
-                  rm.marker_type_name
-                }}</span>
+                <span class="flex min-w-0 flex-1 flex-col">
+                  <span class="truncate text-[12px] font-medium text-slate-700">{{
+                    rm.marker_type_name
+                  }}</span>
+                  @if (rm.trial_acronym ?? rm.trial_name; as trialLabel) {
+                    <span class="truncate font-mono text-[10px] uppercase tracking-wide text-slate-400">{{
+                      trialLabel
+                    }}</span>
+                  }
+                </span>
                 @if (rm.is_projected) {
                   <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
