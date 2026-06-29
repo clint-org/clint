@@ -32,10 +32,8 @@ import { RPC_CONTRACTS } from '../fixtures/rpc-contracts';
  * but red on anything new). Remove an entry once the fix deploys to dev.
  */
 const KNOWN_DIVERGENCES: { key: string; note: string }[] = [
-  {
-    key: 'update_event:missing-required:p_source_url',
-    note: 'update_event requires p_source_url (no default) but UpdateEventArgs dropped it -> PGRST202 on every event edit. Fix: drop p_source_url from update_event (or give it a default). DB session owns it.',
-  },
+  // RESOLVED 2026-06-29: update_event:missing-required:p_source_url -- the DB session dropped
+  // p_source_url from update_event (now 16 args, no p_source_url), matching UpdateEventArgs.
   {
     key: 'update_event_links:not-found',
     note: 'update_event_links dropped by 20260629020000_drop_dead_event_feed_fns but still called by EventService.updateLinks() -> PGRST202 when adding an event link. Fix: restore the RPC or remove the client call.',
