@@ -46,7 +46,11 @@ beforeAll(async () => {
 
   // a company to anchor company-level events
   const co = expectOk(
-    await admin.from('companies').insert({ space_id: spaceId, name: 'FeedCo' }).select('id').single()
+    await admin
+      .from('companies')
+      .insert({ space_id: spaceId, name: 'FeedCo', created_by: p.ids.space_owner })
+      .select('id')
+      .single()
   ) as { id: string };
   companyId = co.id;
 
@@ -68,7 +72,6 @@ beforeAll(async () => {
         headline: 'FeedCo competitive read',
         summary_md: 'Body about FeedCo.',
         implications_md: 'x',
-        watch_md: 'x',
         last_edited_by: p.ids.space_owner,
         version_number: 1,
         published_at: '2026-03-10T12:00:00Z',
@@ -151,8 +154,10 @@ describe('list_intelligence_feed', () => {
   });
 
   it('p_categories filters the event leg only; briefs unaffected', async () => {
-    const r = await feed({ p_categories: ['Leadership'] });
-    // 1 leadership event + the 1 brief (briefs have no category, so they pass)
+    // The Leadership Change type lives in the 'Corporate' category (the
+    // corporate_event_family migration consolidated Leadership/Financial/Strategic).
+    const r = await feed({ p_categories: ['Corporate'] });
+    // 1 corporate event (CEO comment) + the 1 brief (briefs have no category, so they pass)
     expect(r.total).toBe(2);
     expect(r.rows.filter((x) => x.kind === 'event').map((x) => x.title)).toEqual(['CEO comment']);
     expect(r.rows.some((x) => x.kind === 'brief')).toBe(true);
