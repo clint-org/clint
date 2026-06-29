@@ -125,7 +125,7 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
             </div>
             @if (phaseChipLabel()) {
               <span
-                class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
+                class="shrink-0 rounded-sm bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
                 >{{ phaseChipLabel() }}</span
               >
             }

@@ -46,6 +46,25 @@ export async function settle(page: Page, path: string): Promise<void> {
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   await waitForCloudflare(page);
   await page.waitForLoadState('networkidle').catch(() => {});
+  await dismissEnvBadge(page);
+}
+
+/**
+ * Dismiss the dev/local environment badge (app-env-banner). It is a `fixed`
+ * bottom-right z-50 overlay that intercepts pointer events on bottom-anchored
+ * controls (e.g. the import review "Confirm" button). The dismiss state is an
+ * in-memory signal in the app shell (app.component), so one click persists
+ * across SPA route changes within the same page load. Best-effort: no-op if the
+ * badge is absent (prod build) or already dismissed.
+ */
+export async function dismissEnvBadge(page: Page): Promise<void> {
+  const badge = page.getByRole('button', { name: /Dismiss the (DEV|LOCAL) environment badge/ });
+  if (await badge.count().catch(() => 0)) {
+    await badge
+      .first()
+      .click({ timeout: 2000 })
+      .catch(() => {});
+  }
 }
 
 export interface DevFixtures {

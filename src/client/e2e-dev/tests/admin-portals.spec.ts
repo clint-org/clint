@@ -39,7 +39,7 @@ const sp = (tenantId: string, spaceId: string, sub = '') => `/t/${tenantId}/s/${
 // both brand kinds confirmed via get_brand_by_host -- so each clears Cloudflare separately
 // (3 solves). The QA-009 actor-email soft assertions are EXPECTED to fail until that bug is
 // fixed. Verify the host-based admin contexts headed before enabling.
-test.describe.fixme('@admin agency portal + super-admin + audit', () => {
+test.describe('@admin agency portal + super-admin + audit', () => {
   // Contexts opened via the raw `browser` fixture are NOT auto-closed; track + close.
   const opened: BrowserContext[] = [];
   test.afterEach(async () => {
@@ -162,6 +162,13 @@ test.describe.fixme('@admin agency portal + super-admin + audit', () => {
     pageAs,
     gotoSettled,
   }) => {
+    // KNOWN-BUG QA-009: the space audit ACTOR renders "--" instead of the provisioner
+    // email, so the soft assertion at the end of this test fails. Declared as an expected
+    // failure (kept soft per QA-009 tracking) so the suite stays green; remove this
+    // annotation when QA-009 is fixed and the actor email resolves -- at which point this
+    // test will report "expected to fail but passed", prompting the cleanup.
+    test.fail();
+
     // Mutation: owner invites a throwaway email (Tier-1 audited path,
     // invite_to_space at 20260501060000_canonicalize_email.sql:149).
     const invite = await apiAs(world, 'owner').rpc('invite_to_space', {
