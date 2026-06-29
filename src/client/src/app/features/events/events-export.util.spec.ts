@@ -80,4 +80,40 @@ describe('buildEventsExportColumns', () => {
     expect(spec.rows[0]['c5']).toBe('Industry');
     expect(spec.rows[0]['c2']).toBe('Detected');
   });
+
+  it('source URL column prefers registry_url, then sources[0].url, then source_url', () => {
+    const columns = buildEventsExportColumns(display);
+
+    // registry_url wins over everything
+    const withRegistry = buildExportSheet('Events', columns, [
+      fixture({
+        registry_url: 'https://clinicaltrials.gov/ct2/show/NCT00001234',
+        sources: [{ url: 'https://sources.example.com/a', label: null }],
+        source_url: 'https://legacy.example.com',
+      }),
+    ]);
+    expect(withRegistry.rows[0]['c12']).toBe('https://clinicaltrials.gov/ct2/show/NCT00001234');
+
+    // no registry_url: falls back to sources[0].url
+    const withSources = buildExportSheet('Events', columns, [
+      fixture({
+        registry_url: null,
+        sources: [{ url: 'https://sources.example.com/b', label: null }],
+        source_url: 'https://legacy.example.com',
+      }),
+    ]);
+    expect(withSources.rows[0]['c12']).toBe('https://sources.example.com/b');
+
+    // no registry_url or sources: falls back to source_url
+    const withLegacy = buildExportSheet('Events', columns, [
+      fixture({ registry_url: null, sources: [], source_url: 'https://legacy.example.com' }),
+    ]);
+    expect(withLegacy.rows[0]['c12']).toBe('https://legacy.example.com');
+
+    // nothing: empty string
+    const withNothing = buildExportSheet('Events', columns, [
+      fixture({ registry_url: null, sources: [], source_url: null }),
+    ]);
+    expect(withNothing.rows[0]['c12']).toBe('');
+  });
 });

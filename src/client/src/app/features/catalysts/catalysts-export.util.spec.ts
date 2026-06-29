@@ -100,3 +100,39 @@ describe('catalystStatusLabel', () => {
     expect(catalystStatusLabel(fixture({ no_longer_expected: true }))).toBe('No longer expected');
   });
 });
+
+describe('CATALYST_EXPORT_COLUMNS source URL precedence', () => {
+  it('prefers registry_url, then sources[0].url, then source_url', () => {
+    // registry_url wins over everything
+    const withRegistry = buildExportSheet('Catalysts', CATALYST_EXPORT_COLUMNS, [
+      fixture({
+        registry_url: 'https://clinicaltrials.gov/ct2/show/NCT00001234',
+        sources: [{ url: 'https://sources.example.com/a', label: null }],
+        source_url: 'https://legacy.example.com',
+      }),
+    ]);
+    expect(withRegistry.rows[0]['c11']).toBe('https://clinicaltrials.gov/ct2/show/NCT00001234');
+
+    // no registry_url: falls back to sources[0].url
+    const withSources = buildExportSheet('Catalysts', CATALYST_EXPORT_COLUMNS, [
+      fixture({
+        registry_url: null,
+        sources: [{ url: 'https://sources.example.com/b', label: null }],
+        source_url: 'https://legacy.example.com',
+      }),
+    ]);
+    expect(withSources.rows[0]['c11']).toBe('https://sources.example.com/b');
+
+    // no registry_url or sources: falls back to source_url
+    const withLegacy = buildExportSheet('Catalysts', CATALYST_EXPORT_COLUMNS, [
+      fixture({ registry_url: null, sources: [], source_url: 'https://legacy.example.com' }),
+    ]);
+    expect(withLegacy.rows[0]['c11']).toBe('https://legacy.example.com');
+
+    // nothing: empty string
+    const withNothing = buildExportSheet('Catalysts', CATALYST_EXPORT_COLUMNS, [
+      fixture({ registry_url: null, sources: [], source_url: null }),
+    ]);
+    expect(withNothing.rows[0]['c11']).toBe('');
+  });
+});

@@ -57,6 +57,10 @@ export function buildEventsExportColumns(display: EventDisplayFns): ExportColumn
     { header: 'Priority', value: (e) => (e.priority === 'high' ? 'High' : 'Low'), width: 9 },
     { header: 'Tags', value: (e) => (e.tags ?? []).join(', '), width: 20 },
     { header: 'Description', value: (e) => e.description ?? '', width: 40 },
-    { header: 'Source URL', value: (e) => e.source_url ?? '', width: 28 },
+    {
+      header: 'Source URL',
+      value: (e) => e.registry_url ?? e.sources?.[0]?.url ?? e.source_url ?? '',
+      width: 28,
+    },
   ];
 }

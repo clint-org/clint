@@ -43,5 +43,9 @@ export const CATALYST_EXPORT_COLUMNS: ExportColumn<FlatCatalyst>[] = [
   { header: 'Status', value: catalystStatusLabel, width: 16 },
   { header: 'Marker type', value: (c) => c.marker_type_name, width: 18 },
   { header: 'Description', value: (c) => c.description ?? '', width: 40 },
-  { header: 'Source URL', value: (c) => c.source_url ?? '', width: 28 },
+  {
+    header: 'Source URL',
+    value: (c) => c.registry_url ?? c.sources?.[0]?.url ?? c.source_url ?? '',
+    width: 28,
+  },
 ];
