@@ -509,8 +509,11 @@ export class EventFormComponent implements OnInit {
   private assetService = inject(AssetService);
   private trialService = inject(TrialService);
 
+  // Space-anchored ("Industry") events render on no timeline, only in the Events
+  // feed, so the create/edit form does not offer that scope. The `space` anchor
+  // type stays valid server-side; an event already anchored to it just shows a
+  // blank scope select here (none exist today).
   protected readonly levelOptions = [
-    { label: 'Space (portfolio-wide)', value: 'space' as AnchorType },
     { label: 'Company', value: 'company' as AnchorType },
     { label: 'Asset', value: 'asset' as AnchorType },
     { label: 'Trial', value: 'trial' as AnchorType },
@@ -594,7 +597,7 @@ export class EventFormComponent implements OnInit {
   );
   protected readonly anchorPrefilled = computed(() => !!this.presetAnchorId() && this.mode() === 'create');
   protected readonly anchorSummary = computed(() => {
-    if (this.anchorType() === 'space') return 'Portfolio-wide (space)';
+    if (this.anchorType() === 'space') return 'Space';
     const e = this.selectedEntity();
     return e ? `${this.entityLabel()}: ${e.label}` : this.entityLabel();
   });
