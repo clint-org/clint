@@ -645,3 +645,67 @@ asset 4 incl. 1 hidden + 1 projected, company 2 incl. 1 pinned, trial 4 clinical
 - The shared local DB was `db reset` during B-a7fix, which wipes the manually
   created QA space; re-seed `seed_events_model_qa` into a demo-user-owned space
   before re-verifying.
+
+---
+
+## Phase C backtest results
+
+Run 2026-06-28 against a clean `supabase db reset` (worktree), service-role
+integration in isolation. Phase C (producers C1-C6) executed subagent-driven WITH
+the "A-derived" sources model (Phase S) folded in mid-cutover, plus an Activity-wiring
+task (CA) that restored the `trial_change_events` emission C1 retired.
+
+### Tasks (all committed + reviewed Approved)
+
+| Task | Commit | What |
+|---|---|---|
+| C1 | `05a52b04` | retire dropped-marker trigger/changelog fns |
+| C2 | `d7a403d7` | single-anchor marker CRUD on events (drop update_marker_assignments) |
+| S1a | `006f92c7` | event_sources table + RLS + grants + `event_registry_url` helper (SQL+TS) |
+| S1b | `a26fd5b5` | create_event gains atomic `p_sources`; update_event_sources repointed |
+| S2 | `d3bbb74f` | read RPCs emit `sources[]` + derived `registry_url` |
+| S3 | `4744f264` | frontend reads/writes sources + derived registry link |
+| C3 | `b827a6d9` | CT.gov sync emits clinical events (inline; no source_url/event_sources) |
+| C4 | `fc7ba9c4` | commit_source_import emits events via create_event (+ p_sources) |
+| C5 | `b1cd9f95` | demo seed producers emit events (4 fns) + 2 multi-source demo events |
+| CA | `bdcea34c` | restore date-move + event-edit emission into Activity (trial_change_events) |
+| S4 | `3d64cbf5` | QA fixture: multi-source event + derivable registry link (NCT id on trial) |
+| S5 | `500c7d2d` | drop `events.source_url` (vestigial p_source_url param kept) |
+| C6 | `e9b2a141` | producer + Activity + sources backtest spec |
+
+### Acceptance Matrix (integration layer)
+
+| Row | Scenario | Status | Proving spec / evidence |
+|---|---|---|---|
+| 5 | Event edit -> Activity, NOT Intelligence feed | PASS | `activity-wiring.integration.spec.ts`: update_event on a trial event inserts an analyst `trial_change_events` row returned by `get_activity_feed`; no `primary_intelligence` brief created |
+| 6 | Intelligence brief cites an event -> citation resolves | PASS | `event-producers.integration.spec.ts`: QA fixture brief cites the topline event; the intelligence read resolves `entity_id` + `entity_name` (fails on a dangling link) |
+| 11 | Phase bar derives from clinical events | PASS | `event-read-rpcs.integration.spec.ts` (exact Phase 3 + 4-event regression) + `event-producers` (producer-level `phase_data.phase_type` coexists with clinical events) |
+| Sources (hardens 1-2 detail reads) | multi-source business event; clinical/ctgov no-source + DERIVED registry link; event_sources firewall | PASS | `event-sources.integration.spec.ts` (CRUD + viewer-deny/sibling-no-leak firewall), `events-model-qa-fixture.spec.ts` (2 sources on Distribution, 0 on clinical, trial NCT id), `event-producers` (2 demo multi-source events, registry_url=`https://clinicaltrials.gov/study/NCT09000001` derived not stored) |
+
+ctgov drift (`ctgov-marker-precision-over-time.spec.ts` 35/35, incl. the CA-restored
+date_moved rows), import dedup (`import-dedup.integration.spec.ts`), and role-access
+(`role-access.spec.ts` 52/52, the 3 `seed_demo_data` tests now green) all green.
+Full Phase C/S run set: 8 spec files / 128 tests green.
+
+### Gates
+
+`supabase db reset` clean (worktree); `supabase db advisors --local --type all` clean;
+`grants:check` PASS (event_sources added, dark-by-default with `select` to authenticated);
+`ng lint` + `ng build` clean; `npm run test:units` green.
+
+### Known pre-existing (NOT Phase C regressions; deferred)
+
+- `event-sources-edit-flow.spec.ts` + `event-links-edit-flow.spec.ts` query the dropped
+  `event_categories` / `events.category_id` (stale old-events-shape drift; proven failing
+  at pre-S5 HEAD). Stage 3 / cleanup fix.
+- `linked-entities-picker.component.ts` still reads dropped `from('markers')`. Stage 3 / E3.
+
+### Deferred to Phase D / E (next sessions)
+
+- Phase D: `_cleanup_polymorphic_refs` must delete anchored events on entity delete
+  (events.anchor_id has no FK -> orphans); `permanently_delete_space` / `redact_user`
+  marker cleanup.
+- Phase E: S6 docs (runbook events feature doc + glossary "Event" entry + help pages on
+  the sources model) folds into E2's runbook regen; E1 `features:check` mapping of the new
+  RPCs (`event_registry_url`, `create_event(p_sources)`, `update_event_sources`) + the
+  `event_sources` table.
