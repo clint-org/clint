@@ -280,7 +280,7 @@ function fromIso(iso: string | null): Date | null {
           }
         </div>
 
-        <!-- Extent + end -->
+        <!-- Extent + end precision -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <app-form-field label="Extent" fieldId="ev-extent" spacing="">
             <p-select
@@ -296,24 +296,83 @@ function fromIso(iso: string | null): Date | null {
             />
           </app-form-field>
           @if (extent() === 'until') {
-            <app-form-field label="Ends" fieldId="ev-end" [required]="true" spacing="">
-              <p-datepicker
-                inputId="ev-end"
-                [ngModel]="endDate()"
-                (ngModelChange)="endDate.set($event)"
-                name="endDate"
-                dateFormat="yy-mm-dd"
+            <app-form-field label="End precision" fieldId="ev-end-precision" spacing="">
+              <p-select
+                inputId="ev-end-precision"
+                [options]="precisionOptions"
+                [ngModel]="endDatePrecision()"
+                (ngModelChange)="endDatePrecision.set($event)"
+                name="endDatePrecision"
+                optionLabel="label"
+                optionValue="value"
                 styleClass="w-full"
-                [showIcon]="true"
-                appendTo="body"
                 [disabled]="ctgovLocked()"
               />
-              @if (!rangeValid()) {
-                <p class="mt-1 text-[11px] text-red-700">End must be on or after the start.</p>
-              }
             </app-form-field>
           }
         </div>
+
+        <!-- End date / period -->
+        @if (extent() === 'until') {
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            @if (endDatePrecision() === 'exact') {
+              <app-form-field label="Ends" fieldId="ev-end" [required]="true" spacing="">
+                <p-datepicker
+                  inputId="ev-end"
+                  [ngModel]="endDate()"
+                  (ngModelChange)="endDate.set($event)"
+                  name="endDate"
+                  dateFormat="yy-mm-dd"
+                  styleClass="w-full"
+                  [showIcon]="true"
+                  appendTo="body"
+                  [disabled]="ctgovLocked()"
+                />
+                @if (!rangeValid()) {
+                  <p class="mt-1 text-[11px] text-red-700">End must be on or after the start.</p>
+                }
+              </app-form-field>
+            } @else {
+              <app-form-field label="End period" fieldId="ev-end-period-year" [required]="true" spacing="">
+                <div class="flex gap-2">
+                  @if (endDatePrecision() !== 'year') {
+                    <p-select
+                      [options]="endSubOptions()"
+                      [ngModel]="endPeriodSub()"
+                      (ngModelChange)="endPeriodSub.set($event)"
+                      name="endPeriodSub"
+                      optionLabel="label"
+                      optionValue="value"
+                      styleClass="flex-1"
+                      [attr.aria-label]="'End period within ' + endDatePrecision()"
+                      [disabled]="ctgovLocked()"
+                    />
+                  }
+                  <input
+                    pInputText
+                    id="ev-end-period-year"
+                    type="number"
+                    class="w-28"
+                    [ngModel]="endPeriodYear()"
+                    (ngModelChange)="endPeriodYear.set(+$event)"
+                    name="endPeriodYear"
+                    min="2000"
+                    max="2100"
+                    aria-label="End year"
+                    [disabled]="ctgovLocked()"
+                  />
+                </div>
+                <p class="mt-1 text-[11px] text-slate-500">
+                  Approximate ({{ endDatePrecision() }}); placed at the period midpoint
+                  ({{ effectiveEndDate() }}).
+                </p>
+                @if (!rangeValid()) {
+                  <p class="mt-1 text-[11px] text-red-700">End must be on or after the start.</p>
+                }
+              </app-form-field>
+            }
+          </div>
+        }
 
         @if (showRegulatoryPathway()) {
           <app-form-field label="Regulatory pathway" fieldId="ev-pathway" spacing="">
@@ -555,6 +614,9 @@ export class EventFormComponent implements OnInit {
   protected readonly periodSub = signal(0);
   protected readonly extent = signal<Extent>('point');
   protected readonly endDate = signal<Date | null>(null);
+  protected readonly endDatePrecision = signal<DatePrecision>('exact');
+  protected readonly endPeriodYear = signal(new Date().getFullYear());
+  protected readonly endPeriodSub = signal(0);
   protected readonly projection = signal<Projection>('actual');
   protected readonly significance = signal<SignificanceChoice>('Default');
   protected readonly visibility = signal<VisibilityChoice>('Default');
@@ -612,12 +674,20 @@ export class EventFormComponent implements OnInit {
     if (p === 'month' || p === 'quarter' || p === 'half') return PERIOD_SUBS[p];
     return [];
   });
+  protected readonly endSubOptions = computed(() => {
+    const p = this.endDatePrecision();
+    if (p === 'month' || p === 'quarter' || p === 'half') return PERIOD_SUBS[p];
+    return [];
+  });
   protected readonly effectiveEventDate = computed(() =>
     resolvePeriodMidpoint(this.datePrecision(), this.periodYear(), this.periodSub(), toIso(this.eventDate())),
   );
+  protected readonly effectiveEndDate = computed(() =>
+    resolvePeriodMidpoint(this.endDatePrecision(), this.endPeriodYear(), this.endPeriodSub(), toIso(this.endDate())),
+  );
   protected readonly rangeValid = computed(() => {
     if (this.extent() !== 'until') return true;
-    const end = toIso(this.endDate());
+    const end = this.effectiveEndDate();
     return !!end && end >= this.effectiveEventDate();
   });
 
@@ -630,8 +700,8 @@ export class EventFormComponent implements OnInit {
       eventDate: this.effectiveEventDate(),
       datePrecision: this.datePrecision(),
       extent: this.extent(),
-      endDate: this.extent() === 'until' ? toIso(this.endDate()) : null,
-      endDatePrecision: 'exact',
+      endDate: this.extent() === 'until' ? this.effectiveEndDate() : null,
+      endDatePrecision: this.endDatePrecision(),
       projection: this.projection(),
       significance: this.significance(),
       visibility: this.visibility(),
@@ -700,7 +770,16 @@ export class EventFormComponent implements OnInit {
 
       const extent = extentFromEndFields(c.end_date, c.is_ongoing);
       this.extent.set(extent);
-      if (extent === 'until') this.endDate.set(fromIso(c.end_date));
+      if (extent === 'until') {
+        this.endDatePrecision.set(c.end_date_precision);
+        if (c.end_date_precision === 'exact') {
+          this.endDate.set(fromIso(c.end_date));
+        } else {
+          const { year, sub } = periodFromDate(c.end_date_precision, c.end_date ?? '');
+          this.endPeriodYear.set(year);
+          this.endPeriodSub.set(sub);
+        }
+      }
 
       this.projection.set(c.projection as Projection);
       this.significance.set(significanceChoiceFromValue(c.significance));

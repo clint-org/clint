@@ -11,6 +11,7 @@ import {
   visibilityChoiceFromValue,
   extentFromEndFields,
   periodFromDate,
+  type DatePrecision,
   type EventFormState,
 } from './event-payload';
 
@@ -67,6 +68,14 @@ describe('buildCreateEventArgs', () => {
     ).toMatchObject({ p_end_date: '2027-01-01', p_end_date_precision: 'month', p_is_ongoing: false });
   });
 
+  it('emits the chosen fuzzy end precision + the midpoint-resolved end date', () => {
+    // The form resolves the end period to a midpoint via resolvePeriodMidpoint
+    // before building args (mirrors the component`s effectiveEndDate()).
+    const endDate = resolvePeriodMidpoint('quarter', 2027, 2, ''); // Q3 2027 -> 2027-08-15
+    const a = buildCreateEventArgs({ ...base(), extent: 'until', endDate, endDatePrecision: 'quarter' });
+    expect(a).toMatchObject({ p_end_date: '2027-08-15', p_end_date_precision: 'quarter', p_is_ongoing: false });
+  });
+
   it('builds p_metadata from tags + pathway, null when both empty', () => {
     expect(buildCreateEventArgs(base()).p_metadata).toBeNull();
     expect(
@@ -113,6 +122,52 @@ describe('buildUpdateEventArgs', () => {
   });
   it('space anchor on edit nulls anchor_id', () => {
     expect(buildUpdateEventArgs({ ...base(), anchorType: 'space', anchorId: 'x' }).p_anchor_id).toBeNull();
+  });
+
+  it('emits the chosen fuzzy end precision + midpoint-resolved end date', () => {
+    const endDate = resolvePeriodMidpoint('half', 2028, 1, ''); // H2 2028 -> 2028-10-01
+    const a = buildUpdateEventArgs({ ...base(), extent: 'until', endDate, endDatePrecision: 'half' });
+    expect(a).toMatchObject({ p_end_date: '2028-10-01', p_end_date_precision: 'half', p_is_ongoing: false });
+  });
+});
+
+// Mirrors the component`s fuzzy-end flow so the contract is locked without
+// mounting the Angular form (same node-spec convention as the landscape specs):
+//   hydrate:  stored end_date_precision + midpoint end_date -> {year, sub} via periodFromDate
+//   state():  {precision, year, sub} -> midpoint ISO via resolvePeriodMidpoint
+//   build:    EventFormState -> p_end_date / p_end_date_precision
+describe('fuzzy end round-trip (form-level)', () => {
+  it('a quarter-precision end survives hydrate -> state -> build unchanged', () => {
+    // Stored event: a bounded end at Q2 2027 (midpoint 2027-05-15).
+    const storedPrecision: DatePrecision = 'quarter';
+    const storedEndDate = resolvePeriodMidpoint(storedPrecision, 2027, 1, ''); // 2027-05-15
+
+    // hydrate: reverse the stored midpoint back into the end-period signals.
+    const { year, sub } = periodFromDate(storedPrecision, storedEndDate);
+    expect({ year, sub }).toEqual({ year: 2027, sub: 1 });
+
+    // state(): re-resolve the end-period signals into the midpoint we persist.
+    const resolvedEnd = resolvePeriodMidpoint(storedPrecision, year, sub, '');
+    const s: EventFormState = {
+      ...base(),
+      eventDate: resolvePeriodMidpoint('quarter', 2027, 0, ''), // start Q1 2027 (before end)
+      datePrecision: 'quarter',
+      extent: 'until',
+      endDate: resolvedEnd,
+      endDatePrecision: storedPrecision,
+    };
+
+    // build: both create + update carry the chosen precision + midpoint date.
+    expect(buildCreateEventArgs(s)).toMatchObject({
+      p_end_date: storedEndDate,
+      p_end_date_precision: 'quarter',
+    });
+    expect(buildUpdateEventArgs(s)).toMatchObject({
+      p_end_date: storedEndDate,
+      p_end_date_precision: 'quarter',
+    });
+    // and the validator accepts a fuzzy end at/after a fuzzy start.
+    expect(isEventFormValid(s)).toBe(true);
   });
 });
 
