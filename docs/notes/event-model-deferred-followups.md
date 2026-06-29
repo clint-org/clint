@@ -54,6 +54,40 @@ QA closed during the drive: QA-001 (by-design), QA-004, QA-005, QA-007, QA-010.
   `actor_email` is null and the UI renders email. Pre-existing, unrelated to the event
   model. Owner: core/audit team.
 
+### Seed-demo remodel (migration `20260629080000`, live on dev)
+
+The demo seed was remodeled so events land on the correct lane (trial = clinical, asset =
+regulatory/commercial, company = corporate), with no duplicate facts, evergreen dates
+(single orchestrator shift against `R = 2026-06-29`), and the full `actual`/`primary`/
+`company`/`forecasted` projection vocabulary. Spec:
+`docs/superpowers/specs/2026-06-29-seed-demo-remodel-design.md`. Deferred from that work:
+
+- **Frontend: legend glyphs + `p` badge (the explicit follow-up).** Two changes in
+  `marker-visual.ts` and the marker-guide legend, intentionally split out of the DB
+  migration so the seed change stays clean:
+  1. The legend must render the glyph for every event type, including Commercial /
+     Distribution (hexagon), Financial, Leadership, Strategic.
+  2. `marker-visual.ts` currently returns `null` for all `primary` projections. Emit `p`
+     for `primary` on non-trial anchors (asset/company) while trial `primary` stays
+     badge-less (the CT.gov registry default). This makes the `primary` tier visible on the
+     asset/company events the remodel now produces.
+  Owner: frontend.
+- **Corporate band density (product call).** `_seed_demo_events` keeps ~5 corporate events
+  at `significance='high'` with `visibility=null`; high-sig events surface on the band
+  regardless of pin state, so the band is denser than spec section 5's "pin the high-impact
+  ones, leave the rest feed-only" intent. Decide whether to demote some to lower
+  significance for a leaner band. Owner: product / seed.
+- **Structural-marker evergreen coupling (maintainer note).** The structural per-trial
+  `Trial Start`/`Trial End` phase-bar markers come from `_seed_demo_trials` ->
+  `_create_trial_date_markers`, authored from real phase dates, not against `R`. The
+  orchestrator shift uses `R` as the universal baseline; this holds only because those phase
+  dates are historical/far-future. If `_seed_demo_trials` ever authors near-`R` dates,
+  revisit. Owner: seed.
+- **Optional: author CT-388 P2 at `R + interval`.** It is currently pre-`R` and stays
+  evergreen only via the `_seed_demo_recent_activity` `+120` slip (self-guarding, since the
+  producers always co-run and the smoke asserts it post-chain). Marginally more robust to
+  author it ahead of `R` directly. Owner: seed.
+
 ## Reference
 - Spec: `docs/superpowers/specs/2026-06-28-unified-events-timeline-design.md`
 - Cutover plan: `docs/superpowers/plans/2026-06-28-event-model-consumer-producer-cutover.md`
