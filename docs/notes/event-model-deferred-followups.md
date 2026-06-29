@@ -62,16 +62,16 @@ regulatory/commercial, company = corporate), with no duplicate facts, evergreen 
 `company`/`forecasted` projection vocabulary. Spec:
 `docs/superpowers/specs/2026-06-29-seed-demo-remodel-design.md`. Deferred from that work:
 
-- **Frontend: legend glyphs + `p` badge (the explicit follow-up).** Two changes in
-  `marker-visual.ts` and the marker-guide legend, intentionally split out of the DB
-  migration so the seed change stays clean:
-  1. The legend must render the glyph for every event type, including Commercial /
-     Distribution (hexagon), Financial, Leadership, Strategic.
-  2. `marker-visual.ts` currently returns `null` for all `primary` projections. Emit `p`
-     for `primary` on non-trial anchors (asset/company) while trial `primary` stays
-     badge-less (the CT.gov registry default). This makes the `primary` tier visible on the
-     asset/company events the remodel now produces.
-  Owner: frontend.
+- **Frontend: legend glyphs + `p` badge (the explicit follow-up). DONE (live on dev).**
+  1. Legend glyph for every event type (Commercial / Distribution hexagon, Financial,
+     Leadership, Strategic): shipped earlier by Stage 3 (`cafc74f5`), with a
+     glyph-shape-coverage guard spec.
+  2. `p` badge: `resolveMarkerVisual` now emits `p` for a `primary` projection on
+     asset/company anchors, while trial `primary` stays badge-less (the CT.gov registry
+     default). `_dashboard_anchor_events` surfaces `anchor_type` on each grid event
+     (migration `20260629100000`) so the main-timeline resolver can tell the lanes apart;
+     the `Marker` model carries `anchor_type`. SVG glyph renders the letter generically;
+     PPTX never drew badge letters, so it was unaffected. (commits `8977d30d`, `33cd2dfa`.)
 - **Corporate band density (product call).** `_seed_demo_events` keeps ~5 corporate events
   at `significance='high'` with `visibility=null`; high-sig events surface on the band
   regardless of pin state, so the band is denser than spec section 5's "pin the high-impact
