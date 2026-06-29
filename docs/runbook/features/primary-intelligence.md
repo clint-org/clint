@@ -173,7 +173,7 @@ Stout's primary analytical work product, attached to entities in an engagement. 
   role: viewer
   status: active
 - id: primary-intelligence-browse
-  summary: Unified Intelligence feed at /intelligence -- published briefs plus events interleaved by recency (not significance-gated; auto-derived CT.gov markers excluded by provenance), with a Kind toggle (All/Intelligence/Events, default Intelligence), event-category chips, since-date, and free-text search. Dense two-line rows. An event row opens the event detail panel in place. The Drafts view stays briefs-only.
+  summary: Unified Intelligence feed at /intelligence -- published briefs plus events interleaved by recency (not significance-gated; structural trial-lifecycle markers in the system Clinical category, Trial Start/End/Primary Completion, excluded as phase-bar scaffolding), with a Kind toggle (All/Intelligence/Events, default Intelligence), event-category chips (Clinical chip dropped), since-date, and free-text search. Dense two-line rows. An event row opens the event detail panel in place. The Drafts view stays briefs-only.
   routes:
     - /t/:tenantId/s/:spaceId/intelligence
   rpcs:

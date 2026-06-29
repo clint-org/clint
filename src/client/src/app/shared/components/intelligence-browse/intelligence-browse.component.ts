@@ -53,6 +53,10 @@ const KIND_OPTIONS: { label: string; value: KindFilter }[] = [
   { label: 'Events', value: 'event' },
 ];
 
+// System "Clinical" category (Trial Start / Trial End / Primary Completion). The feed
+// RPC excludes these structural trial-lifecycle markers, so the chip is dropped too.
+const STRUCTURAL_CLINICAL_CATEGORY_ID = 'd0000000-0000-0000-0000-000000000001';
+
 const PAGE_SIZE = 25;
 // list_draft_intelligence_for_space takes a limit but no offset, so the
 // drafts view fetches a single generous page and filters client-side.
@@ -478,7 +482,10 @@ export class IntelligenceBrowseComponent implements OnInit {
   }
 
   private async loadCategories(spaceId: string): Promise<void> {
-    this.categoryOptions.set(await this.markerCategory.list(spaceId));
+    // Drop the structural Clinical category: the feed excludes those trial-lifecycle
+    // markers, so its chip would be a dead filter.
+    const cats = await this.markerCategory.list(spaceId);
+    this.categoryOptions.set(cats.filter((c) => c.id !== STRUCTURAL_CLINICAL_CATEGORY_ID));
   }
 
   private async load(): Promise<void> {

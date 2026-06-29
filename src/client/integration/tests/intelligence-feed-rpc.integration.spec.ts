@@ -14,9 +14,10 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { adminClient, buildPersonas, Personas } from '../fixtures/personas';
 import { as, expectOk } from '../harness/as';
 
-const ET_TOPLINE = 'a0000000-0000-0000-0000-000000000013'; // Clinical-family, high
-const ET_LEADERSHIP = 'a0000000-0000-0000-0000-000000000050'; // Leadership, low
-const ET_LOE = 'a0000000-0000-0000-0000-000000000020'; // LOE, high
+const ET_TOPLINE = 'a0000000-0000-0000-0000-000000000013'; // Topline Data -> Data category, high
+const ET_LEADERSHIP = 'a0000000-0000-0000-0000-000000000050'; // Leadership Change -> Corporate, low
+const ET_LOE = 'a0000000-0000-0000-0000-000000000020'; // LOE Date -> Loss of Exclusivity, high
+const ET_TRIAL_START = 'a0000000-0000-0000-0000-000000000011'; // Trial Start -> structural Clinical
 
 interface FeedRow {
   kind: 'brief' | 'event';
@@ -111,20 +112,20 @@ beforeAll(async () => {
     );
   }
 
-  // An auto-derived CT.gov structural marker (metadata.source='ctgov'), created
-  // most-recently so it WOULD top the feed if not excluded. The feed must drop it.
+  // A structural trial-lifecycle marker (Trial Start = system Clinical category),
+  // created most-recently so it WOULD top the feed if not excluded. The feed drops
+  // the whole Clinical category (phase-bar scaffolding), regardless of provenance.
   expectOk(
     await admin
       .from('events')
       .insert({
         space_id: spaceId,
-        event_type_id: ET_TOPLINE,
-        title: 'CTgov auto marker',
+        event_type_id: ET_TRIAL_START,
+        title: 'Trial lifecycle marker',
         event_date: '2026-05-01',
         anchor_type: 'company',
         anchor_id: companyId,
         projection: 'actual',
-        metadata: { source: 'ctgov' },
         created_by: p.ids.space_owner,
         created_at: '2026-03-20T09:00:00Z',
       })
@@ -161,13 +162,14 @@ describe('list_intelligence_feed', () => {
     expect(r.rows.map((x) => x.kind)).toEqual(['event', 'brief', 'event', 'event']);
   });
 
-  it('excludes auto-derived CT.gov events (metadata.source=ctgov), even though newest', async () => {
+  it('excludes structural Clinical trial-lifecycle markers, even though newest', async () => {
     const r = await feed({});
-    expect(r.rows.map((x) => x.title)).not.toContain('CTgov auto marker');
-    // brief + 3 analyst events; the ctgov marker is dropped despite being newest.
+    expect(r.rows.map((x) => x.title)).not.toContain('Trial lifecycle marker');
+    // brief + 3 curated events (Data/Corporate/LOE); the Clinical marker is dropped
+    // despite being the newest row.
     expect(r.total).toBe(4);
     const onlyEvents = await feed({ p_kinds: ['event'] });
-    expect(onlyEvents.rows.map((x) => x.title)).not.toContain('CTgov auto marker');
+    expect(onlyEvents.rows.map((x) => x.title)).not.toContain('Trial lifecycle marker');
     expect(onlyEvents.total).toBe(3);
   });
 

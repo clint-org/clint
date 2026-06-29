@@ -76,15 +76,18 @@ event both appear. Gating is a timeline concept (`effectiveVisibility`), not a f
 This is the defining difference from the timeline and is asserted directly in the
 integration tests.
 
-## Curated stream: exclude auto-derived CT.gov markers
+## Curated stream: exclude structural trial-lifecycle markers
 
-The one exception to "every event" is provenance, not significance. CT.gov sync emits
-structural clinical date markers (Trial Start / Primary Completion / Trial End,
-`metadata.source = 'ctgov'`) that drive the phase bars and number in the hundreds per
-space. They are not analyst-curated intelligence and would flood the feed. The event leg
-excludes them by provenance (`coalesce(metadata->>'source','') <> 'ctgov'`), keeping
-analyst-authored events (`source = 'analyst'` or null). The CT.gov markers still live on
-the **Timeline** (phase derivation) and the **Activity** log (detected changes).
+The one exception to "every event" is the structural trial-lifecycle markers, not
+significance. Trial Start / Trial End / Primary Completion (the system **Clinical**
+category, id `d0000000-0000-0000-0000-000000000001`) drive the phase bars and number in
+the hundreds per space; they are scaffolding, not curated intelligence, and would flood
+the feed. The event leg excludes that whole category (`et.category_id <> <clinical>`), and
+the page drops the now-empty "Clinical" chip. Real readouts are the **Data** category
+(Topline Data) and stay; Approval / Regulatory / Commercial / LOE / Corporate stay. The
+structural markers still live on the **Timeline** (phase derivation) and the **Activity**
+log. (Provenance, `metadata.source`, is the wrong axis here: the seed marks structural
+markers `source = 'analyst'`, so only a handful are `ctgov`.)
 
 ## Default Kind = Intelligence
 
