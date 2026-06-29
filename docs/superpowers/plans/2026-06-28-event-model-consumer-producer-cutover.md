@@ -709,3 +709,75 @@ Full Phase C/S run set: 8 spec files / 128 tests green.
   the sources model) folds into E2's runbook regen; E1 `features:check` mapping of the new
   RPCs (`event_registry_url`, `create_event(p_sources)`, `update_event_sources`) + the
   `event_sources` table.
+
+---
+
+## Phase D backtest results
+
+Run 2026-06-28 against a clean `supabase db reset` (worktree), service-role
+integration in isolation. Phase D (cleanup + admin) executed subagent-driven.
+Repoints the destructive/admin paths so deletes leave no orphaned events; the
+plan-missed `_cleanup_polymorphic_refs` entity-delete task was folded in. The
+`redact_user` plan note ("nulls authorship") was corrected to the live design:
+authorship is deliberately PRESERVED (created_by stays; the `user_redactions`
+marker drives the "(redacted user)" label) -- confirmed by the existing
+`rpc-redaction.spec.ts` assertion. No code caller exists; it is a platform-admin
+Tier-1 RPC exercised only by integration specs.
+
+### Tasks (all committed + reviewed Approved)
+
+| Task | Commit | What |
+|---|---|---|
+| setup | `f6e63e42` | rename event prereq + QA-fixture migrations off a develop materials version collision (mine undeployed; develop's already on dev) |
+| D-trig | `3b904ecf` | `_cleanup_polymorphic_refs` deletes anchored events on trial/asset/company delete (single `where anchor_type=v_type and anchor_id=old.id`; no 'product' alias for events) + 3 entity-delete tests |
+| D1 | `6db7994f` | `permanently_delete_space` drops marker delete/counts/jsonb-keys/ctgov-bracket (keeps events count + all audit); `redact_user` stale comment markers->events only; tests repointed (cascade-safety + redaction markers->events) |
+| D2 | `f79bc560`, `6eebd08e` | consolidated Phase D backtest spec + audit-emission markers->events drift fix + strengthened entity-delete sources proof |
+
+### Destructive paths -- no orphans + audit recorded (integration layer)
+
+| Path | Status | Proving evidence |
+|---|---|---|
+| Space delete (`permanently_delete_space`) | PASS | `event-admin-cleanup-backtest.spec.ts` Test 1: `seed_events_model_qa` populates events/event_changes/event_sources/primary_intelligence_links (+ a manual trial_change_events row), all asserted > 0 pre-delete; after delete ALL five reach 0 for the space; an `audit_events` row `action='space.deleted' resource_id=space source='rpc'` is recorded. Also `rpc-cascade-safety.spec.ts` ("leaves no orphaned events or event_sources") + `audit-emission.spec.ts` (space.deleted metadata shape). |
+| Entity delete (trial/asset/company) | PASS | `event-admin-cleanup-backtest.spec.ts` Test 2: deleting the asset that anchors the fixture's 2-source Distribution event removes that event AND its 2 event_sources (asserted exactly 2 pre-delete, 0 post), sibling company-anchored events survive. Plus `rpc-cascade-safety.spec.ts` 3 dedicated trial/asset/company delete tests. |
+| User redaction (`redact_user`) | PASS | `event-admin-cleanup-backtest.spec.ts` Test 3: a scratch-user-authored event's `created_by` STILL equals the scratch user after `redact_user` (authorship preserved by design, not nulled); an `audit_events` row `action='compliance.user_pii_redacted' resource_id=user` is recorded. Plus `rpc-redaction.spec.ts` (markers->events repoint, preserve-authorship) + `audit-emission.spec.ts`. |
+
+Full Phase D run set: `rpc-cascade-safety.spec.ts` + `rpc-redaction.spec.ts` +
+`audit-emission.spec.ts` + `event-admin-cleanup-backtest.spec.ts` = **80/80 green**.
+
+### Key finding (TDD, corrected the plan premise)
+
+The plan assumed space deletion could rely purely on the `events.space_id`
+ON DELETE CASCADE. It cannot: the `_log_event_change` BEFORE DELETE trigger
+inserts an `event_changes(space_id, ...)` row during the cascade, AFTER
+PostgreSQL has already removed the parent `spaces` row -> FK violation 23503
+(empirically confirmed). `permanently_delete_space` therefore keeps an explicit
+`delete from public.events where space_id = p_space_id` BEFORE the spaces delete
+(space still present -> trigger insert OK -> event_changes then cascades away on
+the spaces delete) -- the same trigger-ordering reason the old code deleted
+markers first. event_sources cascades from events. The entity-delete trigger is
+unaffected (the space row persists on an entity delete).
+
+### Gates
+
+`supabase db reset` clean (worktree); `supabase db advisors --local --type all`
+"No issues found"; `npm run grants:check` PASS (no schema change). Both Tier-1
+audited RPCs retain `record_audit_event()` + the `-- @audit:tier1` marker
+(audit-coverage smoke migration passes on reset).
+
+### Audit firewall preserved
+
+`permanently_delete_space` (`space.deleted`) and `redact_user`
+(`compliance.user_pii_redacted`) both keep their audit emission + `@audit:tier1`
+markers verbatim; the count breakdown jsonb swapped the dropped `markers`/
+`marker_types` keys for the existing `events` key (no audit coverage lost).
+
+### Known pre-existing (NOT Phase D regressions; deferred to Phase E / Stage 3)
+
+- `event-sources-edit-flow.spec.ts` + `event-links-edit-flow.spec.ts` query the
+  dropped `event_categories` / `events.category_id` (kept out of the Phase D
+  green run set).
+- `linked-entities-picker.component.ts` still reads dropped `from('markers')`.
+- D1 in-file smoke is a weak probe (its trial-anchored event is removed by the
+  D-trig trigger before the direct `events.space_id` cascade path; and like all
+  phase smokes it skips prod-safe during `db reset` since the demo space seeds
+  after migrations). The authoritative no-orphan proof is the integration suite.
