@@ -62,35 +62,32 @@
       "evidence": "Eikon initiated a Phase 1 first-in-human study..."
     }
   ],
-  "markers": [
+  "events": [
     {
-      "marker_type": "data_readout",
+      "event_type": "Topline Data",
       "title": "ATTAIN-1 interim analysis",
       "event_date": "2026-09-15",
       "end_date": null,
       "projection": "company",
       "description": "Interim efficacy and safety readout expected H2 2026",
-      "trial_refs": [0],
+      "anchor": { "level": "trial", "ref": 0 },
       "evidence": "Management expects interim data from ATTAIN-1 in H2 2026..."
     },
     {
-      "marker_type": "regulatory_submission",
+      "event_type": "Regulatory Submission",
       "title": "Paxlovid pediatric sNDA",
       "event_date": "2026-06-30",
       "end_date": null,
       "projection": "company",
       "description": "Supplemental NDA for pediatric indication",
-      "trial_refs": [0],
+      "anchor": { "level": "trial", "ref": 0 },
       "evidence": "Pfizer plans to submit a supplemental NDA for pediatric Paxlovid..."
-    }
-  ],
-  "events": [
+    },
     {
-      "category": "earnings",
+      "event_type": "Clinical",
       "title": "Pfizer Q1 2026 Earnings Call",
       "event_date": "2026-04-28",
       "description": "Q1 2026 financial results and pipeline update",
-      "priority": "high",
       "tags": ["earnings", "pipeline"],
       "anchor": { "level": "company", "ref": 0 },
       "evidence": "Pfizer will host its Q1 2026 earnings call..."

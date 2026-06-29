@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validateExtraction } from './response-validator';
+import { ExtractionResultSchema } from './types';
 import type { InventorySnapshot } from './types';
 
 // ---------------------------------------------------------------------------
@@ -13,7 +14,6 @@ const COMPANY_ID = '00000000-0000-4000-8000-000000000001';
 const ASSET_ID = '00000000-0000-4000-8000-000000000002';
 const TRIAL_ID = '00000000-0000-4000-8000-000000000003';
 const TRIAL_ID_B = '00000000-0000-4000-8000-000000000004';
-const MARKER_ID = '00000000-0000-4000-8000-000000000005';
 const EVENT_ID = '00000000-0000-4000-8000-000000000006';
 const MISSING_ID = '00000000-0000-4000-8000-000000000099'; // never in any inventory
 
@@ -23,8 +23,8 @@ function baseInventory(overrides: Partial<InventorySnapshot> = {}): InventorySna
     assets: [{ id: ASSET_ID, name: 'Test Asset', company_id: COMPANY_ID }],
     trials: [{ id: TRIAL_ID, name: 'Test Trial', asset_id: ASSET_ID }],
     indications: [],
-    marker_types: [{ id: '60000000-0000-0000-0000-000000000001', name: 'Topline Data' }],
-    event_categories: [{ id: '70000000-0000-0000-0000-000000000001', name: 'Clinical' }],
+    event_types: [{ id: '60000000-0000-0000-0000-000000000001', name: 'Topline Data' }],
+    event_type_categories: [{ id: '70000000-0000-0000-0000-000000000001', name: 'Clinical' }],
     mechanisms_of_action: [],
     routes_of_administration: [],
     hash: 'test-hash',
@@ -35,12 +35,10 @@ function baseInventory(overrides: Partial<InventorySnapshot> = {}): InventorySna
 /**
  * Minimal valid raw JSON with one company (existing), one asset (existing),
  * and one or more trials. Supply extra.trials to override the default
- * single existing trial. Supply extra.markers / extra.events to populate
- * those arrays.
+ * single existing trial. Supply extra.events to populate the events array.
  */
 function makeRaw(extra: {
   trials?: unknown[];
-  markers?: unknown[];
   events?: unknown[];
 } = {}): string {
   return JSON.stringify({
@@ -63,20 +61,8 @@ function makeRaw(extra: {
         evidence: 'ev',
       },
     ],
-    markers: extra.markers ?? [],
     events: extra.events ?? [],
   });
-}
-
-function existingMarker(id: string, trialRef = 0): unknown {
-  return {
-    match: { kind: 'existing', id },
-    marker_type: 'Topline Data',
-    title: 'Readout',
-    event_date: '2024-06-01',
-    trial_refs: [trialRef],
-    evidence: 'ev',
-  };
 }
 
 function existingEvent(
@@ -86,159 +72,13 @@ function existingEvent(
 ): unknown {
   return {
     match: { kind: 'existing', id },
-    category: 'Clinical',
+    event_type: 'Topline Data',
     title: 'Phase 3 data readout',
     event_date: '2024-06-01',
     anchor: { level: anchorLevel, ref: anchorRef },
     evidence: 'ev',
   };
 }
-
-// ---------------------------------------------------------------------------
-// Marker match validation
-// ---------------------------------------------------------------------------
-
-describe('validateExtraction: marker match validation', () => {
-  it('demotes marker match when existing id is not in inventory', () => {
-    const raw = makeRaw({ markers: [existingMarker(MISSING_ID)] });
-    const inv = baseInventory({
-      markers: [
-        {
-          id: MARKER_ID,
-          trial_id: TRIAL_ID,
-          marker_type: 'Topline Data',
-          title: 'Readout',
-          event_date: '2024-06-01',
-        },
-      ],
-    });
-
-    const out = validateExtraction(raw, inv, 'source text', SKIP);
-    expect(out.ok).toBe(true);
-    if (!out.ok) return;
-    expect(out.result.markers[0].match).toEqual({ kind: 'new' });
-    expect(out.warnings.some((w) => w.includes(MISSING_ID))).toBe(true);
-  });
-
-  it('preserves a valid marker match', () => {
-    const raw = makeRaw({ markers: [existingMarker(MARKER_ID)] });
-    const inv = baseInventory({
-      markers: [
-        {
-          id: MARKER_ID,
-          trial_id: TRIAL_ID,
-          marker_type: 'Topline Data',
-          title: 'Readout',
-          event_date: '2024-06-01',
-        },
-      ],
-    });
-
-    const out = validateExtraction(raw, inv, 'source text', SKIP);
-    expect(out.ok).toBe(true);
-    if (!out.ok) return;
-    expect(out.result.markers[0].match).toEqual({ kind: 'existing', id: MARKER_ID });
-  });
-
-  it('demotes marker match when inventory record belongs to a different trial', () => {
-    // Proposal places the marker on trials[1] (TRIAL_ID_B),
-    // but the inventory record says the marker belongs to TRIAL_ID.
-    const raw = makeRaw({
-      trials: [
-        {
-          match: { kind: 'existing', id: TRIAL_ID },
-          name: 'Trial A',
-          sponsor_ref: 0,
-          asset_refs: [0],
-          evidence: 'ev',
-        },
-        {
-          match: { kind: 'existing', id: TRIAL_ID_B },
-          name: 'Trial B',
-          sponsor_ref: 0,
-          asset_refs: [0],
-          evidence: 'ev',
-        },
-      ],
-      markers: [existingMarker(MARKER_ID, 1 /* trial_refs[0] = index 1 = TRIAL_ID_B */)],
-    });
-    const inv = baseInventory({
-      trials: [
-        { id: TRIAL_ID, name: 'Trial A', asset_id: ASSET_ID },
-        { id: TRIAL_ID_B, name: 'Trial B', asset_id: ASSET_ID },
-      ],
-      markers: [
-        {
-          id: MARKER_ID,
-          trial_id: TRIAL_ID, // belongs to TRIAL_ID, NOT TRIAL_ID_B
-          marker_type: 'Topline Data',
-          title: 'Readout',
-          event_date: '2024-06-01',
-        },
-      ],
-    });
-
-    const out = validateExtraction(raw, inv, 'source text', SKIP);
-    expect(out.ok).toBe(true);
-    if (!out.ok) return;
-    expect(out.result.markers[0].match).toEqual({ kind: 'new' });
-  });
-
-  it('demotes marker match when the resolved trial is new', () => {
-    // A new trial cannot have existing markers.
-    const raw = makeRaw({
-      trials: [
-        {
-          match: { kind: 'new', name: 'Brand New Trial' },
-          name: 'Brand New Trial',
-          sponsor_ref: 0,
-          asset_refs: [0],
-          evidence: 'ev',
-        },
-      ],
-      markers: [existingMarker(MARKER_ID)],
-    });
-    const inv = baseInventory({
-      markers: [
-        {
-          id: MARKER_ID,
-          trial_id: TRIAL_ID,
-          marker_type: 'Topline Data',
-          title: 'Readout',
-          event_date: '2024-06-01',
-        },
-      ],
-    });
-
-    const out = validateExtraction(raw, inv, 'source text', SKIP);
-    expect(out.ok).toBe(true);
-    if (!out.ok) return;
-    expect(out.result.markers[0].match).toEqual({ kind: 'new' });
-  });
-
-  it('keeps first claim and demotes duplicate claim of same existing id', () => {
-    const raw = makeRaw({
-      markers: [existingMarker(MARKER_ID), existingMarker(MARKER_ID)],
-    });
-    const inv = baseInventory({
-      markers: [
-        {
-          id: MARKER_ID,
-          trial_id: TRIAL_ID,
-          marker_type: 'Topline Data',
-          title: 'Readout',
-          event_date: '2024-06-01',
-        },
-      ],
-    });
-
-    const out = validateExtraction(raw, inv, 'source text', SKIP);
-    expect(out.ok).toBe(true);
-    if (!out.ok) return;
-    expect(out.result.markers[0].match).toEqual({ kind: 'existing', id: MARKER_ID });
-    expect(out.result.markers[1].match).toEqual({ kind: 'new' });
-  });
-});
 
 // ---------------------------------------------------------------------------
 // Event match validation
@@ -362,5 +202,55 @@ describe('validateExtraction: event match validation', () => {
     if (!out.ok) return;
     expect(out.result.events[0].match).toEqual({ kind: 'existing', id: EVENT_ID });
     expect(out.result.events[1].match).toEqual({ kind: 'new' });
+  });
+
+  it('demotes an event existing-match whose id is absent from inventory', () => {
+    const res = validateExtraction(
+      JSON.stringify({
+        source_summary: 's',
+        companies: [], assets: [], trials: [],
+        events: [{
+          match: { kind: 'existing', id: '00000000-0000-4000-8000-0000000000ff' },
+          event_type: 'Regulatory Filing', title: 'BLA', event_date: '2026-08-01',
+          anchor: { level: 'space', ref: null }, evidence: 'e',
+        }],
+      }),
+      { companies: [], assets: [], trials: [], indications: [],
+        event_types: [], event_type_categories: [],
+        mechanisms_of_action: [], routes_of_administration: [],
+        events: [], hash: 'h' },
+      'BLA filing accepted',
+      { skipNameGrounding: true },
+    );
+    expect(res.ok).toBe(true);
+    if (res.ok) expect((res.result.events[0].match as { kind: string }).kind).toBe('new');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Unified EventSchema
+// ---------------------------------------------------------------------------
+
+describe('unified EventSchema', () => {
+  it('parses an event carrying event_type + significance + anchor', () => {
+    const parsed = ExtractionResultSchema.parse({
+      source_summary: 's',
+      events: [
+        {
+          match: { kind: 'new' },
+          event_type: 'Topline Data',
+          title: 'Phase 3 readout',
+          event_date: '2026-07-01',
+          significance: 'high',
+          anchor: { level: 'trial', ref: 0 },
+          evidence: 'q',
+        },
+      ],
+    });
+    expect(parsed.events[0].event_type).toBe('Topline Data');
+    expect(parsed.events[0].significance).toBe('high');
+    expect(parsed.events[0].projection).toBe('company'); // default
+    expect(parsed.events[0].tags).toEqual([]); // default
+    expect('markers' in parsed).toBe(false);
   });
 });
