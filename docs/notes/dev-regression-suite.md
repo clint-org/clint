@@ -96,10 +96,10 @@ authored from a verified TP but pending a verification pass or harness extension
 | Taxonomies (Indication/MOA/ROA) admin | `/settings/taxonomies` | `taxonomies.spec.ts` | verified |
 | Event types / categories admin | `/settings/taxonomies` | `taxonomies.spec.ts` | partial |
 | Space settings: members/roles | `/settings/members` | `role-firewall.spec.ts` | verified |
-| Tenant branding / access / custom domains | `/t/:t/settings`, super-admin | `admin-portals.spec.ts` | scaffold |
-| Agency portal | `/admin/*` | `admin-portals.spec.ts` | scaffold |
-| Super-admin console | `/super-admin/*` | `admin-portals.spec.ts` | scaffold |
-| Audit log (space/tenant/agency) | `/settings/audit-log` etc. | `admin-portals.spec.ts` | scaffold |
+| Tenant branding / access / custom domains | `/t/:t/settings`, super-admin | `admin-portals.spec.ts` | partial |
+| Agency portal | `/admin/*` | `admin-portals.spec.ts` | verified |
+| Super-admin console | `/super-admin/*` | `admin-portals.spec.ts` | verified |
+| Audit log (space/tenant/agency) | `/settings/audit-log` etc. | `admin-portals.spec.ts` | verified |
 | Export PNG (blob) | `/timeline` Export | `export.spec.ts` | verified |
 | Export PPTX / XLSX | `/timeline` Export | `export.spec.ts` (same path) | partial |
 | Command palette (Cmd+K) | any space route | `navigation.spec.ts` | verified |
@@ -138,13 +138,13 @@ serially headed through the main loop.
 | Browser threat model | `security-threat-model.spec.ts` | `@security` | cross-space IDOR (two worlds), tampered/expired `sb-auth-dev` cookie fails closed, viewer deep-links to gated routes. |
 | Intelligence briefs + citations + filters | `intelligence-briefs.spec.ts` | `@intelligence` | author via `upsert_primary_intelligence`, published/drafts, citation resolves to anchored trial (matrix row 6), ENTITY/SINCE filters. |
 | Entity CRUD + merged event-form edit-matrix | `entity-crud-events.spec.ts` | `@crud @event` | asset create+rename; trial create+rename+CT.gov phase-lock; event rename + re-anchor via the merged dialog (both through `update_event` -- the UI guard for the p_source_url fix). |
+| Agency portal + super-admin console + audit | `admin-portals.spec.ts` | `@admin` | 6 tests, 3 real hosts (agency `pwreg-ag-<id>`, super-admin `admin.dev.clintapp.com`, role deny). Surfaces render, guards deny non-admins. QA-009 (space audit ACTOR "--") is a `test.fail()` expected-failure -- flips red when the bug is fixed. |
 
 **Scaffold (`test.fixme`, authored + harness-ready, pending a verification pass)**
 | Surface | Spec | Blocked on |
 | --- | --- | --- |
-| AI import (NCT + dedup + text/URL) | `ai-import.spec.ts` | live Anthropic + ct.gov verification pass (`enableAi` harness ready). |
-| AI cost / token accounting | `ai-usage.spec.ts` | live AI + super-admin host (`admin.dev.clintapp.com`, kind confirmed). |
-| Agency / super-admin / audit | `admin-portals.spec.ts` | 3-host headed Cloudflare verification pass; QA-009 actor-email soft assertions expected red. |
+| AI import (NCT + dedup + text/URL) | `ai-import.spec.ts` | live Anthropic + ct.gov verification pass (`enableAi` harness ready) -- spends real Anthropic $ per run. |
+| AI cost / token accounting | `ai-usage.spec.ts` | live AI + super-admin host (`admin.dev.clintapp.com`, kind confirmed) -- spends real Anthropic $ per run. |
 
 New harness: `helpers/ai-config.ts` (`enableAi`), `helpers/admin-context.ts`
 (`agencyPageAs`/`superAdminPageAs` via real host brand resolution -- the `?wl_kind`
