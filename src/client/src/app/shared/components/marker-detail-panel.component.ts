@@ -96,6 +96,7 @@ import { MarkerIconComponent } from './svg-icons/marker-icon.component';
           [spaceId]="spaceId()"
           [surfaceKey]="surfaceKey()"
           [references]="references()"
+          [entityIntelligence]="entityIntelligence()"
           (markerClick)="markerClick.emit($event)"
           (eventClick)="eventClick.emit($event)"
           (trialClick)="trialClick.emit($event)"
@@ -122,6 +123,8 @@ export class MarkerDetailPanelComponent {
   readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
   /** Incoming PI references for the selected marker; see MarkerDetailContentComponent. */
   readonly references = input<PiReference[]>([]);
+  /** Owned trial/asset intelligence for this marker; see MarkerDetailContentComponent. */
+  readonly entityIntelligence = input<PiReference[]>([]);
   /** Forwarded to the content body; see MarkerDetailContentComponent. */
   readonly showEditAction = input<boolean>(false);
   readonly panelClose = output<void>();

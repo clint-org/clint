@@ -63,6 +63,7 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
               [showEditAction]="true"
               [open]="!!state.selectedMarkerId()"
               [references]="state.selectedMarkerReferences()"
+              [entityIntelligence]="state.selectedEntityIntelligence()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"
               (trialClick)="onTrialClick($event)"

@@ -83,7 +83,7 @@
     @if (label.hasIntelligence) {
       <g
         role="img"
-        aria-label="Company has primary intelligence"
+        aria-label="Company has intelligence"
         class="pi-badge"
         [attr.transform]="'rotate(' + label.rotate + ' ' + label.x + ' ' + label.y + ') translate(' + label.x + ' ' + (label.y - 14) + ') scale(' + bookmarkScale + ')'"
       >
@@ -176,7 +176,7 @@
       @if (dot.product.intelligence_count > 0) {
         <g
           role="img"
-          aria-label="Has primary intelligence"
+          aria-label="Has intelligence"
           class="pi-badge"
           [attr.transform]="
             'translate(' + (dot.x + 4) + ',' + (dot.y - 13) + ') scale(' + bookmarkScale + ')'

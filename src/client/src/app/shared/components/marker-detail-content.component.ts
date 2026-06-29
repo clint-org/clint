@@ -368,6 +368,18 @@ interface CtgovProvenanceBlock {
         </div>
       }
 
+      @if (entityIntelligence().length > 0) {
+        <app-detail-panel-section
+          [label]="'Intelligence (' + entityIntelligence().length + ')'"
+          [piMark]="true"
+        >
+          <app-pi-detail-section
+            [references]="entityIntelligence()"
+            (referenceClick)="onReferenceClick($event)"
+          />
+        </app-detail-panel-section>
+      }
+
       @if (references().length > 0) {
         <app-detail-panel-section label="Referenced in intelligence" [piMark]="true">
           <app-pi-detail-section
@@ -387,7 +399,7 @@ interface CtgovProvenanceBlock {
             @for (um of upcomingMarkers(); track um.marker_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(um.marker_id)">
                 <app-marker-icon
-                  class="shrink-0"
+                  class="mt-0.5 shrink-0 self-start"
                   [shape]="um.marker_type_shape"
                   [color]="um.marker_type_color"
                   [size]="12"
@@ -397,7 +409,7 @@ interface CtgovProvenanceBlock {
                   [projectionBadge]="markerBadge(um)"
                   [outlineDash]="markerOutlineDash(um)"
                 />
-                <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
+                <span class="w-[5.25rem] shrink-0 self-start font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   um.event_date | date: 'mediumDate'
                 }}</span>
                 <span class="flex min-w-0 flex-1 flex-col">
@@ -411,7 +423,7 @@ interface CtgovProvenanceBlock {
                   }
                 </span>
                 @if (um.is_projected) {
-                  <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
+                  <span class="mt-0.5 shrink-0 self-start font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
               </app-detail-panel-entity-row>
             }
@@ -425,7 +437,7 @@ interface CtgovProvenanceBlock {
             @for (rm of recentMarkers(); track rm.marker_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(rm.marker_id)">
                 <app-marker-icon
-                  class="shrink-0"
+                  class="mt-0.5 shrink-0 self-start"
                   [shape]="rm.marker_type_shape"
                   [color]="rm.marker_type_color"
                   [size]="12"
@@ -435,7 +447,7 @@ interface CtgovProvenanceBlock {
                   [projectionBadge]="markerBadge(rm)"
                   [outlineDash]="markerOutlineDash(rm)"
                 />
-                <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
+                <span class="w-[5.25rem] shrink-0 self-start font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   rm.event_date | date: 'mediumDate'
                 }}</span>
                 <span class="flex min-w-0 flex-1 flex-col">
@@ -449,7 +461,7 @@ interface CtgovProvenanceBlock {
                   }
                 </span>
                 @if (rm.is_projected) {
-                  <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
+                  <span class="mt-0.5 shrink-0 self-start font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
               </app-detail-panel-entity-row>
             }
@@ -547,6 +559,12 @@ export class MarkerDetailContentComponent {
    * never own PI, so this pane only ever shows references, never an owned block.
    */
   readonly references = input<PiReference[]>([]);
+  /**
+   * Owned intelligence for this marker's parent trial and asset. Surfaced as an
+   * "Intelligence" section so the timeline pane matches the bullseye/heatmap
+   * panels, which show the selected entity's briefs.
+   */
+  readonly entityIntelligence = input<PiReference[]>([]);
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
   readonly trialClick = output<string>();
