@@ -8,7 +8,7 @@
 
 **Tech Stack:** PostgreSQL (Supabase migrations, plpgsql SECURITY DEFINER functions), Vitest + supabase-js integration tests, Angular 19 timeline client (verification only).
 
-## Audit findings (already done before this plan — do not redo)
+## Audit findings (already done before this plan, do not redo)
 
 - **Owner gating + idempotency: DONE.** The live `seed_demo_data(p_space_id)` raises `28000` if unauthenticated, raises `42501` ("Insufficient permissions: must be space owner") unless the caller is a `space_members` owner of `p_space_id` or `is_platform_admin()`, and no-ops if the space already has companies. `role-access.spec.ts` already asserts the full matrix: reader/contributor/tenant_owner/agency rejected `42501`; space_owner ok; second call idempotent ok; platform_admin ok.
 - **Model fit: DONE.** Every `_seed_demo_*` helper writes to `public.events` / `public.event_sources` / `public.trial_change_events` (the activity surface) plus the entity tables (`companies`/`assets`/`trials`/`indications`/`asset_indications`/`materials`/`primary_intelligence`/`trial_notes`). A scan of all live helper bodies found `marker` / `marker_type` / `phase_*_date` / `catalyst` only inside comments and inert jsonb passthrough payloads, never as table writes. `events.source_url` (dropped in `20260628320000`) is not referenced by any helper.
@@ -16,7 +16,7 @@
 
 ## Key design decision: inline DEFINER inserts, NOT create_event
 
-The new feature-coverage events are seeded with **inline `insert into public.events` statements inside the SECURITY DEFINER helper**, exactly like the existing C5 helpers — they are **not** routed through `create_event`.
+The new feature-coverage events are seeded with **inline `insert into public.events` statements inside the SECURITY DEFINER helper**, exactly like the existing C5 helpers, they are **not** routed through `create_event`.
 
 Reason (verified, not optional): `create_event` gates on `has_space_access(p_space_id, array['owner','editor'])`, and `has_space_access` grants a platform admin only a **read-only** bypass (`if not v_is_write and is_platform_admin()`). The `role-access.spec.ts` case "rpc seed_demo_data: ok (platform admin disjunct)" requires `seed_demo_data` to succeed for a platform admin who is **not** an owner/editor and has no `space_members` row. Routing through `create_event` would raise `42501` for that caller and break the test. The SECURITY DEFINER inline insert bypasses RLS and works for every authorized caller. This is the same rationale the C5 migration documents. (The guardrail "only call create_event, do not redefine it" is honored: we do not redefine `create_event`; we simply do not call it, consistent with the existing producer chain.)
 
@@ -58,8 +58,8 @@ Develop's highest migration is `20260629030000`. Stage 3 holds unmerged `2026062
 
 ## File Structure
 
-- **Create** `supabase/migrations/20260629060000_seed_demo_feature_coverage.sql` — `create or replace function public._seed_demo_events(...)` based on the **live** definition, with one re-anchor edit and one new appended block; ends with an in-file smoke and `notify pgrst, 'reload schema'`.
-- **Create** `src/client/integration/tests/seed-demo-feature-coverage.spec.ts` — proves a fresh non-admin owner's space seeds the full feature-coverage landscape and that re-seeding is a no-op.
+- **Create** `supabase/migrations/20260629060000_seed_demo_feature_coverage.sql`, `create or replace function public._seed_demo_events(...)` based on the **live** definition, with one re-anchor edit and one new appended block; ends with an in-file smoke and `notify pgrst, 'reload schema'`.
+- **Create** `src/client/integration/tests/seed-demo-feature-coverage.spec.ts`, proves a fresh non-admin owner's space seeds the full feature-coverage landscape and that re-seeding is a no-op.
 - **No change** to `seed_demo_data` orchestrator (already gated + idempotent), the other `_seed_demo_*` helpers (already on-model), `dashboard.service.ts`, or `seed-demo.component.ts`.
 - **Regen (committed)** `docs/runbook/*` auto-gen blocks via `npm run docs:arch` (migrations changed).
 
