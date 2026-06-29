@@ -227,4 +227,14 @@ describe('seed_demo_data remodel invariants (fresh owner space)', () => {
     expect(co.some((e) => e.visibility === null && e.significance !== 'high'),
       'a feed-only company event').toBe(true);
   });
+
+  it('no trial carries more than one Trial Start event', async () => {
+    const countByTrial = new Map<string, number>();
+    for (const e of await rows()) {
+      if (e.anchor_type !== 'trial' || e.event_type_id !== T_TRIAL_START) continue;
+      countByTrial.set(e.anchor_id as string, (countByTrial.get(e.anchor_id as string) ?? 0) + 1);
+    }
+    const dupes = [...countByTrial.entries()].filter(([, n]) => n > 1);
+    expect(dupes, JSON.stringify(dupes)).toHaveLength(0);
+  });
 });

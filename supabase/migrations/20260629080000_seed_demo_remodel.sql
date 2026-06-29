@@ -235,15 +235,9 @@ begin
     (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'ACACIA-HCM primary completion projected',    'primary', r + 10, 'exact', 'trial', t_acacia_hcm, jsonb_build_object('source','analyst')),
     (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000008', 'CT-388 P2 primary completion',      'actual',  '2025-12-08', 'exact', 'trial', t_ct388_p2, jsonb_build_object('source','analyst'));
 
-  -- =========================================================================
-  -- TRIAL STARTS. a0..011. Clinical -> trial.
-  -- =========================================================================
-  insert into public.events (id, space_id, created_by, event_type_id, title, projection, event_date, date_precision, anchor_type, anchor_id, metadata) values
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'SURMOUNT-MMO study initiated',  'actual', '2022-10-11', 'exact', 'trial', t_surmount_mmo, jsonb_build_object('source','analyst')),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'TRIUMPH-1 study initiated',     'actual', '2023-07-10', 'exact', 'trial', t_triumph_1, jsonb_build_object('source','analyst')),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'ATTAIN-1 first patient in',     'actual', '2023-06-05', 'exact', 'trial', t_attain_1, jsonb_build_object('source','analyst')),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'CT-388 P2 study initiated',     'actual', '2024-08-16', 'exact', 'trial', t_ct388_p2, jsonb_build_object('source','analyst')),
-    (gen_random_uuid(), p_space_id, p_uid, 'a0000000-0000-0000-0000-000000000011', 'VK2735 oral P2 study initiated','actual', '2024-12-18', 'exact', 'trial', t_vk2735_oral_p2, jsonb_build_object('source','analyst'));
+  -- Trial Start (a0..011) events are emitted per-trial by _create_trial_date_markers
+  -- (structural phase-bar markers). No additional descriptive trial-start inserts here;
+  -- duplicates would produce a double marker on those lanes.
 
   -- =========================================================================
   -- LOSS OF EXCLUSIVITY. a0..020. Regulatory/commercial -> asset.
@@ -403,11 +397,10 @@ begin
   end if;
 
   -- REDEFINE-2 trial-anchored business events (Novo CagriSema). Clinical -> trial.
+  -- Trial Start for REDEFINE-2 is emitted by _create_trial_date_markers; no descriptive
+  -- trial-start insert here to avoid a double marker on the lane.
   if t_redefine_2 is not null then
     insert into public.events (id, space_id, created_by, event_type_id, title, projection, event_date, date_precision, description, significance, anchor_type, anchor_id, metadata) values
-      (gen_random_uuid(), p_space_id, p_uid, et_trial_start, 'REDEFINE-2 first participant dosed',
-        'actual', '2023-03-20', 'exact', 'Novo Nordisk doses the first participant in REDEFINE-2, the Phase 3 trial of CagriSema in adults with overweight or obesity and type 2 diabetes.',
-        null, 'trial', t_redefine_2, jsonb_build_object('source','analyst')),
       (gen_random_uuid(), p_space_id, p_uid, et_pcd, 'REDEFINE-2 completes target enrollment',
         'actual', '2024-08-14', 'exact', 'REDEFINE-2 reaches its target enrollment of roughly 1,200 participants across the CagriSema obesity and type 2 diabetes program.',
         null, 'trial', t_redefine_2, jsonb_build_object('source','analyst')),
