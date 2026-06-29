@@ -83,8 +83,36 @@ export const PHASE_SHORT_LABELS: Record<string, string> = Object.fromEntries(
   PHASE_DESCRIPTORS.map((d) => [d.key, d.shortLabel])
 );
 
+// Aliases that map raw phase strings (canonical keys, descriptor labels, roman
+// numerals, and CT.gov combo/early forms) back to a canonical key, so callers
+// that receive a trial's raw phase text (e.g. "Phase 3" from get_event_detail)
+// render the same short label ("PH 3") as the timeline, bullseye, and heatmap,
+// which feed normalized keys. Keys map to themselves; unknowns fall through.
+const PHASE_KEY_ALIASES: Record<string, string> = {
+  ...Object.fromEntries(PHASE_DESCRIPTORS.map((d) => [d.key.toUpperCase(), d.key])),
+  ...Object.fromEntries(PHASE_DESCRIPTORS.map((d) => [d.label.toUpperCase(), d.key])),
+  'PHASE I': 'P1',
+  'PHASE II': 'P2',
+  'PHASE III': 'P3',
+  'PHASE IV': 'P4',
+  'EARLY PHASE 1': 'P1',
+  'PHASE 1/PHASE 2': 'P2',
+  'PHASE 2/PHASE 3': 'P3',
+  OBSERVATIONAL: 'OBS',
+};
+
+/**
+ * Normalize a raw phase value to a canonical key (PRECLIN, P1-P4, OBS). Accepts
+ * keys, descriptor labels, roman numerals, and common CT.gov forms; returns the
+ * input unchanged when it matches nothing known.
+ */
+export function normalizePhaseKey(value: string | null | undefined): string {
+  if (!value) return '';
+  return PHASE_KEY_ALIASES[value.trim().toUpperCase()] ?? value;
+}
+
 export function phaseShortLabel(key: string): string {
-  return PHASE_SHORT_LABELS[key] ?? key;
+  return PHASE_SHORT_LABELS[normalizePhaseKey(key)] ?? key;
 }
 
 const PHASE_ORDER: Record<string, number> = Object.fromEntries(
