@@ -121,6 +121,13 @@ export interface UpcomingMarker {
   marker_type_color: string;
   marker_type_shape: MarkerShape;
   marker_type_inner_mark: InnerMark;
+  /**
+   * Owning trial of a trial-anchored context row (acronym preferred, name
+   * fallback). Null for asset- and company-anchored rows, which the pane
+   * leaves unlabeled since the asset is already the pane's subject.
+   */
+  trial_acronym: string | null;
+  trial_name: string | null;
   is_projected: boolean;
   projection: string | null;
   no_longer_expected: boolean;
