@@ -56,6 +56,6 @@ describe('PiDetailSection reference list', () => {
     // Sanity-check the map the component delegates to.
     expect(ENTITY_TYPE_LABEL.trial).toBe('Trial');
     expect(ENTITY_TYPE_LABEL.product).toBe('Asset');
-    expect(ENTITY_TYPE_LABEL.marker).toBe('Marker');
+    expect(ENTITY_TYPE_LABEL.event).toBe('Event');
   });
 });
