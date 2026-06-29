@@ -190,7 +190,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `restore_space` | spaces | tenants |
 | `retire_hostname_on_change` | retired_hostnames | agencies, tenants |
 | `search_palette` | - | assets, companies, event_type_categories, event_types, events, palette_pinned, palette_recents, trials |
-| `seed_demo_data` | trials | companies, space_members |
+| `seed_demo_data` | events, trials | companies, space_members |
 | `seed_events_model_qa` | assets, companies, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_assets, trials | events, space_members |
 | `self_join_tenant` | tenant_members | tenants |
 | `set_intelligence_lead` | primary_intelligence_anchors | primary_intelligence |
