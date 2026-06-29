@@ -618,7 +618,7 @@ export class MarkerDetailContentComponent {
     };
   });
 
-  /** Derived CT.gov registry link emitted by get_catalyst_detail (or null). */
+  /** Derived CT.gov registry link emitted by get_event_detail (or null). */
   protected readonly registryUrl = computed<string | null>(
     () => this.detail()?.catalyst.registry_url ?? null
   );

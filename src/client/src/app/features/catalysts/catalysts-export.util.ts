@@ -17,7 +17,7 @@ export function catalystStatusLabel(c: FlatCatalyst): string {
  * Detail fields that need a per-row fetch are intentionally excluded:
  * recruitment status and the CT.gov field overlay (trial snapshot), upcoming
  * markers, related events, materials, and history all load per marker via
- * get_catalyst_detail; exporting them would fan out one RPC per row.
+ * get_event_detail; exporting them would fan out one RPC per row.
  */
 export const CATALYST_EXPORT_COLUMNS: ExportColumn<FlatCatalyst>[] = [
   {

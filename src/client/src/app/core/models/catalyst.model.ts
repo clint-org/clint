@@ -38,7 +38,7 @@ export interface Catalyst {
   source_url: string | null;
   /**
    * Attached citations from `event_sources` ({url, label}), emitted by the
-   * read RPCs (e.g. get_catalyst_detail). Optional: dashboard-flattened rows
+   * read RPCs (e.g. get_event_detail). Optional: dashboard-flattened rows
    * may carry only `source_url` until that RPC derives them.
    */
   sources?: { id?: string; url: string; label: string | null }[];
