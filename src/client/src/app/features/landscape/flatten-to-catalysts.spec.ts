@@ -11,6 +11,7 @@ function ev(id: string, title: string, event_date: string) {
     title,
     event_date,
     is_projected: true,
+    projection: 'company',
     marker_types: { category_id: 'c1', name: 'Regulatory Filing', color: '#f97316', shape: 'hexagon', inner_mark: 'none', marker_categories: { name: 'Regulatory' } },
   };
 }
@@ -61,5 +62,10 @@ describe('flattenToCatalysts (QA-010: all anchor levels)', () => {
 
     const tr = out.find((c) => c.marker_id === 'tr-ev')!;
     expect(tr.trial_id).toBe('tr1');
+  });
+
+  it('carries the projection tier so catalyst glyphs render the timeline badge', () => {
+    const co = flattenToCatalysts(fixture(), TODAY).find((c) => c.marker_id === 'co-ev')!;
+    expect(co.projection).toBe('company');
   });
 });

@@ -15,19 +15,14 @@ import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { Marker } from '../../../core/models/marker.model';
 import { effectiveVisibility } from '../../../core/models/marker-visibility';
-import {
-  PHASE_COLORS,
-  PHASE_FALLBACK_COLOR,
-  phaseOrder,
-  phaseShortLabel,
-} from '../../../core/models/phase-colors';
+import { phaseOrder } from '../../../core/models/phase-colors';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
 import { deriveTrialPhaseSpan, TrialPhaseSpan } from '../../../core/models/trial-phase-span';
 import { DetailLevel, GridDensity, LandscapeStateService } from '../../landscape/landscape-state.service';
 import { markerPeriodLabel, markerStartCaption } from '../../../core/models/marker-date-precision';
 import { MARKER_ICON_SIZE } from '../../../shared/utils/grid-constants';
-import { textColorOnWhite } from '../../../shared/utils/color-contrast';
+import { PhaseChipComponent } from '../../../shared/components/phase-chip.component';
 import { computeInitialScrollLeft } from './initial-scroll';
 import {
   CaptionInterval,
@@ -131,6 +126,7 @@ export function assetLeadPhase(trials: Trial[]): string | null {
     GridHeaderComponent,
     MarkerComponent,
     PhaseBarComponent,
+    PhaseChipComponent,
     PiMarkComponent,
     TooltipModule,
   ],
@@ -443,25 +439,6 @@ export class DashboardGridComponent implements AfterViewInit {
       : row.kind === 'asset'
         ? `a:${row.assetId}`
         : `c:${row.companyId}`;
-  }
-
-  /**
-   * Lead-phase chip dot/label/text. The chip mirrors the heatmap + bullseye
-   * standard: a light pill with a phase-hued dot and phase-colored label, rather
-   * than a solid phase-colored fill. The dot carries the raw hue; the text is
-   * darkened to the AA contrast floor on the light chip (the muted early-phase
-   * slates fail as plain text otherwise).
-   */
-  protected phaseChipColor(phase: string): string {
-    return PHASE_COLORS[phase] ?? PHASE_FALLBACK_COLOR;
-  }
-
-  protected phaseChipTextColor(phase: string): string {
-    return textColorOnWhite(this.phaseChipColor(phase));
-  }
-
-  protected phaseChipLabel(phase: string): string {
-    return phaseShortLabel(phase);
   }
 
   /**

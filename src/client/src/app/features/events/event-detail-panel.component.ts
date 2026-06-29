@@ -16,6 +16,11 @@ import { ConfirmationService, MenuItem } from 'primeng/api';
 import { CatalystDetail } from '../../core/models/event-detail.model';
 import { EventCategoryDistribution, EventDetail, FeedItem } from '../../core/models/event.model';
 import type { InnerMark, MarkerShape } from '../../core/models/marker.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { AnnotationService, Annotation } from '../../core/services/annotation.service';
 import { SupabaseService } from '../../core/services/supabase.service';
@@ -58,7 +63,14 @@ interface RecentItemSummary {
   title: string;
   event_date: string;
   /** Marker glyph for marker rows; null otherwise. */
-  glyph: { shape: MarkerShape; color: string; innerMark: InnerMark; projected: boolean } | null;
+  glyph: {
+    shape: MarkerShape;
+    color: string;
+    innerMark: InnerMark;
+    projected: boolean;
+    projectionBadge: ProjectionBadge;
+    outlineDash: boolean;
+  } | null;
   isProjected: boolean | null;
   sourceType: FeedItem['source_type'];
 }
@@ -199,6 +211,8 @@ export class EventDetailPanelComponent {
     color: string;
     innerMark: InnerMark;
     projected: boolean;
+    projectionBadge: ProjectionBadge;
+    outlineDash: boolean;
   } | null>(() => {
     const fi = this.selectedFeedItem();
     if (!fi || fi.source_type !== 'marker' || !fi.marker_type_shape) return null;
@@ -207,6 +221,8 @@ export class EventDetailPanelComponent {
       color: fi.marker_type_color ?? CATEGORY_COLOR_FALLBACK,
       innerMark: fi.marker_type_inner_mark ?? ('none' as InnerMark),
       projected: !!fi.is_projected,
+      projectionBadge: projectionBadge(fi.projection),
+      outlineDash: projectionOutlineDash(fi.projection),
     };
   });
 
@@ -273,6 +289,8 @@ export class EventDetailPanelComponent {
               color: i.marker_type_color ?? CATEGORY_COLOR_FALLBACK,
               innerMark: i.marker_type_inner_mark ?? ('none' as InnerMark),
               projected: !!i.is_projected,
+              projectionBadge: projectionBadge(i.projection),
+              outlineDash: projectionOutlineDash(i.projection),
             }
           : null,
     }))

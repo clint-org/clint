@@ -22,7 +22,6 @@ import {
   projectionOutlineDash,
 } from '../../core/models/marker-visual';
 import { MarkerChangeRow } from '../../core/models/change-event.model';
-import { phaseShortLabel } from '../../core/models/phase-colors';
 import {
   CTGOV_FIELD_CATALOGUE,
   CTGOV_KEY_CATALYSTS_DEFAULT_PATHS,
@@ -56,6 +55,7 @@ import { PiDetailSectionComponent } from './pi-detail-section/pi-detail-section.
 import { PiReference } from '../../core/models/primary-intelligence.model';
 import { MarkerIconComponent } from './svg-icons/marker-icon.component';
 import { MaterialsSectionComponent } from './materials-section/materials-section.component';
+import { PhaseChipComponent } from './phase-chip.component';
 
 export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
 
@@ -94,6 +94,7 @@ interface CtgovProvenanceBlock {
     ExternalLinkComponent,
     MarkerIconComponent,
     MaterialsSectionComponent,
+    PhaseChipComponent,
     SourceProvenanceLineComponent,
   ],
   template: `
@@ -257,20 +258,15 @@ interface CtgovProvenanceBlock {
                     trialLabel
                   }}</span>
                 }
-                <!-- Status + phase: status sits left, phase pill right-aligned. -->
-                @if (d.catalyst.recruitment_status || phaseLabel(d.catalyst.trial_phase)) {
+                <!-- Status + phase: status sits left, phase chip right-aligned. -->
+                @if (d.catalyst.recruitment_status || d.catalyst.trial_phase) {
                   <div class="mt-1 flex items-center gap-2">
                     @if (d.catalyst.recruitment_status) {
                       <p class="min-w-0 truncate text-[11px] text-slate-500">
                         {{ d.catalyst.recruitment_status }}
                       </p>
                     }
-                    @if (phaseLabel(d.catalyst.trial_phase); as phase) {
-                      <span
-                        class="ml-auto shrink-0 rounded-sm bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
-                        >{{ phase }}</span
-                      >
-                    }
+                    <app-phase-chip class="ml-auto" [phase]="d.catalyst.trial_phase" />
                   </div>
                 }
               } @else {
@@ -580,10 +576,6 @@ export class MarkerDetailContentComponent {
 
   protected onReferenceClick(ref: PiReference): void {
     this.openIntelligence.emit({ entityType: ref.entity_type, entityId: ref.entity_id });
-  }
-
-  protected phaseLabel(p: string | null | undefined): string {
-    return p ? phaseShortLabel(p) : '';
   }
 
   /** True when the date is an estimate (projection pill tone is amber). */

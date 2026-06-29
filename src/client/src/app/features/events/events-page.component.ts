@@ -26,6 +26,11 @@ import {
   FeedItem,
 } from '../../core/models/event.model';
 import { FillStyle, MarkerCategory } from '../../core/models/marker.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { DetailPanelPillComponent } from '../../shared/components/detail-panel-pill.component';
 import { EventDetailService } from '../../core/services/event-detail.service';
@@ -364,6 +369,15 @@ export class EventsPageComponent implements OnInit, OnDestroy {
    */
   protected markerFillStyle(item: FeedItem): FillStyle {
     return item.is_projected ? 'outline' : 'filled';
+  }
+
+  /** Projection tier badge + forecast dash, matching the timeline glyph. */
+  protected markerBadge(item: FeedItem): ProjectionBadge {
+    return projectionBadge(item.projection);
+  }
+
+  protected markerOutlineDash(item: FeedItem): boolean {
+    return projectionOutlineDash(item.projection);
   }
 
   /**

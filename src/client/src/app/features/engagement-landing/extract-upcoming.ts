@@ -45,6 +45,7 @@ export function extractUpcoming(companies: Company[], windowDays: number): Upcom
       title: marker.title ?? mt?.name ?? 'Event',
       event_date: marker.event_date,
       is_projected: marker.is_projected,
+      projection: marker.projection,
       no_longer_expected: marker.no_longer_expected,
       category_name: mt?.marker_categories?.name ?? '',
       marker_type_color: mt?.color ?? '',

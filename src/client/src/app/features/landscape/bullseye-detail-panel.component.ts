@@ -15,10 +15,16 @@ import {
   BullseyeData,
   BullseyeDimension,
   BullseyeAsset,
+  BullseyeMarker,
   PHASE_COLOR,
   RingPhase,
   visibleRingOrder,
 } from '../../core/models/landscape.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { CTGOV_BULLSEYE_DEFAULT_PATHS } from '../../core/models/ctgov-field.model';
 import { LandscapeStateService } from './landscape-state.service';
 import { deriveBullseyeEventBuckets } from './bullseye-events';
@@ -348,6 +354,15 @@ export class BullseyeDetailPanelComponent {
 
   protected onMarkerRowClick(markerId: string): void {
     this.openMarker.emit(markerId);
+  }
+
+  /** Projection tier badge + forecast dash, matching the timeline glyph. */
+  protected markerBadge(marker: BullseyeMarker): ProjectionBadge {
+    return projectionBadge(marker.projection);
+  }
+
+  protected markerOutlineDash(marker: BullseyeMarker): boolean {
+    return projectionOutlineDash(marker.projection);
   }
 
   protected onIntelligenceClick(ref: PiReference): void {
