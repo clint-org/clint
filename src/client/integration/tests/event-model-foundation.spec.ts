@@ -107,7 +107,6 @@ describe('event model foundation', () => {
       p_end_date_precision: 'exact',
       p_is_ongoing: false,
       p_description: null,
-      p_source_url: null,
       p_significance: null,
       p_visibility: 'pinned',
       p_no_longer_expected: false,

@@ -1087,4 +1087,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260629090000_corporate_event_family.sql`
 - `20260629100000_dashboard_anchor_events_anchor_type.sql`
 - `20260629110000_seed_demo_corporate_band_curation.sql`
+- `20260629120000_merge_launch_into_commercial.sql`
+- `20260629130000_update_event_drop_vestigial_source_url.sql`
 <!-- /AUTO-GEN:DRIFT -->

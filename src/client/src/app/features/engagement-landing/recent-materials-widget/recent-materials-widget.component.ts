@@ -58,12 +58,14 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
           } @else if (error()) {
             <p class="px-4 py-3 text-xs text-red-600">{{ error() }}</p>
           } @else {
-            <ul class="divide-y divide-slate-100">
+            <ul class="flex flex-col gap-3">
               @for (material of rows(); track material.id) {
                 <li>
                   <app-material-row
                     [material]="material"
                     [showLinks]="true"
+                    [hideSpaceChip]="true"
+                    density="compact"
                     [tenantId]="tenantId()"
                     [spaceId]="spaceId()"
                     (downloadClick)="onDownloadClick($event)"
@@ -92,12 +94,12 @@ export class RecentMaterialsWidgetComponent {
    * before the registry shipped).
    */
   readonly visible = input<boolean>(true);
-  readonly limit = input<number>(3);
+  readonly limit = input<number>(5);
 
   protected readonly rows = signal<Material[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
-  protected readonly skeletonRows = [0, 1, 2];
+  protected readonly skeletonRows = [0, 1, 2, 3, 4];
 
   protected readonly allMaterialsLink = computed(() => {
     const t = this.tenantId();
