@@ -9,6 +9,8 @@ import {
   FeedItem,
 } from '../models/event.model';
 import { CreateEventArgs, UpdateEventArgs } from '../models/event-write.model';
+import { CatalystDetail } from '../models/catalyst.model';
+import { eventDetailFromWrapper } from './event-detail-map';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -84,7 +86,9 @@ export class EventService {
               p_event_id: eventId,
             })
             .throwOnError();
-          return data as EventDetail;
+          // get_event_detail returns the unified catalyst-wrapper shape (Stage 3
+          // IA rename); unwrap it into the flat EventDetail the panel renders.
+          return eventDetailFromWrapper(data as CatalystDetail);
         },
       }
     );

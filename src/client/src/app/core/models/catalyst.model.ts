@@ -41,7 +41,7 @@ export interface Catalyst {
    * read RPCs (e.g. get_catalyst_detail). Optional: dashboard-flattened rows
    * may carry only `source_url` until that RPC derives them.
    */
-  sources?: { url: string; label: string | null }[];
+  sources?: { id?: string; url: string; label: string | null }[];
   /**
    * Derived ClinicalTrials.gov link for trial-anchored markers, emitted by the
    * read RPCs from the anchor trial's identifier. Never stored.
@@ -75,6 +75,21 @@ export interface CatalystDetail {
     recruitment_status: string | null;
     projection: string;
     company_logo_url: string | null;
+    /**
+     * Unified-event keys the merged Event form reads for edit-hydration and the
+     * events-page flat unwrap (added to get_event_detail in Stage 3). anchor_type
+     * is the events.anchor_type enum; significance / visibility are the raw event
+     * qualifier values (null = default).
+     */
+    event_id: string;
+    event_type_id: string;
+    anchor_type: 'space' | 'company' | 'asset' | 'trial';
+    anchor_id: string | null;
+    significance: 'high' | 'low' | null;
+    visibility: 'pinned' | 'hidden' | null;
+    space_id: string;
+    created_at: string;
+    updated_at: string;
     /**
      * Import provenance: the source_documents row this marker landed from when
      * created by an AI import. Null for manually created markers.

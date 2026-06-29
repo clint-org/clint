@@ -48,6 +48,14 @@ import {
   type VisibilityChoice,
 } from './event-payload';
 
+// DB column -> field label for constraint-violation messages (db-error util).
+const EVENT_COLUMN_LABELS: Record<string, string> = {
+  event_type_id: 'Event type',
+  anchor_id: 'Anchor',
+  title: 'Title',
+  event_date: 'Date',
+};
+
 interface EntityOption {
   id: string;
   label: string;
@@ -687,7 +695,7 @@ export class EventFormComponent implements OnInit {
       }
       this.saved.emit();
     } catch (err) {
-      this.error.set(extractConstraintMessage(err) ?? 'Could not save the event.');
+      this.error.set(extractConstraintMessage(err, EVENT_COLUMN_LABELS) ?? 'Could not save the event.');
     } finally {
       this.saving.set(false);
     }
