@@ -234,43 +234,44 @@ interface CtgovProvenanceBlock {
                 Trial
               </p>
               @if (d.catalyst.trial_acronym ?? d.catalyst.trial_name; as trialLabel) {
+                <!-- Trial name on its own full-width row so it is never
+                     condensed by the phase pill (which now sits on the
+                     status row below). -->
                 @if (d.catalyst.trial_id; as trialId) {
                   <button
                     type="button"
-                    class="group flex w-full items-center justify-between gap-2 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    class="group flex w-full items-center gap-1 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
                     (click)="trialClick.emit(trialId)"
                   >
                     <span
-                      class="inline-flex min-w-0 items-center gap-1 text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
+                      class="truncate text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
+                      >{{ trialLabel }}</span
                     >
-                      <span class="truncate">{{ trialLabel }}</span>
-                      <i
-                        class="fa-solid fa-arrow-right shrink-0 text-[10px] text-slate-300 group-hover:text-brand-600"
-                        aria-hidden="true"
-                      ></i>
-                    </span>
-                    @if (phaseLabel(d.catalyst.trial_phase); as phase) {
-                      <span
-                        class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
-                        >{{ phase }}</span
-                      >
-                    }
+                    <i
+                      class="fa-solid fa-arrow-right shrink-0 text-[10px] text-slate-300 group-hover:text-brand-600"
+                      aria-hidden="true"
+                    ></i>
                   </button>
                 } @else {
-                  <div class="flex w-full items-center justify-between gap-2">
-                    <span class="truncate text-[13px] font-medium text-slate-900">{{
-                      trialLabel
-                    }}</span>
+                  <span class="block truncate text-[13px] font-medium text-slate-900">{{
+                    trialLabel
+                  }}</span>
+                }
+                <!-- Status + phase: status sits left, phase pill right-aligned. -->
+                @if (d.catalyst.recruitment_status || phaseLabel(d.catalyst.trial_phase)) {
+                  <div class="mt-1 flex items-center gap-2">
+                    @if (d.catalyst.recruitment_status) {
+                      <p class="min-w-0 truncate text-[11px] text-slate-500">
+                        {{ d.catalyst.recruitment_status }}
+                      </p>
+                    }
                     @if (phaseLabel(d.catalyst.trial_phase); as phase) {
                       <span
-                        class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
+                        class="ml-auto shrink-0 rounded-sm bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
                         >{{ phase }}</span
                       >
                     }
                   </div>
-                }
-                @if (d.catalyst.recruitment_status) {
-                  <p class="mt-1 text-[11px] text-slate-500">{{ d.catalyst.recruitment_status }}</p>
                 }
               } @else {
                 <p class="text-[12px] text-slate-400">No trial linked</p>
