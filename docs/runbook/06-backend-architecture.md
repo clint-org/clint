@@ -146,6 +146,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `list_agency_members` | - | agency_members |
 | `list_audit_events` | - | audit_events |
 | `list_draft_intelligence_for_space` | - | primary_intelligence, primary_intelligence_anchors |
+| `list_intelligence_feed` | - | assets, companies, event_type_categories, event_types, events, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trials |
 | `list_intelligence_for_entity` | - | primary_intelligence, primary_intelligence_anchors |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
 | `list_materials_for_entity` | - | assets, companies, events, material_links, materials, spaces, trials |
@@ -743,6 +744,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `link_asset_moa_roa`
 - `list_audit_events`
 - `list_draft_intelligence_for_space`
+- `list_intelligence_feed`
 - `list_latest_snapshots_for_space`
 - `list_materials_for_entity`
 - `list_materials_for_space`

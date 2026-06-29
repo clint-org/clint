@@ -173,13 +173,17 @@ Stout's primary analytical work product, attached to entities in an engagement. 
   role: viewer
   status: active
 - id: primary-intelligence-browse
-  summary: Filterable expanded view at /intelligence with entity-type, since-date, and free-text search.
+  summary: Unified Intelligence feed at /intelligence -- published briefs plus events interleaved by recency (not significance-gated; structural trial-lifecycle markers in the system Clinical category, Trial Start/End/Primary Completion, excluded as phase-bar scaffolding), with a Kind toggle (All/Intelligence/Events, default Intelligence), event-category chips (Clinical chip dropped), since-date, and free-text search. Dense two-line rows. An event row opens the event detail panel in place. The Drafts view stays briefs-only.
   routes:
     - /t/:tenantId/s/:spaceId/intelligence
   rpcs:
-    - list_primary_intelligence
+    - list_intelligence_feed
+    - list_draft_intelligence_for_space
+    - get_event_detail
   tables:
     - primary_intelligence
+    - events
+    - event_type_categories
   related:
     - primary-intelligence-feed
   user_facing: true

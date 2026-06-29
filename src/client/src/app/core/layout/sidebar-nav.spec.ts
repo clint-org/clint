@@ -52,11 +52,12 @@ describe('filterNavSections role gating', () => {
 });
 
 describe('Intelligence section ordering and engagement gating', () => {
-  it('orders Feed first, then Engagement, then Materials (when engagement exists)', () => {
+  it('orders Feed first, then Engagement, then Activity, then Materials (when engagement exists)', () => {
     const out = filterNavSections(NAV_SECTIONS, true, true, true);
     expect(intelligenceItems(out)).toEqual([
       'intelligence',
       'profiles/engagement',
+      'activity',
       'materials',
     ]);
   });
@@ -68,9 +69,8 @@ describe('Intelligence section ordering and engagement gating', () => {
       [true, true],
     ] as const) {
       const out = filterNavSections(NAV_SECTIONS, canEdit, isOwner, false);
-      expect(intelligenceItems(out)).toEqual(['intelligence', 'materials']);
+      expect(intelligenceItems(out)).toEqual(['intelligence', 'activity', 'materials']);
       expect(intelligenceItems(out)).not.toContain('profiles/engagement');
-      expect(intelligenceItems(out)).not.toContain('events');
     }
   });
 

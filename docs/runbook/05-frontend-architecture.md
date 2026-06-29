@@ -731,6 +731,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `EventThreadService`
 - `EventTypeService`
 - `EventService`
+- `IntelligenceFeedService`
 - `LandscapeService`
 - `MarkerCategoryService`
 - `MarkerService`
@@ -754,6 +755,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `CtgovField`
 - `EventType`
 - `EventWrite`
+- `IntelligenceFeedItem`
 - `MechanismOfAction`
 - `Palette`
 - `PrimaryIntelligence`
