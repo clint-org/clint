@@ -11,20 +11,26 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { DatePickerModule } from 'primeng/datepicker';
 import { PaginatorModule } from 'primeng/paginator';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { MessageService } from 'primeng/api';
 
+import { IntelligenceFeedRow } from '../../../core/models/primary-intelligence.model';
 import {
-  IntelligenceEntityType,
-  IntelligenceFeedRow,
-} from '../../../core/models/primary-intelligence.model';
+  briefRowToFeedItem,
+  FeedItem,
+} from '../../../core/models/intelligence-feed-item.model';
+import { CatalystDetail } from '../../../core/models/event-detail.model';
+import { MarkerCategory } from '../../../core/models/marker.model';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
+import { IntelligenceFeedService } from '../../../core/services/intelligence-feed.service';
+import { MarkerCategoryService } from '../../../core/services/marker-category.service';
+import { EventDetailService } from '../../../core/services/event-detail.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { SectionHeaderComponent } from '../section-header/section-header.component';
 import { IntelligenceFeedComponent } from '../intelligence-feed/intelligence-feed.component';
+import { MarkerDetailPanelComponent } from '../marker-detail-panel.component';
 import { IntelligenceDrawerComponent } from '../intelligence-drawer/intelligence-drawer.component';
 import {
   ComposeTarget,
@@ -32,13 +38,7 @@ import {
 } from '../intelligence-compose-dialog/intelligence-compose-dialog.component';
 import { SkeletonComponent } from '../skeleton/skeleton.component';
 import { parseDayOffset } from '../../utils/parse-day-offset';
-
-const ENTITY_TYPES: { label: string; value: IntelligenceEntityType }[] = [
-  { label: 'Trial', value: 'trial' },
-  { label: 'Company', value: 'company' },
-  { label: 'Asset', value: 'product' },
-  { label: 'Space', value: 'space' },
-];
+import { buildFeedQuery, KindFilter } from './feed-query';
 
 type StatusFilter = 'published' | 'drafts';
 
@@ -47,19 +47,27 @@ const STATUS_OPTIONS: { label: string; value: StatusFilter }[] = [
   { label: 'Drafts', value: 'drafts' },
 ];
 
+const KIND_OPTIONS: { label: string; value: KindFilter }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Intelligence', value: 'intel' },
+  { label: 'Events', value: 'event' },
+];
+
 const PAGE_SIZE = 25;
 // list_draft_intelligence_for_space takes a limit but no offset, so the
 // drafts view fetches a single generous page and filters client-side.
 const DRAFTS_LIMIT = 200;
 
 /**
- * Filterable browse view for primary intelligence in the current space.
- * Toggle between Published (paginated, server-filtered) and Drafts
- * (single page, client-filtered, gated to agency members by RLS).
+ * The Intelligence feed: the one curated stream for the space. The Published
+ * view is the unified briefs + events feed (list_intelligence_feed), recency
+ * descending and NOT significance-gated; the Drafts view stays briefs-only
+ * (events have no draft state) and is gated to agency members by RLS.
  *
  * The toolbar deliberately mirrors the materials browse surface (slate-50
- * stripe + mono labels + same density) so the two pages read as one
- * platform surface, even though their filter controls differ.
+ * stripe + mono labels + same density) so the pages read as one platform
+ * surface. The Kind toggle (All / Intelligence / Events) selects which kinds
+ * appear; the event-category chips filter the event subset only.
  */
 @Component({
   selector: 'app-intelligence-browse',
@@ -68,12 +76,12 @@ const DRAFTS_LIMIT = 200;
     FormsModule,
     ButtonModule,
     InputTextModule,
-    MultiSelectModule,
     DatePickerModule,
     PaginatorModule,
     SelectButtonModule,
     SectionHeaderComponent,
     IntelligenceFeedComponent,
+    MarkerDetailPanelComponent,
     IntelligenceComposeDialogComponent,
     IntelligenceDrawerComponent,
     SkeletonComponent,
@@ -113,6 +121,21 @@ const DRAFTS_LIMIT = 200;
           size="small"
           aria-label="Filter by status"
         />
+        @if (status() === 'published') {
+          <span class="ml-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+            Show
+          </span>
+          <p-selectbutton
+            [options]="kindOptions"
+            [ngModel]="kind()"
+            (ngModelChange)="onKindChange($event)"
+            optionLabel="label"
+            optionValue="value"
+            [allowEmpty]="false"
+            size="small"
+            aria-label="Filter by kind"
+          />
+        }
         <span class="ml-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">
           Search
         </span>
@@ -121,27 +144,9 @@ const DRAFTS_LIMIT = 200;
           type="search"
           [ngModel]="query()"
           (ngModelChange)="query.set($event); resetAndLoad()"
-          placeholder="Headline / summary"
-          aria-label="Search headline or summary"
+          placeholder="Headline / title"
+          aria-label="Search headline or title"
           class="!h-7 w-56 !text-xs"
-        />
-        <span class="ml-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">
-          Entity
-        </span>
-        <p-multi-select
-          [options]="entityTypeOptions"
-          [ngModel]="entityTypes()"
-          (ngModelChange)="entityTypes.set($event ?? []); resetAndLoad()"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Any"
-          ariaLabel="Filter by entity type"
-          [showClear]="true"
-          appendTo="body"
-          [styleClass]="'w-fit' + (entityTypes().length ? ' has-value' : '')"
-          size="small"
-          [maxSelectedLabels]="0"
-          [selectedItemsLabel]="'Entity (' + entityTypes().length + ')'"
         />
         <span class="ml-3 font-mono text-[10px] uppercase tracking-wider text-slate-500">
           Since
@@ -171,6 +176,27 @@ const DRAFTS_LIMIT = 200;
           {{ totalLabel() }}
         </span>
       </div>
+
+      @if (status() === 'published' && kind() !== 'intel' && categoryOptions().length) {
+        <div
+          class="flex flex-wrap items-center gap-1.5 border border-t-0 border-slate-200 bg-slate-50/50 px-4 py-2"
+          role="group"
+          aria-label="Filter events by category"
+        >
+          <span class="mr-1 font-mono text-[10px] uppercase tracking-wider text-slate-500">
+            Category
+          </span>
+          @for (c of categoryOptions(); track c.id) {
+            <p-button
+              [label]="c.name"
+              size="small"
+              [text]="!isCategoryActive(c.name)"
+              [attr.aria-pressed]="isCategoryActive(c.name)"
+              (onClick)="toggleCategory(c.name)"
+            />
+          }
+        </div>
+      }
 
       <div class="border border-t-0 border-slate-200 bg-white" aria-live="polite">
         @if (loading()) {
@@ -212,6 +238,7 @@ const DRAFTS_LIMIT = 200;
             [tenantId]="tenantId()"
             [spaceId]="spaceId()"
             [query]="query()"
+            (eventOpen)="onEventOpen($event)"
           />
         }
       </div>
@@ -226,6 +253,17 @@ const DRAFTS_LIMIT = 200;
           />
         </div>
       }
+
+      <app-marker-detail-panel
+        mode="page-drawer"
+        [open]="eventPanelOpen()"
+        [detail]="eventDetail()"
+        [spaceId]="spaceId()"
+        surfaceKey="timeline_detail"
+        (panelClose)="closeEventPanel()"
+        (eventClick)="onEventOpen($event)"
+        (trialClick)="onTrialClick($event)"
+      />
 
       @if (spaceId(); as sid) {
         <app-intelligence-compose-dialog
@@ -254,30 +292,39 @@ export class IntelligenceBrowseComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly intelligence = inject(PrimaryIntelligenceService);
+  private readonly feed = inject(IntelligenceFeedService);
+  private readonly markerCategory = inject(MarkerCategoryService);
+  private readonly eventDetailService = inject(EventDetailService);
   private readonly messageService = inject(MessageService);
   protected readonly spaceRole = inject(SpaceRoleService);
 
   protected readonly PAGE_SIZE = PAGE_SIZE;
-  protected readonly entityTypeOptions = ENTITY_TYPES;
   protected readonly statusOptions = STATUS_OPTIONS;
+  protected readonly kindOptions = KIND_OPTIONS;
   protected readonly skeletonRows = [0, 1, 2, 3, 4];
 
   protected readonly tenantId = signal<string | null>(null);
   protected readonly spaceId = signal<string | null>(null);
 
   protected readonly status = signal<StatusFilter>('published');
+  protected readonly kind = signal<KindFilter>('all');
   protected readonly query = signal<string>('');
-  protected readonly entityTypes = signal<IntelligenceEntityType[]>([]);
+  protected readonly categories = signal<string[]>([]);
+  protected readonly categoryOptions = signal<MarkerCategory[]>([]);
   protected readonly since = signal<Date | null>(null);
 
-  protected readonly rows = signal<IntelligenceFeedRow[]>([]);
+  protected readonly rows = signal<FeedItem[]>([]);
   protected readonly total = signal<number>(0);
   protected readonly offset = signal<number>(0);
   protected readonly loading = signal<boolean>(false);
 
+  // Event detail: an event-row click opens the shared marker/event detail panel
+  // in place (read-only here; editing lives on the timeline / event surfaces).
+  protected readonly eventDetail = signal<CatalystDetail | null>(null);
+  protected readonly eventPanelOpen = signal<boolean>(false);
+
   // Compose flow: agency members pick an anchor entity, then author the intelligence
-  // in the shared IntelligenceDrawerComponent. The feed itself is not
-  // entity-scoped, so the anchor must be chosen before the drawer opens.
+  // in the shared IntelligenceDrawerComponent.
   protected readonly composeDialogOpen = signal<boolean>(false);
   protected readonly drawerOpen = signal<boolean>(false);
   protected readonly composeTarget = signal<ComposeTarget | null>(null);
@@ -295,23 +342,36 @@ export class IntelligenceBrowseComponent implements OnInit {
   protected readonly headingSubtitle = computed(() =>
     this.status() === 'drafts'
       ? 'In-progress intelligence visible to your agency.'
-      : 'All published intelligence in this space, recency-ordered.'
+      : 'Intelligence and events in this space, most recent first.'
   );
 
   protected readonly emptyMessage = computed(() => {
     if (this.status() === 'drafts') return 'No drafts match the current filters.';
-    return 'No published intelligence matches the current filters.';
+    switch (this.kind()) {
+      case 'intel':
+        return 'No published intelligence matches the current filters.';
+      case 'event':
+        return 'No events match the current filters.';
+      default:
+        return 'No intelligence or events yet.';
+    }
   });
 
   protected readonly hasAnyActive = computed(() => {
-    return this.query().trim().length > 0 || this.entityTypes().length > 0 || this.since() !== null;
+    return (
+      this.query().trim().length > 0 ||
+      this.categories().length > 0 ||
+      this.since() !== null ||
+      this.kind() !== 'all'
+    );
   });
 
-  // Re-fetch when the route's spaceId changes.
+  // Re-fetch (and load category options) when the route's spaceId changes.
   private readonly routeEffect = effect(() => {
     const sid = this.spaceId();
     if (sid) {
       void this.load();
+      void this.loadCategories(sid);
     }
   });
 
@@ -350,6 +410,26 @@ export class IntelligenceBrowseComponent implements OnInit {
     void this.load();
   }
 
+  protected onKindChange(next: KindFilter): void {
+    if (next === this.kind()) return;
+    this.kind.set(next);
+    // category chips only apply to events; clear them when leaving the event view.
+    if (next === 'intel') this.categories.set([]);
+    this.resetAndLoad();
+  }
+
+  protected isCategoryActive(name: string): boolean {
+    return this.categories().includes(name);
+  }
+
+  protected toggleCategory(name: string): void {
+    const current = this.categories();
+    this.categories.set(
+      current.includes(name) ? current.filter((c) => c !== name) : [...current, name]
+    );
+    this.resetAndLoad();
+  }
+
   protected resetAndLoad(): void {
     this.offset.set(0);
     void this.load();
@@ -362,8 +442,9 @@ export class IntelligenceBrowseComponent implements OnInit {
 
   protected onClearAll(): void {
     this.query.set('');
-    this.entityTypes.set([]);
+    this.categories.set([]);
     this.since.set(null);
+    this.kind.set('all');
     this.resetAndLoad();
   }
 
@@ -387,6 +468,28 @@ export class IntelligenceBrowseComponent implements OnInit {
     await this.load();
   }
 
+  protected async onEventOpen(eventId: string): Promise<void> {
+    const detail = await this.eventDetailService.getCatalystDetail(eventId);
+    this.eventDetail.set(detail);
+    this.eventPanelOpen.set(true);
+  }
+
+  protected closeEventPanel(): void {
+    this.eventPanelOpen.set(false);
+  }
+
+  protected onTrialClick(trialId: string): void {
+    const tid = this.tenantId();
+    const sid = this.spaceId();
+    if (!tid || !sid) return;
+    this.eventPanelOpen.set(false);
+    void this.router.navigate(['/t', tid, 's', sid, 'profiles', 'trials', trialId]);
+  }
+
+  private async loadCategories(spaceId: string): Promise<void> {
+    this.categoryOptions.set(await this.markerCategory.list(spaceId));
+  }
+
   private async load(): Promise<void> {
     const sid = this.spaceId();
     if (!sid) return;
@@ -394,19 +497,22 @@ export class IntelligenceBrowseComponent implements OnInit {
     try {
       if (this.status() === 'drafts') {
         const drafts = await this.intelligence.listDraftsForSpace(sid, DRAFTS_LIMIT);
-        const filtered = this.applyClientFilters(drafts);
+        const filtered = this.applyDraftFilters(drafts).map(briefRowToFeedItem);
         this.rows.set(filtered);
         this.total.set(filtered.length);
         this.offset.set(0);
       } else {
-        const result = await this.intelligence.list({
-          spaceId: sid,
-          entityTypes: this.entityTypes()?.length ? this.entityTypes() : null,
-          since: this.since() ? this.since()!.toISOString() : null,
-          query: this.query()?.trim() || null,
-          limit: PAGE_SIZE,
-          offset: this.offset(),
-        });
+        const result = await this.feed.list(
+          buildFeedQuery({
+            spaceId: sid,
+            kind: this.kind(),
+            categories: this.categories(),
+            since: this.since(),
+            query: this.query(),
+            limit: PAGE_SIZE,
+            offset: this.offset(),
+          })
+        );
         this.rows.set(result.rows);
         this.total.set(result.total);
       }
@@ -415,12 +521,10 @@ export class IntelligenceBrowseComponent implements OnInit {
     }
   }
 
-  private applyClientFilters(rows: IntelligenceFeedRow[]): IntelligenceFeedRow[] {
-    const types = this.entityTypes() ?? [];
+  private applyDraftFilters(rows: IntelligenceFeedRow[]): IntelligenceFeedRow[] {
     const sinceDate = this.since();
     const q = this.query()?.trim().toLowerCase() ?? '';
     return rows.filter((row) => {
-      if (types.length > 0 && !types.includes(row.entity_type)) return false;
       if (sinceDate && new Date(row.updated_at) < sinceDate) return false;
       if (q.length > 0) {
         const headline = row.headline?.toLowerCase() ?? '';
