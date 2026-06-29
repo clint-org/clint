@@ -79,16 +79,21 @@ import { eventFeedDateLabel } from './event-feed-date-label';
                   (click)="eventOpen.emit(ev.id)"
                   [innerHTML]="eventTitle(ev)"
                 ></button>
-                <span
-                  class="shrink-0 font-mono text-[10px] font-semibold tabular-nums text-slate-400"
-                  [class.italic]="ev.is_projected"
-                >
-                  {{ eventDateLabel(ev) }}
+                <span class="shrink-0 font-mono text-[10px] font-semibold tabular-nums text-slate-400">
+                  <span class="text-[8px] font-normal uppercase tracking-wider text-slate-300">Added</span>
+                  {{ ev.feed_ts | date: 'mediumDate' }}
                 </span>
               </div>
               <div class="mt-0.5 flex items-baseline gap-1.5 pl-[20px] text-[11.5px] leading-tight">
                 <span class="shrink-0 font-mono text-[10px] uppercase tracking-[0.04em] text-slate-400">
                   {{ ev.entity_name ?? 'Engagement' }}
+                </span>
+                <span
+                  class="shrink-0 font-mono text-[10px] tabular-nums text-slate-400"
+                  [class.italic]="ev.is_projected"
+                >
+                  <span class="text-[8px] not-italic uppercase tracking-wider text-slate-300">Event</span>
+                  {{ eventDateLabel(ev) }}
                 </span>
                 @if (ev.description; as d) {
                   <span class="min-w-0 flex-1 truncate text-slate-500">{{ d }}</span>
@@ -112,6 +117,7 @@ import { eventFeedDateLabel } from './event-feed-date-label';
                   [innerHTML]="headline(br)"
                 ></a>
                 <span class="shrink-0 font-mono text-[10px] font-semibold tabular-nums text-slate-400">
+                  <span class="text-[8px] font-normal uppercase tracking-wider text-slate-300">Updated</span>
                   {{ br.feed_ts | date: 'mediumDate' }}
                 </span>
               </div>
