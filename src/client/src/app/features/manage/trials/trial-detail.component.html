@@ -189,7 +189,7 @@
           (click)="scrollToSection($event, 'markers')"
           class="rounded-sm px-2 py-1 text-slate-600 underline-offset-4 hover:bg-brand-50/60 hover:text-brand-800 hover:underline"
         >
-          Markers
+          Events
         </a>
         <span class="text-slate-300">|</span>
         <a
@@ -289,131 +289,13 @@
           </div>
 
           <div id="markers">
-            <app-section-card
-              title="Events"
-              description="Dated facts and milestones on the timeline."
-              [count]="(t.markers ?? []).length"
-              countNoun="event"
-            >
-              <div actions>
-                @if (spaceRole.canEdit()) {
-                  <p-button
-                    label="Add event"
-                    icon="fa-solid fa-calendar-plus"
-                    [text]="true"
-                    size="small"
-                    (onClick)="editingEventId.set(null); eventDialogOpen.set(true)"
-                  />
-                }
-              </div>
-              @if (spaceIdSig(); as sid) {
-                <app-event-form-dialog
-                  [(visible)]="eventDialogOpen"
-                  [spaceId]="sid"
-                  [mode]="eventDialogMode()"
-                  [eventId]="editingEventId()"
-                  [presetAnchorType]="'trial'"
-                  [presetAnchorId]="trialId()"
-                  [ctgovLocked]="editingEventCtgovLocked()"
-                  (saved)="onMarkerSaved()"
-                />
-              }
-
-              <p-table
-                styleClass="data-table"
-                [value]="t.markers ?? []"
-                [tableStyle]="{ 'min-width': '56rem' }"
-                sortField="event_date"
-                [sortOrder]="-1"
-                [filterDelay]="0"
-                aria-label="Trial events"
-              >
-                <ng-template #header>
-                  <tr>
-                    <th class="w-8" scope="col"><span class="sr-only">Event glyph</span></th>
-                    <th pSortableColumn="marker_types.marker_categories.name">
-                      Category <p-sortIcon field="marker_types.marker_categories.name" />
-                      <p-column-filter
-                        type="text"
-                        field="marker_types.marker_categories.name"
-                        display="menu"
-                      />
-                    </th>
-                    <th pSortableColumn="marker_types.name">
-                      Type <p-sortIcon field="marker_types.name" />
-                      <p-column-filter type="text" field="marker_types.name" display="menu" />
-                    </th>
-                    <th pSortableColumn="title">
-                      Title <p-sortIcon field="title" />
-                      <p-column-filter type="text" field="title" display="menu" />
-                    </th>
-                    <th pSortableColumn="event_date">
-                      Event date <p-sortIcon field="event_date" />
-                      <p-column-filter type="text" field="event_date" display="menu" />
-                    </th>
-                    <th pSortableColumn="projection">
-                      Projection <p-sortIcon field="projection" />
-                      <p-column-filter type="text" field="projection" display="menu" />
-                    </th>
-                    <th class="col-actions"></th>
-                  </tr>
-                </ng-template>
-                <ng-template #body let-marker>
-                  <tr>
-                    <td class="w-8">
-                      @if (marker.marker_types?.shape) {
-                        <app-marker-icon
-                          class="inline-flex"
-                          [shape]="marker.marker_types.shape"
-                          [color]="marker.marker_types.color ?? '#64748b'"
-                          [size]="14"
-                          [fillStyle]="markerFillStyle(marker)"
-                          [innerMark]="marker.marker_types.inner_mark ?? 'none'"
-                          [isNle]="marker.no_longer_expected ?? false"
-                        />
-                      }
-                    </td>
-                    <td class="col-secondary">
-                      {{ marker.marker_types?.marker_categories?.name || '--' }}
-                    </td>
-                    <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
-                    <td class="col-secondary max-w-xs">
-                      <div class="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          class="truncate text-left text-brand-700 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
-                          (click)="viewMarkerDetail(marker)"
-                        >
-                          {{ marker.title }}
-                        </button>
-                        <app-ctgov-source-tag [metadata]="marker.metadata" />
-                      </div>
-                    </td>
-                    <td class="col-identifier">{{ marker.event_date | date: 'mediumDate' }}</td>
-                    <td>
-                      @if (marker.projection && marker.projection !== 'actual') {
-                        <app-status-tag [label]="marker.projection" tone="amber" />
-                      } @else {
-                        <span class="font-mono text-xs text-slate-400">actual</span>
-                      }
-                    </td>
-                    <td class="col-actions">
-                      @if (spaceRole.canEdit()) {
-                        <app-row-actions
-                          [items]="markerMenu(marker)"
-                          [ariaLabel]="'Actions for event ' + marker.title"
-                        />
-                      }
-                    </td>
-                  </tr>
-                </ng-template>
-                <ng-template #emptymessage>
-                  <tr>
-                    <td colspan="7">No events yet. Add one to get started.</td>
-                  </tr>
-                </ng-template>
-              </p-table>
-            </app-section-card>
+            <app-entity-events-section
+              [spaceId]="spaceIdSig()"
+              anchorType="trial"
+              [anchorId]="trialId()"
+              [events]="t.markers ?? []"
+              (changed)="loadTrial()"
+            />
           </div>
 
           <!-- Activity feed for this trial -->
@@ -641,26 +523,6 @@
               <p class="py-4 text-sm text-slate-500">No CT.gov snapshot is available yet.</p>
             }
           </p-dialog>
-
-          <!-- Change events -->
-          <app-section-card
-            title="Events"
-            description="External intelligence scoped to this trial."
-            [count]="eventsCount()"
-            countNoun="event"
-            [flush]="true"
-            [scrollBody]="true"
-          >
-            @if (trial(); as t) {
-              <app-entity-events-panel
-                [spaceId]="spaceIdSig()"
-                [tenantId]="tenantIdSig() ?? ''"
-                entityLevel="trial"
-                [entityId]="t.id"
-                (loaded)="eventsCount.set($event)"
-              />
-            }
-          </app-section-card>
 
           <!-- Referenced in -->
           <div id="referenced-in">

@@ -26,7 +26,9 @@ import { BrandLogoComponent } from '../../../shared/components/brand-logo.compon
 import { TimelineViewComponent } from '../../landscape/timeline-view.component';
 import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
-import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
+import { EntityEventsSectionComponent } from '../../../shared/components/entity-events-section/entity-events-section.component';
+import { EntityEventsService } from '../../../shared/components/entity-events-section/entity-events.service';
+import type { Marker } from '../../../core/models/marker.model';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SourceProvenanceLineComponent } from '../../../shared/components/source-provenance/source-provenance-line.component';
 import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
@@ -72,7 +74,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     MaterialsSectionComponent,
     TimelineViewComponent,
     EntityMarkerDrawerComponent,
-    EntityEventsPanelComponent,
+    EntityEventsSectionComponent,
     LoaderComponent,
     SourceProvenanceLineComponent,
   ],
@@ -125,10 +127,25 @@ export class CompanyDetailComponent {
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
 
-  // Header count badges for the events / materials cards, fed by each panel's
-  // (loaded) output since those counts are fetched inside the child component.
-  protected readonly eventsCount = signal(0);
+  // Header count badge for the materials card, fed by the panel's (loaded)
+  // output since the count is fetched inside the child component.
   protected readonly materialsCount = signal(0);
+
+  // Events anchored to this company, rendered in the standardized events table.
+  private readonly entityEvents = inject(EntityEventsService);
+  protected readonly events = signal<Marker[]>([]);
+  protected async loadEvents(): Promise<void> {
+    const id = this.companyId();
+    if (!id) {
+      this.events.set([]);
+      return;
+    }
+    try {
+      this.events.set(await this.entityEvents.fetchForAnchor('company', id));
+    } catch {
+      this.events.set([]);
+    }
+  }
 
   // Entity overflow menu (Edit details / View assets / Delete), rendered in the
   // content section-header instead of the topbar. Empty for viewers.
@@ -229,6 +246,7 @@ export class CompanyDetailComponent {
     }
     void this.loadCompany();
     void this.loadIntelligence();
+    void this.loadEvents();
   });
 
   private findAncestorParam(key: string): string | null {

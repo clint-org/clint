@@ -26,7 +26,8 @@ import { BrandLogoComponent } from '../../../shared/components/brand-logo.compon
 import { TimelineViewComponent } from '../../landscape/timeline-view.component';
 import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
-import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
+import { EntityEventsSectionComponent } from '../../../shared/components/entity-events-section/entity-events-section.component';
+import { EntityEventsService } from '../../../shared/components/entity-events-section/entity-events.service';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SourceProvenanceLineComponent } from '../../../shared/components/source-provenance/source-provenance-line.component';
 import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
@@ -35,6 +36,7 @@ import { AssetService } from '../../../core/services/asset.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { Asset } from '../../../core/models/asset.model';
+import type { Marker } from '../../../core/models/marker.model';
 import {
   IntelligenceDetailBundle,
   IntelligenceHistoryPayload,
@@ -66,7 +68,7 @@ import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delet
     TimelineViewComponent,
     PiMarkComponent,
     EntityMarkerDrawerComponent,
-    EntityEventsPanelComponent,
+    EntityEventsSectionComponent,
     RowActionsComponent,
     SectionCardComponent,
     ReferencedInPanelComponent,
@@ -183,10 +185,25 @@ export class AssetDetailComponent {
   protected readonly tenantIdSig = computed(() => this.findAncestorParam('tenantId') ?? '');
   protected readonly spaceIdSig = computed(() => this.findAncestorParam('spaceId') ?? '');
 
-  // Header count badges for the events / materials cards, fed by each panel's
-  // (loaded) output since those counts are fetched inside the child component.
-  protected readonly eventsCount = signal(0);
+  // Header count badge for the materials card, fed by the panel's (loaded)
+  // output since the count is fetched inside the child component.
   protected readonly materialsCount = signal(0);
+
+  // Events anchored to this asset, rendered in the standardized events table.
+  private readonly entityEvents = inject(EntityEventsService);
+  protected readonly events = signal<Marker[]>([]);
+  protected async loadEvents(): Promise<void> {
+    const id = this.assetId();
+    if (!id) {
+      this.events.set([]);
+      return;
+    }
+    try {
+      this.events.set(await this.entityEvents.fetchForAnchor('asset', id));
+    } catch {
+      this.events.set([]);
+    }
+  }
 
   private readonly landscape = inject(LandscapeStateService);
 
@@ -213,6 +230,7 @@ export class AssetDetailComponent {
     }
     void this.loadAsset();
     void this.loadIntelligence();
+    void this.loadEvents();
   });
 
   private findAncestorParam(key: string): string | null {

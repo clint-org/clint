@@ -162,29 +162,20 @@
           (cancelled)="purgeDialogOpen.set(false)"
           (confirmed)="onPurgeConfirmed($event)"
         />
+
+        <div id="events" class="mt-4">
+          <app-entity-events-section
+            [spaceId]="spaceIdSig()"
+            anchorType="asset"
+            [anchorId]="assetId()"
+            [events]="events()"
+            (changed)="loadEvents()"
+          />
+        </div>
       </div>
 
-      <!-- Rail: everything referential (events, referenced-in, materials). -->
+      <!-- Rail: everything referential (referenced-in, materials). -->
       <div class="w-full flex-none lg:w-80">
-        <app-section-card
-          title="Events"
-          description="External intelligence scoped to this asset."
-          [count]="eventsCount()"
-          countNoun="event"
-          [flush]="true"
-          [scrollBody]="true"
-        >
-          @if (asset(); as a) {
-            <app-entity-events-panel
-              [spaceId]="spaceIdSig()"
-              [tenantId]="tenantIdSig()"
-              entityLevel="product"
-              [entityId]="a.id"
-              (loaded)="eventsCount.set($event)"
-            />
-          }
-        </app-section-card>
-
         <app-section-card
           title="Referenced in"
           description="Intelligence entries that cite this asset."
