@@ -117,7 +117,7 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
               </div>
               @if (phaseLabel(); as phase) {
                 <span
-                  class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
+                  class="shrink-0 rounded-sm bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
                   >{{ phase }}</span
                 >
               }

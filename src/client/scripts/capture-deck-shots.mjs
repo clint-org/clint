@@ -230,20 +230,44 @@ if (want('timeline')) {
     // Re-assert in case the grid's initial-scroll effect reset it.
     await page.evaluate(scrollOnce, 560).catch(() => {});
     await page.waitForTimeout(700);
-    // Hover a content-rich data marker (description + readout) so the tooltip
-    // card shows the competitive read, not a bare CT.gov milestone. The marker's
-    // aria-label is its title; target the REDEFINE-1 topline readout (CagriSema,
-    // 2024-12, in frame), falling back to a mid marker if it isn't found.
-    let target = page
-      .locator('app-marker div[role="button"][aria-label^="REDEFINE-1 topline"]')
-      .first();
-    if (!(await target.count())) {
-      const markers = page.locator('app-marker div[role="button"]');
-      const n = await markers.count();
-      target = n ? markers.nth(Math.min(n - 1, Math.floor(n * 0.45))) : null;
+    // Hover a content-rich, NON-CT.gov marker (a dated readout/event with a
+    // competitive description) so the tooltip card shows a real read, not a bare
+    // CT.gov milestone. Try a few known headline readouts in the dense 2024 band,
+    // then fall back to any non-CT.gov marker.
+    const PREFERRED = [
+      'Novo CagriSema misses bar, stock -20%',
+      'REDEFINE-1 full readout',
+      'SEQUOIA-HCM topline at AHA 2024',
+      'FINEARTS-HF positive at ESC 2024',
+      'DAPA-HF topline announced',
+    ];
+    let target = null;
+    for (const label of PREFERRED) {
+      const loc = page.locator(`app-marker div[role="button"][aria-label="${label}"]`).first();
+      if (await loc.count()) {
+        target = loc;
+        break;
+      }
+    }
+    if (!target) {
+      const handle = await page.evaluateHandle(() => {
+        const ctgov = /^(Trial Start|Trial End|Primary Completion Date|Estimated|Study Completion)/i;
+        const ms = [...document.querySelectorAll('app-marker div[role="button"]')];
+        return ms.find((m) => {
+          const l = m.getAttribute('aria-label') || '';
+          return l && !ctgov.test(l);
+        });
+      });
+      target = handle.asElement();
     }
     if (target) {
-      await target.scrollIntoViewIfNeeded().catch(() => {});
+      // Center the marker BOTH ways: neighbors fill the frame (denser field) and
+      // the tooltip, which opens around the marker, stays fully in view instead of
+      // clipping at the bottom edge.
+      await target
+        .evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center' }))
+        .catch(() => {});
+      await page.waitForTimeout(500);
       await target.hover({ force: true }).catch(() => {});
       await page.waitForSelector('app-marker-tooltip', { timeout: 4000 }).catch(() => {});
       await page.waitForTimeout(700);
