@@ -34,7 +34,7 @@ The Heatmap view renders a competitive heatmap: rows are the grouping dimension 
   tables: []
   related:
     - timeline-grid
-    - catalysts-list
+    - event-feed
   user_facing: true
   role: viewer
   status: active
@@ -53,7 +53,7 @@ The Heatmap view renders a competitive heatmap: rows are the grouping dimension 
     - companies
     - assets
     - trials
-    - markers
+    - events
     - indications
     - asset_indications
     - mechanisms_of_action

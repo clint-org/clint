@@ -57,18 +57,16 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   routes: []
   rpcs:
     - ingest_ctgov_snapshot
-    - _emit_events_from_marker_change
-    - _log_marker_change
+    - _log_event_change
     - _classify_change
     - _compute_field_diffs
     - recompute_trial_change_events
-    - create_marker
   tables:
     - trial_change_events
     - trial_field_changes
     - trial_ctgov_snapshots
-    - marker_changes
-    - markers
+    - event_changes
+    - events
     - trials
   related:
     - ctgov-snapshot-ingest
@@ -91,7 +89,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
     - trials
   related:
     - trial-change-feed-pipeline
-    - events-feed
+    - event-feed
   user_facing: true
   role: viewer
   status: active
@@ -126,14 +124,12 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   summary: Analyst-side audit trail of marker edits surfaced on the marker detail panel.
   routes:
     - /t/:tenantId/s/:spaceId/catalysts
-  rpcs:
-    - get_marker_history
-    - backfill_marker_history
+  rpcs: []
   tables:
-    - marker_changes
-    - markers
+    - event_changes
+    - events
   related:
-    - catalysts-detail-panel
+    - event-detail
   user_facing: true
   role: viewer
   status: active
@@ -172,7 +168,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   tables:
     - trial_change_events
     - companies
-    - marker_types
+    - event_types
   related:
     - trial-change-feed-unified-events
     - trial-change-feed-what-changed-widget

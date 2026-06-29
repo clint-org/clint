@@ -88,14 +88,15 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   rpcs:
     - get_dashboard_data
     - _dashboard_trial_obj
+    - _dashboard_anchor_events
   tables:
     - companies
     - assets
     - indications
     - asset_indications
     - trials
-    - markers
-    - marker_types
+    - events
+    - event_types
   related:
     - timeline-zoom
     - timeline-filtering
@@ -123,9 +124,9 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   rpcs:
     - get_dashboard_data
   tables:
-    - markers
-    - marker_types
-    - marker_categories
+    - events
+    - event_types
+    - event_type_categories
   related:
     - timeline-grid
     - timeline-legend
@@ -148,7 +149,7 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - events
   related:
     - timeline-grid
-    - events-feed
+    - event-feed
   user_facing: true
   role: viewer
   status: active
@@ -162,7 +163,7 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - companies
     - assets
     - trials
-    - markers
+    - events
   related:
     - timeline-grid
     - competitive-read-bar
@@ -201,8 +202,8 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - /t/:tenantId/s/:spaceId/timeline
   rpcs: []
   tables:
-    - marker_types
-    - marker_categories
+    - event_types
+    - event_type_categories
   related:
     - timeline-event-markers
     - in-app-help-markers

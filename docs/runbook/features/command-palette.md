@@ -62,7 +62,6 @@ A power-user finder/navigator/command runner. Mounted once in `AppShellComponent
     - companies
     - assets
     - trials
-    - markers
     - events
   related: []
   user_facing: true

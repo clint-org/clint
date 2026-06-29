@@ -55,11 +55,10 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   rpcs:
     - get_dashboard_data
   tables:
-    - markers
-    - marker_types
-    - marker_assignments
+    - events
+    - event_types
   related:
-    - catalysts-list
+    - event-feed
   user_facing: true
   role: viewer
   status: active
@@ -72,7 +71,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   tables:
     - spaces
     - trials
-    - markers
+    - events
     - primary_intelligence
   related:
     - engagement-landing-hero-catalyst
@@ -100,10 +99,10 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   rpcs:
     - get_dashboard_data
   tables:
-    - markers
-    - marker_types
+    - events
+    - event_types
   related:
-    - catalysts-list
+    - event-feed
   user_facing: true
   role: viewer
   status: active

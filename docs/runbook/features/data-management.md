@@ -72,29 +72,26 @@ A full CRUD interface for managing all data within a space:
   role: editor
   status: active
 - id: manage-markers
-  summary: Edit event markers (event_date, end_date, tooltip_text, is_projected) attached to trials. On the trial detail page, clicking a marker title opens the read-only detail drawer (Field, Date type, Last synced, source link) shared with the timeline; its Edit action (editors only) and "View detail" links on catalyst rows both deep-link via ?marker=<id>, which opens the inline editor reactively (also closes the drawer). The row kebab still offers a direct Edit. Markers no longer have their own detail page. Trial-assignment changes go through update_marker_assignments, an atomic RPC that keeps the AFTER DELETE orphan-cleanup trigger from dropping a single-assignment marker mid-edit.
+  summary: Edit events (event_date, end_date, tooltip_text, is_projected) attached to trials. Events carry a single polymorphic anchor (anchor_type + anchor_id); trial assignment changes go through create_event or inline events writes.
   routes:
     - /t/:tenantId/s/:spaceId/profiles/trials/:id
-  rpcs:
-    - update_marker_assignments
-    - _cleanup_orphan_marker
+  rpcs: []
   tables:
-    - markers
-    - marker_assignments
+    - events
   related:
     - manage-trials
   user_facing: true
   role: editor
   status: active
 - id: manage-marker-types
-  summary: Define custom marker types beyond the 10 system defaults, each assigned to a category.
+  summary: Define custom event types beyond the system defaults, each assigned to a category.
   routes:
     - /t/:tenantId/s/:spaceId/settings/marker-types
     - /t/:tenantId/s/:spaceId/settings/marker-types
   rpcs: []
   tables:
-    - marker_types
-    - marker_categories
+    - event_types
+    - event_type_categories
   related:
     - in-app-help-markers
   user_facing: true
@@ -159,13 +156,12 @@ A full CRUD interface for managing all data within a space:
     - /t/:tenantId/s/:spaceId/seed-demo
   rpcs:
     - seed_demo_data
-    - auto_join_demo_tenant_local
   tables:
     - companies
     - assets
     - trials
-    - markers
-    - marker_types
+    - events
+    - event_types
     - indications
   related:
     - manage-seed-demo-internals
@@ -195,7 +191,6 @@ A full CRUD interface for managing all data within a space:
     - assets
     - trials
     - trial_notes
-    - markers
     - events
     - materials
     - mechanisms_of_action
@@ -256,5 +251,18 @@ A full CRUD interface for managing all data within a space:
     - source-import-commit
   user_facing: false
   role: editor
+  status: active
+- id: manage-seed-qa-fixtures
+  summary: QA fixture seeding function for the event model; populates events, event_types, and related tables with known test data for automated and manual QA runs.
+  routes: []
+  rpcs:
+    - seed_events_model_qa
+  tables:
+    - events
+    - event_types
+  related:
+    - manage-seed-demo-internals
+  user_facing: false
+  role: super-admin
   status: active
 ```

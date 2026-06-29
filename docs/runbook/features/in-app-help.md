@@ -35,8 +35,8 @@ Pages follow a consistent shape (header + summary + descriptor table + FAQ + bac
     - /t/:tenantId/s/:spaceId/help/markers
   rpcs: []
   tables:
-    - marker_types
-    - marker_categories
+    - event_types
+    - event_type_categories
   related:
     - manage-marker-types
     - timeline-legend

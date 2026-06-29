@@ -64,10 +64,11 @@ If a step after `register_material` (steps 4-7) throws, the upload flow's catch 
 
 ```yaml
 - id: materials-data-model
-  summary: materials table keyed on space_id with material_type (briefing, priority_notice, ad_hoc) and polymorphic material_links to six entity kinds (trial, marker, company, asset, space, event).
+  summary: materials table keyed on space_id with material_type (briefing, priority_notice, ad_hoc) and polymorphic material_links to six entity kinds (trial, marker, company, asset, space, event). normalize_sample_material normalizes material property values during data operations.
   routes: []
   rpcs:
     - validate_material_links_payload
+    - normalize_sample_material
   tables:
     - materials
     - material_links

@@ -36,8 +36,8 @@ Export details:
   rpcs: []
   tables:
     - trials
-    - markers
-    - marker_types
+    - events
+    - event_types
     - companies
     - assets
   related:
@@ -51,7 +51,7 @@ Export details:
     - /t/:tenantId/s/:spaceId/timeline
   rpcs: []
   tables:
-    - marker_types
+    - event_types
   related:
     - pptx-export-generation
     - timeline-phase-bars
@@ -78,8 +78,8 @@ Export details:
     - /t/:tenantId/s/:spaceId/timeline
   rpcs: []
   tables:
-    - marker_types
-    - marker_categories
+    - event_types
+    - event_type_categories
   related:
     - pptx-export-generation
     - timeline-legend
