@@ -9,29 +9,17 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { CircleIconComponent } from '../../../shared/components/svg-icons/circle-icon.component';
 import { CompanyTileComponent } from '../../../shared/components/company-tile.component';
 import { CtgovSourceTagComponent } from '../../../shared/components/ctgov-source-tag.component';
-import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamond-icon.component';
-import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
-import { TriangleIconComponent } from '../../../shared/components/svg-icons/triangle-icon.component';
-import { SquareIconComponent } from '../../../shared/components/svg-icons/square-icon.component';
-import { DatePrecision, FillStyle, InnerMark } from '../../../core/models/marker.model';
+import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker-icon.component';
+import { DatePrecision, FillStyle, InnerMark, MarkerShape } from '../../../core/models/marker.model';
 import { markerExtentLabel, markerPeriodLabel } from '../../../core/models/marker-date-precision';
 import { phaseShortLabel } from '../../../core/models/phase-colors';
 
 @Component({
   selector: 'app-marker-tooltip',
   standalone: true,
-  imports: [
-    CircleIconComponent,
-    CompanyTileComponent,
-    CtgovSourceTagComponent,
-    DiamondIconComponent,
-    FlagIconComponent,
-    TriangleIconComponent,
-    SquareIconComponent,
-  ],
+  imports: [CompanyTileComponent, CtgovSourceTagComponent, MarkerIconComponent],
   template: `
     <div
       class="fixed pointer-events-none overflow-hidden bg-white border border-slate-200 shadow-[0_4px_16px_rgba(15,23,42,0.08),_0_1px_3px_rgba(15,23,42,0.04)]"
@@ -44,48 +32,15 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
     >
       <!-- Identity strip: glyph + category label + trial id -->
       <div class="flex items-center gap-2 border-b border-slate-100 px-3.5 py-2.5">
-        <svg width="12" height="12" class="shrink-0 overflow-visible">
-          @switch (shape()) {
-            @case ('diamond') {
-              <g
-                app-diamond-icon
-                [size]="12"
-                [color]="typeColor()"
-                [fillStyle]="typedFillStyle()"
-                [innerMark]="typedInnerMark()"
-              />
-            }
-            @case ('flag') {
-              <g app-flag-icon [size]="12" [color]="typeColor()" [fillStyle]="typedFillStyle()" />
-            }
-            @case ('triangle') {
-              <g
-                app-triangle-icon
-                [size]="12"
-                [color]="typeColor()"
-                [fillStyle]="typedFillStyle()"
-              />
-            }
-            @case ('square') {
-              <g
-                app-square-icon
-                [size]="12"
-                [color]="typeColor()"
-                [fillStyle]="typedFillStyle()"
-                [innerMark]="typedInnerMark()"
-              />
-            }
-            @default {
-              <g
-                app-circle-icon
-                [size]="12"
-                [color]="typeColor()"
-                [fillStyle]="typedFillStyle()"
-                [innerMark]="typedInnerMark()"
-              />
-            }
-          }
-        </svg>
+        <app-marker-icon
+          class="shrink-0"
+          [shape]="typedShape()"
+          [color]="typeColor()"
+          [size]="12"
+          [fillStyle]="typedFillStyle()"
+          [innerMark]="typedInnerMark()"
+          [isNle]="noLongerExpected()"
+        />
         <span
           class="min-w-0 flex-1 truncate font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500"
         >
@@ -248,6 +203,7 @@ export class MarkerTooltipComponent implements AfterViewInit {
   readonly tooltipY = signal(0);
   readonly flipAbove = signal(false);
 
+  readonly typedShape = computed<MarkerShape>(() => (this.shape() as MarkerShape) || 'circle');
   readonly typedFillStyle = computed<FillStyle>(() => (this.fillStyle() as FillStyle) ?? 'filled');
   readonly typedInnerMark = computed<InnerMark>(() => (this.innerMark() as InnerMark) ?? 'none');
 
@@ -292,8 +248,8 @@ export class MarkerTooltipComponent implements AfterViewInit {
 
   readonly projectionLabel = computed(() => {
     switch (this.projection()) {
-      case 'forecasted':
-        return 'Forecasted';
+      case 'stout':
+        return 'Stout estimate';
       case 'company':
         return 'Company guidance';
       case 'primary':
