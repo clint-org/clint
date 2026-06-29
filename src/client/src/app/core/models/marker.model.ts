@@ -50,6 +50,16 @@ export interface Marker {
   marker_type_id: string;
   title: string;
   projection: Projection;
+  /**
+   * Anchor level of the underlying event (`space`/`company`/`asset`/`trial`).
+   * Rides through the read paths on the events row (`*` selects and the
+   * dashboard RPC's per-anchor event objects). Optional because some legacy
+   * read shapes do not surface it; consumers must tolerate its absence.
+   * Used by `resolveMarkerVisual` to badge a `primary` projection `p` on
+   * non-trial anchors (asset/company), where primary means a non-registry
+   * primary source rather than the CT.gov registry default.
+   */
+  anchor_type?: 'space' | 'company' | 'asset' | 'trial';
   event_date: string;
   date_precision: DatePrecision;
   end_date: string | null;

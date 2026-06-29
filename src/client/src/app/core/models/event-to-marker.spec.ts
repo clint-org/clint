@@ -52,4 +52,16 @@ describe('mapEventToMarker', () => {
 
     expect(marker.sources).toEqual([]);
   });
+
+  it('rides anchor_type through onto the marker (drives the primary p badge)', () => {
+    const marker = mapEventToMarker({
+      id: 'marker-1',
+      event_type_id: 'type-1',
+      event_types: null,
+      anchor_type: 'asset',
+      projection: 'primary',
+    });
+
+    expect(marker.anchor_type).toBe('asset');
+  });
 });

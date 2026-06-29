@@ -3,11 +3,13 @@ import type { FillStyle, InnerMark, Marker, MarkerShape, Projection } from './ma
 /**
  * Single-letter source badge drawn at the top-right of a projected glyph, used
  * only for dates whose source DEVIATES from the assumed default: `c`
- * company-guided, `f` forecasted (our model). `null` covers both a confirmed
- * actual date AND a `primary`-sourced projection (the CT.gov/primary-intelligence
- * registry estimate) — primary is the assumed default for a projected date, so
- * like `actual` it carries no letter; the hollow fill alone marks it projected.
- * (`p` is retained in the union for flexibility but is not currently emitted.)
+ * company-guided, `f` forecasted (our model), `p` a non-registry primary source
+ * on an asset/company anchor. `null` covers a confirmed actual date and a
+ * `primary` projection on a trial (or with no anchor context), which is the
+ * CT.gov registry estimate: the assumed default, so like `actual` it carries no
+ * letter and the hollow fill alone marks it projected. On asset/company anchors
+ * there is no registry default, so a `primary` projection there means a
+ * non-registry primary source and badges `p`.
  */
 export type ProjectionBadge = 'c' | 'p' | 'f' | null;
 
@@ -36,10 +38,11 @@ const FALLBACK_COLOR = '#64748b';
 /**
  * Projection -> {badge, opacity}. Hollow fill marks any projected date; a letter
  * is added ONLY when the source deviates from the assumed default. `primary` (the
- * CT.gov / primary-intelligence registry estimate) is that default, so it gets no
- * letter — only `company` guidance (`c`) and our own `forecasted` model (`f`) do.
- * Opacity is a gentle dim reserved for the least-confident forecast tier; the
- * forecast also dashes its outline.
+ * CT.gov registry estimate) is that default on a trial, so the base map gives it
+ * no letter — only `company` guidance (`c`) and our own `forecasted` model (`f`)
+ * do. The resolver overrides `primary` to `p` on asset/company anchors, where it
+ * means a non-registry primary source. Opacity is a gentle dim reserved for the
+ * least-confident forecast tier; the forecast also dashes its outline.
  */
 const PROJECTION_VISUAL: Record<Projection, { badge: ProjectionBadge; opacity: number }> = {
   actual: { badge: null, opacity: 1 },
@@ -47,6 +50,22 @@ const PROJECTION_VISUAL: Record<Projection, { badge: ProjectionBadge; opacity: n
   primary: { badge: null, opacity: 1 },
   forecasted: { badge: 'f', opacity: 0.72 },
 };
+
+/**
+ * A `primary` projection on a non-trial anchor (asset/company) is a non-registry
+ * primary source and badges `p`. On a trial, or when the anchor is unknown,
+ * `primary` is the CT.gov registry default and stays badge-less.
+ */
+function projectionBadgeFor(marker: Marker): ProjectionBadge {
+  if (
+    marker.projection === 'primary' &&
+    marker.anchor_type &&
+    marker.anchor_type !== 'trial'
+  ) {
+    return 'p';
+  }
+  return (PROJECTION_VISUAL[marker.projection] ?? PROJECTION_VISUAL.actual).badge;
+}
 
 /**
  * Derive the visual descriptor from a marker row. Fill style and the projection
@@ -65,7 +84,7 @@ export function resolveMarkerVisual(marker: Marker): MarkerVisual {
     fillStyle: marker.projection === 'actual' ? 'filled' : 'outline',
     innerMark: type?.inner_mark ?? 'none',
     isNle: marker.no_longer_expected,
-    projectionBadge: projection.badge,
+    projectionBadge: projectionBadgeFor(marker),
     opacity: projection.opacity,
     outlineDash: marker.projection === 'forecasted',
   };

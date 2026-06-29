@@ -54,11 +54,36 @@ describe('resolveMarkerVisual', () => {
     expect(resolveMarkerVisual(marker({ projection: 'primary' })).fillStyle).toBe('outline');
   });
 
-  it('badges only the deviating tiers; actual and the assumed primary carry none', () => {
+  it('badges only the deviating tiers; actual and trial/registry primary carry none', () => {
     expect(resolveMarkerVisual(marker({ projection: 'actual' })).projectionBadge).toBeNull();
+    // primary with no anchor context, or on a trial, is the CT.gov registry default: no letter
     expect(resolveMarkerVisual(marker({ projection: 'primary' })).projectionBadge).toBeNull();
+    expect(
+      resolveMarkerVisual(marker({ projection: 'primary', anchor_type: 'trial' })).projectionBadge,
+    ).toBeNull();
     expect(resolveMarkerVisual(marker({ projection: 'company' })).projectionBadge).toBe('c');
     expect(resolveMarkerVisual(marker({ projection: 'forecasted' })).projectionBadge).toBe('f');
+  });
+
+  it("badges primary as 'p' on asset/company anchors (non-registry primary source)", () => {
+    expect(
+      resolveMarkerVisual(marker({ projection: 'primary', anchor_type: 'asset' })).projectionBadge,
+    ).toBe('p');
+    expect(
+      resolveMarkerVisual(marker({ projection: 'primary', anchor_type: 'company' })).projectionBadge,
+    ).toBe('p');
+    // the 'p' rule is specific to the primary tier; other tiers keep their own letters
+    expect(
+      resolveMarkerVisual(marker({ projection: 'company', anchor_type: 'asset' })).projectionBadge,
+    ).toBe('c');
+    expect(
+      resolveMarkerVisual(marker({ projection: 'forecasted', anchor_type: 'asset' }))
+        .projectionBadge,
+    ).toBe('f');
+    // a confirmed actual on an asset still carries no badge
+    expect(
+      resolveMarkerVisual(marker({ projection: 'actual', anchor_type: 'asset' })).projectionBadge,
+    ).toBeNull();
   });
 
   it('dims opacity only at the forecasted tier (actual/company/primary all solid)', () => {
