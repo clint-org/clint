@@ -11,7 +11,16 @@ import {
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, ActivatedRouteSnapshot, RouterLink } from '@angular/router';
 
-import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/event-detail.model';
+import {
+  CatalystDetail,
+  CtgovMarkerMetadata,
+  UpcomingMarker,
+} from '../../core/models/event-detail.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { MarkerChangeRow } from '../../core/models/change-event.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
 import {
@@ -225,43 +234,44 @@ interface CtgovProvenanceBlock {
                 Trial
               </p>
               @if (d.catalyst.trial_acronym ?? d.catalyst.trial_name; as trialLabel) {
+                <!-- Trial name on its own full-width row so it is never
+                     condensed by the phase pill (which now sits on the
+                     status row below). -->
                 @if (d.catalyst.trial_id; as trialId) {
                   <button
                     type="button"
-                    class="group flex w-full items-center justify-between gap-2 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    class="group flex w-full items-center gap-1 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
                     (click)="trialClick.emit(trialId)"
                   >
                     <span
-                      class="inline-flex min-w-0 items-center gap-1 text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
+                      class="truncate text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
+                      >{{ trialLabel }}</span
                     >
-                      <span class="truncate">{{ trialLabel }}</span>
-                      <i
-                        class="fa-solid fa-arrow-right shrink-0 text-[10px] text-slate-300 group-hover:text-brand-600"
-                        aria-hidden="true"
-                      ></i>
-                    </span>
-                    @if (phaseLabel(d.catalyst.trial_phase); as phase) {
-                      <span
-                        class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
-                        >{{ phase }}</span
-                      >
-                    }
+                    <i
+                      class="fa-solid fa-arrow-right shrink-0 text-[10px] text-slate-300 group-hover:text-brand-600"
+                      aria-hidden="true"
+                    ></i>
                   </button>
                 } @else {
-                  <div class="flex w-full items-center justify-between gap-2">
-                    <span class="truncate text-[13px] font-medium text-slate-900">{{
-                      trialLabel
-                    }}</span>
+                  <span class="block truncate text-[13px] font-medium text-slate-900">{{
+                    trialLabel
+                  }}</span>
+                }
+                <!-- Status + phase: status sits left, phase pill right-aligned. -->
+                @if (d.catalyst.recruitment_status || phaseLabel(d.catalyst.trial_phase)) {
+                  <div class="mt-1 flex items-center gap-2">
+                    @if (d.catalyst.recruitment_status) {
+                      <p class="min-w-0 truncate text-[11px] text-slate-500">
+                        {{ d.catalyst.recruitment_status }}
+                      </p>
+                    }
                     @if (phaseLabel(d.catalyst.trial_phase); as phase) {
                       <span
-                        class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
+                        class="ml-auto shrink-0 rounded-sm bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
                         >{{ phase }}</span
                       >
                     }
                   </div>
-                }
-                @if (d.catalyst.recruitment_status) {
-                  <p class="mt-1 text-[11px] text-slate-500">{{ d.catalyst.recruitment_status }}</p>
                 }
               } @else {
                 <p class="text-[12px] text-slate-400">No trial linked</p>
@@ -359,6 +369,18 @@ interface CtgovProvenanceBlock {
         </div>
       }
 
+      @if (entityIntelligence().length > 0) {
+        <app-detail-panel-section
+          [label]="'Intelligence (' + entityIntelligence().length + ')'"
+          [piMark]="true"
+        >
+          <app-pi-detail-section
+            [references]="entityIntelligence()"
+            (referenceClick)="onReferenceClick($event)"
+          />
+        </app-detail-panel-section>
+      }
+
       @if (references().length > 0) {
         <app-detail-panel-section label="Referenced in intelligence" [piMark]="true">
           <app-pi-detail-section
@@ -378,15 +400,17 @@ interface CtgovProvenanceBlock {
             @for (um of upcomingMarkers(); track um.marker_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(um.marker_id)">
                 <app-marker-icon
-                  class="shrink-0"
+                  class="mt-0.5 shrink-0 self-start"
                   [shape]="um.marker_type_shape"
                   [color]="um.marker_type_color"
                   [size]="12"
                   [fillStyle]="um.is_projected ? 'outline' : 'filled'"
                   [innerMark]="um.marker_type_inner_mark"
                   [isNle]="um.no_longer_expected"
+                  [projectionBadge]="markerBadge(um)"
+                  [outlineDash]="markerOutlineDash(um)"
                 />
-                <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
+                <span class="w-[5.25rem] shrink-0 self-start font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   um.event_date | date: 'mediumDate'
                 }}</span>
                 <span class="flex min-w-0 flex-1 flex-col">
@@ -400,7 +424,7 @@ interface CtgovProvenanceBlock {
                   }
                 </span>
                 @if (um.is_projected) {
-                  <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
+                  <span class="mt-0.5 shrink-0 self-start font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
               </app-detail-panel-entity-row>
             }
@@ -414,15 +438,17 @@ interface CtgovProvenanceBlock {
             @for (rm of recentMarkers(); track rm.marker_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(rm.marker_id)">
                 <app-marker-icon
-                  class="shrink-0"
+                  class="mt-0.5 shrink-0 self-start"
                   [shape]="rm.marker_type_shape"
                   [color]="rm.marker_type_color"
                   [size]="12"
                   [fillStyle]="rm.is_projected ? 'outline' : 'filled'"
                   [innerMark]="rm.marker_type_inner_mark"
                   [isNle]="rm.no_longer_expected"
+                  [projectionBadge]="markerBadge(rm)"
+                  [outlineDash]="markerOutlineDash(rm)"
                 />
-                <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
+                <span class="w-[5.25rem] shrink-0 self-start font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   rm.event_date | date: 'mediumDate'
                 }}</span>
                 <span class="flex min-w-0 flex-1 flex-col">
@@ -436,7 +462,7 @@ interface CtgovProvenanceBlock {
                   }
                 </span>
                 @if (rm.is_projected) {
-                  <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
+                  <span class="mt-0.5 shrink-0 self-start font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
               </app-detail-panel-entity-row>
             }
@@ -534,6 +560,12 @@ export class MarkerDetailContentComponent {
    * never own PI, so this pane only ever shows references, never an owned block.
    */
   readonly references = input<PiReference[]>([]);
+  /**
+   * Owned intelligence for this marker's parent trial and asset. Surfaced as an
+   * "Intelligence" section so the timeline pane matches the bullseye/heatmap
+   * panels, which show the selected entity's briefs.
+   */
+  readonly entityIntelligence = input<PiReference[]>([]);
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
   readonly trialClick = output<string>();
@@ -711,6 +743,20 @@ export class MarkerDetailContentComponent {
   protected readonly upcomingMarkers = computed(() => this.detail()?.upcoming_markers ?? []);
   /** Past events sharing the same anchor, most-recent first. Symmetric with upcoming. */
   protected readonly recentMarkers = computed(() => this.detail()?.recent_markers ?? []);
+
+  /**
+   * Projection tier badge / forecast dash for an Upcoming or Recent marker row,
+   * so these glyphs match the timeline + header (same `app-marker-icon`, same
+   * inputs). Upcoming/Recent markers share the parent event's anchor, so the
+   * `primary`-on-non-trial nuance keys off the parent catalyst's anchor_type.
+   */
+  protected markerBadge(m: UpcomingMarker): ProjectionBadge {
+    return projectionBadge(m.projection, this.detail()?.catalyst.anchor_type);
+  }
+
+  protected markerOutlineDash(m: UpcomingMarker): boolean {
+    return projectionOutlineDash(m.projection);
+  }
 
   protected isAutoDescription(desc: string): boolean {
     return desc.toLowerCase().startsWith('auto-derived from');

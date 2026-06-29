@@ -98,11 +98,23 @@ also written).
 - `INTEL_TRIAL_ID=<uuid>` / `DETAIL_TRIAL_ID=<uuid>` pin the intelligence /
   trial-detail trials instead of resolving them by NCT
 
+## Cache-busting
+
+Screenshots keep stable filenames, so a browser/CDN can serve a stale copy after
+a refresh overwrites a PNG in place. To prevent that, every capture run ends by
+calling `stamp-deck-cache-busters.mjs`, which rewrites each `img/NAME.png`
+reference in `stout-intro.html` to `img/NAME.png?v=<sha256[:10]>` from the PNG's
+current bytes. A changed image gets a new URL (fetched fresh); an unchanged one
+keeps its hash. So a refresh also modifies `stout-intro.html` — commit it with
+the PNGs. To re-stamp without capturing (e.g. after hand-swapping a PNG), run
+`node scripts/stamp-deck-cache-busters.mjs`.
+
 ## Verify and commit
 
 Eyeball the new PNGs (a near-empty file usually means a too-early capture or a
-guard redirect). Stage only the changed PNGs explicitly, never `git add -A`
-here, because the gitignored profile holds a real session.
+guard redirect). Stage the changed PNGs **and** `stout-intro.html` (the
+cache-buster restamp) explicitly, never `git add -A` here, because the gitignored
+profile holds a real session.
 
 The repo's pre-push hook runs the full e2e suite, which flakes on cold-start
 timeouts unrelated to image assets. For an assets-only change you can push with

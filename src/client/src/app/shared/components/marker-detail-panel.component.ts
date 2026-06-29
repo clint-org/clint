@@ -3,6 +3,11 @@ import { NgTemplateOutlet } from '@angular/common';
 
 import { CatalystDetail } from '../../core/models/event-detail.model';
 import { FillStyle, InnerMark } from '../../core/models/marker.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { PiReference } from '../../core/models/primary-intelligence.model';
 import { SpaceRoleService } from '../../core/services/space-role.service';
 import { slidePanelAnimation } from '../animations/slide-panel.animation';
@@ -68,6 +73,8 @@ import { MarkerIconComponent } from './svg-icons/marker-icon.component';
               [fillStyle]="effectiveFillStyle()"
               [innerMark]="innerMark()"
               [isNle]="d.catalyst.no_longer_expected"
+              [projectionBadge]="markerBadge()"
+              [outlineDash]="markerOutlineDash()"
             />
           }
         </span>
@@ -89,6 +96,7 @@ import { MarkerIconComponent } from './svg-icons/marker-icon.component';
           [spaceId]="spaceId()"
           [surfaceKey]="surfaceKey()"
           [references]="references()"
+          [entityIntelligence]="entityIntelligence()"
           (markerClick)="markerClick.emit($event)"
           (eventClick)="eventClick.emit($event)"
           (trialClick)="trialClick.emit($event)"
@@ -115,6 +123,8 @@ export class MarkerDetailPanelComponent {
   readonly surfaceKey = input<CtgovMarkerSurfaceKey>('timeline_detail');
   /** Incoming PI references for the selected marker; see MarkerDetailContentComponent. */
   readonly references = input<PiReference[]>([]);
+  /** Owned trial/asset intelligence for this marker; see MarkerDetailContentComponent. */
+  readonly entityIntelligence = input<PiReference[]>([]);
   /** Forwarded to the content body; see MarkerDetailContentComponent. */
   readonly showEditAction = input<boolean>(false);
   readonly panelClose = output<void>();
@@ -167,4 +177,20 @@ export class MarkerDetailPanelComponent {
   readonly innerMark = computed<InnerMark>(() => {
     return this.detail()?.catalyst.marker_type_inner_mark ?? 'none';
   });
+
+  /**
+   * Projection tier badge for the header glyph, derived from the same rule the
+   * timeline uses (`projectionBadge` in marker-visual), so the detail-pane glyph
+   * carries the same 'c'/'p'/'f' letter as the marker on the row. The catalyst
+   * surfaces `projection` + `anchor_type` from the read RPC.
+   */
+  readonly markerBadge = computed<ProjectionBadge>(() => {
+    const c = this.detail()?.catalyst;
+    if (!c) return null;
+    return projectionBadge(c.projection, c.anchor_type);
+  });
+
+  readonly markerOutlineDash = computed<boolean>(() =>
+    projectionOutlineDash(this.detail()?.catalyst.projection)
+  );
 }

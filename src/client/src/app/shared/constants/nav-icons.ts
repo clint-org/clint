@@ -34,3 +34,16 @@ export const NAV_ICONS: Record<string, string> = {
   'audit-log': 'fa-solid fa-clock-rotate-left',
   phases: 'fa-solid fa-layer-group',
 };
+
+/**
+ * Canonical icon class per intelligence/entity scope type, reusing the same
+ * glyphs as the nav rail so trial/company/asset/space read identically wherever
+ * they are surfaced (scope filters, inventory counts, feed kind labels).
+ * Keyed by `IntelligenceEntityType` ('product' is the Asset scope).
+ */
+export const ENTITY_TYPE_ICON: Record<string, string> = {
+  trial: NAV_ICONS['trials'],
+  company: NAV_ICONS['companies'],
+  product: NAV_ICONS['assets'],
+  space: NAV_ICONS['engagement'],
+};

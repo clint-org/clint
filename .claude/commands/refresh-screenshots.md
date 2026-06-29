@@ -32,7 +32,7 @@ Run from `src/client/`:
 
 ## Phase 3: Commit (only if `commit` was passed, or the user confirms)
 
-- Stage **only** the changed PNGs (and any script edits) explicitly — never `git add -A` (the `.shots-profile-run/` profile holds a real session, and the shared checkout may carry another session's WIP; verify `git diff --cached` is only your files).
+- Stage **only** the changed PNGs, the restamped `stout-intro.html` (the capture re-stamps content-hash cache-busters into its image URLs), and any script edits, explicitly — never `git add -A` (the `.shots-profile-run/` profile holds a real session, and the shared checkout may carry another session's WIP; verify `git diff --cached` is only your files).
 - Intermediate `source-import-processing.png` / `source-import-results.png` are gitignored; only the composite is committed.
 - `git push --no-verify origin develop` (the pre-push e2e flakes on cold start; CI is canonical). Pushing develop deploys to dev; promote to prod only on explicit ask.
 
