@@ -1,5 +1,9 @@
 import type { DatePrecision, FillStyle, InnerMark, MarkerShape } from './marker.model';
-import type { IntelligenceEntityType, PrimaryIntelligenceLink } from './primary-intelligence.model';
+import type {
+  IntelligenceEntityType,
+  IntelligenceFeedRow,
+  PrimaryIntelligenceLink,
+} from './primary-intelligence.model';
 
 /**
  * One row of the unified Intelligence feed (the /intelligence stream): published
@@ -70,4 +74,30 @@ export interface FeedResult {
 /** Narrows a feed row to the event shape. */
 export function isEventItem(item: FeedItem): item is EventFeedItem {
   return item.kind === 'event';
+}
+
+/**
+ * Adapts an `IntelligenceFeedRow` (from list_primary_intelligence /
+ * list_draft_intelligence_for_space) into a `BriefFeedItem`, so brief-only
+ * surfaces (the Drafts view) can feed the unified IntelligenceFeedComponent.
+ * `feed_ts` is the brief's `updated_at`; `title` is the headline.
+ */
+export function briefRowToFeedItem(row: IntelligenceFeedRow): BriefFeedItem {
+  return {
+    kind: 'brief',
+    id: row.id,
+    space_id: row.space_id,
+    feed_ts: row.updated_at,
+    title: row.headline,
+    entity_type: row.entity_type,
+    entity_id: row.entity_id,
+    entity_name: null,
+    anchor_id: row.anchor_id,
+    is_lead: row.is_lead,
+    summary_md: row.summary_md,
+    last_edited_by: row.last_edited_by,
+    state: row.state,
+    links: row.links,
+    contributors: row.contributors,
+  };
 }
