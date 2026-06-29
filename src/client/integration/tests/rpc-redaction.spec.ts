@@ -4,7 +4,7 @@
  * End-to-end coverage for the redact_user RPC introduced by migration
  * 20260521120100_user_redaction_rpc. Builds a single hermetic fixture
  * (synthetic auth.users target with a known password, plus a scratch
- * agency/tenant/space and authorship rows on spaces / markers / materials /
+ * agency/tenant/space and authorship rows on spaces / events / materials /
  * primary_intelligence) once in beforeAll. After the happy-path call in
  * test #1, the target user is redacted for the remainder of the file; the
  * subsequent tests assert downstream effects (login failure, audit metadata
@@ -43,22 +43,22 @@ let targetEmail: string;
 let agencyId: string;
 let tenantId: string;
 let spaceId: string;
-let markerId: string;
+let eventId: string;
 let materialId: string;
 let piId: string;
 let piAnchorId: string;
 
 /**
- * Resolve a global (space_id is null) marker_type that we can attach the
- * authorship marker to. Falls back to a clear error if the seed shape
+ * Resolve a global (space_id is null) event_type that we can attach the
+ * authorship event to. Falls back to a clear error if the seed shape
  * has drifted.
  */
-async function pickGlobalMarkerType(pg: PgClient): Promise<string> {
+async function pickGlobalEventType(pg: PgClient): Promise<string> {
   const { rows } = await pg.query<{ id: string }>(
-    `select id from public.marker_types where space_id is null limit 1`,
+    `select id from public.event_types where space_id is null limit 1`,
   );
   if (rows.length === 0) {
-    throw new Error('rpc-redaction.spec: no global marker_type available in seed');
+    throw new Error('rpc-redaction.spec: no global event_type available in seed');
   }
   return rows[0].id;
 }
@@ -84,7 +84,7 @@ beforeAll(async () => {
   agencyId = randomUUID();
   tenantId = randomUUID();
   spaceId = randomUUID();
-  markerId = randomUUID();
+  eventId = randomUUID();
   materialId = randomUUID();
   piId = randomUUID();
   piAnchorId = randomUUID();
@@ -94,7 +94,7 @@ beforeAll(async () => {
     await pg.connect();
     await pg.query('begin');
 
-    const markerTypeId = await pickGlobalMarkerType(pg);
+    const eventTypeId = await pickGlobalEventType(pg);
 
     // Agency under the target as owner so agency_members gets a row.
     await pg.query(
@@ -153,16 +153,16 @@ beforeAll(async () => {
     await pg.query(`insert into public.platform_admins (user_id) values ($1)`, [targetUserId]);
 
     // ---- authorship rows that must survive the redaction.
-    // The markers BEFORE INSERT trigger requires a valid auth.uid() for
-    // changed_by. Set request.jwt.claim.sub to the target for the duration
-    // of these inserts, then reset.
+    // The events trg_events_set_created_by BEFORE INSERT trigger lands
+    // created_by from request.jwt.claim.sub. Set it to the target for
+    // the duration of these inserts, then reset.
     await pg.query(`select set_config('request.jwt.claim.sub', $1, true)`, [targetUserId]);
 
     await pg.query(
-      `insert into public.markers
-         (id, space_id, marker_type_id, title, event_date, projection, created_by)
-       values ($1, $2, $3, $4, current_date, 'actual', $5)`,
-      [markerId, spaceId, markerTypeId, 'redact-spec marker', targetUserId],
+      `insert into public.events
+         (id, space_id, event_type_id, title, event_date, anchor_type, created_by)
+       values ($1, $2, $3, $4, current_date, 'space', $5)`,
+      [eventId, spaceId, eventTypeId, 'redact-spec event', targetUserId],
     );
 
     await pg.query(
@@ -245,12 +245,12 @@ afterAll(async () => {
     );
 
     // Authorship rows + space cascade. Order mirrors the delete_space RPC:
-    // primary_intelligence and markers go first so trigger inserts have a
+    // primary_intelligence and events go first so trigger inserts have a
     // valid parent space until the parent is deleted last.
     await pg.query(`delete from public.primary_intelligence where id = $1`, [piId]);
     await pg.query(`delete from public.primary_intelligence_anchors where id = $1`, [piAnchorId]);
     await pg.query(`delete from public.materials where id = $1`, [materialId]);
-    await pg.query(`delete from public.markers where id = $1`, [markerId]);
+    await pg.query(`delete from public.events where id = $1`, [eventId]);
     await pg.query(`delete from public.space_members where space_id = $1`, [spaceId]);
     await pg.query(`delete from public.spaces where id = $1`, [spaceId]);
     await pg.query(`delete from public.tenant_members where tenant_id = $1`, [tenantId]);
@@ -344,11 +344,12 @@ describe('rpc redact_user', () => {
       );
       expect(spaceRows[0]?.created_by).toBe(targetUserId);
 
-      const { rows: markerRows } = await pg.query<{ created_by: string }>(
-        `select created_by from public.markers where id = $1`,
-        [markerId],
+      // event authorship must survive redaction: created_by is deliberately preserved.
+      const { rows: eventRows } = await pg.query<{ created_by: string }>(
+        `select created_by from public.events where id = $1`,
+        [eventId],
       );
-      expect(markerRows[0]?.created_by).toBe(targetUserId);
+      expect(eventRows[0]?.created_by).toBe(targetUserId);
 
       const { rows: materialRows } = await pg.query<{ uploaded_by: string }>(
         `select uploaded_by from public.materials where id = $1`,
