@@ -33,7 +33,7 @@ export const MARKER_BOOL_FIELDS: ReadonlySet<string> = new Set([
 
 export const PROJECTION_LABEL: Record<string, string> = {
   actual: 'Confirmed actual',
-  estimate: 'Projected · Estimate',
+  forecasted: 'Forecasted',
   company: 'Projected · Company guidance',
   primary: 'Projected · Primary source estimate',
 };

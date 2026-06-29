@@ -461,7 +461,7 @@ export class MarkerFormComponent implements OnInit {
 
   readonly projectionOptions: { label: string; value: Projection }[] = [
     { label: PROJECTION_LABEL['actual'], value: 'actual' },
-    { label: PROJECTION_LABEL['estimate'], value: 'estimate' },
+    { label: PROJECTION_LABEL['forecasted'], value: 'forecasted' },
     { label: PROJECTION_LABEL['company'], value: 'company' },
     { label: PROJECTION_LABEL['primary'], value: 'primary' },
   ];

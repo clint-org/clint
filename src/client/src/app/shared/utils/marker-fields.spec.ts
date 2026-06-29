@@ -7,7 +7,7 @@ import {
 import type { Projection } from '../../core/models/marker.model';
 
 // Keep this list in sync with the Projection union in marker.model.ts.
-const ALL_PROJECTIONS: Projection[] = ['estimate', 'company', 'primary', 'actual'];
+const ALL_PROJECTIONS: Projection[] = ['forecasted', 'company', 'primary', 'actual'];
 
 describe('PROJECTION_LABEL (P2.2 relabel)', () => {
   it('has a human label for every Projection enum value', () => {
@@ -22,13 +22,14 @@ describe('PROJECTION_LABEL (P2.2 relabel)', () => {
 
   it('reads "actual" as a confirmed date and the others as projected sources', () => {
     expect(PROJECTION_LABEL['actual'].toLowerCase()).toContain('actual');
-    for (const p of ['estimate', 'company', 'primary'] as Projection[]) {
+    expect(PROJECTION_LABEL['forecasted']).toBe('Forecasted');
+    for (const p of ['company', 'primary'] as Projection[]) {
       expect(PROJECTION_LABEL[p]).toMatch(/projected/i);
     }
   });
 
   it('formats a projection value via the canonical label', () => {
-    expect(formatMarkerFieldValue('projection', 'estimate')).toBe('Projected · Estimate');
+    expect(formatMarkerFieldValue('projection', 'forecasted')).toBe('Forecasted');
     expect(formatMarkerFieldValue('projection', 'actual')).toBe('Confirmed actual');
   });
 

@@ -10,7 +10,7 @@ create table public.events (
   end_date           date,
   end_date_precision text not null default 'exact' check (end_date_precision in ('exact','month','quarter','half','year')),
   is_ongoing         boolean not null default false check (not (is_ongoing and end_date is not null)),
-  projection         text not null default 'actual' check (projection in ('estimate','company','primary','actual')),
+  projection         text not null default 'actual' check (projection in ('forecasted','company','primary','actual')),
   is_projected       boolean generated always as (projection <> 'actual') stored,
   significance        text check (significance in ('high','low')),
   visibility          text check (visibility in ('pinned','hidden')),

@@ -49,7 +49,7 @@ describe('resolveMarkerVisual', () => {
   });
 
   it('non-actual projection renders outline', () => {
-    expect(resolveMarkerVisual(marker({ projection: 'estimate' })).fillStyle).toBe('outline');
+    expect(resolveMarkerVisual(marker({ projection: 'forecasted' })).fillStyle).toBe('outline');
     expect(resolveMarkerVisual(marker({ projection: 'company' })).fillStyle).toBe('outline');
     expect(resolveMarkerVisual(marker({ projection: 'primary' })).fillStyle).toBe('outline');
   });
