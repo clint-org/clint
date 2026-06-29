@@ -129,17 +129,7 @@
                     <span class="truncate text-sm font-semibold text-slate-700">{{
                       row.assetName
                     }}</span>
-                    @if (row.leadPhase) {
-                      <!-- Phase chip: mono + AA-darkened phase color, matching the
-                           bullseye ring-label typography (shared source via
-                           phaseShortLabel + textColorOnWhite). -->
-                      <span
-                        class="inline-flex shrink-0 items-center rounded-sm bg-slate-50 px-1 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wide ring-1 ring-slate-200"
-                        [style.color]="phaseChipTextColor(row.leadPhase)"
-                      >
-                        {{ phaseChipLabel(row.leadPhase) }}
-                      </span>
-                    }
+                    <app-phase-chip class="shrink-0" [phase]="row.leadPhase" />
                     @if (row.assetHasIntelligence) {
                       <app-pi-mark [size]="10" class="shrink-0" />
                     }

@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { DatePipe } from '@angular/common';
 
 import { FlatCatalyst } from '../../core/models/event-detail.model';
-import { phaseShortLabel } from '../../core/models/phase-colors';
 import { CompanyTileComponent } from '../../shared/components/company-tile.component';
+import { PhaseChipComponent } from '../../shared/components/phase-chip.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
 
@@ -20,7 +20,7 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
 @Component({
   selector: 'app-event-row-tooltip',
   standalone: true,
-  imports: [CompanyTileComponent, DatePipe, MarkerIconComponent],
+  imports: [CompanyTileComponent, DatePipe, MarkerIconComponent, PhaseChipComponent],
   animations: [fadeTooltipAnimation],
   template: `
     @if (catalyst(); as c) {
@@ -108,12 +108,7 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
                   <div class="mt-0.5 truncate text-[12px] text-slate-500">{{ c.asset_name }}</div>
                 }
               </div>
-              @if (phaseLabel(); as phase) {
-                <span
-                  class="shrink-0 rounded-sm bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
-                  >{{ phase }}</span
-                >
-              }
+              <app-phase-chip class="shrink-0" [phase]="catalyst()?.trial_phase" />
             </div>
           }
         </div>
@@ -126,11 +121,6 @@ export class EventRowTooltipComponent {
   readonly catalyst = input<FlatCatalyst | null>(null);
   readonly x = input<number>(0);
   readonly y = input<number>(0);
-
-  protected readonly phaseLabel = computed<string | null>(() => {
-    const p = this.catalyst()?.trial_phase;
-    return p ? phaseShortLabel(p) : null;
-  });
 
   /**
    * Source host for the provenance line. Primary-source rule: the derived

@@ -15,12 +15,12 @@ import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker
 import { DatePrecision, FillStyle, InnerMark, MarkerShape } from '../../../core/models/marker.model';
 import { ProjectionBadge } from '../../../core/models/marker-visual';
 import { markerExtentLabel, markerPeriodLabel } from '../../../core/models/marker-date-precision';
-import { phaseShortLabel } from '../../../core/models/phase-colors';
+import { PhaseChipComponent } from '../../../shared/components/phase-chip.component';
 
 @Component({
   selector: 'app-marker-tooltip',
   standalone: true,
-  imports: [CompanyTileComponent, CtgovSourceTagComponent, MarkerIconComponent],
+  imports: [CompanyTileComponent, CtgovSourceTagComponent, MarkerIconComponent, PhaseChipComponent],
   template: `
     <div
       class="fixed pointer-events-none overflow-hidden bg-white border border-slate-200 shadow-[0_4px_16px_rgba(15,23,42,0.08),_0_1px_3px_rgba(15,23,42,0.04)]"
@@ -123,12 +123,7 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
                 <div class="truncate text-[11px] text-slate-500">{{ assetName() }}</div>
               }
             </div>
-            @if (phaseChipLabel()) {
-              <span
-                class="shrink-0 rounded-sm bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
-                >{{ phaseChipLabel() }}</span
-              >
-            }
+            <app-phase-chip class="shrink-0" [phase]="trialPhase()" />
           </div>
         }
 
@@ -222,12 +217,6 @@ export class MarkerTooltipComponent implements AfterViewInit {
 
   /** Compact status tag wording on the focal row. */
   readonly statusTagLabel = computed(() => (this.isProjected() ? 'Projected' : 'Confirmed'));
-
-  /** Short phase label (P1..P4) for the footer chip; empty when no phase. */
-  readonly phaseChipLabel = computed(() => {
-    const p = this.trialPhase();
-    return p ? phaseShortLabel(p) : '';
-  });
 
   private formatPoint(iso: string, precision: DatePrecision): string {
     const period = markerPeriodLabel(iso, precision);
