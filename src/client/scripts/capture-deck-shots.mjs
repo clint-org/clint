@@ -235,6 +235,10 @@ if (want('timeline')) {
     // CT.gov milestone. Try a few known headline readouts in the dense 2024 band,
     // then fall back to any non-CT.gov marker.
     const PREFERRED = [
+      // A non-CT.gov Commercial/Distribution analyst event in the dense NOVO
+      // NORDISK band: centering on it surfaces the richest marker field AND a
+      // tooltip with a real competitive read (not a bare CT.gov milestone).
+      'Wegovy broad US distribution restored',
       'Novo CagriSema misses bar, stock -20%',
       'REDEFINE-1 full readout',
       'SEQUOIA-HCM topline at AHA 2024',
