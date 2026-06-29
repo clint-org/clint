@@ -432,7 +432,7 @@ export class MaterialUploadZoneComponent {
       display_order: i,
     }));
     const anchorType = this.entityType();
-    if (anchorType === 'space' || anchorType === 'event') {
+    if (anchorType === 'space' || anchorType === 'event' || anchorType === 'marker') {
       links.unshift({
         entity_type: anchorType,
         entity_id: this.entityId(),
