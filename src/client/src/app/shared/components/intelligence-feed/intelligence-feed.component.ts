@@ -57,7 +57,7 @@ import { eventFeedDateLabel } from './event-feed-date-label';
           ></span>
           @if (row.kind === 'event') {
             @let ev = asEvent(row);
-            <div class="min-w-0 flex-1 px-4 py-2 transition-colors group-hover:bg-slate-50">
+            <div class="min-w-0 flex-1 px-4 py-2.5 transition-colors group-hover:bg-slate-50">
               <div class="flex items-center gap-2">
                 <app-marker-icon
                   [shape]="ev.marker_shape"
@@ -68,31 +68,31 @@ import { eventFeedDateLabel } from './event-feed-date-label';
                   [isNle]="ev.no_longer_expected"
                 />
                 <span
-                  class="shrink-0 font-mono text-[9px] font-bold uppercase leading-none tracking-[0.1em] text-slate-500"
+                  class="shrink-0 font-mono text-[10.5px] font-bold uppercase leading-none tracking-[0.08em] text-slate-500"
                 >
                   {{ ev.category_name }}
                 </span>
                 <button
                   type="button"
                   data-event-open
-                  class="min-w-0 flex-1 truncate text-left text-[13.5px] font-semibold leading-tight text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+                  class="min-w-0 flex-1 truncate text-left text-[15px] font-semibold leading-tight text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
                   (click)="eventOpen.emit(ev.id)"
                   [innerHTML]="eventTitle(ev)"
                 ></button>
-                <span class="shrink-0 font-mono text-[10px] font-semibold tabular-nums text-slate-400">
-                  <span class="text-[9px] font-normal uppercase tracking-wider text-slate-400">Added</span>
+                <span class="shrink-0 font-mono text-[12px] font-semibold tabular-nums text-slate-500">
+                  <span class="text-[10.5px] font-normal uppercase tracking-wider text-slate-500">Added</span>
                   {{ ev.feed_ts | date: 'mediumDate' }}
                 </span>
               </div>
-              <div class="mt-0.5 flex items-baseline gap-1.5 pl-[20px] text-[12px] leading-tight">
-                <span class="shrink-0 font-mono text-[11px] uppercase tracking-[0.04em] text-slate-500">
+              <div class="mt-0.5 flex items-baseline gap-2 pl-[20px] text-[13px] leading-snug">
+                <span class="shrink-0 font-mono text-[13px] uppercase tracking-[0.02em] text-slate-600">
                   {{ ev.entity_name ?? 'Engagement' }}
                 </span>
                 <span
-                  class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500"
+                  class="shrink-0 font-mono text-[13px] tabular-nums text-slate-600"
                   [class.italic]="ev.is_projected"
                 >
-                  <span class="text-[9px] not-italic uppercase tracking-wider text-slate-400">Event</span>
+                  <span class="text-[10.5px] not-italic uppercase tracking-wider text-slate-500">Event</span>
                   {{ eventDateLabel(ev) }}
                 </span>
                 @if (ev.description; as d) {
@@ -102,10 +102,10 @@ import { eventFeedDateLabel } from './event-feed-date-label';
             </div>
           } @else {
             @let br = asBrief(row);
-            <div class="min-w-0 flex-1 px-4 py-2 transition-colors group-hover:bg-slate-50">
+            <div class="min-w-0 flex-1 px-4 py-2.5 transition-colors group-hover:bg-slate-50">
               <div class="flex items-center gap-2">
                 <span
-                  class="shrink-0 font-mono text-[9px] font-bold uppercase leading-none tracking-[0.1em]"
+                  class="shrink-0 font-mono text-[10.5px] font-bold uppercase leading-none tracking-[0.08em]"
                   [class.text-brand-700]="br.entity_type === 'space'"
                   [class.text-slate-500]="br.entity_type !== 'space'"
                 >
@@ -113,17 +113,17 @@ import { eventFeedDateLabel } from './event-feed-date-label';
                 </span>
                 <a
                   [routerLink]="entityRouterLink(br)"
-                  class="min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+                  class="min-w-0 flex-1 truncate text-[15px] font-semibold leading-tight text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
                   [innerHTML]="headline(br)"
                 ></a>
-                <span class="shrink-0 font-mono text-[10px] font-semibold tabular-nums text-slate-400">
-                  <span class="text-[9px] font-normal uppercase tracking-wider text-slate-400">Updated</span>
+                <span class="shrink-0 font-mono text-[12px] font-semibold tabular-nums text-slate-500">
+                  <span class="text-[10.5px] font-normal uppercase tracking-wider text-slate-500">Updated</span>
                   {{ br.feed_ts | date: 'mediumDate' }}
                 </span>
               </div>
               @if (excerpt(br); as e) {
                 <p
-                  class="mt-0.5 truncate pl-[20px] text-[12px] leading-tight text-slate-600"
+                  class="mt-0.5 truncate pl-[20px] text-[13px] leading-snug text-slate-600"
                   [innerHTML]="e"
                 ></p>
               }
