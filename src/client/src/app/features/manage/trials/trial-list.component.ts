@@ -28,6 +28,7 @@ import { SpaceSettingsService } from '../../../core/services/space-settings.serv
 import { formatCtgovFieldValue } from '../../../shared/utils/ctgov-field-format';
 import { TrialCreateDialogComponent } from './trial-create-dialog.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
+import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { StatusTagComponent } from '../../../shared/components/status-tag.component';
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
@@ -52,6 +53,7 @@ interface TrialRow {
   readonly assetId: string;
   readonly companyName: string;
   readonly companyId: string;
+  readonly companyLogoUrl: string | null;
   readonly phaseLabel: string;
   readonly phaseRank: number;
   readonly markerCount: number;
@@ -66,6 +68,7 @@ interface TrialRow {
     MessageModule,
     TrialCreateDialogComponent,
     ManagePageShellComponent,
+    BrandLogoComponent,
     RowActionsComponent,
     StatusTagComponent,
     GridToolbarComponent,
@@ -160,6 +163,7 @@ export class TrialListComponent implements OnInit {
         assetId: product?.id ?? '',
         companyName: company?.name ?? '--',
         companyId: company?.id ?? '',
+        companyLogoUrl: company?.logo_url ?? null,
         phaseLabel: trial.phase_type ? phaseShortLabel(trial.phase_type) : '--',
         phaseRank: phaseOrder(trial.phase_type),
         markerCount: trial.markers?.length ?? 0,
