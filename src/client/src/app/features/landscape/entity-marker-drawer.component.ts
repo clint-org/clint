@@ -28,6 +28,7 @@ import { LandscapeStateService } from './landscape-state.service';
         <app-marker-detail-panel
           mode="page-drawer"
           [detail]="state.selectedDetail()"
+          [references]="state.selectedMarkerReferences()"
           [spaceId]="state.spaceIdSig()"
           surfaceKey="timeline_detail"
           [showEditAction]="true"
