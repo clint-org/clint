@@ -18,6 +18,7 @@ import {
   timePeriodToRange,
 } from '../../core/models/landscape.model';
 import { PiReference } from '../../core/models/primary-intelligence.model';
+import { briefsToReferences, dedupeReferencesById } from '../../core/models/intelligence-references';
 import { EventDetailService } from '../../core/services/event-detail.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
@@ -127,6 +128,12 @@ export class LandscapeStateService {
   readonly detailLoading = signal(false);
   /** Incoming PI references for the selected marker (entries that cite it). */
   readonly selectedMarkerReferences = signal<PiReference[]>([]);
+  /**
+   * Owned intelligence for the selected marker's parent trial and asset, so the
+   * timeline detail pane surfaces an "Intelligence" section like the bullseye
+   * and heatmap panels do for their selected entity.
+   */
+  readonly selectedEntityIntelligence = signal<PiReference[]>([]);
 
   // ─── Filtered views (computed) ───────────────────────────────────────
 
@@ -262,6 +269,7 @@ export class LandscapeStateService {
     this.selectedMarkerId.set(markerId);
     this.selectedDetail.set(null);
     this.selectedMarkerReferences.set([]);
+    this.selectedEntityIntelligence.set([]);
     this.detailLoading.set(true);
 
     // Incoming PI references load in parallel and never block the catalyst
@@ -282,6 +290,7 @@ export class LandscapeStateService {
       const detail = await this.catalyst.getCatalystDetail(markerId);
       if (this.selectedMarkerId() === markerId) {
         this.selectedDetail.set(detail);
+        void this.loadEntityIntelligence(markerId, detail);
       }
     } catch {
       this.clearSelection();
@@ -290,11 +299,49 @@ export class LandscapeStateService {
     }
   }
 
+  /**
+   * Load the owned intelligence for the marker's parent trial and asset in
+   * parallel, merge and de-dupe, then publish to {@link selectedEntityIntelligence}.
+   * Non-critical: failures leave the section empty and never disturb the pane.
+   */
+  private async loadEntityIntelligence(markerId: string, detail: CatalystDetail): Promise<void> {
+    const c = detail.catalyst;
+    const tasks: Promise<PiReference[]>[] = [];
+    if (c.trial_id) {
+      const trialId = c.trial_id;
+      const trialName = c.trial_acronym ?? c.trial_name;
+      tasks.push(
+        this.intelligence
+          .getTrialDetail(trialId)
+          .then((b) => (b ? briefsToReferences(b.briefs, 'trial', trialId, trialName) : [])),
+      );
+    }
+    if (c.asset_id) {
+      const assetId = c.asset_id;
+      const assetName = c.asset_name;
+      tasks.push(
+        this.intelligence
+          .getAssetDetail(assetId)
+          .then((b) => (b ? briefsToReferences(b.briefs, 'product', assetId, assetName) : [])),
+      );
+    }
+    if (tasks.length === 0) return;
+    try {
+      const results = await Promise.all(tasks);
+      if (this.selectedMarkerId() === markerId) {
+        this.selectedEntityIntelligence.set(dedupeReferencesById(results.flat()));
+      }
+    } catch {
+      /* owned intelligence is a non-critical augmentation of the pane */
+    }
+  }
+
   /** Close the detail panel. */
   clearSelection(): void {
     this.selectedMarkerId.set(null);
     this.selectedDetail.set(null);
     this.selectedMarkerReferences.set([]);
+    this.selectedEntityIntelligence.set([]);
   }
 
   // ─── Private ─────────────────────────────────────────────────────────

@@ -359,6 +359,18 @@ interface CtgovProvenanceBlock {
         </div>
       }
 
+      @if (entityIntelligence().length > 0) {
+        <app-detail-panel-section
+          [label]="'Intelligence (' + entityIntelligence().length + ')'"
+          [piMark]="true"
+        >
+          <app-pi-detail-section
+            [references]="entityIntelligence()"
+            (referenceClick)="onReferenceClick($event)"
+          />
+        </app-detail-panel-section>
+      }
+
       @if (references().length > 0) {
         <app-detail-panel-section label="Referenced in intelligence" [piMark]="true">
           <app-pi-detail-section
@@ -534,6 +546,12 @@ export class MarkerDetailContentComponent {
    * never own PI, so this pane only ever shows references, never an owned block.
    */
   readonly references = input<PiReference[]>([]);
+  /**
+   * Owned intelligence for this marker's parent trial and asset. Surfaced as an
+   * "Intelligence" section so the timeline pane matches the bullseye/heatmap
+   * panels, which show the selected entity's briefs.
+   */
+  readonly entityIntelligence = input<PiReference[]>([]);
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
   readonly trialClick = output<string>();
