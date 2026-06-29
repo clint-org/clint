@@ -27,9 +27,7 @@ describe('bullseye node PI badge', () => {
     expect(chartHtml).toContain('@if (dot.product.intelligence_count > 0)');
     expect(chartHtml).toContain('[attr.d]="bookmarkPath"');
     expect(chartHtml).toContain('fill="var(--brand-600)"');
-    // Agency-aware aria-label: "Has {Agency} intelligence" via the chart computed.
-    expect(chartHtml).toContain('[attr.aria-label]="assetPiAriaLabel()"');
-    expect(chartTs).toContain('intelligenceLabel()');
+    expect(chartHtml).toContain('aria-label="Has intelligence"');
     expect(chartTs).toContain('bookmarkPath = BOOKMARK_PATH');
     // The shape is the shared single source of truth.
     expect(BOOKMARK_PATH.startsWith('M')).toBe(true);

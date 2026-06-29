@@ -26,7 +26,6 @@ import { phaseShortLabel } from '../../../core/models/phase-colors';
 import { shouldShowTrialSecondaryName } from '../../../core/utils/display-fallbacks';
 import { TrialService } from '../../../core/services/trial.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
-import { BrandContextService } from '../../../core/services/brand-context.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
 import {
@@ -123,7 +122,6 @@ export class TrialDetailComponent {
   private router = inject(Router);
   private trialService = inject(TrialService);
   private intelligenceService = inject(PrimaryIntelligenceService);
-  protected readonly brand = inject(BrandContextService);
   private readonly changeEventService = inject(ChangeEventService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);

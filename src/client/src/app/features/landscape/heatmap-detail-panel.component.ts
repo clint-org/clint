@@ -27,7 +27,6 @@ import {
   PiReference,
 } from '../../core/models/primary-intelligence.model';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
-import { BrandContextService } from '../../core/services/brand-context.service';
 import { DetailPanelEmptyStateComponent } from '../../shared/components/detail-panel-empty-state.component';
 import { DetailPanelSectionComponent } from '../../shared/components/detail-panel-section.component';
 import { DetailPanelShellComponent } from '../../shared/components/detail-panel-shell.component';
@@ -109,7 +108,7 @@ const GROUPING_LABEL: Record<HeatmapGrouping, string> = {
         }
 
         @if (allPiReferences().length > 0) {
-          <app-detail-panel-section [label]="brand.intelligenceLabel()" [piMark]="true">
+          <app-detail-panel-section label="Intelligence" [piMark]="true">
             <app-pi-detail-section
               [references]="allPiReferences()"
               [countLabel]="piCountLabel()"
@@ -210,7 +209,6 @@ export class HeatmapDetailPanelComponent {
   });
 
   private readonly intelligenceService = inject(PrimaryIntelligenceService);
-  protected readonly brand = inject(BrandContextService);
 
   /**
    * Real PI references for the group's PI-bearing assets. Each reference carries

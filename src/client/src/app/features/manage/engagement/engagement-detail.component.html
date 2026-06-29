@@ -5,16 +5,13 @@
   @if (loading()) {
     <div class="flex justify-center px-4 py-8"><app-loader [size]="28" /></div>
   } @else {
-    <app-section-header
-      label="Engagement"
-      [detail]="brand.intelligenceLabel() + ' for the whole space'"
-    />
+    <app-section-header label="Engagement" detail="Intelligence for the whole space" />
 
     @if (hasIntelligence()) {
       <h2
         class="mb-3 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-slate-700"
       >
-        {{ brand.intelligenceLabel() }} ({{ intelligence()?.briefs?.length ?? 0 }})
+        Intelligence ({{ intelligence()?.briefs?.length ?? 0 }})
       </h2>
       <app-intelligence-stack
         [briefs]="intelligence()?.briefs ?? []"

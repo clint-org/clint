@@ -19,7 +19,6 @@ import {
   CTGOV_KEY_CATALYSTS_DEFAULT_PATHS,
   CTGOV_TIMELINE_DEFAULT_PATHS,
 } from '../../core/models/ctgov-field.model';
-import { BrandContextService } from '../../core/services/brand-context.service';
 import { ChangeEventService } from '../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
 import { SpaceRoleService } from '../../core/services/space-role.service';
@@ -361,7 +360,7 @@ interface CtgovProvenanceBlock {
       }
 
       @if (references().length > 0) {
-        <app-detail-panel-section [label]="referencedInLabel()" [piMark]="true">
+        <app-detail-panel-section label="Referenced in intelligence" [piMark]="true">
           <app-pi-detail-section
             [references]="references()"
             [countLabel]="referenceCountLabel()"
@@ -499,16 +498,9 @@ export class MarkerDetailContentComponent {
   private fieldVisibility = inject(SpaceFieldVisibilityService);
   private spaceRole = inject(SpaceRoleService);
   private route = inject(ActivatedRoute);
-  private brand = inject(BrandContextService);
 
   /** Import provenance is for curators: owners and editors only. */
   protected readonly canViewProvenance = computed(() => this.spaceRole.canEdit());
-
-  /** "Referenced in {Agency} intelligence", or lowercase fallback with no agency. */
-  protected readonly referencedInLabel = computed(() => {
-    const agency = this.brand.agencyName();
-    return agency ? `Referenced in ${agency} intelligence` : 'Referenced in intelligence';
-  });
 
   /**
    * Tenant id read from the route ancestry. Used to build the "View detail"

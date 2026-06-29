@@ -1,6 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Brand } from '../models/brand.model';
-import { resolveAgencyName, resolveIntelligenceLabel } from '../models/intelligence-label';
 
 export const DEFAULT_BRAND: Brand = {
   kind: 'default',
@@ -29,21 +28,6 @@ export class BrandContextService {
   readonly hasSelfJoin = computed(() => this._brand().has_self_join);
   readonly suspended = computed(() => this._brand().suspended);
   readonly agency = computed(() => this._brand().agency);
-
-  /**
-   * Display name of the agency in the current context, or null. Single source
-   * of truth for "{Agency} intelligence" framing (see {@link intelligenceLabel}).
-   */
-  readonly agencyName = computed(() => resolveAgencyName(this._brand()));
-
-  /**
-   * Formal label for the authored-brief deliverable: "{Agency} intelligence"
-   * when an agency resolves, else plain "Intelligence". Use on formal surfaces
-   * (section headers, empty states, authoring drawer title). Compact surfaces
-   * (nav, badges, tooltips) and the unified `/intelligence` feed stay plain
-   * "Intelligence".
-   */
-  readonly intelligenceLabel = computed(() => resolveIntelligenceLabel(this._brand()));
 
   setBrand(brand: Brand): void {
     this._brand.set(brand);

@@ -35,7 +35,6 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 
 import { CompanyService } from '../../../core/services/company.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
-import { BrandContextService } from '../../../core/services/brand-context.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { Company } from '../../../core/models/company.model';
@@ -88,7 +87,6 @@ export class CompanyDetailComponent {
   private router = inject(Router);
   private companyService = inject(CompanyService);
   private intelligenceService = inject(PrimaryIntelligenceService);
-  protected readonly brand = inject(BrandContextService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);

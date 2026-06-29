@@ -1,6 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-
-import { BrandContextService } from '../../../core/services/brand-context.service';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /** Single source of truth for the PI bookmark shape (24x24 viewBox). */
 export const BOOKMARK_PATH =
@@ -20,7 +18,7 @@ export const PI_MARK_VIEWBOX = '0 0 24 24';
   template: `
     <svg
       role="img"
-      [attr.aria-label]="effectiveLabel()"
+      [attr.aria-label]="label()"
       [attr.width]="size()"
       [attr.height]="size()"
       [attr.viewBox]="viewBox"
@@ -37,14 +35,8 @@ export const PI_MARK_VIEWBOX = '0 0 24 24';
   `,
 })
 export class PiMarkComponent {
-  private readonly brand = inject(BrandContextService);
-
   readonly size = input<number>(11);
-  /** Override the aria-label; defaults to "Has {Agency} intelligence". */
-  readonly label = input<string | undefined>(undefined);
-  protected readonly effectiveLabel = computed(
-    () => this.label() ?? `Has ${this.brand.intelligenceLabel()}`,
-  );
+  readonly label = input<string>('Has intelligence');
   protected readonly path = BOOKMARK_PATH;
   protected readonly viewBox = PI_MARK_VIEWBOX;
 }

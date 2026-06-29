@@ -22,7 +22,6 @@ import { MaterialsSectionComponent } from '../../../shared/components/materials-
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
-import { BrandContextService } from '../../../core/services/brand-context.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import {
   IntelligenceDetailBundle,
@@ -51,7 +50,6 @@ import {
 export class EngagementDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private intelligenceService = inject(PrimaryIntelligenceService);
-  protected readonly brand = inject(BrandContextService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);

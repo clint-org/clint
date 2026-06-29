@@ -149,7 +149,7 @@
           (click)="scrollToSection($event, 'primary-intelligence')"
           class="rounded-sm px-2 py-1 text-slate-600 underline-offset-4 hover:bg-brand-50/60 hover:text-brand-800 hover:underline"
         >
-          {{ brand.intelligenceLabel() }}
+          Intelligence
         </a>
         <span class="text-slate-300">|</span>
         <a
@@ -237,7 +237,7 @@
                 <h2
                   class="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-slate-700"
                 >
-                  {{ brand.intelligenceLabel() }} ({{ intelligence()?.briefs?.length ?? 0 }})
+                  Intelligence ({{ intelligence()?.briefs?.length ?? 0 }})
                 </h2>
                 @if (spaceRole.canAuthorIntelligence()) {
                   <button
