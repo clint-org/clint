@@ -8,6 +8,33 @@ spec: docs/superpowers/specs/2026-06-28-unified-events-timeline-design.md
 The unified dated-fact entity that powers the timeline, the Intelligence feed,
 Future Events, and Activity.
 
+## Event sources
+
+Sources are three orthogonal things, not one field.
+
+**Attached citations (`event_sources` table).** An event has zero or more labeled
+citations added by an analyst or AI import. Each citation is a row in `event_sources`
+(`event_id` FK -> `events(id) ON DELETE CASCADE`, `url NOT NULL`, `label NULL`,
+`sort_order`). There is no `events.source_url` column; it was removed. Where a
+compact display needs a single primary link, take the first `event_sources` row by
+`(sort_order, created_at)`. Write paths: `create_event` accepts an optional
+`p_sources jsonb` array of `{url, label}` objects and writes `event_sources` rows
+atomically in the same SECURITY DEFINER transaction. `update_event_sources` replaces
+an event's full citation set. `event_sources` inherits space-level RLS from its
+parent event (SELECT = `has_space_access`; write = owner/editor only).
+
+**CT.gov registry link (derived, never stored).** The CT.gov page for a trial-anchored
+event is `https://clinicaltrials.gov/study/<trial.identifier>`. It is identical for
+every event on a trial, so it is never stored in `event_sources` or any column. The
+CT.gov ingest producer writes zero source rows. Readers derive the link at render time
+from the anchor trial's identifier. The SQL helper `event_registry_url` and the
+TypeScript util `ctgovRegistryUrl` are the single homes for this format; the link is
+shown alongside the `event_sources` citation list, not inside it.
+
+**Ingest provenance (`source_doc_id`).** The AI-ingest provenance pointer (which source
+document an event was extracted from) is orthogonal to citations and is stored directly
+on the `events` row. It is unchanged by the sources model.
+
 ## Capabilities
 
 ```yaml

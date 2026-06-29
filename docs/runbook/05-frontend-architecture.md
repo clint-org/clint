@@ -758,5 +758,5 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `RouteOfAdministration`
 
 **SVG icon components:**
-_All svg-icon components documented._
+- `HexagonIconComponent`
 <!-- /AUTO-GEN:DRIFT -->

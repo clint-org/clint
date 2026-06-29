@@ -8,12 +8,11 @@ All schema changes are in `supabase/migrations/` as timestamped SQL files.
 
 ## Trial change feed tables
 
-The trial change feed introduces five new tables that together replace the wide CT.gov column set on `trials`:
+The trial change feed introduces four new tables that together replace the wide CT.gov column set on `trials`:
 
 - `trial_ctgov_snapshots`: append-only JSONB store of CT.gov payloads, keyed by `(trial_id, ctgov_version)`. Source of truth for everything CT.gov-derived; consulted only for history queries (per-trial change log, "view this field as of date X", column-chooser rendering).
 - `trial_field_changes`: raw diff log between consecutive snapshots; one row per changed field path. Cheap to write, easy to replay through the classifier.
-- `trial_change_events`: the typed event stream the UI reads. Both CT.gov-derived events (`derived_from_change_id`) and analyst-derived events (`derived_from_marker_change_id`, `marker_id`) flow here; surface code does not branch on origin.
-- `marker_changes`: analyst-side audit log written by a BEFORE INSERT/UPDATE/DELETE trigger on `markers`. BEFORE timing is required: an AFTER DELETE trigger would see zero `marker_assignments` after the cascade, so the trigger fires before the cascade runs and captures the intent.
+- `trial_change_events`: the typed event stream the UI reads. CT.gov-derived change rows carry `derived_from_change_id`; analyst event changes are linked via `event_id` (FK to `events`). Surface code does not branch on origin.
 - `ctgov_sync_runs`: one observability row per Cloudflare cron invocation: started/finished timestamps, trials polled, trials changed, status (`success | partial | failed`), and any error message.
 
 `trials` retained 3 materialized CT.gov columns (`phase`, `recruitment_status`, `study_type`) for filter performance, plus the watermark trio (`last_update_posted_date`, `latest_ctgov_version`, `last_polled_at`) the Worker uses to skip unchanged records. 36 orphaned columns were dropped in Phase 7 of the change-feed rollout (eligibility, design, regulatory, sponsor; all readable from the latest snapshot's JSONB on demand).
@@ -49,29 +48,16 @@ erDiagram
   CONDITIONS ||--o{ CONDITION_INDICATION_MAP : "condition_id"
   INDICATIONS ||--o{ CONDITION_INDICATION_MAP : "indication_id"
   SPACES ||--o{ CONDITIONS : "space_id"
-  SPACES ||--o{ EVENT_CATEGORIES : "space_id"
-  EVENTS ||--o{ EVENT_LINKS : "source_event_id"
-  EVENTS ||--o{ EVENT_LINKS : "target_event_id"
+  SPACES ||--o{ EVENT_CHANGES : "space_id"
   EVENTS ||--o{ EVENT_SOURCES : "event_id"
-  SPACES ||--o{ EVENT_THREADS : "space_id"
-  ASSETS ||--o{ EVENTS : "asset_id"
-  EVENT_CATEGORIES ||--o{ EVENTS : "category_id"
-  COMPANIES ||--o{ EVENTS : "company_id"
+  SPACES ||--o{ EVENT_TYPE_CATEGORIES : "space_id"
+  EVENT_TYPE_CATEGORIES ||--o{ EVENT_TYPES : "category_id"
+  SPACES ||--o{ EVENT_TYPES : "space_id"
+  EVENT_TYPES ||--o{ EVENTS : "event_type_id"
   SOURCE_DOCUMENTS ||--o{ EVENTS : "source_doc_id"
   SPACES ||--o{ EVENTS : "space_id"
-  EVENT_THREADS ||--o{ EVENTS : "thread_id"
-  TRIALS ||--o{ EVENTS : "trial_id"
   INDICATIONS ||--o{ INDICATIONS : "parent_id"
   SPACES ||--o{ INDICATIONS : "space_id"
-  MARKERS ||--o{ MARKER_ASSIGNMENTS : "marker_id"
-  TRIALS ||--o{ MARKER_ASSIGNMENTS : "trial_id"
-  SPACES ||--o{ MARKER_CATEGORIES : "space_id"
-  SPACES ||--o{ MARKER_CHANGES : "space_id"
-  MARKER_CATEGORIES ||--o{ MARKER_TYPES : "category_id"
-  SPACES ||--o{ MARKER_TYPES : "space_id"
-  MARKER_TYPES ||--o{ MARKERS : "marker_type_id"
-  SOURCE_DOCUMENTS ||--o{ MARKERS : "source_doc_id"
-  SPACES ||--o{ MARKERS : "space_id"
   MATERIALS ||--o{ MATERIAL_LINKS : "material_id"
   SPACES ||--o{ MATERIALS : "space_id"
   SPACES ||--o{ MECHANISMS_OF_ACTION : "space_id"
@@ -92,8 +78,7 @@ erDiagram
   ASSETS ||--o{ TRIAL_ASSETS : "asset_id"
   TRIALS ||--o{ TRIAL_ASSETS : "trial_id"
   TRIAL_FIELD_CHANGES ||--o{ TRIAL_CHANGE_EVENTS : "derived_from_change_id"
-  MARKER_CHANGES ||--o{ TRIAL_CHANGE_EVENTS : "derived_from_marker_change_id"
-  MARKERS ||--o{ TRIAL_CHANGE_EVENTS : "marker_id"
+  EVENTS ||--o{ TRIAL_CHANGE_EVENTS : "event_id"
   SPACES ||--o{ TRIAL_CHANGE_EVENTS : "space_id"
   TRIALS ||--o{ TRIAL_CHANGE_EVENTS : "trial_id"
   CONDITIONS ||--o{ TRIAL_CONDITIONS : "condition_id"
@@ -734,6 +719,9 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `asset_routes_of_administration`
 - `audit_events`
 - `change_event_annotations`
+- `event_changes`
+- `event_type_categories`
+- `event_types`
 - `palette_pinned`
 - `palette_recents`
 - `r2_drain_control`
@@ -1045,6 +1033,42 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260627200000_events_rpc_category_name_filter.sql`
 - `20260627210000_landscape_multilevel_intelligence.sql`
 - `20260627220000_events_overview_full_set_aggregates.sql`
+- `20260628070739_drop_marker_event_tables.sql`
+- `20260628070943_event_type_categories.sql`
+- `20260628071012_event_types.sql`
+- `20260628071042_events_table.sql`
+- `20260628071101_event_changes.sql`
+- `20260628071121_create_event_rpc.sql`
+- `20260628071141_update_event_rpc.sql`
+- `20260628071155_event_grants.sql`
+- `20260628071742_drop_legacy_create_event.sql`
+- `20260628074529_dashboard_trial_obj_reads_events.sql`
+- `20260628075551_get_catalyst_detail_reads_events.sql`
+- `20260628090000_dashboard_data_asset_company_events.sql`
 - `20260628100000_materials_is_sample.sql`
+- `20260628100001_event_cutover_schema_prereqs.sql`
 - `20260628110000_materials_list_rpcs_is_sample.sql`
+- `20260628110001_events_model_qa_fixture.sql`
+- `20260628120000_activity_feed_reads_events.sql`
+- `20260628130000_events_page_data_reads_events.sql`
+- `20260628140000_landing_stats_reads_events.sql`
+- `20260628150000_bullseye_reads_events.sql`
+- `20260628160000_palette_reads_events.sql`
+- `20260628170000_inventory_ai_counts_read_events.sql`
+- `20260628180000_link_targets_read_events.sql`
+- `20260628190000_delete_previews_count_events.sql`
+- `20260628200000_recent_materials_reads_events.sql`
+- `20260628210000_retire_marker_triggers.sql`
+- `20260628220000_event_anchor_crud.sql`
+- `20260628240000_event_sources_table.sql`
+- `20260628250000_event_sources_rpc_writes.sql`
+- `20260628260000_read_rpcs_emit_sources.sql`
+- `20260628270000_ctgov_sync_emits_events.sql`
+- `20260628280000_commit_source_import_emits_events.sql`
+- `20260628290000_seed_demo_emits_events.sql`
+- `20260628300000_activity_wiring.sql`
+- `20260628310000_qa_fixture_sources.sql`
+- `20260628320000_drop_events_source_url.sql`
+- `20260628330000_cleanup_trigger_deletes_anchored_events.sql`
+- `20260628340000_admin_cleanup_drops_markers.sql`
 <!-- /AUTO-GEN:DRIFT -->

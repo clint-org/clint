@@ -121,7 +121,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   role: viewer
   status: active
 - id: trial-change-feed-marker-history
-  summary: Analyst-side audit trail of marker edits surfaced on the marker detail panel.
+  summary: Analyst-side audit trail of event edits surfaced on the event detail panel.
   routes:
     - /t/:tenantId/s/:spaceId/catalysts
   rpcs: []
