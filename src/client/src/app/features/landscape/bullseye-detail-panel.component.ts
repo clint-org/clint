@@ -21,6 +21,7 @@ import {
 } from '../../core/models/landscape.model';
 import { CTGOV_BULLSEYE_DEFAULT_PATHS } from '../../core/models/ctgov-field.model';
 import { LandscapeStateService } from './landscape-state.service';
+import { deriveBullseyeEventBuckets } from './bullseye-events';
 import {
   AssetIntelligenceNote,
   IntelligenceEntityType,
@@ -115,6 +116,17 @@ export class BullseyeDetailPanelComponent {
   });
 
   protected readonly recentChangeLabel = recentChangeLabel;
+
+  /**
+   * Split the focused asset's events into Recent (past) and Upcoming (future)
+   * buckets so the panel renders two symmetric lists from the single
+   * `recent_markers` source the bullseye RPC returns.
+   */
+  protected readonly eventBuckets = computed(() =>
+    deriveBullseyeEventBuckets(this.selectedAsset()?.recent_markers ?? [])
+  );
+  protected readonly recentEvents = computed(() => this.eventBuckets().recent);
+  protected readonly upcomingEvents = computed(() => this.eventBuckets().upcoming);
 
   private readonly showAllTrials = signal(false);
 
