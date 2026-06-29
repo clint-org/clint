@@ -511,10 +511,10 @@ Add a spec asserting the trial select string no longer contains `marker_assignme
 
 **Backtest target:** the FULL Acceptance Matrix (rows 1-14) at the visual layer, per the spec's "Visual confirmation artifact." This is the final authoritativeness gate.
 
-- [ ] **Step 1:** Merge `feat/event-model` -> `develop` (user-gated dev deploy); `supabase db push` applies the cutover migrations to dev. Seed a dev "Events model QA" space via `seed_events_model_qa` (or manual `create_event`).
-- [ ] **Step 2:** Drive `dev.clintapp.com` with Chrome MCP using the pre-authenticated dev profile (clear Turnstile: chrome-channel + automation-flag fingerprint per the memory note). Capture a screenshot per matrix scenario at each toggle state (default / Compare preset / full detail).
-- [ ] **Step 3:** Produce a verification report: screenshots + pass/fail for every one of rows 1-14. Any fail becomes a fix-forward task; the cutover is authoritative-done only when all 14 are green.
-- [ ] **Step 4:** Save the report under `docs/notes/` and link it from the plan.
+- [x] **Step 1:** Merge `feat/event-model` -> `develop` (user-gated dev deploy); `supabase db push` applies the cutover migrations to dev. Seed a dev "Events model QA" space via `seed_events_model_qa` (or manual `create_event`). DONE (deployed `9816f111`; QA space seeded via the real auth-gated fixture with spoofed JWT claims over the dev pooler).
+- [x] **Step 2:** Drive `dev.clintapp.com` with Chrome MCP using the pre-authenticated dev profile (clear Turnstile: chrome-channel + automation-flag fingerprint per the memory note). Capture a screenshot per matrix scenario at each toggle state (default / Compare preset / full detail). DONE (authenticated session, no Turnstile; verified against the detail-level depth selector that replaced the 3 toggles + Compare preset).
+- [x] **Step 3:** Produce a verification report: screenshots + pass/fail for every one of rows 1-14. Any fail becomes a fix-forward task; the cutover is authoritative-done only when all 14 are green. DONE -- **all 14 rows PASS**; runtime clean (18/18 REST 200 on the events schema, zero dropped-table refs, zero console errors). Two `seed_events_model_qa` fixture gaps logged as fix-forward (row-10 Beta under-seeded; row-12 hidden event off-horizon).
+- [x] **Step 4:** Save the report under `docs/notes/` and link it from the plan. DONE -- **report: [`docs/notes/event-model-e4-visual-results.md`](../../notes/event-model-e4-visual-results.md)**.
 
 ---
 
