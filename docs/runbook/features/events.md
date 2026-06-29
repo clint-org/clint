@@ -54,11 +54,10 @@ on the `events` row. It is unchanged by the sources model.
   role: editor
   status: active
 - id: event-feed
-  summary: Unified events/catalysts feed read path (get_events_page_data) listing analyst-created events and future milestones, filterable by source, date, company, and type. The /events page UI is de-routed pending the Stage 3 Events->Activity rework; the read RPCs remain live. get_key_catalysts returns a prioritized forward-looking catalyst list for summary surfaces.
+  summary: Unified events feed read path (get_events_page_data) listing analyst-created events and future milestones, filterable by source, date, company, and type. The /events page UI is de-routed pending the Stage 3 Events->Activity rework; the read RPCs remain live.
   routes: []
   rpcs:
     - get_events_page_data
-    - get_key_catalysts
   tables:
     - events
     - event_types
@@ -70,10 +69,10 @@ on the `events` row. It is unchanged by the sources model.
   role: viewer
   status: active
 - id: event-detail
-  summary: Detail panel for a single event; renders date, type, significance, provenance, source citations, and linked materials. get_catalyst_detail is the read path; event_registry_url derives the CT.gov registry link from the event anchor.
+  summary: Detail panel for a single event; renders date, type, significance, provenance, source citations, and linked materials. get_event_detail is the read path (returns the unified shape incl. event_type_id/anchor/significance/visibility for edit-hydration); event_registry_url derives the CT.gov registry link from the event anchor.
   routes: []
   rpcs:
-    - get_catalyst_detail
+    - get_event_detail
     - event_registry_url
   tables:
     - events

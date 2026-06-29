@@ -8,6 +8,9 @@ import {
   EventsPageFilters,
   FeedItem,
 } from '../models/event.model';
+import { CreateEventArgs, UpdateEventArgs } from '../models/event-write.model';
+import { CatalystDetail } from '../models/catalyst.model';
+import { eventDetailFromWrapper } from './event-detail-map';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -83,7 +86,9 @@ export class EventService {
               p_event_id: eventId,
             })
             .throwOnError();
-          return data as EventDetail;
+          // get_event_detail returns the unified catalyst-wrapper shape (Stage 3
+          // IA rename); unwrap it into the flat EventDetail the panel renders.
+          return eventDetailFromWrapper(data as CatalystDetail);
         },
       }
     );
@@ -169,6 +174,35 @@ export class EventService {
       .single()
       .throwOnError();
     return row as AppEvent;
+  }
+
+  /**
+   * Merged Event form create path: the unified create_event RPC (atomic sources via p_sources).
+   * Replaces the legacy create() (category_id/priority/company_id shape) once the old form is removed.
+   */
+  async createEvent(spaceId: string, args: CreateEventArgs): Promise<string> {
+    const params: Record<string, unknown> = { p_space_id: spaceId, ...args };
+    // Omit p_metadata when empty so create works before the create_event metadata param lands.
+    if (params['p_metadata'] == null) delete params['p_metadata'];
+    const { data: newId } = await this.supabase.client.rpc('create_event', params).throwOnError();
+    this.cache.invalidateTags([`space:${spaceId}:events`, `space:${spaceId}:tags`]);
+    return newId as string;
+  }
+
+  /**
+   * Merged Event form edit path: the unified update_event RPC. Carries type + anchor
+   * (re-anchor on edit); the backend RPC extension accepting them is owned by the cutover session.
+   */
+  async updateEvent(spaceId: string, eventId: string, args: UpdateEventArgs): Promise<void> {
+    const params: Record<string, unknown> = { p_event_id: eventId, ...args };
+    // Omit p_metadata when empty so edits work before the update_event metadata param lands.
+    if (params['p_metadata'] == null) delete params['p_metadata'];
+    await this.supabase.client.rpc('update_event', params).throwOnError();
+    this.cache.invalidateTags([
+      `event:${eventId}:detail`,
+      `space:${spaceId}:events`,
+      `space:${spaceId}:tags`,
+    ]);
   }
 
   async update(id: string, changes: Partial<AppEvent>): Promise<AppEvent> {

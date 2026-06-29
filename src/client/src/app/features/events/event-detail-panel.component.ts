@@ -41,6 +41,7 @@ import {
 } from '../../shared/utils/change-event-summary';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { buildEntityActionMenu } from '../../shared/entity-actions/entity-action-menu';
+import { sourceDisplay } from './event-form/event-payload';
 
 interface CategoryHistogramEntry {
   name: string;
@@ -153,6 +154,11 @@ export class EventDetailPanelComponent {
         void this.loadAnnotation(item.id);
       }
     });
+  }
+
+  /** Citation display text: label, else the URL host (D1 host-fallback). */
+  protected sourceLabel(src: { url: string; label: string | null }): string {
+    return sourceDisplay(src);
   }
 
   protected readonly isDetected = computed(

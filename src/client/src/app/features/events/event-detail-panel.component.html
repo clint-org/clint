@@ -90,10 +90,19 @@
         <ul class="space-y-1">
           @for (src of d.sources; track src.url) {
             <li>
-              <app-external-link [href]="src.url">{{ src.label || src.url }}</app-external-link>
+              <app-external-link [href]="src.url">{{ sourceLabel(src) }}</app-external-link>
             </li>
           }
         </ul>
+      </app-detail-panel-section>
+    }
+
+    <!-- Registry: the derived CT.gov link for a trial-anchored event (registry_url
+         is derived server-side, never stored). Kept separate from the attached
+         citations above. -->
+    @if (d.registry_url) {
+      <app-detail-panel-section [first]="!d.description && !d.sources.length" label="Registry">
+        <app-external-link [href]="d.registry_url">ClinicalTrials.gov</app-external-link>
       </app-detail-panel-section>
     }
 

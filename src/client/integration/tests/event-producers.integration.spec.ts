@@ -305,11 +305,12 @@ describe('event citation + derived registry link resolve through the read RPCs',
     expect(eventLinks[0].entity_name).toBe('QA trial topline results');
   });
 
-  it('sources: get_catalyst_detail derives registry_url from the trial NCT identifier', async () => {
+  it('sources: get_event_detail derives registry_url from the trial NCT identifier', async () => {
     // The QA trial carries identifier NCT09000001 (S4). The Topline event is
     // trial-anchored, so the detail read derives the CT.gov registry link rather
-    // than reading a stored source_url.
-    const r = await as(p, 'space_owner').rpc('get_catalyst_detail', { p_marker_id: toplineId });
+    // than reading a stored source_url. (get_catalyst_detail was renamed to
+    // get_event_detail in the Stage 3 IA rename; p_marker_id -> p_event_id.)
+    const r = await as(p, 'space_owner').rpc('get_event_detail', { p_event_id: toplineId });
     const detail = expectOk(r) as { catalyst: { registry_url: string | null; title: string } };
     expect(detail.catalyst).toBeTruthy();
     expect(detail.catalyst.registry_url).toBe('https://clinicaltrials.gov/study/NCT09000001');
