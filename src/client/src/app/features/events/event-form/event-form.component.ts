@@ -117,7 +117,7 @@ function fromIso(iso: string | null): Date | null {
       }
 
       <!-- Step 1: event type drives the rest -->
-      <app-form-field label="Event type" fieldId="ev-type" [required]="true" spacing="">
+      <app-form-field label="Event type" fieldId="ev-type" [required]="true" spacing="pb-2">
         <p-select
           inputId="ev-type"
           [options]="typeGroups()"
@@ -136,7 +136,7 @@ function fromIso(iso: string | null): Date | null {
           [disabled]="ctgovLocked()"
         />
         @if (selectedType(); as t) {
-          <p class="mt-1 text-[11px] text-slate-500">
+          <p class="mt-2 text-[11px] text-slate-500">
             {{ categoryName(t.category_id) }} - default significance
             <span class="font-medium">{{ t.default_significance ?? 'low' }}</span>
           </p>
