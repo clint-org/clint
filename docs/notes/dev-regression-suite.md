@@ -137,11 +137,11 @@ serially headed through the main loop.
 | Adversarial create_event validation (QA-008) | `adversarial-create-event.spec.ts` | `@adversarial` | RPC guard contract (accepted vs blocked SQLSTATEs) + XSS-title rendered escaped (security). |
 | Browser threat model | `security-threat-model.spec.ts` | `@security` | cross-space IDOR (two worlds), tampered/expired `sb-auth-dev` cookie fails closed, viewer deep-links to gated routes. |
 | Intelligence briefs + citations + filters | `intelligence-briefs.spec.ts` | `@intelligence` | author via `upsert_primary_intelligence`, published/drafts, citation resolves to anchored trial (matrix row 6), ENTITY/SINCE filters. |
+| Entity CRUD + merged event-form edit-matrix | `entity-crud-events.spec.ts` | `@crud @event` | asset create+rename; trial create+rename+CT.gov phase-lock; event rename + re-anchor via the merged dialog (both through `update_event` -- the UI guard for the p_source_url fix). |
 
 **Scaffold (`test.fixme`, authored + harness-ready, pending a verification pass)**
 | Surface | Spec | Blocked on |
 | --- | --- | --- |
-| Entity CRUD + merged event form (edit-matrix) | `entity-crud-events.spec.ts` | PrimeNG datepicker fill race; the EDIT/re-anchor half is blocked by the live `update_event` bug below. |
 | AI import (NCT + dedup + text/URL) | `ai-import.spec.ts` | live Anthropic + ct.gov verification pass (`enableAi` harness ready). |
 | AI cost / token accounting | `ai-usage.spec.ts` | live AI + super-admin host (`admin.dev.clintapp.com`, kind confirmed). |
 | Agency / super-admin / audit | `admin-portals.spec.ts` | 3-host headed Cloudflare verification pass; QA-009 actor-email soft assertions expected red. |
