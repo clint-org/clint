@@ -128,13 +128,20 @@ let page = ctx.pages()[0] ?? (await ctx.newPage());
 log('opening login...');
 await page.goto(`${HOST}/login`, { waitUntil: 'domcontentloaded' }).catch(() => {});
 if (page.url().includes('/login')) {
-  await page
-    .getByRole('button', { name: /sign in with google/i })
-    .waitFor({ state: 'visible', timeout: 20000 })
-    .catch(() => {});
+  const googleBtn = page.getByRole('button', { name: /sign in with google/i });
+  await googleBtn.waitFor({ state: 'visible', timeout: 30000 }).catch(() => {});
   await settle(page, 1200);
-  if (page.url().includes('/login') && want('whitelabel-stout-login')) {
-    await shot(page, 'whitelabel-stout-login.png');
+  // Only capture once the real branded login has rendered (the Google button is
+  // visible). A cold navigation can land on a Cloudflare "verify you are human"
+  // challenge whose URL is still /login; shooting then overwrites the good shot
+  // with the challenge page. Guard on the button so we skip rather than corrupt.
+  const loginReady = await googleBtn.isVisible().catch(() => false);
+  if (want('whitelabel-stout-login')) {
+    if (loginReady && page.url().includes('/login')) {
+      await shot(page, 'whitelabel-stout-login.png');
+    } else {
+      log('  (login not ready -- likely a Cloudflare challenge; kept existing whitelabel-stout-login.png)');
+    }
   }
 }
 
@@ -174,6 +181,9 @@ const go = async (path, name, ms = 1800) => {
   }
 };
 await go('', 'engagement-landing.png');
+// Intelligence Feed ("Latest from Stout") -- the unified, recency-ordered feed
+// of every published read in the space. The headline intelligence surface.
+await go('/intelligence', 'intelligence-feed.png', 2400);
 
 // Timeline -- scroll so ~2023 is the leftmost year (the dense, varied marker
 // field from the reference cover shot) and hover a marker so its tooltip card
@@ -266,7 +276,6 @@ if (want('heatmap')) {
     log('FAILED heatmap.png -', e.message);
   }
 }
-await go('/activity', 'activity.png');
 
 // 4) Bullseye -- select an asset that owns published primary intelligence
 // (CagriSema) so the asset panel shows its Intelligence section while the chart
@@ -275,6 +284,10 @@ if (want('bullseye')) {
   try {
     await page.goto(`${BASE}/bullseye`, { waitUntil: 'domcontentloaded' });
     await settle(page, 2600);
+    // The radial chart hydrates after the route settles; wait for the dots to
+    // exist before selecting one, or an early screenshot catches an empty plot.
+    await page.waitForSelector('circle.bullseye-dot', { timeout: 12000 }).catch(() => {});
+    await page.waitForTimeout(800);
     const piDot = page.locator('circle.bullseye-dot[aria-label^="CagriSema"]').first();
     if (await piDot.count()) {
       await piDot.click({ force: true });
@@ -292,22 +305,54 @@ if (want('bullseye')) {
   }
 }
 
-// 5) Future Events -- select a real upcoming-event row (opens side panel).
-if (want('future-events')) {
+// 5) Catalysts -- select a real catalyst row (opens side panel).
+if (want('catalysts')) {
   try {
-    await page.goto(`${BASE}/future-events`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/catalysts`, { waitUntil: 'domcontentloaded' });
     await settle(page, 2000);
     await page.locator('tr.cursor-pointer').first().click().catch(() => {});
     await page.waitForTimeout(900);
     await page.mouse.move(900, 8);
     await page.waitForTimeout(600);
-    await shot(page, 'future-events.png');
+    await shot(page, 'catalysts.png');
   } catch (e) {
-    log('FAILED future-events.png -', e.message);
+    log('FAILED catalysts.png -', e.message);
   }
 }
 
-// 6) Source import -- paste a real article into "From text", run extraction,
+// 6) Events -- select an event that belongs to a thread so the detail pane
+//    renders the "Thread" section (the seeded "Pfizer oral GLP-1 retreat" thread
+//    chains the danuglipron discontinuation -> R&D pivot events).
+if (want('events')) {
+  try {
+    // Filter to source_type=event so the manual events (incl. the seeded
+    // thread) sit on the first page instead of being buried under 2026 markers.
+    await page.goto(`${BASE}/events?source=event`, { waitUntil: 'domcontentloaded' });
+    await settle(page, 2400);
+    // A threaded row carries a "Part of a thread" badge; click its row.
+    const threadRow = page
+      .locator('tbody tr', { has: page.locator('[aria-label="Part of a thread"]') })
+      .first();
+    if (await threadRow.count()) {
+      await threadRow.click().catch(() => {});
+    } else {
+      log('  (no threaded event row found -- falling back to first row)');
+      await page.locator('tbody tr').first().click().catch(() => {});
+    }
+    // Wait for the detail pane's Thread section to render.
+    await page
+      .getByText(/^Thread\b/i)
+      .first()
+      .waitFor({ timeout: 5000 })
+      .catch(() => log('  (Thread section not detected in detail pane)'));
+    await page.waitForTimeout(1000);
+    await shot(page, 'events.png');
+  } catch (e) {
+    log('FAILED events.png -', e.message);
+  }
+}
+
+// 7) Source import -- paste a real article into "From text", run extraction,
 //    and capture BOTH the processing stepper and the resolved review (results)
 //    screen, then compose them side by side. The import page is gated by
 //    importGuard (owner/editor + tenant ai_enabled). Extraction logs an ai_call
@@ -385,7 +430,7 @@ const REDEFINE_2_NCT = 'NCT05394519';
 const MATERIALS_NCT = 'NCT04847557'; // SUMMIT -- a trial with several linked materials
 
 async function resolveTrialIdByNct(nct) {
-  await page.goto(`${BASE}/manage/trials`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.goto(`${BASE}/profiles/trials`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await settle(page, 2200);
   const search = page.getByPlaceholder('Search trials...');
   if (await search.count()) {
@@ -405,8 +450,8 @@ async function resolveTrialIdByNct(nct) {
     return false;
   }, nct);
   if (!clicked) return null;
-  await page.waitForURL(/\/manage\/trials\/[0-9a-f-]{36}/, { timeout: 8000 }).catch(() => {});
-  return (page.url().match(/\/manage\/trials\/([0-9a-f-]{36})/) || [])[1] || null;
+  await page.waitForURL(/\/profiles\/trials\/[0-9a-f-]{36}/, { timeout: 8000 }).catch(() => {});
+  return (page.url().match(/\/profiles\/trials\/([0-9a-f-]{36})/) || [])[1] || null;
 }
 
 // CT.gov sync for a trial via the trial-detail "Sync" button. The seed does not
@@ -414,7 +459,7 @@ async function resolveTrialIdByNct(nct) {
 // "Not yet synced" until this runs. Gated on SYNC=1.
 async function syncTrialCtgov(trialId) {
   if (!trialId) return;
-  await page.goto(`${BASE}/manage/trials/${trialId}`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/profiles/trials/${trialId}`, { waitUntil: 'domcontentloaded' });
   await settle(page, 2000);
   const syncBtn = page.getByRole('button', { name: /^sync$/i });
   if (await syncBtn.count()) {
@@ -447,7 +492,7 @@ async function trialSection(name, anchor, trialId) {
   if (!want(name.replace('.png', ''))) return;
   if (!trialId) return log('skip', name, '(no trial)');
   try {
-    await page.goto(`${BASE}/manage/trials/${trialId}`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/profiles/trials/${trialId}`, { waitUntil: 'domcontentloaded' });
     await settle(page, 2000);
     await page
       .locator(anchor)
@@ -471,7 +516,7 @@ if (want('materials')) {
     log('skip materials.png (no trial)');
   } else {
     try {
-      await page.goto(`${BASE}/manage/trials/${materialsTrialId}`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${BASE}/profiles/trials/${materialsTrialId}`, { waitUntil: 'domcontentloaded' });
       await settle(page, 2200);
       const drop = page.locator('app-material-upload-zone').first();
       if (await drop.count()) {
