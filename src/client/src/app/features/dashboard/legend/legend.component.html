@@ -91,6 +91,15 @@
                         [innerMark]="mt.inner_mark"
                       />
                     }
+                    @case ('hexagon') {
+                      <g
+                        app-hexagon-icon
+                        [size]="12"
+                        [color]="mt.color"
+                        fillStyle="filled"
+                        [innerMark]="mt.inner_mark"
+                      />
+                    }
                   }
                 </svg>
               }

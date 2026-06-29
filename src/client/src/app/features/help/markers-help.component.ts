@@ -15,6 +15,7 @@ import { CircleIconComponent } from '../../shared/components/svg-icons/circle-ic
 import { DiamondIconComponent } from '../../shared/components/svg-icons/diamond-icon.component';
 import { FlagIconComponent } from '../../shared/components/svg-icons/flag-icon.component';
 import { SquareIconComponent } from '../../shared/components/svg-icons/square-icon.component';
+import { HexagonIconComponent } from '../../shared/components/svg-icons/hexagon-icon.component';
 import { TriangleIconComponent } from '../../shared/components/svg-icons/triangle-icon.component';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
@@ -60,6 +61,7 @@ const MARKER_DEFINITIONS: Record<string, string> = {
     FlagIconComponent,
     TriangleIconComponent,
     SquareIconComponent,
+    HexagonIconComponent,
     LoaderComponent,
   ],
   template: `
@@ -152,6 +154,15 @@ const MARKER_DEFINITIONS: Record<string, string> = {
                                   @case ('square') {
                                     <g
                                       app-square-icon
+                                      [size]="14"
+                                      [color]="mt.color"
+                                      fillStyle="filled"
+                                      [innerMark]="mt.inner_mark"
+                                    />
+                                  }
+                                  @case ('hexagon') {
+                                    <g
+                                      app-hexagon-icon
                                       [size]="14"
                                       [color]="mt.color"
                                       fillStyle="filled"
