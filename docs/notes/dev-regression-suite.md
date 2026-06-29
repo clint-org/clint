@@ -29,9 +29,10 @@ cd src/client
 secret is `SUPABASE_DEV_DB_POOLER_URL`; the dev URL + anon key are public. Runs
 **headed** (see Cloudflare below), except the `@contract` test which is pooler-only
 (no browser). Phase 1 baseline: 24 passed, 7 scaffolds skipped. Phase 2 added the
-`@contract`, `@adversarial`, `@security`, and `@intelligence` (briefs) suites
-(verified green) plus `@crud`/`@external`/`@admin` scaffolds (`test.fixme`, pending
-verification passes -- see Phase 2 section).
+`@contract`, `@adversarial`, `@security`, `@intelligence` (briefs), `@crud`,
+`@external` (ai-import, ai-usage), and `@admin` (admin-portals) suites -- all now
+verified green (see Phase 2 section). The `@external` and `@admin` suites are
+local/on-demand only (real Anthropic $ / heavier 3-host Cloudflare).
 
 ## Run model (decisions, 2026-06-29)
 
@@ -91,8 +92,9 @@ authored from a verified TP but pending a verification pass or harness extension
 | Intelligence feed | `/intelligence` | `intelligence.spec.ts` | verified |
 | Materials browser | `/materials` | `intelligence.spec.ts` | verified |
 | Briefs / citations / history | `/intelligence` | (integration today) | gap |
-| Source import: ct.gov sync | trial detail CT.GOV | `external-services.spec.ts` | external |
-| Source import: AI extract + dedup | `/import` | `external-services.spec.ts` | external |
+| Source import: ct.gov sync | trial detail CT.GOV | `ai-import.spec.ts` (NCT happy path) | verified |
+| Source import: AI extract + dedup | `/import` | `ai-import.spec.ts` | verified |
+| AI cost / token accounting | `/super-admin/ai-usage` + `ai_calls` | `ai-usage.spec.ts` | verified |
 | Taxonomies (Indication/MOA/ROA) admin | `/settings/taxonomies` | `taxonomies.spec.ts` | verified |
 | Event types / categories admin | `/settings/taxonomies` | `taxonomies.spec.ts` | partial |
 | Space settings: members/roles | `/settings/members` | `role-firewall.spec.ts` | verified |
@@ -113,14 +115,14 @@ authored from a verified TP but pending a verification pass or harness extension
 - **Event merged form (`@event`)**: trial-detail dialog selectors need one headed
   verification pass; flow is documented from TP-009 / QA-004. Event creation is
   already covered at the RPC layer by `seedBasics`.
-- **External (`@external`)**: ct.gov sync hits clinicaltrials.gov (pin a stable
-  NCT, generous timeouts); AI import needs the scratch tenant's
-  `ai_config.ai_enabled = true` (a harness extension) plus live AI workers.
-- **Admin (`@admin`)**: agency portal needs an agency-host page helper +
-  `agency_members` row; super-admin needs a super-admin host (or the
-  `?wl_kind=super-admin` dev override) for the platform-admin provisioner; audit
-  logs need audited actions seeded first. Regression guard target: QA-009 (agency
-  audit ACTOR renders "--").
+- **External (`@external`)**: VERIFIED (ai-import, ai-usage). Local/on-demand only --
+  each run spends real Anthropic $ (and ct.gov for the NCT path). Gated by the scratch
+  tenant's `ai_config.ai_enabled = true` (`enableAi` harness). Do NOT add to any
+  unattended/CI run.
+- **Admin (`@admin`)**: VERIFIED (admin-portals; ai-usage console test). Free but
+  heavier -- clears Cloudflare on 3 separate hosts per run (agency / super-admin /
+  role-deny), so local/on-demand. QA-009 (space audit ACTOR "--") is carried as a
+  `test.fail()` expected-failure that flips red when the bug is fixed.
 - **Briefs/citations**: currently covered by the integration suite; add a seeded
   brief + citation-resolve e2e when authoring is wired into the harness.
 
@@ -139,18 +141,27 @@ serially headed through the main loop.
 | Intelligence briefs + citations + filters | `intelligence-briefs.spec.ts` | `@intelligence` | author via `upsert_primary_intelligence`, published/drafts, citation resolves to anchored trial (matrix row 6), ENTITY/SINCE filters. |
 | Entity CRUD + merged event-form edit-matrix | `entity-crud-events.spec.ts` | `@crud @event` | asset create+rename; trial create+rename+CT.gov phase-lock; event rename + re-anchor via the merged dialog (both through `update_event` -- the UI guard for the p_source_url fix). |
 | Agency portal + super-admin console + audit | `admin-portals.spec.ts` | `@admin` | 6 tests, 3 real hosts (agency `pwreg-ag-<id>`, super-admin `admin.dev.clintapp.com`, role deny). Surfaces render, guards deny non-admins. QA-009 (space audit ACTOR "--") is a `test.fail()` expected-failure -- flips red when the bug is fixed. |
+| AI import (NCT + dedup + text/URL) | `ai-import.spec.ts` | `@external` | 3 live-Anthropic tests: NCT resolve->review->commit (incl. ct.gov background-sync event poll); reworded re-import dedup (distinct-milestone-date invariant, robust to extraction variance); text/URL extraction entry points. SPENDS real Anthropic $ per run. |
+| AI cost / token accounting | `ai-usage.spec.ts` | `@external @admin` | server-side `ai_calls` cost == catalog formula (pooler), per-space rollup sum, and the `/super-admin/ai-usage` console drill-down (tenant->space->imports->success->tokens). Extract runs in a Cloudflare-cleared page (Node fetch to the worker /api is 403'd). SPENDS real Anthropic $ per run. |
 
-**Scaffold (`test.fixme`, authored + harness-ready, pending a verification pass)**
-| Surface | Spec | Blocked on |
-| --- | --- | --- |
-| AI import (NCT + dedup + text/URL) | `ai-import.spec.ts` | live Anthropic + ct.gov verification pass (`enableAi` harness ready) -- spends real Anthropic $ per run. |
-| AI cost / token accounting | `ai-usage.spec.ts` | live AI + super-admin host (`admin.dev.clintapp.com`, kind confirmed) -- spends real Anthropic $ per run. |
+All Phase 2 scaffolds are now verified. The two `@external` specs and `@admin` are
+local/on-demand only (real $ / heavier Cloudflare), not part of any unattended run.
 
 New harness: `helpers/ai-config.ts` (`enableAi`), `helpers/admin-context.ts`
 (`agencyPageAs`/`superAdminPageAs` via real host brand resolution -- the `?wl_kind`
 override is disabled on dev because `environment.dev.ts` ships `production:true`),
 `helpers/session-tamper.ts`, `helpers/ctgov-lock.ts`, `helpers/intelligence.ts`,
 `helpers/ai-usage.ts`, and `scratch-world.ts` now exposes `world.provisioner`.
+`fixtures.ts` gained `dismissEnvBadge` (the dev env badge is a fixed bottom-right
+overlay that intercepts clicks on bottom-anchored controls like the import Confirm
+button; `settle` now clears it on every navigation).
+
+Verification-pass findings folded in (all fixes were in the tests/harness, not the
+product): the worker `/api` sits behind Cloudflare on dev so the extract must run
+from a cleared browser page, not a Node fetch; the import dedup is non-deterministic
+in milestone COUNT per phrasing so the contract is asserted as "no duplicate
+milestone date"; PrimeNG `p-table` aria-labels need `getByLabel`, not
+`getByRole('table')`; QA-009 (space audit actor "--") is carried as a `test.fail()`.
 
 ## Findings raised (not fixed here)
 
