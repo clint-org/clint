@@ -15,6 +15,11 @@ import {
   type EventFeedItem,
   type FeedItem,
 } from '../../../core/models/intelligence-feed-item.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../../core/models/marker-visual';
 import { BrandContextService } from '../../../core/services/brand-context.service';
 import { renderMarkdownInline } from '../../utils/markdown-render';
 import { highlightHtml, highlightPlain } from '../../utils/highlight-search';
@@ -66,6 +71,8 @@ import { eventFeedDateLabel } from './event-feed-date-label';
                   [fillStyle]="ev.is_projected ? 'outline' : 'filled'"
                   [innerMark]="ev.marker_inner_mark"
                   [isNle]="ev.no_longer_expected"
+                  [projectionBadge]="markerBadge(ev)"
+                  [outlineDash]="markerOutlineDash(ev)"
                 />
                 <span
                   class="shrink-0 font-mono text-[10.5px] font-bold uppercase leading-none tracking-[0.08em] text-slate-500"
@@ -166,6 +173,15 @@ export class IntelligenceFeedComponent {
 
   protected asEvent(row: FeedItem): EventFeedItem {
     return row as EventFeedItem;
+  }
+
+  /** Projection tier badge + forecast dash, matching the timeline glyph. */
+  protected markerBadge(ev: EventFeedItem): ProjectionBadge {
+    return projectionBadge(ev.projection, ev.anchor_type);
+  }
+
+  protected markerOutlineDash(ev: EventFeedItem): boolean {
+    return projectionOutlineDash(ev.projection);
   }
 
   protected entityLabel(row: BriefFeedItem): string {

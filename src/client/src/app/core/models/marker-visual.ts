@@ -52,19 +52,35 @@ const PROJECTION_VISUAL: Record<Projection, { badge: ProjectionBadge; opacity: n
 };
 
 /**
- * A `primary` projection on a non-trial anchor (asset/company) is a non-registry
- * primary source and badges `p`. On a trial, or when the anchor is unknown,
- * `primary` is the CT.gov registry default and stays badge-less.
+ * Pure projection -> badge rule, shared by `resolveMarkerVisual` (the timeline)
+ * and every other surface that shows a marker glyph (detail pane header, hover
+ * tooltip), so the tier letter derives from ONE place rather than each call site
+ * re-deriving (or silently dropping) it. A `primary` projection on a non-trial
+ * anchor (asset/company) is a non-registry primary source and badges `p`. On a
+ * trial, or when the anchor is unknown, `primary` is the CT.gov registry default
+ * and stays badge-less. Accepts loose strings since read RPCs surface
+ * `projection` / `anchor_type` as plain text.
  */
-function projectionBadgeFor(marker: Marker): ProjectionBadge {
-  if (
-    marker.projection === 'primary' &&
-    marker.anchor_type &&
-    marker.anchor_type !== 'trial'
-  ) {
+export function projectionBadge(
+  projection: string | null | undefined,
+  anchorType?: string | null
+): ProjectionBadge {
+  if (projection === 'primary' && anchorType && anchorType !== 'trial') {
     return 'p';
   }
-  return (PROJECTION_VISUAL[marker.projection] ?? PROJECTION_VISUAL.actual).badge;
+  return (PROJECTION_VISUAL[projection as Projection] ?? PROJECTION_VISUAL.actual).badge;
+}
+
+/**
+ * Dashed glyph outline — true only for the forecasted tier. The single source of
+ * that rule, shared with the surfaces that pass `outlineDash` to `app-marker-icon`.
+ */
+export function projectionOutlineDash(projection: string | null | undefined): boolean {
+  return projection === 'forecasted';
+}
+
+function projectionBadgeFor(marker: Marker): ProjectionBadge {
+  return projectionBadge(marker.projection, marker.anchor_type);
 }
 
 /**
@@ -86,7 +102,7 @@ export function resolveMarkerVisual(marker: Marker): MarkerVisual {
     isNle: marker.no_longer_expected,
     projectionBadge: projectionBadgeFor(marker),
     opacity: projection.opacity,
-    outlineDash: marker.projection === 'forecasted',
+    outlineDash: projectionOutlineDash(marker.projection),
   };
 }
 

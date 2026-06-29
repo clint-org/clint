@@ -11,7 +11,16 @@ import {
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, ActivatedRouteSnapshot, RouterLink } from '@angular/router';
 
-import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/event-detail.model';
+import {
+  CatalystDetail,
+  CtgovMarkerMetadata,
+  UpcomingMarker,
+} from '../../core/models/event-detail.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { MarkerChangeRow } from '../../core/models/change-event.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
 import {
@@ -397,6 +406,8 @@ interface CtgovProvenanceBlock {
                   [fillStyle]="um.is_projected ? 'outline' : 'filled'"
                   [innerMark]="um.marker_type_inner_mark"
                   [isNle]="um.no_longer_expected"
+                  [projectionBadge]="markerBadge(um)"
+                  [outlineDash]="markerOutlineDash(um)"
                 />
                 <span class="w-[5.25rem] shrink-0 self-start font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   um.event_date | date: 'mediumDate'
@@ -433,6 +444,8 @@ interface CtgovProvenanceBlock {
                   [fillStyle]="rm.is_projected ? 'outline' : 'filled'"
                   [innerMark]="rm.marker_type_inner_mark"
                   [isNle]="rm.no_longer_expected"
+                  [projectionBadge]="markerBadge(rm)"
+                  [outlineDash]="markerOutlineDash(rm)"
                 />
                 <span class="w-[5.25rem] shrink-0 self-start font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   rm.event_date | date: 'mediumDate'
@@ -729,6 +742,20 @@ export class MarkerDetailContentComponent {
   protected readonly upcomingMarkers = computed(() => this.detail()?.upcoming_markers ?? []);
   /** Past events sharing the same anchor, most-recent first. Symmetric with upcoming. */
   protected readonly recentMarkers = computed(() => this.detail()?.recent_markers ?? []);
+
+  /**
+   * Projection tier badge / forecast dash for an Upcoming or Recent marker row,
+   * so these glyphs match the timeline + header (same `app-marker-icon`, same
+   * inputs). Upcoming/Recent markers share the parent event's anchor, so the
+   * `primary`-on-non-trial nuance keys off the parent catalyst's anchor_type.
+   */
+  protected markerBadge(m: UpcomingMarker): ProjectionBadge {
+    return projectionBadge(m.projection, this.detail()?.catalyst.anchor_type);
+  }
+
+  protected markerOutlineDash(m: UpcomingMarker): boolean {
+    return projectionOutlineDash(m.projection);
+  }
 
   protected isAutoDescription(desc: string): boolean {
     return desc.toLowerCase().startsWith('auto-derived from');
