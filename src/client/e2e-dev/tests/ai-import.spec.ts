@@ -19,7 +19,7 @@
  * Sources: docs/notes/import-dedup-test-plan.md (Text A/B verbatim, count deltas),
  * import-page.component.ts / nct-input.component.ts / review-page.component.ts.
  */
-import { test, expect, apiAs } from '../fixtures';
+import { test, expect, apiAs, dismissEnvBadge } from '../fixtures';
 import { enableAi } from '../helpers/ai-config';
 import type { ScratchWorld } from '../fixtures';
 
@@ -86,7 +86,7 @@ const REVIEW_URL = /\/import\/[0-9a-fA-F-]+\/review/;
 // SCAFFOLD (test.fixme): authored + grounded; pending a headed verification pass that spends
 // real Anthropic + ct.gov calls. Harness ready (enableAi flips ai_config.ai_enabled on the
 // scratch tenant). Verify the NCT happy path + dedup count-deltas headed before enabling.
-test.describe.fixme('@external AI import (source-import)', () => {
+test.describe('@external AI import (source-import)', () => {
   // Live Anthropic + ct.gov: extractions run 20-90s; allow plenty of headroom.
   test.setTimeout(300_000);
 
@@ -116,6 +116,8 @@ test.describe.fixme('@external AI import (source-import)', () => {
     });
 
     // Fresh space -> everything is new; Confirm N items (review-page.component.ts:597).
+    // The dev env badge (fixed bottom-right) overlaps the Confirm button; clear it first.
+    await dismissEnvBadge(page);
     const confirm = page.getByRole('button', { name: /^Confirm \d+ items$/ });
     await expect(confirm).toBeEnabled({ timeout: 30_000 });
     await confirm.click();
@@ -147,7 +149,7 @@ test.describe.fixme('@external AI import (source-import)', () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
-  test('dedup: re-importing the same milestones (reworded) adds zero events', async ({
+  test('dedup: re-importing the same milestones (reworded) creates no duplicate events', async ({
     world,
     pageAs,
     gotoSettled,
@@ -161,6 +163,7 @@ test.describe.fixme('@external AI import (source-import)', () => {
     await page.waitForURL(REVIEW_URL, { timeout: 180_000 });
     await expect(page.getByRole('heading', { name: 'Review import proposals' })).toBeVisible();
 
+    await dismissEnvBadge(page); // badge overlaps the bottom-right Confirm button
     const confirmA = page.getByRole('button', { name: /^Confirm \d+ items$/ });
     await expect(confirmA).toBeEnabled({ timeout: 30_000 });
     await confirmA.click();
@@ -187,6 +190,7 @@ test.describe.fixme('@external AI import (source-import)', () => {
     // Commit whatever the review allows (often 0 new leaf items; trial/asset already
     // exist). If the source hash differed enough to proceed, that's fine -- the
     // ground-truth assertion below is the per-item event count, not the toast.
+    await dismissEnvBadge(page); // badge overlaps the bottom-right Confirm button
     const confirmB = page.getByRole('button', { name: /^Confirm \d+ items$/ });
     if (await confirmB.isEnabled().catch(() => false)) {
       await confirmB.click();
@@ -195,12 +199,32 @@ test.describe.fixme('@external AI import (source-import)', () => {
         .catch(() => {});
     }
 
-    // Core dedup contract: no duplicate events created (count holds at baseline).
-    // Allow a short settle in case a 0-new commit still navigated.
-    const after = await countRows(world, 'events');
-    expect(after, 'reworded re-import of identical milestones must not duplicate events').toBe(
-      baseline
-    );
+    // Core dedup contract. The matcher must not create a SECOND event for a milestone
+    // that already exists. We do NOT assert a fixed count delta: LLM extraction is
+    // non-deterministic in HOW MANY of the three milestones it pulls from each phrasing
+    // (an observed run had Text A yield 2 of 3 and Text B contribute the 3rd, which the
+    // matcher correctly added once while deduping the two A already had). The invariant
+    // that actually encodes "no duplicate milestone" is: every event sits on a distinct
+    // milestone date -- the three press-release milestones (12 Mar topline, Q3 NDA,
+    // 3 Nov ObesityWeek) all carry distinct dates, so a dedup failure would re-add one of
+    // them and surface as a repeated date.
+    const api = apiAs(world, 'owner');
+    const { data: evRows, error: evErr } = await api
+      .from('events')
+      .select('event_date')
+      .eq('space_id', world.spaceId);
+    expect(evErr, evErr?.message).toBeNull();
+    const dates = (evRows ?? []).map((e) => e.event_date as string);
+    const uniqueDates = new Set(dates);
+    expect(
+      uniqueDates.size,
+      `reworded re-import must not duplicate an existing milestone date (dates=${JSON.stringify(dates)})`
+    ).toBe(dates.length);
+    // Sanity: the union never falls below what Text A established, and never exceeds the
+    // three milestones the press releases describe (a fully-broken dedup re-adding A's
+    // milestones would overshoot this bound).
+    expect(dates.length).toBeGreaterThanOrEqual(baseline);
+    expect(dates.length).toBeLessThanOrEqual(3);
   });
 
   test('extraction entry points: From text extracts; From URL exposes its controls', async ({
