@@ -1,0 +1,129 @@
+/**
+ * Feature-coverage gate for seed_demo_data.
+ *
+ * Verifies that the seeder populates asset lanes (asset-anchored Approval +
+ * Distribution events), the company band (pinned company-anchored event), and
+ * produces a feed-only low-significance Leadership event. Also asserts that
+ * re-seeding is idempotent (event count unchanged on a second call).
+ *
+ * This spec is intentionally RED until Task 2 (the seeder rewrite) lands.
+ * The "seeds events" and "idempotent" cases may already pass; the asset-lane
+ * and pinned-company cases must fail against the current seed implementation.
+ */
+
+import { beforeAll, describe, expect, it } from 'vitest';
+import { buildPersonas, Personas } from '../fixtures/personas';
+import { as, expectOk } from '../harness/as';
+
+const ET_APPROVAL = 'a0000000-0000-0000-0000-000000000035';
+const ET_DISTRIBUTION = 'a0000000-0000-0000-0000-000000000040';
+const ET_LEADERSHIP = 'a0000000-0000-0000-0000-000000000050';
+
+let p: Personas;
+
+beforeAll(async () => {
+  p = await buildPersonas();
+  // space_owner is a non-platform-admin owner of p.org.spaceId.
+  expectOk(await as(p, 'space_owner').rpc('seed_demo_data', { p_space_id: p.org.spaceId }));
+}, 120_000);
+
+describe('seed_demo_data feature coverage (fresh non-admin owner space)', () => {
+  it('seeds events on the owner space', async () => {
+    const r = await as(p, 'space_owner')
+      .from('events')
+      .select('id', { count: 'exact', head: true })
+      .eq('space_id', p.org.spaceId);
+    expect(r.count ?? 0).toBeGreaterThan(0);
+  });
+
+  it('populates asset lanes: >= 2 assets each have an asset-anchored Approval AND Distribution', async () => {
+    const r = await as(p, 'space_owner')
+      .from('events')
+      .select('anchor_id, event_type_id')
+      .eq('space_id', p.org.spaceId)
+      .eq('anchor_type', 'asset')
+      .in('event_type_id', [ET_APPROVAL, ET_DISTRIBUTION]);
+    expect(r.error).toBeNull();
+    const byAsset = new Map<string, Set<string>>();
+    for (const row of r.data ?? []) {
+      const set = byAsset.get(row.anchor_id) ?? new Set<string>();
+      set.add(row.event_type_id);
+      byAsset.set(row.anchor_id, set);
+    }
+    const complete = [...byAsset.values()].filter(
+      (s) => s.has(ET_APPROVAL) && s.has(ET_DISTRIBUTION),
+    );
+    expect(complete.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('seeds at least one high-significance asset-anchored Distribution (hexagon) event', async () => {
+    const r = await as(p, 'space_owner')
+      .from('events')
+      .select('id', { count: 'exact', head: true })
+      .eq('space_id', p.org.spaceId)
+      .eq('anchor_type', 'asset')
+      .eq('event_type_id', ET_DISTRIBUTION)
+      .eq('significance', 'high');
+    expect(r.count ?? 0).toBeGreaterThanOrEqual(1);
+  });
+
+  it('company band: at least one pinned company-anchored event', async () => {
+    const r = await as(p, 'space_owner')
+      .from('events')
+      .select('id', { count: 'exact', head: true })
+      .eq('space_id', p.org.spaceId)
+      .eq('anchor_type', 'company')
+      .eq('visibility', 'pinned');
+    expect(r.count ?? 0).toBeGreaterThanOrEqual(1);
+  });
+
+  it('company band: a low-significance leadership event is feed-only (no high sig, not pinned)', async () => {
+    const r = await as(p, 'space_owner')
+      .from('events')
+      .select('significance, visibility')
+      .eq('space_id', p.org.spaceId)
+      .eq('anchor_type', 'company')
+      .eq('event_type_id', ET_LEADERSHIP);
+    expect(r.error).toBeNull();
+    expect((r.data ?? []).some((e) => e.significance !== 'high' && e.visibility === null)).toBe(
+      true,
+    );
+  });
+
+  it('approval-to-distribution gap differs between two assets (comparison is meaningful)', async () => {
+    const r = await as(p, 'space_owner')
+      .from('events')
+      .select('anchor_id, event_type_id, event_date')
+      .eq('space_id', p.org.spaceId)
+      .eq('anchor_type', 'asset')
+      .in('event_type_id', [ET_APPROVAL, ET_DISTRIBUTION]);
+    expect(r.error).toBeNull();
+    const gaps = new Map<string, { appr?: number; dist?: number }>();
+    for (const row of r.data ?? []) {
+      const g = gaps.get(row.anchor_id) ?? {};
+      const t = new Date(row.event_date as string).getTime();
+      if (row.event_type_id === ET_APPROVAL) g.appr = t;
+      else g.dist = t;
+      gaps.set(row.anchor_id, g);
+    }
+    const spans = [...gaps.values()]
+      .filter((g) => g.appr !== undefined && g.dist !== undefined)
+      .map((g) => g.dist! - g.appr!);
+    expect(spans.length).toBeGreaterThanOrEqual(2);
+    // the two assets must have visibly different approval->distribution spans
+    expect(Math.max(...spans) - Math.min(...spans)).toBeGreaterThan(180 * 24 * 3600 * 1000);
+  });
+
+  it('re-seeding is idempotent: event count unchanged', async () => {
+    const before = await as(p, 'space_owner')
+      .from('events')
+      .select('id', { count: 'exact', head: true })
+      .eq('space_id', p.org.spaceId);
+    expectOk(await as(p, 'space_owner').rpc('seed_demo_data', { p_space_id: p.org.spaceId }));
+    const after = await as(p, 'space_owner')
+      .from('events')
+      .select('id', { count: 'exact', head: true })
+      .eq('space_id', p.org.spaceId);
+    expect(after.count).toBe(before.count);
+  });
+});
