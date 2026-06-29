@@ -23,7 +23,7 @@ import { MessageModule } from 'primeng/message';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 import { EventService } from '../../../core/services/event.service';
-import { CatalystService } from '../../../core/services/catalyst.service';
+import { EventDetailService } from '../../../core/services/event-detail.service';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { MarkerCategoryService } from '../../../core/services/marker-category.service';
 import { CompanyService } from '../../../core/services/company.service';
@@ -502,7 +502,7 @@ export class EventFormComponent implements OnInit {
   readonly cancelled = output<void>();
 
   private eventService = inject(EventService);
-  private catalystService = inject(CatalystService);
+  private catalystService = inject(EventDetailService);
   private typeService = inject(MarkerTypeService);
   private categoryService = inject(MarkerCategoryService);
   private companyService = inject(CompanyService);
@@ -673,7 +673,7 @@ export class EventFormComponent implements OnInit {
 
   /**
    * Load an existing event into the form for editing. Reads the unified
-   * get_event_detail wrapper (via CatalystService) and reverses each write
+   * get_event_detail wrapper (via EventDetailService) and reverses each write
    * mapping back into the form signals. Entities are already loaded above so the
    * anchor select renders the resolved name.
    */

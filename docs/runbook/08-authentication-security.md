@@ -328,7 +328,6 @@ Auto-generated from `pg_class` and `pg_policy`. Every public table should have R
 Auto-generated. Lists Angular route guards in `src/client/src/app/core/guards/` whose conventional name does not appear anywhere in this file.
 
 <!-- AUTO-GEN:DRIFT -->
-- `activityRedirectGuard`
 - `auditAgencyGuard`
 - `auditSpaceGuard`
 - `auditTenantGuard`

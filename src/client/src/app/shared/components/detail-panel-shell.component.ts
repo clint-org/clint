@@ -8,13 +8,13 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
  * Two density variants:
  *   - `compact`: 340px-class drawer over the timeline (smaller header/close,
  *     tighter top padding).
- *   - `roomy`: persistent column on /catalysts /events /landscape (default).
+ *   - `roomy`: persistent column on /future-events /activity /landscape (default).
  *
  * Header label tone (both slate, matching the hover tooltip eyebrow):
  *   - `brand`: object class shown when something is selected (e.g.
  *     "Clinical Readout · Phase 3 Topline"); slate-500.
  *   - `muted`: passive overview eyebrow shown in empty states (e.g.
- *     "Catalysts · overview"); slate-400.
+ *     "Future events · overview"); slate-400.
  */
 @Component({
   selector: 'app-detail-panel-shell',

@@ -259,10 +259,12 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
       /positioning/by-moa-indication   -> heatmap/by-moa-indication
       /positioning/by-company   -> heatmap/by-company
       /positioning/by-roa   -> heatmap/by-roa
-      /catalysts   CatalystsPageComponent
+      /future-events   FutureEventsPageComponent
+      /catalysts   -> future-events
     /intelligence   IntelligenceBrowseComponent
     /materials   MaterialsBrowsePageComponent
-    /activity   activityRedirectGuard
+    /activity   ActivityPageComponent
+    /events   -> activity
     /landscape   -> bullseye
     /landscape/by-therapy-area   -> bullseye
     /landscape/by-therapy-area/:entityId   -> bullseye
@@ -725,6 +727,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 **Services:**
 - `AuditEventService`
 - `ChangeEventService`
+- `EventDetailService`
 - `EventThreadService`
 - `EventTypeService`
 - `EventService`

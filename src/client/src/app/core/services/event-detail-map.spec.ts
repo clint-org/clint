@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { CatalystDetail } from '../models/catalyst.model';
+import type { CatalystDetail } from '../models/event-detail.model';
 import { eventDetailFromWrapper } from './event-detail-map';
 
 function wrapper(overrides: Partial<CatalystDetail['catalyst']> = {}): CatalystDetail {

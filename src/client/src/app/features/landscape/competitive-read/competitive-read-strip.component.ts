@@ -153,8 +153,8 @@ export class CompetitiveReadStripComponent {
   private actionLabel(link: ReadLink | null): string {
     if (!link) return '';
     if (link.kind === 'company-filter') return `Filter to ${link.companyName}`;
-    if (link.companyName) return `View catalysts for ${link.companyName}`;
-    return 'View catalysts in the next 90 days';
+    if (link.companyName) return `View events for ${link.companyName}`;
+    return 'View events in the next 90 days';
   }
 
   protected activate(link: ReadLink): void {
@@ -181,8 +181,8 @@ export class CompetitiveReadStripComponent {
   }
 
   /**
-   * Router command array to the current space's catalysts view, derived from
-   * the route param tree (/t/:tenantId/s/:spaceId/catalysts). Returns null if
+   * Router command array to the current space's future-events view, derived from
+   * the route param tree (/t/:tenantId/s/:spaceId/future-events). Returns null if
    * the params are unavailable (the filter is still applied in that case).
    */
   private catalystsCommands(): unknown[] | null {
@@ -195,6 +195,6 @@ export class CompetitiveReadStripComponent {
       snap = snap.parent;
     }
     if (!tenantId || !spaceId) return null;
-    return ['/t', tenantId, 's', spaceId, 'catalysts'];
+    return ['/t', tenantId, 's', spaceId, 'future-events'];
   }
 }

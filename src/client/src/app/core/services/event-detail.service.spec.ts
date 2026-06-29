@@ -1,7 +1,7 @@
 import { Injector, runInInjectionContext } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
 
-import { CatalystService } from './catalyst.service';
+import { EventDetailService } from './event-detail.service';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -28,7 +28,7 @@ function makeRpcResult(data: unknown, error: unknown = null) {
   return obj;
 }
 
-function makeService(client: ClientStub, cache: CacheStub): CatalystService {
+function makeService(client: ClientStub, cache: CacheStub): EventDetailService {
   const supabaseStub = { client } as unknown as SupabaseService;
   const cacheStub = cache as unknown as RpcCache;
   const injector = Injector.create({
@@ -37,10 +37,10 @@ function makeService(client: ClientStub, cache: CacheStub): CatalystService {
       { provide: RpcCache, useValue: cacheStub },
     ],
   });
-  return runInInjectionContext(injector, () => new CatalystService());
+  return runInInjectionContext(injector, () => new EventDetailService());
 }
 
-describe('CatalystService.getCatalystDetail', () => {
+describe('EventDetailService.getCatalystDetail', () => {
   it('routes through cache.get with rpcName, key, tag, and HEAVY_TTL', async () => {
     const get = vi.fn().mockResolvedValue({ id: 'marker-1' });
     const service = makeService(

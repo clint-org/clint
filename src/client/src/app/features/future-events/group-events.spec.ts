@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { catalystContextLine } from './group-catalysts';
+import { catalystContextLine } from './group-events';
 
 type ContextArg = Parameters<typeof catalystContextLine>[0];
 

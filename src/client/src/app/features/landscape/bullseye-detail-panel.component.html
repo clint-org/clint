@@ -253,7 +253,7 @@
       </app-detail-panel-section>
 
       @if (asset.recent_markers.length > 0) {
-        <app-detail-panel-section label="Recent markers">
+        <app-detail-panel-section label="Recent events">
           <app-detail-panel-entity-list>
             @for (marker of asset.recent_markers; track marker.id) {
               <app-detail-panel-entity-row (rowClick)="onMarkerRowClick(marker.id)">
