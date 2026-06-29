@@ -180,7 +180,7 @@ export class EngagementLandingComponent implements OnInit {
     const tid = this.tenantId();
     const sid = this.spaceId();
     if (!tid || !sid) return '';
-    return `/t/${tid}/s/${sid}/catalysts`;
+    return `/t/${tid}/s/${sid}/future-events`;
   });
 
   readonly statsRoutes = computed(() => {
@@ -192,7 +192,7 @@ export class EngagementLandingComponent implements OnInit {
       activeTrials: `${base}/profiles/trials`,
       companies: `${base}/profiles/companies`,
       assets: `${base}/profiles/assets`,
-      catalysts: `${base}/catalysts`,
+      catalysts: `${base}/future-events`,
       intelligence: `${base}/intelligence`,
     };
   });
@@ -210,17 +210,17 @@ export class EngagementLandingComponent implements OnInit {
         windowLabel: 'next 90d',
         value: v(s?.p3_readouts_90d),
         display: s?.p3_readouts_90d == null ? '' : String(s.p3_readouts_90d),
-        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        route: hasRoute ? ['/t', tid, 's', sid, 'future-events'] : null,
         queryParams: hasRoute ? { phase: 'P3', within: '90d' } : null,
         warn: (s?.p3_readouts_90d ?? 0) > 0,
       },
       {
         key: 'catalysts',
-        label: pluralize(s?.catalysts_90d, 'Catalyst'),
+        label: pluralize(s?.catalysts_90d, 'Event'),
         windowLabel: 'next 90d',
         value: v(s?.catalysts_90d),
         display: s?.catalysts_90d == null ? '' : String(s.catalysts_90d),
-        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        route: hasRoute ? ['/t', tid, 's', sid, 'future-events'] : null,
         queryParams: hasRoute ? { within: '90d' } : null,
         warn: (s?.catalysts_90d ?? 0) > 0,
       },
@@ -320,7 +320,7 @@ export class EngagementLandingComponent implements OnInit {
         weekday: SHORT_DAYS[d.getDay()].toUpperCase(),
         monthLabel: `${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`,
         isToday: c.event_date === todayIso(),
-        title: c.title || c.category_name || 'Catalyst',
+        title: c.title || c.category_name || 'Event',
         who: [c.company_name?.toUpperCase(), c.asset_name, c.is_projected ? 'PROJECTED' : null]
           .filter((p): p is string => !!p)
           .join(' · '),
@@ -430,8 +430,8 @@ export class EngagementLandingComponent implements OnInit {
     const tid = this.tenantId();
     const sid = this.spaceId();
     if (!tid || !sid) return;
-    void this.router.navigate(['/t', tid, 's', sid, 'catalysts'], {
-      queryParams: { markerId },
+    void this.router.navigate(['/t', tid, 's', sid, 'future-events'], {
+      queryParams: { eventId: markerId },
     });
   }
 
@@ -635,7 +635,7 @@ function extractUpcoming(companies: Company[], windowDays: number): UpcomingCata
           const mt = marker.marker_types;
           out.push({
             marker_id: marker.id,
-            title: marker.title ?? mt?.name ?? 'Catalyst',
+            title: marker.title ?? mt?.name ?? 'Event',
             event_date: marker.event_date,
             is_projected: marker.is_projected,
             no_longer_expected: marker.no_longer_expected,

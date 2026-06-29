@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
-import { FlatCatalyst } from '../../core/models/catalyst.model';
+import { FlatCatalyst } from '../../core/models/event-detail.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
 import { CompanyTileComponent } from '../../shared/components/company-tile.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
@@ -18,7 +18,7 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
  * Projection colors are the fixed amber/brand treatment, never whitelabeled.
  */
 @Component({
-  selector: 'app-catalyst-row-tooltip',
+  selector: 'app-event-row-tooltip',
   standalone: true,
   imports: [CompanyTileComponent, DatePipe, MarkerIconComponent],
   animations: [fadeTooltipAnimation],
@@ -122,7 +122,7 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalystRowTooltipComponent {
+export class EventRowTooltipComponent {
   readonly catalyst = input<FlatCatalyst | null>(null);
   readonly x = input<number>(0);
   readonly y = input<number>(0);

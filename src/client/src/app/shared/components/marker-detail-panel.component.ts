@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 
-import { CatalystDetail } from '../../core/models/catalyst.model';
+import { CatalystDetail } from '../../core/models/event-detail.model';
 import { FillStyle, InnerMark } from '../../core/models/marker.model';
 import { PiReference } from '../../core/models/primary-intelligence.model';
 import { SpaceRoleService } from '../../core/services/space-role.service';

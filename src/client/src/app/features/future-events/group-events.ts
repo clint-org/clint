@@ -1,4 +1,4 @@
-import { Catalyst, CatalystGroup, FlatCatalyst } from '../../core/models/catalyst.model';
+import { Catalyst, CatalystGroup, FlatCatalyst } from '../../core/models/event-detail.model';
 
 /**
  * Derives the trial/asset context line shown under a catalyst title.
@@ -11,7 +11,7 @@ import { Catalyst, CatalystGroup, FlatCatalyst } from '../../core/models/catalys
  * anchorless. Returns null when the title already carries its own context or
  * when there is no trial/asset to anchor it to.
  *
- * Pure function -- unit-tested in group-catalysts.spec.ts. The company/asset
+ * Pure function -- unit-tested in group-events.spec.ts. The company/asset
  * column already shows company + asset, so this line leads with the trial and
  * only adds the asset when there is no trial to name.
  */

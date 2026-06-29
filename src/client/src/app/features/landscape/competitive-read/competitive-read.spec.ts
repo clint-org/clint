@@ -544,7 +544,7 @@ describe('buildLandscapeRead', () => {
         const result = buildLandscapeRead({ view: 'timeline', groupBy: 'company', stats });
         const viewSeg = result.segments.find((s) => s.clause === 'view');
         expect(viewSeg?.shape).toBe('catalyst-window');
-        expect(result.text).toContain('3 catalysts in next 90 days (2 Lilly, 1 Novo)');
+        expect(result.text).toContain('3 events in next 90 days (2 Lilly, 1 Novo)');
       });
 
       it('all-from-one-entity after sweep', () => {
@@ -598,7 +598,7 @@ describe('buildLandscapeRead', () => {
         const result = buildLandscapeRead({ view: 'timeline', groupBy: 'company', stats });
         const viewSeg = result.segments.find((s) => s.clause === 'view');
         expect(viewSeg?.shape).toBe('no-near-term-catalysts');
-        expect(result.text).toContain('no near-term catalysts');
+        expect(result.text).toContain('no near-term events');
       });
 
       it('next-catalyst after sole-entrant when within 90 days', () => {
@@ -614,7 +614,7 @@ describe('buildLandscapeRead', () => {
         const result = buildLandscapeRead({ view: 'timeline', groupBy: 'company', stats });
         const viewSeg = result.segments.find((s) => s.clause === 'view');
         expect(viewSeg?.shape).toBe('next-catalyst');
-        expect(result.text).toContain('next catalyst in 47 days: PFIZER-101 readout');
+        expect(result.text).toContain('next event in 47 days: PFIZER-101 readout');
       });
     });
 

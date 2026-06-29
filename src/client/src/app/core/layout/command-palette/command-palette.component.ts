@@ -228,7 +228,7 @@ export class CommandPaletteComponent implements OnInit {
       case 'event':
         return `${base}/events?eventId=${item.id}`;
       case 'catalyst':
-        return `${base}/catalysts?markerId=${item.id}`;
+        return `${base}/future-events?eventId=${item.id}`;
     }
   }
 }
