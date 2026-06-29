@@ -1084,4 +1084,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260629060000_seed_demo_feature_coverage.sql`
 - `20260629070000_create_trial_backfill_phase.sql`
 - `20260629080000_seed_demo_remodel.sql`
+- `20260629090000_corporate_event_family.sql`
+- `20260629100000_dashboard_anchor_events_anchor_type.sql`
 <!-- /AUTO-GEN:DRIFT -->
