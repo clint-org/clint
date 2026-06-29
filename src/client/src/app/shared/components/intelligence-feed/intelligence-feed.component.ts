@@ -57,91 +57,70 @@ import { eventFeedDateLabel } from './event-feed-date-label';
           ></span>
           @if (row.kind === 'event') {
             @let ev = asEvent(row);
-            <div class="min-w-0 flex-1 px-[22px] py-[17px] transition-colors group-hover:bg-slate-50">
-              <div class="mb-2 flex items-center gap-2.5">
+            <div class="min-w-0 flex-1 px-4 py-2 transition-colors group-hover:bg-slate-50">
+              <div class="flex items-center gap-2">
                 <app-marker-icon
                   [shape]="ev.marker_shape"
                   [color]="ev.marker_color"
-                  [size]="14"
+                  [size]="12"
                   [fillStyle]="ev.is_projected ? 'outline' : 'filled'"
                   [innerMark]="ev.marker_inner_mark"
                   [isNle]="ev.no_longer_expected"
                 />
                 <span
-                  class="inline-flex items-center border border-slate-200 bg-white px-2 py-1 font-mono text-[9px] font-bold uppercase leading-none tracking-[0.1em] text-slate-500"
+                  class="shrink-0 font-mono text-[9px] font-bold uppercase leading-none tracking-[0.1em] text-slate-400"
                 >
                   {{ ev.category_name }}
                 </span>
+                <button
+                  type="button"
+                  data-event-open
+                  class="min-w-0 flex-1 truncate text-left text-[13.5px] font-semibold leading-tight text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+                  (click)="eventOpen.emit(ev.id)"
+                  [innerHTML]="eventTitle(ev)"
+                ></button>
                 <span
-                  class="ml-auto font-mono text-[10px] font-semibold tabular-nums text-slate-400"
+                  class="shrink-0 font-mono text-[10px] font-semibold tabular-nums text-slate-400"
                   [class.italic]="ev.is_projected"
                 >
                   {{ eventDateLabel(ev) }}
                 </span>
               </div>
-              <button
-                type="button"
-                data-event-open
-                class="block w-full text-left text-[17px] font-bold leading-snug text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
-                (click)="eventOpen.emit(ev.id)"
-                [innerHTML]="eventTitle(ev)"
-              ></button>
-              @if (eventExcerpt(ev); as e) {
-                <p
-                  class="mt-[7px] text-[13.5px] leading-relaxed text-slate-600 line-clamp-2"
-                  [innerHTML]="e"
-                ></p>
-              }
-              <div class="mt-2.5 flex items-center gap-2">
-                <span class="font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-slate-400">
+              <div class="mt-0.5 flex items-baseline gap-1.5 pl-[20px] text-[11.5px] leading-tight">
+                <span class="shrink-0 font-mono text-[10px] uppercase tracking-[0.04em] text-slate-400">
                   {{ ev.entity_name ?? 'Engagement' }}
                 </span>
-                <span
-                  class="relative ml-auto font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-brand-700"
-                  aria-hidden="true"
-                >
-                  Open event &rarr;
-                </span>
+                @if (ev.description; as d) {
+                  <span class="min-w-0 flex-1 truncate text-slate-500">{{ d }}</span>
+                }
               </div>
             </div>
           } @else {
             @let br = asBrief(row);
-            <div class="min-w-0 flex-1 px-[22px] py-[17px] transition-colors group-hover:bg-slate-50">
-              <div class="mb-2 flex items-center gap-2.5">
+            <div class="min-w-0 flex-1 px-4 py-2 transition-colors group-hover:bg-slate-50">
+              <div class="flex items-center gap-2">
                 <span
-                  class="inline-flex items-center border border-slate-200 bg-white px-2 py-1 font-mono text-[9px] font-bold uppercase leading-none tracking-[0.1em]"
+                  class="shrink-0 font-mono text-[9px] font-bold uppercase leading-none tracking-[0.1em]"
                   [class.text-brand-700]="br.entity_type === 'space'"
-                  [class.text-slate-500]="br.entity_type !== 'space'"
+                  [class.text-slate-400]="br.entity_type !== 'space'"
                 >
                   {{ entityLabel(br) }}
                 </span>
-                <span class="ml-auto font-mono text-[10px] font-semibold tabular-nums text-slate-400">
+                <a
+                  [routerLink]="entityRouterLink(br)"
+                  class="min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
+                  [innerHTML]="headline(br)"
+                ></a>
+                <span class="shrink-0 font-mono text-[10px] font-semibold tabular-nums text-slate-400">
                   {{ br.feed_ts | date: 'mediumDate' }}
                 </span>
               </div>
-              <a
-                [routerLink]="entityRouterLink(br)"
-                class="block text-[17px] font-bold leading-snug text-slate-900 group-hover:text-brand-700 before:absolute before:inset-0 before:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-1"
-                [innerHTML]="headline(br)"
-              ></a>
               @if (excerpt(br); as e) {
                 <p
-                  class="mt-[7px] text-[13.5px] leading-relaxed text-slate-600 line-clamp-2"
+                  class="mt-0.5 truncate pl-[20px] text-[11.5px] leading-tight text-slate-500"
                   [innerHTML]="e"
                 ></p>
               }
-              <div class="mt-2.5 flex items-center gap-2">
-                <span class="h-[18px] w-[18px] shrink-0 rounded-full bg-slate-200" aria-hidden="true"></span>
-                <span class="font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-slate-400">
-                  {{ agencyName() }}
-                </span>
-                <span
-                  class="relative ml-auto font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-brand-700"
-                  aria-hidden="true"
-                >
-                  Open intelligence &rarr;
-                </span>
-              </div>
             </div>
           }
         </li>

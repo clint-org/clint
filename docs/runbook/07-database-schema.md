@@ -1090,4 +1090,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260629120000_merge_launch_into_commercial.sql`
 - `20260629130000_update_event_drop_vestigial_source_url.sql`
 - `20260629160000_list_intelligence_feed.sql`
+- `20260629170000_feed_excludes_ctgov_events.sql`
 <!-- /AUTO-GEN:DRIFT -->

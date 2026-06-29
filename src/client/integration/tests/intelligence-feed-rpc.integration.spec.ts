@@ -110,6 +110,27 @@ beforeAll(async () => {
         .single()
     );
   }
+
+  // An auto-derived CT.gov structural marker (metadata.source='ctgov'), created
+  // most-recently so it WOULD top the feed if not excluded. The feed must drop it.
+  expectOk(
+    await admin
+      .from('events')
+      .insert({
+        space_id: spaceId,
+        event_type_id: ET_TOPLINE,
+        title: 'CTgov auto marker',
+        event_date: '2026-05-01',
+        anchor_type: 'company',
+        anchor_id: companyId,
+        projection: 'actual',
+        metadata: { source: 'ctgov' },
+        created_by: p.ids.space_owner,
+        created_at: '2026-03-20T09:00:00Z',
+      })
+      .select('id')
+      .single()
+  );
 });
 
 async function feed(args: Record<string, unknown>): Promise<FeedResult> {
@@ -138,6 +159,16 @@ describe('list_intelligence_feed', () => {
       'Topline readout',
     ]);
     expect(r.rows.map((x) => x.kind)).toEqual(['event', 'brief', 'event', 'event']);
+  });
+
+  it('excludes auto-derived CT.gov events (metadata.source=ctgov), even though newest', async () => {
+    const r = await feed({});
+    expect(r.rows.map((x) => x.title)).not.toContain('CTgov auto marker');
+    // brief + 3 analyst events; the ctgov marker is dropped despite being newest.
+    expect(r.total).toBe(4);
+    const onlyEvents = await feed({ p_kinds: ['event'] });
+    expect(onlyEvents.rows.map((x) => x.title)).not.toContain('CTgov auto marker');
+    expect(onlyEvents.total).toBe(3);
   });
 
   it('does NOT gate on significance or visibility (low-sig + hidden both appear)', async () => {
