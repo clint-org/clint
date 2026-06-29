@@ -263,7 +263,8 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
       /catalysts   -> future-events
     /intelligence   IntelligenceBrowseComponent
     /materials   MaterialsBrowsePageComponent
-    /activity   activityRedirectGuard
+    /activity   ActivityPageComponent
+    /events   -> activity
     /landscape   -> bullseye
     /landscape/by-therapy-area   -> bullseye
     /landscape/by-therapy-area/:entityId   -> bullseye

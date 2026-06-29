@@ -1,0 +1,154 @@
+<app-manage-page-shell>
+  @if (error()) {
+    <p-message severity="error" [closable]="false" styleClass="mb-4">{{ error() }}</p-message>
+  }
+
+  <app-section-header
+    label="Activity"
+    [detail]="total() ? total() + ' detected change' + (total() === 1 ? '' : 's') : ''"
+  />
+  <p class="mb-4 text-xs text-slate-500">
+    A read-only log of detected changes across this landscape: ClinicalTrials.gov registry updates
+    and analyst edits, newest first.
+  </p>
+
+  <div class="flex gap-0" [class.divide-x]="selectedItem()">
+    <!-- Table area -->
+    <div class="min-w-0 flex-1 overflow-x-auto">
+      <p-table
+        styleClass="data-table"
+        [value]="items()"
+        [loading]="loading()"
+        [lazy]="true"
+        (onLazyLoad)="onLazyLoad($event)"
+        [paginator]="total() > page().rows"
+        [rows]="page().rows"
+        [first]="page().first"
+        [totalRecords]="total()"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        selectionMode="single"
+        [selection]="selectedItem()"
+        dataKey="id"
+      >
+        <ng-template #header>
+          <tr>
+            <th class="col-date">Logged</th>
+            <th class="w-full min-w-[18rem]">Change</th>
+            <th class="col-secondary">Entity</th>
+            <th class="col-secondary">Source</th>
+            <th class="col-status">Type</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-item>
+          <tr
+            class="cursor-pointer transition-colors hover:bg-slate-50"
+            [class.selected-row]="selectedItem()?.id === item.id"
+            (click)="onRowClick(item)"
+            (keydown.enter)="onRowClick(item)"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="viewDetailsLabel(changeTypeLabel(item))"
+            [attr.aria-pressed]="selectedItem()?.id === item.id"
+          >
+            <td class="col-date text-xs tabular-nums text-slate-500">
+              <time [attr.datetime]="item.feed_ts">
+                <div>{{ item.feed_ts | date: 'MMM d, y' }}</div>
+                <div class="text-[10px] uppercase tracking-wider text-slate-400">
+                  {{ item.feed_ts | date: 'h:mm a' }}
+                </div>
+              </time>
+            </td>
+            <td class="min-w-[18rem]">
+              <span class="text-sm text-slate-900">
+                @for (seg of getDetectedSummary(item).segments; track $index) {
+                  @switch (seg.kind) {
+                    @case ('plain') {
+                      <span>{{ seg.text }}</span>
+                    }
+                    @case ('old') {
+                      <span class="text-slate-400 line-through">{{ seg.text }}</span>
+                    }
+                    @case ('new') {
+                      <span class="font-semibold">{{ seg.text }}</span>
+                    }
+                    @case ('arrow') {
+                      <span class="mx-0.5 text-slate-400">&rarr;</span>
+                    }
+                    @case ('muted') {
+                      <span class="text-slate-500">{{ seg.text }}</span>
+                    }
+                  }
+                }
+              </span>
+            </td>
+            <td class="col-secondary whitespace-nowrap text-xs">
+              @let ec = entityCell(item);
+              <span class="inline-flex items-center gap-1.5 align-middle">
+                <span
+                  class="rounded-sm border border-brand-100 bg-brand-50 px-1 py-px font-mono text-[9px] font-semibold uppercase tracking-wider text-brand-700"
+                  >{{ ec.badge }}</span
+                >
+                @if (ec.value) {
+                  <span class="font-medium text-slate-900">{{ ec.value }}</span>
+                }
+                @if (ec.parents.length) {
+                  <span class="text-slate-400">{{ ec.parents.join(' / ') }}</span>
+                }
+              </span>
+            </td>
+            <td class="col-secondary whitespace-nowrap text-xs">
+              <span
+                class="inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500"
+              >
+                {{ sourceLabel(item) }}
+              </span>
+            </td>
+            <td class="col-status whitespace-nowrap text-right">
+              <span class="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                {{ changeTypeLabel(item) }}
+              </span>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #loadingbody>
+          <app-table-skeleton-body
+            [cells]="[
+              { w: '72px', h: '11px', class: 'col-date' },
+              { w: '60%' },
+              { w: '52%', class: 'col-secondary' },
+              { w: '48px', h: '14px', class: 'col-secondary' },
+              { w: '56px', h: '16px', class: 'col-status' },
+            ]"
+          />
+        </ng-template>
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="5">
+              No detected changes yet. Activity records changes Clint detects automatically:
+              ClinicalTrials.gov registry updates (status, dates, phase, enrollment) and analyst
+              edits to tracked trials. This log is read-only.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <!-- Detail panel: shown only when a detected row is selected (read-only). -->
+    @if (selectedItem(); as item) {
+      <div
+        class="sticky top-0 w-[340px] shrink-0 self-start max-h-[calc(100vh-3.5rem)] overflow-y-auto"
+      >
+        <app-event-detail-panel
+          [selectedFeedItem]="item"
+          [canEdit]="false"
+          [spaceId]="spaceId()"
+          [tenantId]="tenantId"
+          (panelClose)="closePanel()"
+          (trialClick)="onTrialClick($event)"
+        />
+      </div>
+    }
+  </div>
+</app-manage-page-shell>
