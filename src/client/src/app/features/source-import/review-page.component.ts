@@ -38,25 +38,24 @@ import {
   resolveTrialPrimaryAssetIndex,
   orphanTrialIndexes,
   countFilterMatches,
-  markerLeafDisplay,
   eventLeafDisplay,
-  pickMarkerType,
+  pickEventType,
   defaultSelections,
-  type MarkerTypeLite,
+  type EventTypeLite,
   type ReviewFlag,
 } from './review-grid.logic';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
-import { MarkerTypeService } from '../../core/services/marker-type.service';
-import type { MarkerType } from '../../core/models/marker.model';
+import { EventTypeService } from '../../core/services/event-type.service';
+import type { EventType } from '../../core/models/event-type.model';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
 import { ReviewEditDialogComponent } from './review-edit-dialog.component';
 import { commitSummary, type CommitCreated } from './commit-summary.logic';
 
 type EditableEntityType = 'companies' | 'assets' | 'trials';
 
-type EntityType = 'companies' | 'assets' | 'trials' | 'markers' | 'events';
+type EntityType = 'companies' | 'assets' | 'trials' | 'events';
 
-const ENTITY_ORDER: EntityType[] = ['companies', 'assets', 'trials', 'markers', 'events'];
+const ENTITY_ORDER: EntityType[] = ['companies', 'assets', 'trials', 'events'];
 
 interface CompanyNode {
   companyIdx: number;
@@ -67,20 +66,17 @@ interface CompanyNode {
 interface AssetNode {
   assetIdx: number;
   trials: TrialNode[];
-  markers: number[];
   events: number[];
 }
 
 interface TrialNode {
   trialIdx: number;
-  markers: number[];
   events: number[];
 }
 
 interface HierarchicalTree {
   companies: CompanyNode[];
   orphanTrials: number[];
-  orphanMarkers: number[];
   orphanEvents: number[];
 }
 
@@ -88,7 +84,7 @@ interface GridRow {
   key: string;
   type: EntityType;
   idx: number;
-  kind: 'company' | 'asset' | 'trial' | 'marker' | 'event';
+  kind: 'company' | 'asset' | 'trial' | 'event';
   name: string;
   state: 'new' | 'existing';
   phase: string | null;
@@ -100,21 +96,21 @@ interface GridRow {
   // nesting is under its primary (headline) asset or a secondary one. Undefined
   // for single-asset trials and for non-trial rows.
   multiAssetRole?: 'primary' | 'secondary';
-  // Marker/event leaf rows carry their identity in the entity cell instead of
-  // the trial-shaped columns: a category chip (marker_type / event category)
-  // and a date. Undefined for company/asset/trial rows.
+  // Event leaf rows carry their identity in the entity cell instead of the
+  // trial-shaped columns: a category chip (event_type) and a date. Undefined
+  // for company/asset/trial rows.
   category?: string | null;
   date?: string | null;
-  // For a marker row, the resolved marker type whose glyph it will receive on
+  // For an event row, the resolved event type whose glyph it will receive on
   // commit, so the review renders the real app-marker-icon (not a stand-in).
-  // Null while the space's marker types are still loading.
-  markerType?: MarkerTypeLite | null;
+  // Null while the space's event types are still loading.
+  eventType?: EventTypeLite | null;
 }
 
-// Row kinds that are leaf attributes of an entity (markers, events) rather than
+// Row kinds that are leaf attributes of an entity (events) rather than
 // structural records. They render in the entity cell, leave the trial columns
 // blank, and are not editable through the dialog.
-const LEAF_KINDS = new Set<GridRow['kind']>(['marker', 'event']);
+const LEAF_KINDS = new Set<GridRow['kind']>(['event']);
 
 @Component({
   selector: 'app-review-page',
@@ -310,30 +306,27 @@ const LEAF_KINDS = new Set<GridRow['kind']>(['marker', 'event']);
                   </td>
                   <td class="align-top">
                     @if (isLeafRow(row)) {
-                      <!-- Marker/event leaf: title on its own line, a muted meta
-                           line below for category + date, so nothing competes for
+                      <!-- Event leaf: title on its own line, a muted meta line
+                           below for category + date, so nothing competes for
                            horizontal room in the deeply-indented cell. -->
                       <div class="flex items-start gap-2">
                         <p-treeTableToggler [rowNode]="rowNode" />
-                        <!-- Markers render the real glyph their marker_type
-                             resolves to (same as the legend/timeline); events use
-                             the canonical events icon (shared/constants/nav-icons.ts).
-                             Marker falls back to fa-shapes until types load. -->
-                        @if (row.kind === 'marker' && row.markerType; as mt) {
+                        <!-- Events render the real glyph their event_type resolves
+                             to (same as the legend/timeline), falling back to the
+                             canonical events icon until types load. -->
+                        @if (row.eventType; as et) {
                           <span class="mt-0.5 inline-flex">
                             <app-marker-icon
-                              [shape]="mt.shape"
-                              [color]="mt.color"
-                              [fillStyle]="mt.fill_style"
-                              [innerMark]="mt.inner_mark"
+                              [shape]="et.shape"
+                              [color]="et.color"
+                              [fillStyle]="et.fill_style"
+                              [innerMark]="et.inner_mark"
                               [size]="13"
                             />
                           </span>
                         } @else {
                           <i
-                            class="fa-solid mt-1 text-[10px] text-slate-400"
-                            [class.fa-shapes]="row.kind === 'marker'"
-                            [class.fa-calendar-day]="row.kind === 'event'"
+                            class="fa-solid fa-calendar-day mt-1 text-[10px] text-slate-400"
                             aria-hidden="true"
                           ></i>
                         }
@@ -518,23 +511,6 @@ const LEAF_KINDS = new Set<GridRow['kind']>(['marker', 'event']);
             </section>
           }
 
-          <!-- Orphaned markers (no trial_refs) -->
-          @if (tree.orphanMarkers.length > 0) {
-            <section class="mb-4">
-              <h2 class="mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-slate-500">
-                Unlinked markers ({{ tree.orphanMarkers.length }})
-              </h2>
-              <div class="rounded border border-slate-200 bg-white px-4 py-2">
-                @for (mi of tree.orphanMarkers; track mi) {
-                  <ng-container
-                    [ngTemplateOutlet]="orphanRow"
-                    [ngTemplateOutletContext]="{ type: 'markers', idx: mi, editable: false }"
-                  />
-                }
-              </div>
-            </section>
-          }
-
           <!-- Orphaned events (space-level) -->
           @if (tree.orphanEvents.length > 0) {
             <section class="mb-4">
@@ -625,11 +601,11 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   private readonly messages = inject(MessageService);
   private readonly rpcCache = inject(RpcCache);
   private readonly changeEventService = inject(ChangeEventService);
-  private readonly markerTypeService = inject(MarkerTypeService);
+  private readonly eventTypeService = inject(EventTypeService);
 
-  // The space's marker types, loaded once spaceId is known, so marker leaf rows
-  // can render the real glyph their marker_type resolves to (see gridNodes).
-  protected readonly markerTypes = signal<MarkerType[]>([]);
+  // The space's event types, loaded once spaceId is known, so event leaf rows
+  // can render the real glyph their event_type resolves to (see gridNodes).
+  protected readonly eventTypes = signal<EventType[]>([]);
 
   protected readonly entityOrder = ENTITY_ORDER;
 
@@ -767,7 +743,6 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       companies: count('companies'),
       assets: count('assets'),
       trials: count('trials'),
-      markers: count('markers'),
       events: count('events'),
     });
   });
@@ -791,26 +766,12 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
   readonly hierarchicalTree = computed<HierarchicalTree>(() => {
     const p = this.proposal();
-    if (!p) return { companies: [], orphanTrials: [], orphanMarkers: [], orphanEvents: [] };
+    if (!p) return { companies: [], orphanTrials: [], orphanEvents: [] };
 
     const companies = p.proposals.companies ?? [];
     const assets = p.proposals.assets ?? [];
     const trials = p.proposals.trials ?? [];
-    const markers = p.proposals.markers ?? [];
     const events = p.proposals.events ?? [];
-
-    const trialMarkersMap = new Map<number, number[]>();
-    const assignedMarkers = new Set<number>();
-    for (let mi = 0; mi < markers.length; mi++) {
-      const refs = (markers[mi]['trial_refs'] as number[]) ?? [];
-      for (const tr of refs) {
-        if (tr < trials.length) {
-          if (!trialMarkersMap.has(tr)) trialMarkersMap.set(tr, []);
-          trialMarkersMap.get(tr)!.push(mi);
-          assignedMarkers.add(mi);
-        }
-      }
-    }
 
     const trialEventsMap = new Map<number, number[]>();
     const assetEventsMap = new Map<number, number[]>();
@@ -860,19 +821,12 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         assetIdx: ai,
         trials: (assetTrialsMap.get(ai) ?? []).map((ti) => ({
           trialIdx: ti,
-          markers: trialMarkersMap.get(ti) ?? [],
           events: trialEventsMap.get(ti) ?? [],
         })),
-        markers: [] as number[],
         events: assetEventsMap.get(ai) ?? [],
       })),
       events: companyEventsMap.get(ci) ?? [],
     }));
-
-    const orphanMarkers: number[] = [];
-    for (let mi = 0; mi < markers.length; mi++) {
-      if (!assignedMarkers.has(mi)) orphanMarkers.push(mi);
-    }
 
     const orphanEvents: number[] = [];
     for (let ei = 0; ei < events.length; ei++) {
@@ -884,14 +838,14 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     // still counting toward the "(N trials)" header (the master-protocol case).
     const orphanTrials = orphanTrialIndexes(trials, assets.length);
 
-    return { companies: companyNodes, orphanTrials, orphanMarkers, orphanEvents };
+    return { companies: companyNodes, orphanTrials, orphanEvents };
   });
 
   protected hasBlockingFlag(row: GridRow): boolean {
     return row.flags.some((f) => f.tier === 'blocking');
   }
-  // Marker/event leaf rows render their identity in the entity cell and have no
-  // edit dialog, so the template branches on this.
+  // Event leaf rows render their identity in the entity cell and have no edit
+  // dialog, so the template branches on this.
   protected isLeafRow(row: GridRow): boolean {
     return LEAF_KINDS.has(row.kind);
   }
@@ -906,19 +860,19 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
     const assetCount = this.entitiesOf('assets').length;
     const dupes = duplicateTrialIndexes(trials);
 
-    // Markers and events nest as leaf rows under the entity they describe. The
-    // selection key stays per-entity (so a marker shared by two trials toggles
-    // together) while the tree-node key is namespaced by the parent node, since
-    // the same leaf can appear under several parents (mirrors multi-asset trials).
-    const markerTypes = this.markerTypes();
-    const leafRow = (type: 'markers' | 'events', idx: number, parentNodeKey: string): TreeNode => {
+    // Events nest as leaf rows under the entity they describe. The selection key
+    // stays per-event (so an event shared by two parents toggles together) while
+    // the tree-node key is namespaced by the parent node, since the same leaf can
+    // appear under several parents (mirrors multi-asset trials).
+    const eventTypes = this.eventTypes() as EventTypeLite[];
+    const leafRow = (type: 'events', idx: number, parentNodeKey: string): TreeNode => {
       const e = this.entitiesOf(type)[idx];
-      const disp = type === 'markers' ? markerLeafDisplay(e) : eventLeafDisplay(e);
+      const disp = eventLeafDisplay(e);
       const row: GridRow = {
         key: this.entityKey(type, idx),
         type,
         idx,
-        kind: type === 'markers' ? 'marker' : 'event',
+        kind: 'event',
         name: this.entityName(type, idx),
         state: entityState(e),
         phase: null,
@@ -928,7 +882,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
         flags: [],
         category: disp.category,
         date: disp.date,
-        markerType: type === 'markers' ? pickMarkerType(disp.category, markerTypes) : null,
+        eventType: pickEventType(disp.category, eventTypes),
       };
       return { key: `${parentNodeKey}/${row.key}`, data: row };
     };
@@ -972,10 +926,7 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       // under several assets, so namespace it by the parent asset. row.key (the
       // selection key) stays per-trial so both copies share state.
       const nodeKey = `assets_${parentAssetIdx}/${row.key}`;
-      return branch(nodeKey, row, [
-        ...tn.markers.map((mi) => leafRow('markers', mi, nodeKey)),
-        ...tn.events.map((ei) => leafRow('events', ei, nodeKey)),
-      ]);
+      return branch(nodeKey, row, [...tn.events.map((ei) => leafRow('events', ei, nodeKey))]);
     };
 
     const assetRow = (an: AssetNode): TreeNode => {
@@ -1095,19 +1046,19 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
   ngOnInit(): void {
     this.extractRouteParams();
     this.initSelections();
-    void this.loadMarkerTypes();
+    void this.loadEventTypes();
   }
 
-  // Fetch the space's marker types (system + space-scoped) so marker leaf rows
+  // Fetch the space's event types (system + space-scoped) so event leaf rows
   // can resolve their real glyph. Best-effort: on failure the rows fall back to
-  // the fa-shapes icon, which is purely cosmetic for the review preview.
-  private async loadMarkerTypes(): Promise<void> {
+  // the fa-calendar-day icon, which is purely cosmetic for the review preview.
+  private async loadEventTypes(): Promise<void> {
     const spaceId = this.spaceId();
     if (!spaceId) return;
     try {
-      this.markerTypes.set(await this.markerTypeService.list(spaceId));
+      this.eventTypes.set(await this.eventTypeService.list(spaceId));
     } catch {
-      this.markerTypes.set([]);
+      this.eventTypes.set([]);
     }
   }
 
