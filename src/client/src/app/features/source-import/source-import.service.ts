@@ -28,7 +28,6 @@ export interface SourceImportProposals {
   companies: Record<string, unknown>[];
   assets: Record<string, unknown>[];
   trials: Record<string, unknown>[];
-  markers: Record<string, unknown>[];
   events: Record<string, unknown>[];
 }
 

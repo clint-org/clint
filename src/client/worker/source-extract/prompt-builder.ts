@@ -5,21 +5,15 @@ export interface PromptParts {
   user: string;
 }
 
-const MARKER_TYPE_FALLBACK =
-  'Topline Data | Interim Data | Full Data | Regulatory Filing | Submission | Acceptance | Approval';
-const EVENT_CATEGORY_FALLBACK =
-  'Regulatory | Financial | Clinical | Commercial | Strategic | Leadership';
+const EVENT_TYPE_FALLBACK =
+  'Trial Start | Trial End | Primary Completion | Topline Data | Regulatory Filing | ' +
+  'Approval | Launch | LOE Date | Distribution | Leadership Change | Financial | Strategic';
 
 function buildSystemPrompt(inventory: InventorySnapshot): string {
-  const markerTypeEnum =
-    inventory.marker_types?.length > 0
-      ? inventory.marker_types.map((mt) => mt.name).join(' | ')
-      : MARKER_TYPE_FALLBACK;
-
-  const categoryEnum =
-    inventory.event_categories?.length > 0
-      ? inventory.event_categories.map((ec) => ec.name).join(' | ')
-      : EVENT_CATEGORY_FALLBACK;
+  const eventTypeEnum =
+    inventory.event_types?.length > 0
+      ? inventory.event_types.map((et) => et.name).join(' | ')
+      : EVENT_TYPE_FALLBACK;
 
   return `You are a pharma competitive intelligence extraction engine. Extract structured entities from a source document. You will receive the source text and the current space inventory.
 
@@ -30,7 +24,9 @@ Rules:
 - For MOA and ROA on well-known approved or late-stage investigational drugs, populate the standard pharmacological class and route even if the source document does not explicitly restate them (e.g., semaglutide -> "GLP-1 receptor agonist" / "Subcutaneous", pembrolizumab -> "PD-1 inhibitor" / "Intravenous"). Leave empty only when the drug is genuinely novel and the source provides no signal.
 - Never infer regulatory dates that are not explicitly stated.
 - For every entity, quote the relevant evidence verbatim from the source.
-- Use ONLY the marker_type and category values listed in the schema. Pick the closest match.
+- Use ONLY an event_type value listed in the schema; pick the most specific match.
+- Anchor each event with anchor.level (trial for clinical/data milestones; company for corporate, financial, leadership, strategic events; asset where the event is about the asset itself) and a zero-based ref into that array (null for space-level).
+- Set significance to high for material, market-moving developments; low otherwise.
 - Output ONLY valid JSON. No markdown fences, no explanation, no preamble.
 
 Output schema (follow this exactly):
@@ -65,33 +61,24 @@ Output schema (follow this exactly):
     "indications": ["disease/condition string", ...] (every indication the trial studies; empty array if none),
     "evidence": "verbatim quote"
   }],
-  "markers": [{
+  "events": [{
     "match": {"kind": "existing", "id": "uuid"} OR {"kind": "new"},
-    "marker_type": "${markerTypeEnum}",
+    "event_type": "${eventTypeEnum}",
     "title": "short descriptive title",
     "event_date": "YYYY-MM-DD",
     "end_date": "YYYY-MM-DD or null",
     "projection": "actual | company | primary",
+    "significance": "high | low",
     "description": "string or null",
-    "trial_refs": [0],
-    "evidence": "verbatim quote"
-  }],
-  "events": [{
-    "match": {"kind": "existing", "id": "uuid"} OR {"kind": "new"},
-    "category": "${categoryEnum}",
-    "title": "short descriptive title",
-    "event_date": "YYYY-MM-DD",
-    "description": "string or null",
-    "priority": "high | low",
     "tags": ["tag strings"],
     "anchor": {"level": "space | company | asset | trial", "ref": 0 or null},
     "evidence": "verbatim quote"
   }]
 }
 
-company_ref, sponsor_ref, asset_refs, primary_asset_ref, trial_refs, and anchor.ref are zero-based indices into their respective arrays in THIS output (not inventory ids). asset_refs is the list of assets a trial tests (empty for observational; multiple for a master protocol testing several drugs) and primary_asset_ref (one of asset_refs) is the headline asset. Use "existing" match with the inventory id when the entity already exists. Use "new" match when it does not.
+company_ref, sponsor_ref, asset_refs, primary_asset_ref, and anchor.ref are zero-based indices into their respective arrays in THIS output (not inventory ids). asset_refs is the list of assets a trial tests (empty for observational; multiple for a master protocol testing several drugs) and primary_asset_ref (one of asset_refs) is the headline asset. Use "existing" match with the inventory id when the entity already exists. Use "new" match when it does not.
 
-For markers and events, set match.kind to "existing" with the inventory id ONLY when the proposal describes the SAME real-world milestone as an existing marker/event on the same trial/anchor. Anchor on trial + event_date; tolerate differences in title wording and marker_type/category. Read the title, type, category, and evidence to keep genuinely different same-date developments separate. When uncertain, use "new": a missed duplicate is recoverable, but a wrong match permanently drops a distinct item.
+For events, set match.kind to "existing" with the inventory id ONLY when the proposal describes the SAME real-world milestone as an existing event on the same anchor. Anchor on the resolved entity + event_date; tolerate differences in title wording and event_type. Read the title, type, and evidence to keep genuinely different same-date developments separate. When uncertain, use "new": a missed duplicate is recoverable, but a wrong match permanently drops a distinct item.
 
 If nothing can be extracted, return all arrays as empty.`;
 }

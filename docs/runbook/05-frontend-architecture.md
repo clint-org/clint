@@ -729,6 +729,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `ChangeEventService`
 - `EventDetailService`
 - `EventThreadService`
+- `EventTypeService`
 - `EventService`
 - `LandscapeService`
 - `MarkerCategoryService`
@@ -751,6 +752,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `AuditEvent`
 - `ChangeEvent`
 - `CtgovField`
+- `EventType`
 - `EventWrite`
 - `MechanismOfAction`
 - `Palette`

@@ -22,7 +22,7 @@ const newEntityMatch = z.object({
   name: z.string(),
 });
 
-// Marker/event matches carry no name field -- the title is already on the object.
+// Existing/new match objects carry no name field -- the title is already on the object.
 const newSimpleMatch = z.object({
   kind: z.literal('new'),
 });
@@ -77,29 +77,19 @@ const TrialSchema = z.object({
   evidence: z.string(),
 });
 
-const MarkerSchema = z.object({
-  match: z
-    .discriminatedUnion('kind', [existingMatch, newSimpleMatch])
-    .default({ kind: 'new' }),
-  marker_type: z.string(),
-  title: z.string(),
-  event_date: dateString.nullable().optional().default(null),
-  end_date: dateString.nullable().optional().default(null),
-  projection: z.enum(['actual', 'company', 'primary']).optional().default('company'),
-  description: z.string().nullable().optional().default(null),
-  trial_refs: z.array(z.number().int()).optional().default([]),
-  evidence: z.string(),
-});
-
 const EventSchema = z.object({
   match: z
     .discriminatedUnion('kind', [existingMatch, newSimpleMatch])
     .default({ kind: 'new' }),
-  category: z.string(),
+  // A stable event_type NAME enumerated in the prompt from the live taxonomy.
+  event_type: z.string(),
   title: z.string(),
   event_date: dateString.nullable().optional().default(null),
+  end_date: dateString.nullable().optional().default(null),
+  projection: z.enum(['actual', 'company', 'primary']).optional().default('company'),
+  significance: z.enum(['high', 'low']).optional(),
   description: z.string().nullable().optional().default(null),
-  priority: z.enum(['high', 'low']).optional().default('low'),
+  // Kept in the schema + review; NOT written on commit (deferred to p_metadata).
   tags: z.array(z.string()).optional().default([]),
   anchor: z.object({
     level: z.enum(['space', 'company', 'asset', 'trial']),
@@ -119,7 +109,6 @@ export const ExtractionResultSchema = z.object({
   companies: z.array(CompanySchema).optional().default([]),
   assets: z.array(AssetSchema).optional().default([]),
   trials: z.array(TrialSchema).optional().default([]),
-  markers: z.array(MarkerSchema).optional().default([]),
   events: z.array(EventSchema).optional().default([]),
 });
 
@@ -145,27 +134,14 @@ export interface InventorySnapshot {
     phase_type?: string;
   }[];
   indications: { id: string; name: string }[];
-  marker_types: { id: string; name: string }[];
-  event_categories: { id: string; name: string }[];
+  event_types: { id: string; name: string }[];
+  event_type_categories: { id: string; name: string }[];
   mechanisms_of_action: { id: string; name: string }[];
   routes_of_administration: { id: string; name: string; abbreviation?: string }[];
-  /** Existing marker instances in the space, one entry per (marker, trial) pair.
-   *  Used by the import validator to detect duplicate markers across re-imports. */
-  markers?: {
-    id: string;
-    trial_id: string;
-    marker_type: string;
-    title: string;
-    event_date: string | null;
-  }[];
-  /** Existing event instances in the space with their anchor.
-   *  Used by the import validator to detect duplicate events across re-imports. */
+  /** Existing event instances in the space with their anchor, for dedup. */
   events?: {
     id: string;
-    anchor: {
-      level: 'space' | 'company' | 'asset' | 'trial';
-      id: string | null;
-    };
+    anchor: { level: 'space' | 'company' | 'asset' | 'trial'; id: string | null };
     category: string;
     title: string;
     event_date: string | null;
@@ -190,7 +166,7 @@ export interface NctResolveRequest {
 }
 
 export interface DroppedEntity {
-  type: 'company' | 'asset' | 'trial' | 'marker' | 'event';
+  type: 'company' | 'asset' | 'trial' | 'event';
   index: number;
   name: string;
   reason: string;
