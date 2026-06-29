@@ -32,6 +32,8 @@ import {
 import { renderMarkdownInline } from '../../shared/utils/markdown-render';
 import { buildEntityRouterLink } from '../../shared/utils/intelligence-router-link';
 import { pluralize } from '../../shared/utils/pluralize';
+import { ENTITY_TYPE_ICON } from '../../shared/constants/nav-icons';
+import { buildFeedFilters, FeedFilter } from './engagement-feed-filters';
 import {
   EngagementLandingService,
   SpaceLandingStats,
@@ -42,12 +44,6 @@ import { BriefResult, computeBrief } from './brief-window';
 import { EngagementRouteIds, shouldReloadEngagement } from './engagement-landing.nav';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
-
-interface FeedFilter {
-  key: 'all' | IntelligenceEntityType;
-  label: string;
-  count: number;
-}
 
 interface MotionCell {
   key: 'p3Readouts' | 'catalysts' | 'newIntel' | 'trialMoves';
@@ -344,22 +340,10 @@ export class EngagementLandingComponent implements OnInit {
     return groups;
   });
 
-  readonly feedFilters = computed<FeedFilter[]>(() => {
-    const rows = this.latestIntelligence();
-    const counts = new Map<IntelligenceEntityType, number>();
-    for (const r of rows) {
-      counts.set(r.entity_type, (counts.get(r.entity_type) ?? 0) + 1);
-    }
-    const order: IntelligenceEntityType[] = ['trial', 'company', 'product', 'space'];
-    const out: FeedFilter[] = [{ key: 'all', label: 'All', count: rows.length }];
-    for (const type of order) {
-      const n = counts.get(type) ?? 0;
-      if (n > 0) {
-        out.push({ key: type, label: ENTITY_TYPE_LABEL[type] ?? type, count: n });
-      }
-    }
-    return out;
-  });
+  /** Canonical entity-scope icon classes, reused in the inventory count header. */
+  protected readonly entityIcon = ENTITY_TYPE_ICON;
+
+  readonly feedFilters = computed<FeedFilter[]>(() => buildFeedFilters(this.latestIntelligence()));
 
   readonly visibleFeed = computed<IntelligenceFeedRow[]>(() => {
     const f = this.feedFilter();
