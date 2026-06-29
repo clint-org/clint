@@ -2,6 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { DatePipe } from '@angular/common';
 
 import { FlatCatalyst } from '../../core/models/event-detail.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { CompanyTileComponent } from '../../shared/components/company-tile.component';
 import { PhaseChipComponent } from '../../shared/components/phase-chip.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
@@ -42,6 +47,8 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
             [fillStyle]="c.is_projected ? 'outline' : 'filled'"
             [innerMark]="c.marker_type_inner_mark"
             [isNle]="c.no_longer_expected"
+            [projectionBadge]="markerBadge(c)"
+            [outlineDash]="markerOutlineDash(c)"
           />
           <span
             class="min-w-0 flex-1 truncate font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500"
@@ -121,6 +128,15 @@ export class EventRowTooltipComponent {
   readonly catalyst = input<FlatCatalyst | null>(null);
   readonly x = input<number>(0);
   readonly y = input<number>(0);
+
+  /** Projection tier badge + forecast dash, matching the timeline glyph. */
+  protected markerBadge(c: FlatCatalyst): ProjectionBadge {
+    return projectionBadge(c.projection);
+  }
+
+  protected markerOutlineDash(c: FlatCatalyst): boolean {
+    return projectionOutlineDash(c.projection);
+  }
 
   /**
    * Source host for the provenance line. Primary-source rule: the derived

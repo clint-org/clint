@@ -12,6 +12,8 @@
         [size]="12"
         [fillStyle]="glyph.projected ? 'outline' : 'filled'"
         [innerMark]="glyph.innerMark"
+        [projectionBadge]="glyph.projectionBadge"
+        [outlineDash]="glyph.outlineDash"
       />
     </span>
   }
@@ -522,6 +524,8 @@
                     [size]="13"
                     [fillStyle]="g.projected ? 'outline' : 'filled'"
                     [innerMark]="g.innerMark"
+                    [projectionBadge]="g.projectionBadge"
+                    [outlineDash]="g.outlineDash"
                   />
                 }
                 <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{

@@ -15,6 +15,12 @@ export interface Catalyst {
   marker_type_shape: MarkerShape;
   marker_type_inner_mark: InnerMark;
   is_projected: boolean;
+  /**
+   * Projection tier ('actual' | 'company' | 'primary' | 'forecasted'), carried
+   * from the dashboard/flatten so catalyst glyphs render the same projection
+   * badge ('c'/'f') as the timeline row. 'actual' for confirmed dates.
+   */
+  projection: string;
   no_longer_expected: boolean;
   company_name: string | null;
   company_id: string | null;
