@@ -116,17 +116,32 @@ interface CtgovProvenanceBlock {
         </div>
       }
 
-      <!-- Asset + Trial identity grid: two bordered cells with a vertical
-           divider, matching the standardized affiliation scaffold. -->
-      @if (d.catalyst.company_name || (d.catalyst.trial_acronym ?? d.catalyst.trial_name)) {
-        <div class="mt-4 grid grid-cols-2 border border-slate-200">
-          <!-- Asset cell -->
-          <div class="min-w-0 border-r border-slate-200 px-3 py-2.5">
-            <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              Asset
-            </p>
-            @if (d.catalyst.company_name) {
-              <div class="flex items-center gap-2">
+      <!-- Company / Asset / Trial affiliation. Company gets a full-width header
+           cell (logo, or the building entity icon as fallback, + name); the
+           Asset | Trial row sits beneath. Mirrors the building/capsule/flask
+           entity vocabulary used in the nav and timeline. -->
+      @if (
+        d.catalyst.company_name ||
+        d.catalyst.asset_name ||
+        (d.catalyst.trial_acronym ?? d.catalyst.trial_name)
+      ) {
+        <div class="mt-4 border border-slate-200">
+          <!-- Company header cell: the whole row (logo + name) is the link. -->
+          @if (d.catalyst.company_name) {
+            @if (d.catalyst.company_id && tenantIdSig() && spaceId()) {
+              <a
+                [routerLink]="[
+                  '/t',
+                  tenantIdSig(),
+                  's',
+                  spaceId(),
+                  'profiles',
+                  'companies',
+                  d.catalyst.company_id,
+                ]"
+                appDetailPanelEntityLink
+                class="flex items-center gap-2 border-b border-slate-200 px-3 py-2.5"
+              >
                 @if (d.catalyst.company_logo_url) {
                   <img
                     [ngSrc]="d.catalyst.company_logo_url"
@@ -135,106 +150,124 @@ interface CtgovProvenanceBlock {
                     height="20"
                     class="h-5 w-5 flex-none rounded object-contain"
                   />
-                }
-                <div class="min-w-0">
-                  @if (d.catalyst.company_id && tenantIdSig() && spaceId()) {
-                    <a
-                      [routerLink]="[
-                        '/t',
-                        tenantIdSig(),
-                        's',
-                        spaceId(),
-                        'profiles',
-                        'companies',
-                        d.catalyst.company_id,
-                      ]"
-                      appDetailPanelEntityLink
-                      class="block truncate text-[11px] font-semibold uppercase tracking-wide"
-                    >
-                      {{ d.catalyst.company_name }}
-                    </a>
-                  } @else {
-                    <span class="block truncate text-[11px] font-semibold uppercase tracking-wide text-slate-700">
-                      {{ d.catalyst.company_name }}
-                    </span>
-                  }
-                  @if (d.catalyst.asset_name) {
-                    @if (d.catalyst.asset_id && tenantIdSig() && spaceId()) {
-                      <a
-                        [routerLink]="[
-                          '/t',
-                          tenantIdSig(),
-                          's',
-                          spaceId(),
-                          'profiles',
-                          'assets',
-                          d.catalyst.asset_id,
-                        ]"
-                        appDetailPanelEntityLink
-                        class="mt-0.5 block truncate text-[12px]"
-                      >
-                        {{ d.catalyst.asset_name }}
-                      </a>
-                    } @else {
-                      <span class="mt-0.5 block truncate text-[12px] text-slate-700">
-                        {{ d.catalyst.asset_name }}
-                      </span>
-                    }
-                  }
-                </div>
-              </div>
-            } @else {
-              <p class="text-[12px] text-slate-400">No asset linked</p>
-            }
-          </div>
-
-          <!-- Trial cell -->
-          <div class="min-w-0 px-3 py-2.5">
-            <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              Trial
-            </p>
-            @if (d.catalyst.trial_acronym ?? d.catalyst.trial_name; as trialLabel) {
-              @if (d.catalyst.trial_id; as trialId) {
-                <button
-                  type="button"
-                  class="group flex w-full items-center justify-between gap-2 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  (click)="trialClick.emit(trialId)"
-                >
-                  <span
-                    class="inline-flex min-w-0 items-center gap-1 text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
-                  >
-                    <span class="truncate">{{ trialLabel }}</span>
-                    <i
-                      class="fa-solid fa-arrow-right shrink-0 text-[10px] text-slate-300 group-hover:text-brand-600"
-                      aria-hidden="true"
-                    ></i>
+                } @else {
+                  <span class="flex h-5 w-5 flex-none items-center justify-center text-slate-400">
+                    <i class="fa-solid fa-building text-[13px]" aria-hidden="true"></i>
                   </span>
-                  @if (phaseLabel(d.catalyst.trial_phase); as phase) {
-                    <span
-                      class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
-                      >{{ phase }}</span
-                    >
-                  }
-                </button>
-              } @else {
-                <div class="flex w-full items-center justify-between gap-2">
-                  <span class="truncate text-[13px] font-medium text-slate-900">{{
-                    trialLabel
-                  }}</span>
-                  @if (phaseLabel(d.catalyst.trial_phase); as phase) {
-                    <span
-                      class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
-                      >{{ phase }}</span
-                    >
-                  }
-                </div>
-              }
-              @if (d.catalyst.recruitment_status) {
-                <p class="mt-1 text-[11px] text-slate-500">{{ d.catalyst.recruitment_status }}</p>
-              }
+                }
+                <span class="min-w-0 truncate text-[11px] font-semibold uppercase tracking-wide">
+                  {{ d.catalyst.company_name }}
+                </span>
+              </a>
             } @else {
-              <p class="text-[12px] text-slate-400">No trial linked</p>
+              <div class="flex items-center gap-2 border-b border-slate-200 px-3 py-2.5">
+                @if (d.catalyst.company_logo_url) {
+                  <img
+                    [ngSrc]="d.catalyst.company_logo_url"
+                    [alt]="d.catalyst.company_name"
+                    width="20"
+                    height="20"
+                    class="h-5 w-5 flex-none rounded object-contain"
+                  />
+                } @else {
+                  <span class="flex h-5 w-5 flex-none items-center justify-center text-slate-400">
+                    <i class="fa-solid fa-building text-[13px]" aria-hidden="true"></i>
+                  </span>
+                }
+                <span class="min-w-0 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-700">
+                  {{ d.catalyst.company_name }}
+                </span>
+              </div>
             }
+          }
+
+          <div class="grid grid-cols-2">
+            <!-- Asset cell -->
+            <div class="min-w-0 border-r border-slate-200 px-3 py-2.5">
+              <p
+                class="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+              >
+                <i class="fa-solid fa-capsules text-[11px]" aria-hidden="true"></i>
+                Asset
+              </p>
+              @if (d.catalyst.asset_name) {
+                @if (d.catalyst.asset_id && tenantIdSig() && spaceId()) {
+                  <a
+                    [routerLink]="[
+                      '/t',
+                      tenantIdSig(),
+                      's',
+                      spaceId(),
+                      'profiles',
+                      'assets',
+                      d.catalyst.asset_id,
+                    ]"
+                    appDetailPanelEntityLink
+                    class="block truncate text-[12px]"
+                  >
+                    {{ d.catalyst.asset_name }}
+                  </a>
+                } @else {
+                  <span class="block truncate text-[12px] text-slate-700">
+                    {{ d.catalyst.asset_name }}
+                  </span>
+                }
+              } @else {
+                <p class="text-[12px] text-slate-400">No asset linked</p>
+              }
+            </div>
+
+            <!-- Trial cell -->
+            <div class="min-w-0 px-3 py-2.5">
+              <p
+                class="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+              >
+                <i class="fa-solid fa-flask text-[11px]" aria-hidden="true"></i>
+                Trial
+              </p>
+              @if (d.catalyst.trial_acronym ?? d.catalyst.trial_name; as trialLabel) {
+                @if (d.catalyst.trial_id; as trialId) {
+                  <button
+                    type="button"
+                    class="group flex w-full items-center justify-between gap-2 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    (click)="trialClick.emit(trialId)"
+                  >
+                    <span
+                      class="inline-flex min-w-0 items-center gap-1 text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
+                    >
+                      <span class="truncate">{{ trialLabel }}</span>
+                      <i
+                        class="fa-solid fa-arrow-right shrink-0 text-[10px] text-slate-300 group-hover:text-brand-600"
+                        aria-hidden="true"
+                      ></i>
+                    </span>
+                    @if (phaseLabel(d.catalyst.trial_phase); as phase) {
+                      <span
+                        class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
+                        >{{ phase }}</span
+                      >
+                    }
+                  </button>
+                } @else {
+                  <div class="flex w-full items-center justify-between gap-2">
+                    <span class="truncate text-[13px] font-medium text-slate-900">{{
+                      trialLabel
+                    }}</span>
+                    @if (phaseLabel(d.catalyst.trial_phase); as phase) {
+                      <span
+                        class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
+                        >{{ phase }}</span
+                      >
+                    }
+                  </div>
+                }
+                @if (d.catalyst.recruitment_status) {
+                  <p class="mt-1 text-[11px] text-slate-500">{{ d.catalyst.recruitment_status }}</p>
+                }
+              } @else {
+                <p class="text-[12px] text-slate-400">No trial linked</p>
+              }
+            </div>
           </div>
         </div>
       }
