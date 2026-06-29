@@ -895,6 +895,22 @@ describe('group 6: deriveTrialPhaseSpan matches old column behavior (via get_das
     expect(span.endPrecision).toBe('exact');
   });
 
+  it('QA-002: create_trial backfills the human-readable phase from phase_type', async () => {
+    // create_trial was called with p_phase_type 'P3' and no separate phase string.
+    // The trials.phase text column must be backfilled to 'Phase 3' (parity with
+    // the ct.gov sync path), not left NULL as it was before the QA-002 fix; the
+    // trial-detail Phase field reads this column and rendered "(not set)" before.
+    const { data, error } = await svc
+      .from('trials')
+      .select('phase, phase_type')
+      .eq('id', trialEId)
+      .single();
+    expect(error).toBeNull();
+    const row = data as { phase: string | null; phase_type: string | null };
+    expect(row.phase_type).toBe('P3');
+    expect(row.phase).toBe('Phase 3');
+  });
+
   it('trial_F appears in get_dashboard_data output', () => {
     expect(dashTrialF).not.toBeNull();
   });

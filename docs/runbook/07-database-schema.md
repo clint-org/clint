@@ -1081,4 +1081,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260629040300_event_taxonomy_name_uniqueness.sql`
 - `20260629050100_commit_source_import_unified_events.sql`
 - `20260629060000_seed_demo_feature_coverage.sql`
+- `20260629070000_create_trial_backfill_phase.sql`
 <!-- /AUTO-GEN:DRIFT -->
