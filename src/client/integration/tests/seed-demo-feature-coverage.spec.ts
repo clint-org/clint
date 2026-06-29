@@ -228,6 +228,16 @@ describe('seed_demo_data remodel invariants (fresh owner space)', () => {
       'a feed-only company event').toBe(true);
   });
 
+  it('corporate band is explicitly curated: no company event surfaces via high+null', async () => {
+    // The band shows an event when it is pinned OR high significance, so a
+    // high-significance company event with null visibility would crowd the band
+    // implicitly. Every band-surfacing corporate event must be pinned on purpose;
+    // anything not pinned must be below high significance (feed-only).
+    const implicit = (await rows()).filter(
+      (e) => e.anchor_type === 'company' && e.significance === 'high' && e.visibility === null);
+    expect(implicit, JSON.stringify(implicit.map((e) => e.title))).toHaveLength(0);
+  });
+
   it('no trial carries more than one Trial Start event', async () => {
     const countByTrial = new Map<string, number>();
     for (const e of await rows()) {
