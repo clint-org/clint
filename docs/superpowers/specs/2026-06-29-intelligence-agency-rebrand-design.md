@@ -45,10 +45,22 @@ and component selectors all keep the internal "PI" / "primary_intelligence" name
 
 ## Timeline detail pane
 
-The bullseye and heatmap detail panels surface an "Intelligence" section
-(`pi-detail-section`: owned brief headline/summary + references). The timeline's marker
-detail pane gains the same "Intelligence" section so the three landscape views are
-consistent. See the follow-up implementation for the data wiring.
+The bullseye and heatmap views render their own detail panel for the selected
+asset/bubble with an "Intelligence (N)" section. The timeline's only detail pane is the
+shared marker detail panel, which previously showed only "Referenced in intelligence"
+(briefs citing the clicked marker), never an owned block.
+
+To bring the timeline to parity, the marker pane now also shows an "Intelligence (N)"
+section listing the owned briefs of the marker's parent trial AND asset:
+
+- `LandscapeStateService.loadEntityIntelligence` fetches `getTrialDetail(trial_id)` and
+  `getAssetDetail(asset_id)` in parallel (both cached RPCs), maps published briefs to
+  `PiReference[]` via the pure `briefsToReferences` helper, de-dupes by brief id with
+  `dedupeReferencesById`, and publishes `selectedEntityIntelligence`.
+- `landscape-shell` binds it into `marker-detail-panel` -> `marker-detail-content`, which
+  renders the new section above "Referenced in intelligence".
+- The merge/map logic is pure and unit-tested (`intelligence-references.spec.ts`). The
+  fetch is non-critical: failures leave the section empty without disturbing the pane.
 
 ## Verification
 
