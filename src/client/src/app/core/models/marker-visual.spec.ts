@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { resolveMarkerVisual, GLYPH_RATIOS } from './marker-visual';
+import {
+  resolveMarkerVisual,
+  projectionBadge,
+  projectionOutlineDash,
+  GLYPH_RATIOS,
+} from './marker-visual';
 import type { Marker, MarkerType } from './marker.model';
 
 function markerType(over: Partial<MarkerType> = {}): MarkerType {
@@ -123,6 +128,43 @@ describe('resolveMarkerVisual', () => {
     expect(v.shape).toBe('circle');
     expect(v.innerMark).toBe('none');
     expect(v.color).toBe('#64748b');
+  });
+});
+
+describe('projectionBadge (pure helper shared by detail pane + tooltip)', () => {
+  it('mirrors the resolver rule from loose projection/anchor strings', () => {
+    expect(projectionBadge('actual')).toBeNull();
+    expect(projectionBadge('company')).toBe('c');
+    expect(projectionBadge('forecasted')).toBe('f');
+    // primary is the registry default on a trial / unknown anchor: no letter
+    expect(projectionBadge('primary')).toBeNull();
+    expect(projectionBadge('primary', 'trial')).toBeNull();
+    // primary on a non-trial anchor is a non-registry source: badges 'p'
+    expect(projectionBadge('primary', 'asset')).toBe('p');
+    expect(projectionBadge('primary', 'company')).toBe('p');
+  });
+
+  it('the p-rule is specific to the primary tier', () => {
+    expect(projectionBadge('company', 'asset')).toBe('c');
+    expect(projectionBadge('forecasted', 'asset')).toBe('f');
+    expect(projectionBadge('actual', 'asset')).toBeNull();
+  });
+
+  it('falls back to no badge for nullish or unknown projections', () => {
+    expect(projectionBadge(null)).toBeNull();
+    expect(projectionBadge(undefined)).toBeNull();
+    expect(projectionBadge('')).toBeNull();
+    expect(projectionBadge('bogus')).toBeNull();
+  });
+});
+
+describe('projectionOutlineDash', () => {
+  it('dashes only the forecasted tier', () => {
+    expect(projectionOutlineDash('forecasted')).toBe(true);
+    expect(projectionOutlineDash('actual')).toBe(false);
+    expect(projectionOutlineDash('company')).toBe(false);
+    expect(projectionOutlineDash('primary')).toBe(false);
+    expect(projectionOutlineDash(null)).toBe(false);
   });
 });
 

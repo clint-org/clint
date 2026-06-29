@@ -17,6 +17,11 @@ import { TableModule } from 'primeng/table';
 
 import { isCtgovOwnedMarker } from '../../../core/models/trial-date-marker';
 import type { Marker } from '../../../core/models/marker.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../../core/models/marker-visual';
 import { MarkerService } from '../../../core/services/marker.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { LandscapeStateService } from '../../../features/landscape/landscape-state.service';
@@ -154,6 +159,15 @@ export class EntityEventsSectionComponent {
     const projected =
       marker.is_projected || (!!marker.projection && marker.projection !== 'actual');
     return projected ? 'outline' : 'filled';
+  }
+
+  /** Projection tier badge + forecast dash, matching the timeline glyph. */
+  protected markerBadge(marker: Marker): ProjectionBadge {
+    return projectionBadge(marker.projection, marker.anchor_type);
+  }
+
+  protected markerOutlineDash(marker: Marker): boolean {
+    return projectionOutlineDash(marker.projection);
   }
 
   protected timelineLabel(marker: Marker): string {

@@ -77,6 +77,8 @@
               [fillStyle]="markerFillStyle(marker)"
               [innerMark]="marker.marker_types.inner_mark ?? 'none'"
               [isNle]="marker.no_longer_expected ?? false"
+              [projectionBadge]="markerBadge(marker)"
+              [outlineDash]="markerOutlineDash(marker)"
             />
           }
         </td>
