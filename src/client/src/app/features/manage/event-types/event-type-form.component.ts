@@ -28,8 +28,11 @@ import {
   createInlineCategory,
   shouldOfferCategoryCreate,
 } from './event-type-form.inline-category';
-
-type Significance = 'high' | 'low' | null;
+import {
+  DEFAULT_EVENT_TYPE_SIGNIFICANCE,
+  EVENT_TYPE_SIGNIFICANCE_OPTIONS,
+  EventTypeSignificance,
+} from './event-type-form.significance';
 
 @Component({
   selector: 'app-event-type-form',
@@ -82,11 +85,7 @@ export class EventTypeFormComponent implements OnInit {
     { label: 'Cross', value: 'x' },
   ];
 
-  readonly significanceOptions: { label: string; value: Significance }[] = [
-    { label: 'None', value: null },
-    { label: 'High', value: 'high' },
-    { label: 'Low', value: 'low' },
-  ];
+  readonly significanceOptions = EVENT_TYPE_SIGNIFICANCE_OPTIONS;
 
   readonly categoryId = signal('');
   readonly name = signal('');
@@ -94,7 +93,7 @@ export class EventTypeFormComponent implements OnInit {
   readonly fillStyle = signal<MarkerType['fill_style']>('filled');
   readonly color = signal('#14b8a6');
   readonly innerMark = signal<InnerMark>('none');
-  readonly defaultSignificance = signal<Significance>(null);
+  readonly defaultSignificance = signal<EventTypeSignificance>(DEFAULT_EVENT_TYPE_SIGNIFICANCE);
   readonly displayOrder = signal<number | null>(0);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
@@ -128,7 +127,7 @@ export class EventTypeFormComponent implements OnInit {
       this.fillStyle.set(existing.fill_style);
       this.color.set(existing.color);
       this.innerMark.set(existing.inner_mark ?? 'none');
-      this.defaultSignificance.set(existing.default_significance ?? null);
+      this.defaultSignificance.set(existing.default_significance ?? DEFAULT_EVENT_TYPE_SIGNIFICANCE);
       this.displayOrder.set(existing.display_order);
       this.categoryId.set(existing.category_id);
     }
