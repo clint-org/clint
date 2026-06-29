@@ -1086,4 +1086,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260629080000_seed_demo_remodel.sql`
 - `20260629090000_corporate_event_family.sql`
 - `20260629100000_dashboard_anchor_events_anchor_type.sql`
+- `20260629110000_seed_demo_corporate_band_curation.sql`
 <!-- /AUTO-GEN:DRIFT -->
