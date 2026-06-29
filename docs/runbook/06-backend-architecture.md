@@ -612,7 +612,7 @@ Deno-runtime handler triggered by a Supabase database webhook on `INSERT` into `
 
 ## Trial change feed RPCs
 
-The trial change feed has four pipeline pieces: a Cloudflare Worker pulls daily from CT.gov on cron, calls `ingest_ctgov_snapshot` per changed trial which writes to `trial_ctgov_snapshots`, computes diffs into `trial_field_changes`, and classifies them into the typed `trial_change_events` stream the UI reads. Analyst event edits flow into the same `trial_change_events` table via the `_log_event_change` trigger on `events`, which writes `event_changes` audit rows.
+The trial change feed has four pipeline pieces: a Cloudflare Worker pulls daily from CT.gov on cron, calls `ingest_ctgov_snapshot` per changed trial which writes to `trial_ctgov_snapshots`, computes diffs into `trial_field_changes`, and classifies them into the typed `trial_change_events` stream the UI reads. Analyst event edits flow into `trial_change_events` via the `update_event` RPC, which captures the old date/anchor before the update and emits one `trial_change_events` row. The `_log_event_change` trigger separately writes `event_changes` audit rows for every INSERT/UPDATE/DELETE on `events`.
 
 ```mermaid
 flowchart TD
@@ -791,7 +791,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `tenant_owner_update_ai_config`
 - `update_asset_mechanisms`
 - `update_asset_routes`
-- `update_event`
 - `update_event_links`
 - `update_event_sources`
 - `update_material`

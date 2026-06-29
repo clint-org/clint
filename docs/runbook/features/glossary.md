@@ -30,10 +30,9 @@ points to the originating `source_documents` row for AI-imported events.
 **Significance.** `significance` (high / medium / low / none) drives rendering weight
 and is optional (null = unset).
 
-**Anchor.** Every event has exactly one primary anchor -- a single trial, asset, or
-company -- held by the polymorphic `anchor_trial_id` / `anchor_asset_id` /
-`anchor_company_id` columns (exactly one non-null). Additional secondary anchors are
-in the `event_links` side table (via `update_event_links`).
+**Anchor.** Every event has exactly one anchor, held by the polymorphic `anchor_type`
+column (one of `space`, `company`, `asset`, or `trial`) and the `anchor_id` UUID. There
+are no secondary anchors.
 
 **Pin / hide.** `is_pinned` and `is_hidden` are viewer-level display controls stored
 on the event row. Pinned events are promoted in timeline rendering; hidden events are
@@ -50,11 +49,11 @@ excluded from default views.
 `_log_event_change` trigger to the `event_changes` table (append-only).
 
 **Key tables:** `events`, `event_types`, `event_type_categories`, `event_sources`,
-`event_changes`, `event_links`.
+`event_changes`.
 
-**Key RPCs:** `create_event`, `update_event`, `update_event_links`,
-`update_event_sources`, `get_event_detail`, `get_events_page_data`,
-`get_key_catalysts`, `event_registry_url`.
+**Key RPCs:** `create_event`, `update_event`, `update_event_sources`,
+`get_event_detail`, `get_events_page_data`, `get_key_catalysts`,
+`event_registry_url`.
 
 ---
 
@@ -86,10 +85,14 @@ collection). Intelligence is distinct from Activity (detected changes) and from 
 ## Activity
 
 Detected changes only: CT.gov field diffs pulled by the daily Cloudflare Worker and
-analyst edit rows written by the `_log_event_change` trigger, all stored in
-`trial_change_events`. Activity rows are classified by type (`phase_transitioned`,
-`status_changed`, etc.) and surfaced on the unified Events page with
-`source_type='detected'`. Activity is the automated, system-generated side of the
+analyst event edits, all stored in `trial_change_events`. CT.gov diffs are classified
+by the ingest pipeline; analyst event edits emit a `trial_change_events` row via the
+`update_event` RPC (which captures the old date/anchor before the update). The
+`_log_event_change` trigger is a separate per-event change log that writes
+`event_changes` (append-only audit trail for every INSERT/UPDATE/DELETE on `events`);
+it does not write `trial_change_events`. Activity rows are classified by type
+(`phase_transitioned`, `status_changed`, etc.) and surfaced on the unified Events page
+with `source_type='detected'`. Activity is the automated, system-generated side of the
 event stream; Events are the analyst-authored side. The standalone `/activity` route
 redirects to `/events?source=detected`.
 
