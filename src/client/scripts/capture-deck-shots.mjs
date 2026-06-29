@@ -35,6 +35,7 @@ import { chromium } from '@playwright/test';
 import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { stampCacheBusters } from './stamp-deck-cache-busters.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(here, '../public/internal/img');
@@ -520,6 +521,10 @@ if (want('materials')) {
     }
   }
 }
+
+// Stamp content-hash cache-busters so refreshed PNGs (stable filenames) are
+// fetched fresh by browsers/CDN instead of served stale from cache.
+log('stamped cache-busters for', stampCacheBusters(resolve(OUT, '..')), 'image refs');
 
 log('Done. Wrote shots to', OUT);
 await ctx.close().catch(() => {});
