@@ -19,7 +19,8 @@
  * Sources: ai_calls schema 20260526100200; server-side cost 20260624150100;
  * pricing 20260624150000; rollup 20260526101000; console super-admin-ai-usage.component.ts.
  */
-import { test, expect, createScratchWorld, settle, type ScratchWorld } from '../fixtures';
+import { test, expect, createScratchWorld, settle, userFor, type ScratchWorld } from '../fixtures';
+import type { BrowserContext, Page } from '@playwright/test';
 import {
   triggerSourceExtract,
   selectAiCall,
@@ -29,6 +30,7 @@ import {
   expectedCostCents,
   type AiCallRow,
 } from '../helpers/ai-usage';
+import { sessionCookie } from '../helpers/auth-cookie';
 import { enableAi } from '../helpers/ai-config';
 // superAdminPageAs is OWNED by the admin-portals area (platform-admin session on a
 // super-admin host). Reference it; do not redefine. If it/the host is unavailable
@@ -67,19 +69,28 @@ test.describe.configure({ mode: 'serial' });
 // Anthropic call and needs the super-admin host (admin.dev.clintapp.com, confirmed kind
 // 'super-admin') for the console-aggregation test. Pooler-level ai_calls cost assertions are
 // the load-bearing ones; verify headed before enabling.
-test.describe.fixme('@external AI cost + token accounting', () => {
+test.describe('@external AI cost + token accounting', () => {
   let world: ScratchWorld;
   let model: string;
   let aiCallId: string;
   let row: AiCallRow;
+  let extractCtx: BrowserContext;
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({ browser }) => {
     world = await createScratchWorld(); // owner only -- the extract runs as owner
     // Use the product's default model so we exercise the real production path and
     // minimize the chance the model-id is unprovisioned at the dev API key.
     model = await enableAi(world, 'claude-sonnet-4-6');
 
-    const { status, body } = await triggerSourceExtract(world, 'owner', pressRelease(world.id));
+    // The worker /api is behind Cloudflare on dev; a bare Node fetch is 403'd. Run
+    // the extract from a real Chrome page that has cleared the challenge (same path
+    // the import UI takes). `browser` is worker-scoped, so it is available here.
+    extractCtx = await browser.newContext({ baseURL: world.baseURL });
+    await extractCtx.addCookies([sessionCookie(userFor(world, 'owner').session)]);
+    const page: Page = await extractCtx.newPage();
+    await settle(page, `/t/${world.tenantId}/s/${world.spaceId}`); // clears Cloudflare
+
+    const { status, body } = await triggerSourceExtract(page, world, 'owner', pressRelease(world.id));
     expect(status, `extract did not return 200: ${JSON.stringify(body)}`).toBe(200);
     aiCallId = body['ai_call_id'] as string;
     expect(aiCallId, 'worker should return an ai_call_id on success').toBeTruthy();
@@ -88,6 +99,7 @@ test.describe.fixme('@external AI cost + token accounting', () => {
   });
 
   test.afterAll(async () => {
+    await extractCtx?.close().catch(() => {});
     await world?.cleanup();
   });
 
@@ -148,41 +160,42 @@ test.describe.fixme('@external AI cost + token accounting', () => {
     await settle(page, '/super-admin/ai-usage');
 
     const tenantName = `PW Reg Tenant ${world.id}`; // provision_tenant p_name (scratch-world.ts:219)
-    // Table aria-label "AI usage by tenant" (super-admin-ai-usage.component.ts:180).
-    const tenantTable = page.getByRole('table', { name: 'AI usage by tenant' }); // VERIFY: aria-label -> accessible name
-    await expect(tenantTable).toBeVisible({ timeout: 20000 });
+    // The aria-label sits on the <p-table> host, which PrimeNG does NOT render as a
+    // role=table element -> match by accessible name with getByLabel, not getByRole.
+    // Only one scope's p-table is in the DOM at a time (@if scope() === ...), so the
+    // row lookups below are page-level and unambiguous.
+    await expect(page.getByLabel('AI usage by tenant')).toBeVisible({ timeout: 20000 });
 
     // The tenant must appear (the rollup counted our import for it).
-    const tenantRow = tenantTable.getByRole('row', {
-      name: new RegExp(escapeRegExp(tenantName)),
-    }); // VERIFY: row accessible name includes the tenant cell text
+    const tenantRow = page.getByRole('row', { name: new RegExp(escapeRegExp(tenantName)) });
     await expect(tenantRow).toBeVisible();
 
-    // Drill platform -> spaces (row click, component.ts:202 (click)=drillToSpaces).
-    await tenantRow.click(); // VERIFY: row click drills in (cursor-pointer tr)
+    // Drill platform -> spaces (row click, component.ts:198 (click)=drillToSpaces).
+    await tenantRow.click();
     const spaceName = `PW Reg Space ${world.id}`; // create_space p_name (scratch-world.ts:227)
-    const spaceTable = page.getByRole('table', { name: 'AI usage by space' }); // component.ts:251
-    await expect(spaceTable).toBeVisible({ timeout: 15000 });
-    const spaceRow = spaceTable.getByRole('row', { name: new RegExp(escapeRegExp(spaceName)) }); // VERIFY
+    await expect(page.getByLabel('AI usage by space')).toBeVisible({ timeout: 15000 });
+    const spaceRow = page.getByRole('row', { name: new RegExp(escapeRegExp(spaceName)) });
     await expect(spaceRow).toBeVisible();
 
-    // Drill spaces -> imports (component.ts:272 (click)=drillToImports).
-    await spaceRow.click(); // VERIFY
-    const importsTable = page.getByRole('table', { name: 'Import details' }); // component.ts:301
+    // Drill spaces -> imports (component.ts:268 (click)=drillToImports).
+    await spaceRow.click();
+    // exact: true so the table's "Import details" label does not also match the
+    // per-row "Show import details" expand button (substring collision).
+    const importsTable = page.getByLabel('Import details', { exact: true }); // component.ts:298
     await expect(importsTable).toBeVisible({ timeout: 15000 });
     // Outcome badge renders the literal outcome text (component.ts:361).
-    await expect(importsTable.getByText('success', { exact: false }).first()).toBeVisible(); // VERIFY
+    await expect(page.getByText('success', { exact: false }).first()).toBeVisible();
 
     // Best-effort precise cost: expand the row (toggle button aria-label
     // "Show import details", component.ts:321) and read the Tokens line
-    // ("N in / N out", component.ts:382-383) which must match the DB row.
-    // VERIFY end to end headed; left lenient because source_title may be blank
+    // ("N in / N out", component.ts:382-383) which must match the DB row. Page-level
+    // (not scoped to the labeled table) and guarded, since source_title may be blank
     // for a text paste, making row-targeting ambiguous.
-    const expandBtn = importsTable.getByRole('button', { name: /show import details/i }).first(); // VERIFY
+    const expandBtn = page.getByRole('button', { name: /show import details/i }).first();
     if (await expandBtn.count()) {
       await expandBtn.click();
       const inTokens = (row.prompt_tokens as number).toLocaleString('en-US');
-      await expect(importsTable.getByText(`${inTokens} in`, { exact: false })).toBeVisible(); // VERIFY: number pipe grouping
+      await expect(page.getByText(`${inTokens} in`, { exact: false }).first()).toBeVisible();
     }
   });
 });

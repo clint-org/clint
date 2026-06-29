@@ -15,6 +15,7 @@
  * only triggers calls and reads back the accounting rows.
  */
 import { Client as PgClient } from 'pg';
+import type { Page } from '@playwright/test';
 import { userFor, type RoleName, type ScratchWorld } from './scratch-world';
 import { requirePoolerUrl } from './dev-env';
 
@@ -41,31 +42,48 @@ async function withPg<T>(fn: (pg: PgClient) => Promise<T>): Promise<T> {
 }
 
 /**
- * POST a text source to the deployed worker's extract endpoint as a role. The
- * worker authenticates via the Bearer token (CORS is irrelevant to this server
- * -> server fetch). Mirrors import-page.component.ts:502. Returns status + parsed
- * body; on success body.ai_call_id is the opened (and already-closed) call.
+ * POST a text source to the deployed worker's extract endpoint as a role, FROM
+ * INSIDE a Cloudflare-cleared browser page. The worker /api routes sit behind
+ * Cloudflare bot protection on dev, which 403s a bare Node fetch (it returns the
+ * challenge HTML, not the worker's JSON); a same-origin fetch from a page that has
+ * already cleared the challenge succeeds, exactly as the import UI does
+ * (import-page.component.ts:502, workerBase() defaults to '' -> same origin).
+ *
+ * `page` must already be navigated to the scratch host (via settle) so the fetch is
+ * same-origin and the challenge cookie is present. The worker authenticates via the
+ * Bearer token. On success body.ai_call_id is the opened (and already-closed) call.
  */
 export async function triggerSourceExtract(
+  page: Page,
   world: ScratchWorld,
   role: RoleName,
   sourceText: string
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   const token = userFor(world, role).session.access_token;
-  const res = await fetch(`${world.baseURL}/api/source/extract`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+  return page.evaluate(
+    async ({ token, spaceId, sourceText }) => {
+      const r = await fetch('/api/source/extract', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          space_id: spaceId,
+          source_kind: 'text',
+          source_text: sourceText,
+        }),
+      });
+      let body: Record<string, unknown> = {};
+      try {
+        body = (await r.json()) as Record<string, unknown>;
+      } catch {
+        // non-JSON response (e.g. a Cloudflare challenge page)
+      }
+      return { status: r.status, body };
     },
-    body: JSON.stringify({
-      space_id: world.spaceId,
-      source_kind: 'text',
-      source_text: sourceText,
-    }),
-  });
-  const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-  return { status: res.status, body };
+    { token, spaceId: world.spaceId, sourceText }
+  );
 }
 
 const AI_CALL_COLS =
