@@ -2,6 +2,8 @@ import { computed, effect, inject, Injectable, signal } from '@angular/core';
 
 import { Company } from '../../core/models/company.model';
 import { Asset } from '../../core/models/asset.model';
+import { Trial } from '../../core/models/trial.model';
+import { Marker } from '../../core/models/marker.model';
 import { Catalyst, CatalystDetail, FlatCatalyst } from '../../core/models/event-detail.model';
 import { DashboardData } from '../../core/models/dashboard.model';
 import { ZoomLevel } from '../../core/models/dashboard.model';
@@ -487,48 +489,62 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
  * Flatten the company > asset > trial > marker hierarchy into a flat
  * Catalyst[] array, keeping only markers with event_date >= today.
  */
-function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
+/**
+ * Flatten the company > asset > trial hierarchy to the future-events list. Future events
+ * exist at EVERY anchor level: company-anchored (company.events), asset-anchored (asset.events),
+ * and trial-anchored (trial.markers). QA-010: this previously walked only trial.markers, so a
+ * high-significance asset/company future event (e.g. an asset Regulatory Filing) rendered on the
+ * timeline but never on the Future Events page. Exported for unit coverage.
+ */
+export function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
   const catalysts: Catalyst[] = [];
 
-  for (const company of companies) {
-    for (const asset of company.assets ?? []) {
-      for (const trial of asset.trials ?? []) {
-        for (const marker of trial.markers ?? []) {
-          if (marker.event_date < today) continue;
+  const push = (
+    marker: Marker,
+    ctx: { company: Company; asset?: Asset; trial?: Trial }
+  ): void => {
+    if (marker.event_date < today) return;
+    const { company, asset, trial } = ctx;
+    const mt = marker.marker_types;
+    catalysts.push({
+      marker_id: marker.id,
+      title: marker.title ?? '',
+      event_date: marker.event_date,
+      date_precision: marker.date_precision ?? 'exact',
+      end_date: marker.end_date ?? null,
+      end_date_precision: marker.end_date_precision ?? 'exact',
+      is_ongoing: marker.is_ongoing ?? false,
+      category_name: mt?.marker_categories?.name ?? '',
+      category_id: mt?.category_id ?? '',
+      marker_type_name: mt?.name ?? '',
+      marker_type_color: mt?.color ?? '',
+      marker_type_shape: mt?.shape ?? 'circle',
+      marker_type_inner_mark: mt?.inner_mark ?? 'none',
+      is_projected: marker.is_projected,
+      no_longer_expected: marker.no_longer_expected ?? false,
+      company_name: company.name,
+      company_id: company.id,
+      company_logo_url: company.logo_url ?? null,
+      asset_name: asset?.name ?? null,
+      asset_id: asset?.id ?? null,
+      trial_name: trial?.name ?? null,
+      trial_acronym: trial?.acronym ?? null,
+      trial_id: trial?.id ?? null,
+      trial_phase: trial ? (trial.phase_type ?? trial.phase ?? null) : null,
+      description: marker.description ?? null,
+      source_url: marker.source_url ?? null,
+      trial_recent_changes_count: trial?.recent_changes_count ?? 0,
+      trial_most_recent_change_type: trial?.most_recent_change_type ?? null,
+      trial_most_recent_change_event_id: trial?.most_recent_change_event_id ?? null,
+    });
+  };
 
-          const mt = marker.marker_types;
-          catalysts.push({
-            marker_id: marker.id,
-            title: marker.title ?? '',
-            event_date: marker.event_date,
-            date_precision: marker.date_precision ?? 'exact',
-            end_date: marker.end_date ?? null,
-            end_date_precision: marker.end_date_precision ?? 'exact',
-            is_ongoing: marker.is_ongoing ?? false,
-            category_name: mt?.marker_categories?.name ?? '',
-            category_id: mt?.category_id ?? '',
-            marker_type_name: mt?.name ?? '',
-            marker_type_color: mt?.color ?? '',
-            marker_type_shape: mt?.shape ?? 'circle',
-            marker_type_inner_mark: mt?.inner_mark ?? 'none',
-            is_projected: marker.is_projected,
-            no_longer_expected: marker.no_longer_expected ?? false,
-            company_name: company.name,
-            company_id: company.id,
-            company_logo_url: company.logo_url ?? null,
-            asset_name: asset.name,
-            asset_id: asset.id,
-            trial_name: trial.name,
-            trial_acronym: trial.acronym ?? null,
-            trial_id: trial.id,
-            trial_phase: trial.phase_type ?? trial.phase ?? null,
-            description: marker.description ?? null,
-            source_url: marker.source_url ?? null,
-            trial_recent_changes_count: trial.recent_changes_count ?? 0,
-            trial_most_recent_change_type: trial.most_recent_change_type ?? null,
-            trial_most_recent_change_event_id: trial.most_recent_change_event_id ?? null,
-          });
-        }
+  for (const company of companies) {
+    for (const marker of company.events ?? []) push(marker, { company });
+    for (const asset of company.assets ?? []) {
+      for (const marker of asset.events ?? []) push(marker, { company, asset });
+      for (const trial of asset.trials ?? []) {
+        for (const marker of trial.markers ?? []) push(marker, { company, asset, trial });
       }
     }
   }
