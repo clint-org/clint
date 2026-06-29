@@ -58,7 +58,7 @@ import { confirmDelete } from '../../../shared/utils/confirm-delete';
           } @else if (error()) {
             <p class="px-4 py-3 text-xs text-red-600">{{ error() }}</p>
           } @else {
-            <ul class="divide-y divide-slate-100">
+            <ul class="flex flex-col gap-2.5">
               @for (material of rows(); track material.id) {
                 <li>
                   <app-material-row
