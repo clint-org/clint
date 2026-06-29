@@ -6,7 +6,7 @@ You are refreshing the screenshots embedded in the Stout intro deck (`src/client
 
 1. Read `src/client/scripts/deck-capture.README.md` for current options, and the memory note `reference_deck_screenshot_capture.md` for the target space, viewer-role gotcha, and sync/AI prerequisites.
 2. From `$ARGUMENTS`, extract:
-   - **Shot names** (any of: `whitelabel-stout-login, engagement-landing, intelligence-feed, timeline, heatmap, bullseye, catalysts, events, source-import, command-palette, materials, intelligence, trial-detail`). `intelligence-feed` is the space-level Intelligence Feed at `/intelligence`; `intelligence` is the per-trial published read on trial-detail. If none given, capture all.
+   - **Shot names** (any of: `whitelabel-stout-login, engagement-landing, intelligence-feed, timeline, heatmap, bullseye, future-events, activity, source-import, command-palette, materials, intelligence, trial-detail`). `intelligence-feed` is the space-level Intelligence Feed at `/intelligence` (intelligence + events); `intelligence` is the per-trial published read on trial-detail; `future-events` is the upcoming-event calendar at `/future-events`; `activity` is the detected-changes log at `/activity`. If none given, capture all.
    - **`sync`** flag → set `SYNC=1` (clicks the trial-detail "Sync" button on the intelligence/trial-detail trials; only needed right after a fresh space reseed, since the seed does not set CT.gov fields).
    - **`commit`** flag → commit + push the changed PNGs at the end.
 3. The script's `DEFAULT_DECK_URL` points at the canonical prod space ("Obesity Competitive Landscape", `780b5021...` under the Pfizer tenant). Override only if the user gave a different `DECK_URL`.

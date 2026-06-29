@@ -42,12 +42,15 @@ ONLY=timeline,materials,bullseye node scripts/capture-deck-shots.mjs
 ```
 
 Shot names: `whitelabel-stout-login`, `engagement-landing`, `intelligence-feed`,
-`timeline`, `heatmap`, `bullseye`, `catalysts`, `events`, `source-import`,
+`timeline`, `heatmap`, `bullseye`, `future-events`, `activity`, `source-import`,
 `command-palette`, `materials`, `intelligence`, `trial-detail`.
 
 `intelligence-feed` is the space-level Intelligence Feed ("Latest from Stout",
-recency-ordered) at `/intelligence`; `intelligence` is the per-trial published
-read on a trial-detail page. `whitelabel-stout-login` only captures when logged
+intelligence + events interleaved by recency) at `/intelligence`; `intelligence`
+is the per-trial published read on a trial-detail page. `future-events` is the
+upcoming-event calendar at `/future-events` (the old `/catalysts` route, renamed
+from "Future Catalysts"). `activity` is the read-only detected-changes log at
+`/activity` (the old standalone Events feed, now CT.gov + analyst deltas). `whitelabel-stout-login` only captures when logged
 out, and the script now skips it (rather than overwriting the committed shot) if
 the login lands on a Cloudflare challenge instead of the branded page.
 
@@ -65,10 +68,10 @@ Three shots rely on data that the demo seed must provide, so they only look righ
 against a space seeded by the current `seed_demo_data()` (migration
 `20260626120000` and later):
 
-- **events** selects a threaded event (the seeded "Pfizer oral GLP-1 retreat"
-  thread) so the detail pane renders its Thread section.
+- **activity** opens the first row of the detected-changes log so the panel
+  renders a change's before/after (no longer thread-dependent).
 - **trial-detail** pins **REDEFINE-2** (`NCT05394519`), which the seed gives
-  trial-scoped events, a referenced-in published read, activity, and markers, so
+  trial-scoped events, a referenced-in published read, activity, and events, so
   every section is populated.
 - **intelligence** pins **ATTRibute-CM** (`NCT03860935`): published intelligence
   + CT.gov-synced.
