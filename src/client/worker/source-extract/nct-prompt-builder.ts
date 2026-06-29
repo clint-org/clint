@@ -44,7 +44,7 @@ Rules:
 - Evidence: for every entity, produce "CT.gov: {nctId}" as the evidence string. For companies and assets spanning multiple trials, use "CT.gov: {nctId1}, {nctId2}".
 - Source summary: produce a one-line summary like "Batch import of 14 trials across oncology, immunology".
 - Output ONLY valid JSON. No markdown fences, no explanation, no preamble.
-- Markers and events arrays must be empty.
+- The events array must be empty.
 
 Output schema (follow this exactly):
 {
@@ -78,7 +78,6 @@ Output schema (follow this exactly):
     "indications": ["disease/condition string", ...] (every indication the trial studies; empty array if none),
     "evidence": "CT.gov: NCTxxxxxxxx"
   }],
-  "markers": [],
   "events": []
 }
 
