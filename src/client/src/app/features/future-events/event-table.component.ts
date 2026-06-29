@@ -5,6 +5,11 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
 import { FlatCatalyst } from '../../core/models/event-detail.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { markerPeriodLabel } from '../../core/models/marker-date-precision';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
@@ -160,6 +165,8 @@ export interface CatalystHoverEvent {
                 [fillStyle]="catalyst.is_projected ? 'outline' : 'filled'"
                 [innerMark]="catalyst.marker_type_inner_mark"
                 [isNle]="catalyst.no_longer_expected"
+                [projectionBadge]="markerBadge(catalyst)"
+                [outlineDash]="markerOutlineDash(catalyst)"
               />
               <span
                 class="whitespace-nowrap font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500"
@@ -274,6 +281,19 @@ export class EventTableComponent {
   }
 
   /** Approximate period label ("Q4 '26") for a fuzzy-dated catalyst, else null. */
+  /**
+   * Projection tier badge + forecast dash, matching the timeline glyph. The
+   * dashboard flatten carries no anchor_type (same as the timeline markers), so
+   * the badge is projection-only -- consistent with the row it mirrors.
+   */
+  protected markerBadge(catalyst: FlatCatalyst): ProjectionBadge {
+    return projectionBadge(catalyst.projection);
+  }
+
+  protected markerOutlineDash(catalyst: FlatCatalyst): boolean {
+    return projectionOutlineDash(catalyst.projection);
+  }
+
   protected periodLabel(catalyst: FlatCatalyst): string | null {
     return markerPeriodLabel(catalyst.event_date, catalyst.date_precision);
   }

@@ -246,6 +246,8 @@
                     [size]="12"
                     [fillStyle]="markerFillStyle(item)"
                     [innerMark]="item.marker_type_inner_mark ?? 'none'"
+                    [projectionBadge]="markerBadge(item)"
+                    [outlineDash]="markerOutlineDash(item)"
                   />
                 } @else {
                   <span

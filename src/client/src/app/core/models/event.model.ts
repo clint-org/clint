@@ -131,6 +131,12 @@ export interface FeedItem {
    * client-side category palette).
    */
   is_projected: boolean | null;
+  /**
+   * Projection tier ('actual' | 'company' | 'primary' | 'forecasted'), emitted by
+   * get_events_page_data for marker rows. Drives the projection badge ('c'/'f')
+   * so the feed glyph matches the timeline row. Null on event / detected rows.
+   */
+  projection: string | null;
   marker_type_shape: MarkerShape | null;
   marker_type_color: string | null;
   marker_type_inner_mark: InnerMark | null;
