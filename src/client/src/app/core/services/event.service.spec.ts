@@ -574,6 +574,7 @@ describe('EventService.updateEvent (unified)', () => {
       p_anchor_id: 'co-1',
       p_no_longer_expected: false,
     });
+    expect(params).not.toHaveProperty('p_metadata');
     expect(invalidateTags).toHaveBeenCalledWith([
       'event:event-1:detail',
       'space:space-1:events',

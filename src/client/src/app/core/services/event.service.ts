@@ -190,7 +190,10 @@ export class EventService {
    * (re-anchor on edit); the backend RPC extension accepting them is owned by the cutover session.
    */
   async updateEvent(spaceId: string, eventId: string, args: UpdateEventArgs): Promise<void> {
-    await this.supabase.client.rpc('update_event', { p_event_id: eventId, ...args }).throwOnError();
+    const params: Record<string, unknown> = { p_event_id: eventId, ...args };
+    // Omit p_metadata when empty so edits work before the update_event metadata param lands.
+    if (params['p_metadata'] == null) delete params['p_metadata'];
+    await this.supabase.client.rpc('update_event', params).throwOnError();
     this.cache.invalidateTags([
       `event:${eventId}:detail`,
       `space:${spaceId}:events`,
