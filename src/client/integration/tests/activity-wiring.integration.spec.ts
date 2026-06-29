@@ -1,5 +1,6 @@
 /**
- * Activity-wiring integration coverage (task CA, migration 20260628300000).
+ * Activity-wiring integration coverage (task CA, migration 20260628300000;
+ * re-anchor + re-type coverage, migration 20260629030000).
  *
  * The Activity feed (get_activity_feed) reads public.trial_change_events. Task CA
  * restored two emitters that were lost when C1 retired the marker-audit trigger:
@@ -16,6 +17,11 @@
  *            trial-anchored event -- `date_moved` when the event_date moved,
  *            `event_edited` otherwise. It does NOT create an Intelligence-feed
  *            brief (primary_intelligence) and does NOT emit for a no-op edit.
+ *
+ *   Stage 3 re-anchor / re-type: update_event accepts p_event_type_id,
+ *            p_anchor_type, p_anchor_id (all DEFAULT NULL; no-op when omitted).
+ *            Validates the anchor exactly like create_event; CA emit targets the
+ *            NEW effective anchor when re-anchoring.
  *
  * All assertions go through the live RPCs (update_event, ingest_ctgov_snapshot,
  * get_activity_feed) and the real RLS-checked auth model. Work happens in the
@@ -261,5 +267,195 @@ describe('gap (a): CT.gov date drift -> Activity (through get_activity_feed)', (
       expect(row.source).toBe('ctgov');
       expect(row.payload['which_date']).toBe('start');
     }
+  });
+});
+
+/**
+ * Stage 3 re-anchor + re-type (migration 20260629030000).
+ *
+ * update_event now accepts p_event_type_id / p_anchor_type / p_anchor_id, each
+ * DEFAULT NULL so existing callers are unaffected.  These tests cover the four
+ * requirements from the brief:
+ *
+ *   (a) anchor_type / anchor_id / event_type_id are updated when provided.
+ *   (b) invalid anchor_type -> 22023.
+ *   (c) anchor_id belonging to a different space -> 22023.
+ *   (d) re-anchoring a trial event still emits the analyst trial_change_events
+ *       row, keyed to the NEW trial.
+ */
+describe('Stage 3 re-anchor + re-type via update_event', () => {
+  /** Helper: call update_event with the new optional params. */
+  function callUpdateEventWithAnchor(
+    persona: 'contributor' | 'reader',
+    eventId: string,
+    opts: {
+      eventDate?: string;
+      eventTypeId?: string | null;
+      anchorType?: string | null;
+      anchorId?: string | null;
+    } = {},
+  ) {
+    return as(p, persona).rpc('update_event', {
+      p_event_id: eventId,
+      p_title: 'Reanchor test event',
+      p_event_date: opts.eventDate ?? '2026-01-01',
+      p_projection: 'actual',
+      p_date_precision: 'exact',
+      p_end_date: null,
+      p_end_date_precision: 'exact',
+      p_is_ongoing: false,
+      p_description: null,
+      p_source_url: null,
+      p_significance: null,
+      p_visibility: null,
+      p_no_longer_expected: false,
+      p_event_type_id: opts.eventTypeId ?? null,
+      p_anchor_type: opts.anchorType ?? null,
+      p_anchor_id: opts.anchorId ?? null,
+    });
+  }
+
+  it('(a) re-anchors an event and updates event_type_id when provided', async () => {
+    const trialA = await newTrial('Reanchor src trial A');
+    const trialB = await newTrial('Reanchor dst trial B');
+
+    // get two distinct system event types
+    const { data: types } = await admin
+      .from('event_types')
+      .select('id')
+      .is('space_id', null)
+      .limit(2);
+    const typeA = (types as { id: string }[])[0]!.id;
+    const typeB = (types as { id: string }[])[1]!.id;
+
+    // create event anchored to trialA with typeA
+    const { data: ev, error: evErr } = await admin
+      .from('events')
+      .insert({
+        space_id: p.org.spaceId,
+        event_type_id: typeA,
+        title: 'Reanchor test event',
+        event_date: '2026-01-01',
+        anchor_type: 'trial',
+        anchor_id: trialA,
+        created_by: p.ids.contributor,
+        metadata: { source: 'analyst' },
+      })
+      .select('id')
+      .single();
+    if (evErr) throw new Error(`create event: ${evErr.message}`);
+    const eventId = (ev as { id: string }).id;
+    eventIds.push(eventId);
+
+    expectOk(
+      await callUpdateEventWithAnchor('contributor', eventId, {
+        eventTypeId: typeB,
+        anchorType: 'trial',
+        anchorId: trialB,
+      }),
+    );
+
+    const { data: row } = await admin
+      .from('events')
+      .select('anchor_type, anchor_id, event_type_id')
+      .eq('id', eventId)
+      .single();
+    expect((row as { anchor_type: string }).anchor_type).toBe('trial');
+    expect((row as { anchor_id: string }).anchor_id).toBe(trialB);
+    expect((row as { event_type_id: string }).event_type_id).toBe(typeB);
+  });
+
+  it('(b) invalid anchor_type raises 22023', async () => {
+    const trialId = await newTrial('Invalid anchor type trial');
+    const eventId = await newTrialEvent(trialId, 'Invalid anchor type event', '2026-01-01');
+
+    expectCode(
+      await callUpdateEventWithAnchor('contributor', eventId, { anchorType: 'bogus' }),
+      '22023',
+    );
+  });
+
+  it('(c) anchor_id from a different space raises 22023', async () => {
+    // create a scratch space in the same tenant with a trial the contributor
+    // is NOT a member of; the trial therefore does not belong to the event's space
+    const { data: space2, error: spErr } = await admin
+      .from('spaces')
+      .insert({
+        tenant_id: p.org.tenantId,
+        name: 'Reanchor cross-space scratch',
+        created_by: p.ids.contributor,
+      })
+      .select('id')
+      .single();
+    if (spErr) throw new Error(`space2: ${spErr.message}`);
+    const space2Id = (space2 as { id: string }).id;
+
+    const { data: co2 } = await admin
+      .from('companies')
+      .insert({ space_id: space2Id, name: 'Cross-space Co', created_by: p.ids.contributor })
+      .select('id')
+      .single();
+    const { data: as2 } = await admin
+      .from('assets')
+      .insert({
+        space_id: space2Id,
+        company_id: (co2 as { id: string }).id,
+        name: 'Cross-space Asset',
+        created_by: p.ids.contributor,
+      })
+      .select('id')
+      .single();
+    const { data: tr2 } = await admin
+      .from('trials')
+      .insert({
+        space_id: space2Id,
+        asset_id: (as2 as { id: string }).id,
+        name: 'Cross-space Trial',
+        created_by: p.ids.contributor,
+      })
+      .select('id')
+      .single();
+    const crossTrialId = (tr2 as { id: string }).id;
+
+    // event lives in the main test space
+    const mainTrialId = await newTrial('Cross-space main trial');
+    const eventId = await newTrialEvent(mainTrialId, 'Cross-space test event', '2026-01-01');
+
+    // re-anchor to a trial in space2 -- must fail with 22023
+    expectCode(
+      await callUpdateEventWithAnchor('contributor', eventId, {
+        anchorType: 'trial',
+        anchorId: crossTrialId,
+      }),
+      '22023',
+    );
+
+    // cleanup space2 entities (wipe on next buildPersonas also catches these)
+    await admin.from('trials').delete().eq('id', crossTrialId);
+    await admin.from('assets').delete().eq('id', (as2 as { id: string }).id);
+    await admin.from('companies').delete().eq('id', (co2 as { id: string }).id);
+    await admin.from('spaces').delete().eq('id', space2Id);
+  });
+
+  it('(d) re-anchoring a trial event emits an analyst trial_change_events row for the NEW trial', async () => {
+    const trialA = await newTrial('Activity reanchor src trial');
+    const trialB = await newTrial('Activity reanchor dst trial');
+    const eventId = await newTrialEvent(trialA, 'Activity reanchor event', '2026-01-01');
+
+    // re-anchor to trialB + change the date so date_moved is triggered
+    expectOk(
+      await callUpdateEventWithAnchor('contributor', eventId, {
+        eventDate: '2026-06-01',
+        anchorType: 'trial',
+        anchorId: trialB,
+      }),
+    );
+
+    // CA emit must be on trialB, not trialA
+    const feedB = await feedForTrial('contributor', trialB);
+    expect(feedB.filter((f) => f.source === 'analyst' && f.event_type === 'date_moved')).toHaveLength(1);
+
+    const feedA = await feedForTrial('contributor', trialA);
+    expect(feedA.filter((f) => f.source === 'analyst')).toHaveLength(0);
   });
 });
