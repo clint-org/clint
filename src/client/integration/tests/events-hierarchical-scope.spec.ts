@@ -11,6 +11,9 @@ import { buildPersonas, Personas, adminClient } from '../fixtures/personas';
 import { createScratchAgency } from '../fixtures/scratch';
 import { SupabaseClient } from '@supabase/supabase-js';
 
+// 'Leadership Change' system event_type (seeded by the event_types migration).
+const LEADERSHIP_TYPE_ID = 'a0000000-0000-0000-0000-000000000050';
+
 let p: Personas;
 let svc: SupabaseClient;
 let spaceId: string;
@@ -66,37 +69,37 @@ beforeAll(async () => {
   if (trialErr) throw new Error(`insert trial: ${trialErr.message}`);
   trialId = trial!.id;
 
-  // Pick any system event_category.
-  const { data: categoryRow, error: catErr } = await svc
-    .from('event_categories')
-    .select('id')
-    .limit(1)
-    .single();
-  if (catErr) throw new Error(`fetch event_categories: ${catErr.message}`);
-  const categoryId = categoryRow!.id;
-
-  // Seed one event at each entity level.
+  // Seed one event at each entity level using the unified events shape
+  // (event_type_id + anchor_type/anchor_id). These are service-role inserts,
+  // which bypass trg_events_set_created_by's auth.uid(), so created_by is set
+  // explicitly.
   const { error: evErr } = await svc.from('events').insert([
     {
       space_id: spaceId,
-      company_id: companyId,
-      category_id: categoryId,
+      event_type_id: LEADERSHIP_TYPE_ID,
+      anchor_type: 'company',
+      anchor_id: companyId,
       title: 'Company event',
       event_date: '2026-01-01',
+      created_by: createdBy,
     },
     {
       space_id: spaceId,
-      asset_id: assetId,
-      category_id: categoryId,
+      event_type_id: LEADERSHIP_TYPE_ID,
+      anchor_type: 'asset',
+      anchor_id: assetId,
       title: 'Product event',
       event_date: '2026-01-02',
+      created_by: createdBy,
     },
     {
       space_id: spaceId,
-      trial_id: trialId,
-      category_id: categoryId,
+      event_type_id: LEADERSHIP_TYPE_ID,
+      anchor_type: 'trial',
+      anchor_id: trialId,
       title: 'Trial event',
       event_date: '2026-01-03',
+      created_by: createdBy,
     },
   ]);
   if (evErr) throw new Error(`insert events: ${evErr.message}`);
@@ -119,7 +122,7 @@ async function listEventsScopedTo(
     p_offset: 0,
   });
   if (error) throw new Error(`get_events_page_data(${level}): ${error.message}`);
-  const result = data as { items: Array<{ title: string }>; total: number };
+  const result = data as { items: { title: string }[]; total: number };
   return result.items.map((r) => r.title).sort();
 }
 
@@ -154,19 +157,14 @@ describe('get_events_page_data hierarchical scope', () => {
       .single();
     if (p2Err) throw new Error(`insert sibling asset: ${p2Err.message}`);
 
-    const { data: catRow, error: catErr } = await svc
-      .from('event_categories')
-      .select('id')
-      .limit(1)
-      .single();
-    if (catErr) throw new Error(`fetch event_categories: ${catErr.message}`);
-
     const { error: sibEvErr } = await svc.from('events').insert({
       space_id: spaceId,
-      asset_id: p2!.id,
-      category_id: catRow!.id,
+      event_type_id: LEADERSHIP_TYPE_ID,
+      anchor_type: 'asset',
+      anchor_id: p2!.id,
       title: 'Sibling event',
       event_date: '2026-01-04',
+      created_by: p.ids.tenant_owner,
     });
     if (sibEvErr) throw new Error(`insert sibling event: ${sibEvErr.message}`);
 

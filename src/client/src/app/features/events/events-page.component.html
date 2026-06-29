@@ -246,6 +246,8 @@
                     [size]="12"
                     [fillStyle]="markerFillStyle(item)"
                     [innerMark]="item.marker_type_inner_mark ?? 'none'"
+                    [projectionBadge]="markerBadge(item)"
+                    [outlineDash]="markerOutlineDash(item)"
                   />
                 } @else {
                   <span
@@ -385,12 +387,10 @@
   </div>
 </app-manage-page-shell>
 
-<p-dialog
-  [header]="editingEventId() ? 'Edit event' : 'Log event'"
+<app-event-form-dialog
+  [spaceId]="spaceId()"
   [(visible)]="modalOpen"
-  [modal]="true"
-  styleClass="!w-[42rem]"
-  (onHide)="closeModal()"
->
-  <app-event-form [eventId]="editingEventId()" (saved)="onSaved()" (cancelled)="closeModal()" />
-</p-dialog>
+  [mode]="editingEventId() ? 'edit' : 'create'"
+  [eventId]="editingEventId()"
+  (saved)="onSaved()"
+/>

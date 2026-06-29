@@ -6,9 +6,10 @@ import {
   PHASE_COLOR,
   RingPhase,
 } from '../../core/models/landscape.model';
-import { DEVELOPMENT_STATUS_LABELS, phaseShortLabel } from '../../core/models/phase-colors';
+import { DEVELOPMENT_STATUS_LABELS } from '../../core/models/phase-colors';
 import { CompanyTileComponent } from '../../shared/components/company-tile.component';
 import { DetailPanelMiniPhaseBarComponent } from '../../shared/components/detail-panel-mini-phase-bar.component';
+import { PhaseChipComponent } from '../../shared/components/phase-chip.component';
 import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.animation';
 
 /**
@@ -23,7 +24,7 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
 @Component({
   selector: 'app-heatmap-cell-tooltip',
   standalone: true,
-  imports: [CompanyTileComponent, DetailPanelMiniPhaseBarComponent],
+  imports: [CompanyTileComponent, DetailPanelMiniPhaseBarComponent, PhaseChipComponent],
   animations: [fadeTooltipAnimation],
   template: `
     @if (bubble() && phase()) {
@@ -47,10 +48,7 @@ import { fadeTooltipAnimation } from '../../shared/animations/fade-tooltip.anima
           <span class="min-w-0 flex-1 truncate text-[13.5px] font-bold leading-tight text-slate-900">{{
             b.label
           }}</span>
-          <span
-            class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
-            >{{ phaseShort(phase()!) }}</span
-          >
+          <app-phase-chip class="shrink-0" [phase]="phase()" />
         </div>
 
         <div class="px-3.5 py-3">
@@ -138,10 +136,6 @@ export class HeatmapCellTooltipComponent {
 
   protected phaseColor(phase: RingPhase): string {
     return PHASE_COLOR[phase] ?? '#64748b';
-  }
-
-  protected phaseShort(phase: RingPhase): string {
-    return phaseShortLabel(phase).replace('PH ', 'P');
   }
 
   protected phaseLong(phase: RingPhase): string {

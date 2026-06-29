@@ -212,16 +212,16 @@ export class PrimaryIntelligenceService {
   }
 
   /**
-   * Incoming PI references for a marker: the published trial/asset/company
-   * intelligence entries that cite this catalyst via primary_intelligence_links.
-   * Markers do not own PI, so this is always a reference list, never an owned
+   * Incoming PI references for an event: the published trial/asset/company
+   * intelligence entries that cite this event via primary_intelligence_links.
+   * Events do not own PI, so this is always a reference list, never an owned
    * block. Returns a normalized PiReference[] for the shared PiDetailSection.
    */
   async getMarkerReferences(spaceId: string, markerId: string): Promise<PiReference[]> {
     const result = await this.list({
       spaceId,
       entityTypes: ['trial', 'company', 'product'],
-      referencingEntityType: 'marker',
+      referencingEntityType: 'event',
       referencingEntityId: markerId,
       limit: 50,
     });

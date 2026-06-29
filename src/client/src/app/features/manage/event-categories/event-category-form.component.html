@@ -1,0 +1,45 @@
+<form (ngSubmit)="onSubmit()" class="space-y-4">
+  @if (error()) {
+    <p-message severity="error" [closable]="false">{{ error() }}</p-message>
+  }
+
+  <app-form-field
+    label="Name"
+    fieldId="ec-name"
+    [required]="true"
+    [error]="nameInvalid() ? 'Name is required.' : null"
+  >
+    <input
+      pInputText
+      id="ec-name"
+      class="w-full mt-1"
+      [ngModel]="name()"
+      (ngModelChange)="name.set($event)"
+      name="name"
+      required
+      placeholder="e.g. Manufacturing, Intellectual property"
+      (blur)="nameBlurred.set(true)"
+      [attr.aria-required]="true"
+      [attr.aria-invalid]="nameInvalid()"
+    />
+  </app-form-field>
+
+  <app-form-field label="Display order" fieldId="ec-display-order">
+    <p-inputnumber
+      inputId="ec-display-order"
+      [ngModel]="displayOrder()"
+      (ngModelChange)="displayOrder.set($event)"
+      name="displayOrder"
+      [min]="0"
+      placeholder="Auto"
+      styleClass="w-full"
+      class="mt-1"
+    />
+  </app-form-field>
+
+  <app-form-actions
+    [submitLabel]="category() ? 'Update category' : 'Create category'"
+    [loading]="saving()"
+    (cancelled)="cancelled.emit()"
+  />
+</form>

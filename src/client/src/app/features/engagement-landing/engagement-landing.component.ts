@@ -22,12 +22,9 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
+import { projectionBadge, projectionOutlineDash } from '../../core/models/marker-visual';
 import { Space } from '../../core/models/space.model';
 import { Tenant } from '../../core/models/tenant.model';
-import { Company } from '../../core/models/company.model';
-import { Marker } from '../../core/models/marker.model';
-import { Trial } from '../../core/models/trial.model';
-import { Asset } from '../../core/models/asset.model';
 import {
   ENTITY_TYPE_LABEL,
   IntelligenceEntityType,
@@ -36,21 +33,18 @@ import {
 import { renderMarkdownInline } from '../../shared/utils/markdown-render';
 import { buildEntityRouterLink } from '../../shared/utils/intelligence-router-link';
 import { pluralize } from '../../shared/utils/pluralize';
+import { ENTITY_TYPE_ICON } from '../../shared/constants/nav-icons';
+import { buildFeedFilters, FeedFilter } from './engagement-feed-filters';
 import {
   EngagementLandingService,
   SpaceLandingStats,
   UpcomingCatalyst,
 } from './engagement-landing.service';
+import { extractUpcoming, todayIso } from './extract-upcoming';
 import { BriefResult, computeBrief } from './brief-window';
 import { EngagementRouteIds, shouldReloadEngagement } from './engagement-landing.nav';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
 import { WhatChangedWidgetComponent } from '../../shared/components/what-changed-widget/what-changed-widget.component';
-
-interface FeedFilter {
-  key: 'all' | IntelligenceEntityType;
-  label: string;
-  count: number;
-}
 
 interface MotionCell {
   key: 'p3Readouts' | 'catalysts' | 'newIntel' | 'trialMoves';
@@ -180,7 +174,7 @@ export class EngagementLandingComponent implements OnInit {
     const tid = this.tenantId();
     const sid = this.spaceId();
     if (!tid || !sid) return '';
-    return `/t/${tid}/s/${sid}/catalysts`;
+    return `/t/${tid}/s/${sid}/future-events`;
   });
 
   readonly statsRoutes = computed(() => {
@@ -192,7 +186,7 @@ export class EngagementLandingComponent implements OnInit {
       activeTrials: `${base}/profiles/trials`,
       companies: `${base}/profiles/companies`,
       assets: `${base}/profiles/assets`,
-      catalysts: `${base}/catalysts`,
+      catalysts: `${base}/future-events`,
       intelligence: `${base}/intelligence`,
     };
   });
@@ -210,17 +204,17 @@ export class EngagementLandingComponent implements OnInit {
         windowLabel: 'next 90d',
         value: v(s?.p3_readouts_90d),
         display: s?.p3_readouts_90d == null ? '' : String(s.p3_readouts_90d),
-        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        route: hasRoute ? ['/t', tid, 's', sid, 'future-events'] : null,
         queryParams: hasRoute ? { phase: 'P3', within: '90d' } : null,
         warn: (s?.p3_readouts_90d ?? 0) > 0,
       },
       {
         key: 'catalysts',
-        label: pluralize(s?.catalysts_90d, 'Catalyst'),
+        label: pluralize(s?.catalysts_90d, 'Event'),
         windowLabel: 'next 90d',
         value: v(s?.catalysts_90d),
         display: s?.catalysts_90d == null ? '' : String(s.catalysts_90d),
-        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        route: hasRoute ? ['/t', tid, 's', sid, 'future-events'] : null,
         queryParams: hasRoute ? { within: '90d' } : null,
         warn: (s?.catalysts_90d ?? 0) > 0,
       },
@@ -320,7 +314,7 @@ export class EngagementLandingComponent implements OnInit {
         weekday: SHORT_DAYS[d.getDay()].toUpperCase(),
         monthLabel: `${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`,
         isToday: c.event_date === todayIso(),
-        title: c.title || c.category_name || 'Catalyst',
+        title: c.title || c.category_name || 'Event',
         who: [c.company_name?.toUpperCase(), c.asset_name, c.is_projected ? 'PROJECTED' : null]
           .filter((p): p is string => !!p)
           .join(' · '),
@@ -329,6 +323,8 @@ export class EngagementLandingComponent implements OnInit {
         fillStyle: c.is_projected ? ('outline' as const) : c.marker_type_fill_style,
         innerMark: c.marker_type_inner_mark,
         isNle: c.no_longer_expected,
+        projectionBadge: projectionBadge(c.projection),
+        outlineDash: projectionOutlineDash(c.projection),
       };
     });
   });
@@ -347,22 +343,10 @@ export class EngagementLandingComponent implements OnInit {
     return groups;
   });
 
-  readonly feedFilters = computed<FeedFilter[]>(() => {
-    const rows = this.latestIntelligence();
-    const counts = new Map<IntelligenceEntityType, number>();
-    for (const r of rows) {
-      counts.set(r.entity_type, (counts.get(r.entity_type) ?? 0) + 1);
-    }
-    const order: IntelligenceEntityType[] = ['trial', 'company', 'product', 'space'];
-    const out: FeedFilter[] = [{ key: 'all', label: 'All', count: rows.length }];
-    for (const type of order) {
-      const n = counts.get(type) ?? 0;
-      if (n > 0) {
-        out.push({ key: type, label: ENTITY_TYPE_LABEL[type] ?? type, count: n });
-      }
-    }
-    return out;
-  });
+  /** Canonical entity-scope icon classes, reused in the inventory count header. */
+  protected readonly entityIcon = ENTITY_TYPE_ICON;
+
+  readonly feedFilters = computed<FeedFilter[]>(() => buildFeedFilters(this.latestIntelligence()));
 
   readonly visibleFeed = computed<IntelligenceFeedRow[]>(() => {
     const f = this.feedFilter();
@@ -430,8 +414,8 @@ export class EngagementLandingComponent implements OnInit {
     const tid = this.tenantId();
     const sid = this.spaceId();
     if (!tid || !sid) return;
-    void this.router.navigate(['/t', tid, 's', sid, 'catalysts'], {
-      queryParams: { markerId },
+    void this.router.navigate(['/t', tid, 's', sid, 'future-events'], {
+      queryParams: { eventId: markerId },
     });
   }
 
@@ -561,6 +545,8 @@ interface CatalystDay {
   fillStyle: import('../../core/models/marker.model').FillStyle;
   innerMark: import('../../core/models/marker.model').InnerMark;
   isNle: boolean;
+  projectionBadge: import('../../core/models/marker-visual').ProjectionBadge;
+  outlineDash: boolean;
 }
 
 interface MonthGroup {
@@ -604,58 +590,6 @@ function daysFromTodayUtc(eventDateIso: string): number {
   const now = new Date();
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   return Math.floor((event - today) / 86_400_000);
-}
-
-function todayIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate()
-  ).padStart(2, '0')}`;
-}
-
-function addDaysIso(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate()
-  ).padStart(2, '0')}`;
-}
-
-function extractUpcoming(companies: Company[], windowDays: number): UpcomingCatalyst[] {
-  const today = todayIso();
-  const horizon = addDaysIso(windowDays);
-  const out: UpcomingCatalyst[] = [];
-
-  for (const company of companies) {
-    for (const asset of company.assets ?? ([] as Asset[])) {
-      for (const trial of asset.trials ?? ([] as Trial[])) {
-        for (const marker of trial.markers ?? ([] as Marker[])) {
-          if (!marker.event_date) continue;
-          if (marker.event_date < today || marker.event_date > horizon) continue;
-          const mt = marker.marker_types;
-          out.push({
-            marker_id: marker.id,
-            title: marker.title ?? mt?.name ?? 'Catalyst',
-            event_date: marker.event_date,
-            is_projected: marker.is_projected,
-            no_longer_expected: marker.no_longer_expected,
-            category_name: mt?.marker_categories?.name ?? '',
-            marker_type_color: mt?.color ?? '',
-            marker_type_shape: mt?.shape ?? 'circle',
-            marker_type_fill_style: mt?.fill_style ?? 'filled',
-            marker_type_inner_mark: mt?.inner_mark ?? 'none',
-            company_name: company.name,
-            asset_name: asset.name,
-            trial_name: trial.name ?? null,
-            trial_acronym: trial.acronym ?? null,
-          });
-        }
-      }
-    }
-  }
-
-  out.sort((a, b) => a.event_date.localeCompare(b.event_date) || a.title.localeCompare(b.title));
-  return out;
 }
 
 function recentCount(rows: IntelligenceFeedRow[], days: number): number {

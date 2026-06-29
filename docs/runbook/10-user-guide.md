@@ -52,7 +52,7 @@ The dashboard is the main view. It shows a timeline grid with your trials.
 
 ### Navigation
 
-The header shows your current **Organization** and **Space** as dropdowns. Click either to switch. Navigation links in the center (Dashboard, Companies, Products, Trials, Markers, Areas) are visible when inside a space. The signed-in account email and Sign out are available under the initials avatar button on the right.
+The header shows your current **Organization** and **Space** as dropdowns. Click either to switch. Navigation links in the center (Dashboard, Companies, Products, Trials, Future Events, Areas) are visible when inside a space. The signed-in account email and Sign out are available under the initials avatar button on the right.
 
 ### Timeline Grid
 
@@ -173,17 +173,17 @@ The Trial Detail page provides a comprehensive form with sections:
 - **Add Note** -- Enter free text content
 - **Edit / Delete** notes
 
-### Marker Types
+### Event Types
 
-**Navigate:** Markers link in header
+**Navigate:** Settings > Taxonomies (Event Types tab)
 
-You can create custom marker types beyond the 10 system defaults:
-1. Click **Add Marker Type**
+You can create custom event types beyond the 10 system defaults:
+1. Click **Add Event Type**
 2. Select a **category** (Clinical Trial, Data, Regulatory, Approval, or Loss of Exclusivity)
 3. Choose a name, shape (circle, diamond, flag, arrow, bar, x), fill style (filled, outline, striped, gradient), and color
-4. Custom markers appear in the legend and are available when adding markers to trials
+4. Custom event types appear in the legend and are available when adding events to trials
 
-System marker types (the 10 defaults) cannot be modified or deleted.
+System event types (the 10 defaults) cannot be modified or deleted.
 
 ### Therapeutic Areas
 
@@ -223,9 +223,9 @@ Trial names on the dashboard, the Trials list, and the engagement landing show a
 
 Hover the badge for a quick summary; click the trial to drill in.
 
-### Marker history panel
+### Event history panel
 
-On any marker detail, expand **History** to see who edited the marker, what fields changed, and when. Useful for auditing analyst overrides.
+On any event detail, expand **History** to see who edited the event, what fields changed, and when. Useful for auditing analyst overrides.
 
 ### Trial-detail Activity section
 
@@ -239,7 +239,7 @@ Trial-detail pages have a **Sync from CT.gov** button that forces an immediate p
 
 **Navigate:** `/t/:tenantId/s/:spaceId/settings/fields`
 
-Space owners pick which CT.gov fields appear on each surface (trial detail, bullseye detail, timeline detail, key catalysts panel, trial list). Useful for hiding noise fields the team doesn't track or for surfacing rare fields a particular engagement cares about. Choices are per-space.
+Space owners pick which CT.gov fields appear on each surface (trial detail, bullseye detail, timeline detail, key events panel, trial list). Useful for hiding noise fields the team doesn't track or for surfacing rare fields a particular engagement cares about. Choices are per-space.
 
 ### Track preclinical phase
 

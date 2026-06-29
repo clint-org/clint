@@ -21,7 +21,7 @@ const SUPABASE_DB_URL =
 
 let p: Personas;
 let admin: SupabaseClient;
-let systemCategoryId: string;
+let systemEventTypeId: string;
 
 const eventIds: string[] = [];
 
@@ -29,13 +29,14 @@ beforeAll(async () => {
   p = await buildPersonas();
   admin = adminClient();
 
-  const { data: cat } = await admin
-    .from('event_categories')
+  // Fetch a system event_type (space_id IS NULL) -- event_categories is dropped.
+  const { data: et } = await admin
+    .from('event_types')
     .select('id')
     .is('space_id', null)
     .limit(1)
     .single();
-  systemCategoryId = cat!.id as string;
+  systemEventTypeId = et!.id as string;
 }, 120_000);
 
 afterEach(async () => {
@@ -60,7 +61,8 @@ async function createEvent(title: string): Promise<string> {
     .from('events')
     .insert({
       space_id: p.org.spaceId,
-      category_id: systemCategoryId,
+      event_type_id: systemEventTypeId,
+      anchor_type: 'space',
       title,
       event_date: '2026-06-01',
       created_by: p.ids.contributor,

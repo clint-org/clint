@@ -153,14 +153,12 @@ async function wipe(admin: SupabaseClient): Promise<void> {
         [personaIds]
       );
 
-      // Markers must be deleted before their parent spaces. The cascade from
-      // deleting spaces fires the _log_marker_change trigger which inserts
-      // marker_changes audit rows referencing the parent space_id; if the
-      // space row is already gone (mid-cascade), the FK rejects. Same fix
-      // public.permanently_delete_space (migration 20260521120400) applies in
-      // its RPC.
+      // Events must be deleted before their parent spaces. The cascade from
+      // deleting spaces fires the _log_event_change trigger which inserts
+      // event_changes audit rows referencing the parent space_id; if the
+      // space row is already gone (mid-cascade), the FK rejects.
       await pg.query(
-        `delete from public.markers where space_id in (
+        `delete from public.events where space_id in (
            select id from public.spaces
            where created_by = any($1::uuid[])
               or tenant_id in (select id from public.tenants where subdomain = $2)

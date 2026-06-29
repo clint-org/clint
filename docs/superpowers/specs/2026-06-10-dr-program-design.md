@@ -62,6 +62,16 @@ workstreams. Each is independently spec-able and ownable.
 - **WS1 Materials durability** - depends on WS3 (bucket plus lock as code) and WS4
   (mirror token from Infisical). Scope: versioning, Object Lock, scheduled R2->B2
   mirror, reconciliation job.
+  **Status: shipped 2026-06-28.** Live: R2 7-day immutability lock; per-env,
+  bucket-scoped add-only daily R2->B2 mirror to Backblaze B2 under a 30-day
+  compliance Object Lock; weekly three-way DB/R2/B2 reconciliation; daily
+  drain-volume monitor. All three scheduled from `main`. Reconciliation is
+  sample-aware (`materials.is_sample` excludes seed/demo/playground rows from
+  the dangling check) and tiers severity (dangling + mirror_gap fail; orphan
+  informational). Operational detail and recovery steps live in
+  `docs/runbook/14-disaster-recovery.md` section 2. Residual follow-ups (not
+  blocking): B2 lagged-prune, event-driven mirror for sub-24h RPO,
+  provenance-based drain auto-approve.
 - **WS2 Observability** - depends on WS4 (alert/monitor secrets). Scope: real alert
   channel (replaces the interim GitHub-issue baseline shipped in the early Phase
   0.2 work), backup heartbeat/dead-man's-switch, external uptime + cert monitor,

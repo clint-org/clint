@@ -1,0 +1,208 @@
+// Pure builders + helpers for the merged Event form. No Angular, no Supabase.
+// Aligned to the SHIPPED RPC contracts on the cutover tip:
+//   create_event(p_space_id, p_event_type_id, p_title, p_event_date, p_anchor_type, p_anchor_id,
+//     p_projection, p_date_precision, p_end_date, p_end_date_precision, p_is_ongoing,
+//     p_description, p_source_url, p_significance, p_visibility, p_source_doc_id, p_sources jsonb)
+//   update_event(p_event_id, p_title, p_event_date, p_projection, p_date_precision, p_end_date,
+//     p_end_date_precision, p_is_ongoing, p_description, p_source_url, p_significance, p_visibility,
+//     p_no_longer_expected)   <-- note: update_event does NOT change event_type or anchor.
+
+import type {
+  AnchorType,
+  CreateEventArgs,
+  DatePrecision,
+  EventMetadata,
+  Projection,
+  UpdateEventArgs,
+} from '../../../core/models/event-write.model';
+
+export type { AnchorType, CreateEventArgs, DatePrecision, EventMetadata, Projection, UpdateEventArgs };
+export type Extent = 'point' | 'until' | 'onwards';
+export type SignificanceChoice = 'Default' | 'High' | 'Low';
+export type VisibilityChoice = 'Default' | 'Pinned' | 'Hidden';
+
+export interface SourceRow {
+  url: string;
+  label: string;
+}
+
+export interface EventFormState {
+  eventTypeId: string | null;
+  anchorType: AnchorType;
+  anchorId: string | null;
+  title: string;
+  eventDate: string; // resolved ISO (already midpoint-resolved for fuzzy precisions)
+  datePrecision: DatePrecision;
+  extent: Extent;
+  endDate: string | null;
+  endDatePrecision: DatePrecision;
+  projection: Projection;
+  significance: SignificanceChoice;
+  visibility: VisibilityChoice;
+  noLongerExpected: boolean;
+  description: string;
+  sources: SourceRow[];
+  tags: string[];
+  regulatoryPathway: string | null;
+}
+
+export const PROJECTION_OPTIONS: { label: string; value: Projection }[] = [
+  { label: 'Confirmed actual', value: 'actual' },
+  { label: 'Company guidance', value: 'company' },
+  { label: 'Intelligence', value: 'primary' },
+  { label: 'Forecasted', value: 'forecasted' },
+];
+
+export function significanceValue(choice: SignificanceChoice): 'high' | 'low' | null {
+  if (choice === 'High') return 'high';
+  if (choice === 'Low') return 'low';
+  return null;
+}
+
+export function visibilityValue(choice: VisibilityChoice): 'pinned' | 'hidden' | null {
+  if (choice === 'Pinned') return 'pinned';
+  if (choice === 'Hidden') return 'hidden';
+  return null;
+}
+
+/** Inverse of significanceValue: the raw event qualifier -> the form choice. */
+export function significanceChoiceFromValue(v: 'high' | 'low' | null): SignificanceChoice {
+  if (v === 'high') return 'High';
+  if (v === 'low') return 'Low';
+  return 'Default';
+}
+
+/** Inverse of visibilityValue: the raw event qualifier -> the form choice. */
+export function visibilityChoiceFromValue(v: 'pinned' | 'hidden' | null): VisibilityChoice {
+  if (v === 'pinned') return 'Pinned';
+  if (v === 'hidden') return 'Hidden';
+  return 'Default';
+}
+
+/** Reconstruct the extent control from the stored end fields (ongoing wins over a set end). */
+export function extentFromEndFields(endDate: string | null, isOngoing: boolean): Extent {
+  if (isOngoing) return 'onwards';
+  if (endDate) return 'until';
+  return 'point';
+}
+
+/** Inverse of resolvePeriodMidpoint: recover {year, sub} from a stored fuzzy midpoint ISO date. */
+export function periodFromDate(precision: DatePrecision, isoDate: string): { year: number; sub: number } {
+  const [y, m] = isoDate.split('-').map(Number);
+  const year = Number.isFinite(y) ? y : 0;
+  const month = Number.isFinite(m) ? m : 1; // 1-based
+  if (precision === 'half') return { year, sub: month <= 6 ? 0 : 1 };
+  if (precision === 'quarter') return { year, sub: Math.floor((month - 1) / 3) };
+  if (precision === 'month') return { year, sub: month - 1 };
+  return { year, sub: 0 }; // year / exact: no sub-division
+}
+
+function endFields(s: EventFormState): { end: string | null; precision: DatePrecision; ongoing: boolean } {
+  if (s.extent === 'until') return { end: s.endDate, precision: s.endDatePrecision, ongoing: false };
+  if (s.extent === 'onwards') return { end: null, precision: 'exact', ongoing: true };
+  return { end: null, precision: 'exact', ongoing: false };
+}
+
+/** Build the events.metadata jsonb (tags + regulatory pathway), null when both empty. */
+export function buildMetadata(s: EventFormState): EventMetadata | null {
+  const meta: EventMetadata = {};
+  const tags = s.tags.map((t) => t.trim()).filter(Boolean);
+  if (tags.length) meta.tags = tags;
+  if (s.regulatoryPathway) meta.pathway = s.regulatoryPathway;
+  return Object.keys(meta).length ? meta : null;
+}
+
+function sourcesJsonb(rows: SourceRow[]): { url: string; label: string | null }[] | null {
+  const clean = rows
+    .filter((r) => r.url.trim())
+    .map((r) => ({ url: r.url.trim(), label: r.label.trim() || null }));
+  return clean.length ? clean : null;
+}
+
+export function buildCreateEventArgs(s: EventFormState): CreateEventArgs {
+  const e = endFields(s);
+  return {
+    p_event_type_id: s.eventTypeId!,
+    p_title: s.title.trim(),
+    p_event_date: s.eventDate,
+    p_anchor_type: s.anchorType,
+    p_anchor_id: s.anchorType === 'space' ? null : s.anchorId,
+    p_projection: s.projection,
+    p_date_precision: s.datePrecision,
+    p_end_date: e.end,
+    p_end_date_precision: e.precision,
+    p_is_ongoing: e.ongoing,
+    p_description: s.description.trim() || null,
+    p_significance: significanceValue(s.significance),
+    p_visibility: visibilityValue(s.visibility),
+    p_metadata: buildMetadata(s),
+    p_sources: sourcesJsonb(s.sources),
+  };
+}
+
+export function buildUpdateEventArgs(s: EventFormState): UpdateEventArgs {
+  const e = endFields(s);
+  return {
+    p_event_type_id: s.eventTypeId!,
+    p_anchor_type: s.anchorType,
+    p_anchor_id: s.anchorType === 'space' ? null : s.anchorId,
+    p_title: s.title.trim(),
+    p_event_date: s.eventDate,
+    p_projection: s.projection,
+    p_date_precision: s.datePrecision,
+    p_end_date: e.end,
+    p_end_date_precision: e.precision,
+    p_is_ongoing: e.ongoing,
+    p_description: s.description.trim() || null,
+    p_significance: significanceValue(s.significance),
+    p_visibility: visibilityValue(s.visibility),
+    p_metadata: buildMetadata(s),
+    p_no_longer_expected: s.noLongerExpected,
+  };
+}
+
+// Period sub-divisions per fuzzy precision (0-based value -> label).
+export const PERIOD_SUBS: Record<'month' | 'quarter' | 'half', { label: string; value: number }[]> = {
+  month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(
+    (label, value) => ({ label, value }),
+  ),
+  quarter: ['Q1', 'Q2', 'Q3', 'Q4'].map((label, value) => ({ label, value })),
+  half: ['H1', 'H2'].map((label, value) => ({ label, value })),
+};
+
+/** Resolve a fuzzy period to the midpoint ISO date the timeline renders at. */
+export function resolvePeriodMidpoint(
+  precision: DatePrecision,
+  year: number,
+  sub: number,
+  exactDate: string,
+): string {
+  const yyyy = String(year).padStart(4, '0');
+  if (precision === 'exact') return exactDate;
+  if (precision === 'year') return `${yyyy}-07-02`;
+  if (precision === 'half') return sub === 0 ? `${yyyy}-04-01` : `${yyyy}-10-01`;
+  if (precision === 'quarter') return `${yyyy}-${['02', '05', '08', '11'][sub] ?? '02'}-15`;
+  return `${yyyy}-${String(sub + 1).padStart(2, '0')}-15`;
+}
+
+/** Detail/compact display text for a source row: label, else the URL host (D1 decision). */
+export function sourceDisplay(row: { url: string; label: string | null }): string {
+  if (row.label && row.label.trim()) return row.label.trim();
+  try {
+    return new URL(row.url).host;
+  } catch {
+    return row.url;
+  }
+}
+
+/** Validity: type + title + (space-anchor OR entity) + (extent=until -> end >= start). */
+export function isEventFormValid(s: EventFormState): boolean {
+  if (!s.eventTypeId) return false;
+  if (!s.title.trim()) return false;
+  if (s.anchorType !== 'space' && !s.anchorId) return false;
+  if (s.extent === 'until') {
+    if (!s.endDate) return false;
+    if (s.endDate < s.eventDate) return false;
+  }
+  return true;
+}

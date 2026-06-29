@@ -55,7 +55,6 @@ interface EntityCounts {
   companies: number;
   assets: number;
   trials: number;
-  markers: number;
   events: number;
 }
 
@@ -90,7 +89,6 @@ interface CreatedEntities {
   companies?: EntityRef[];
   assets?: EntityRef[];
   trials?: EntityRef[];
-  markers?: EntityRef[];
   events?: EntityRef[];
 }
 
@@ -532,15 +530,6 @@ interface ModelRow {
                                     class="text-brand-600 hover:underline"
                                     [routerLink]="manageLink(detail, 'trials', t.id)"
                                     >{{ t.name }}</a
-                                  >@if (!$last) {<span class="text-slate-400">, </span>}
-                                }
-                              </div>
-                            }
-                            @if (ents.markers?.length) {
-                              <div>
-                                <span class="text-slate-500">Markers: </span>
-                                @for (m of ents.markers ?? []; track m.id) {
-                                  <span class="text-slate-700">{{ m.title }}</span
                                   >@if (!$last) {<span class="text-slate-400">, </span>}
                                 }
                               </div>
@@ -1008,7 +997,6 @@ export class SuperAdminAiUsageComponent implements OnInit {
     add(counts.companies, 'company', 'companies');
     add(counts.assets, 'asset', 'assets');
     add(counts.trials, 'trial', 'trials');
-    add(counts.markers, 'marker', 'markers');
     add(counts.events, 'event', 'events');
     return parts.length ? parts.join(', ') : 'No entities created';
   }

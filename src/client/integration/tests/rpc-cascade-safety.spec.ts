@@ -543,11 +543,9 @@ describe('rpc permanently_delete_space', () => {
         'companies',
         'assets',
         'trials',
-        'markers',
         'materials',
         'events',
         'primary_intelligence',
-        'marker_types',
         'was_archived',
         'platform_admin_override',
       ]) {
@@ -561,6 +559,74 @@ describe('rpc permanently_delete_space', () => {
     } finally {
       await scratch.cleanup();
     }
+  });
+
+  it('leaves no orphaned events or event_sources', async () => {
+    const scratch = await createScratchSpace(p);
+    await setArchived(scratch.spaceId, true);
+
+    // Seed a space-anchored event and one event_sources row directly via pg
+    // so we avoid the has_space_access gate on create_event.
+    const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
+    let eventId: string;
+    try {
+      await pg.connect();
+      const etRes = await pg.query<{ id: string }>(
+        `select id from public.event_types where space_id is null limit 1`,
+      );
+      const eventTypeId = etRes.rows[0].id;
+
+      const evtRes = await pg.query<{ id: string }>(
+        `insert into public.events
+           (space_id, event_type_id, title, event_date, anchor_type, created_by)
+           values ($1, $2, $3, $4, 'space', $5) returning id`,
+        [scratch.spaceId, eventTypeId, 'Cascade Safety Event', '2026-01-01', p.ids.tenant_owner],
+      );
+      eventId = evtRes.rows[0].id;
+
+      await pg.query(
+        `insert into public.event_sources (event_id, url, label, sort_order)
+           values ($1, $2, $3, $4)`,
+        [eventId, 'https://cascade-safety.test', 'Cascade Safety Source', 0],
+      );
+    } finally {
+      await pg.end();
+    }
+
+    // Call permanently_delete_space as tenant_owner (space is archived above).
+    const r = await as(p, 'tenant_owner').rpc('permanently_delete_space', {
+      p_space_id: scratch.spaceId,
+    });
+    expectOk(r);
+
+    // The space is now gone; assert the cascade cleaned events and event_sources.
+    const pgCheck = new PgClient({ connectionString: SUPABASE_DB_URL });
+    try {
+      await pgCheck.connect();
+      const { rows: evtRows } = await pgCheck.query<{ count: string }>(
+        `select count(*)::text as count from public.events where space_id = $1`,
+        [scratch.spaceId],
+      );
+      if (evtRows[0].count !== '0') {
+        throw new Error(
+          `permanently_delete_space left ${evtRows[0].count} event(s) for space ${scratch.spaceId}`,
+        );
+      }
+      const { rows: srcRows } = await pgCheck.query<{ count: string }>(
+        `select count(*)::text as count from public.event_sources where event_id = $1`,
+        [eventId],
+      );
+      if (srcRows[0].count !== '0') {
+        throw new Error(
+          `permanently_delete_space left ${srcRows[0].count} event_sources row(s) for event ${eventId}`,
+        );
+      }
+    } finally {
+      await pgCheck.end();
+    }
+    // scratch.cleanup() is a no-op for a deleted space; call it so the
+    // afterAll pattern stays consistent (it will silently find nothing).
+    await scratch.cleanup().catch(() => { /* space already gone */ });
   });
 });
 
@@ -653,9 +719,6 @@ describe('rpc preview_*_delete (cascade-footprint previews)', () => {
         'material_links',
         'primary_intelligence',
         'primary_intelligence_links',
-        'marker_assignments',
-        'markers_removed_entirely',
-        'markers_unlinked_only',
       ];
       for (const key of expected) {
         if (!(key in data)) {
@@ -794,5 +857,220 @@ describe('rpc preview_*_delete (cascade-footprint previews)', () => {
         throw new Error(`preview_trial_delete not read-only: ${JSON.stringify(r1.data)} then ${JSON.stringify(r2.data)}`);
       }
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// _cleanup_polymorphic_refs deletes anchored events
+// ---------------------------------------------------------------------------
+//
+// Verifies that the AFTER DELETE trigger on companies / assets / trials also
+// removes public.events rows anchored to the deleted entity. events.anchor_id
+// has no FK constraint, so the trigger is the only cleanup path. event_sources
+// has ON DELETE CASCADE from events and is therefore verified implicitly.
+
+describe('_cleanup_polymorphic_refs deletes anchored events', () => {
+  let spaceId: string;
+  let userId: string;
+  let eventTypeId: string;
+  let scratchCleanup: () => Promise<void>;
+
+  beforeAll(async () => {
+    const scratch = await createScratchSpace(p);
+    spaceId = scratch.spaceId;
+    scratchCleanup = scratch.cleanup;
+    userId = p.ids.tenant_owner;
+
+    const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
+    await pg.connect();
+    try {
+      const etRes = await pg.query<{ id: string }>(
+        `select id from public.event_types where space_id is null limit 1`,
+      );
+      eventTypeId = etRes.rows[0].id;
+    } finally {
+      await pg.end();
+    }
+  }, 60_000);
+
+  afterAll(async () => {
+    if (scratchCleanup) await scratchCleanup();
+  });
+
+  it('deleting a trial removes its anchored event and event_sources', async () => {
+    const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
+    await pg.connect();
+    try {
+      const coRes = await pg.query<{ id: string }>(
+        `insert into public.companies (space_id, name, created_by)
+           values ($1, $2, $3) returning id`,
+        [spaceId, 'Cascade Co Trial', userId],
+      );
+      const companyId = coRes.rows[0].id;
+
+      const assetRes = await pg.query<{ id: string }>(
+        `insert into public.assets (space_id, company_id, name, created_by)
+           values ($1, $2, $3, $4) returning id`,
+        [spaceId, companyId, 'Cascade Asset Trial', userId],
+      );
+      const assetId = assetRes.rows[0].id;
+
+      const trialRes = await pg.query<{ id: string }>(
+        `insert into public.trials (space_id, asset_id, name, created_by)
+           values ($1, $2, $3, $4) returning id`,
+        [spaceId, assetId, 'Cascade Trial', userId],
+      );
+      const trialId = trialRes.rows[0].id;
+
+      const eventRes = await pg.query<{ id: string }>(
+        `insert into public.events
+           (space_id, event_type_id, title, event_date, anchor_type, anchor_id, created_by)
+           values ($1, $2, $3, $4, 'trial', $5, $6) returning id`,
+        [spaceId, eventTypeId, 'Cascade Trial Event', '2026-01-01', trialId, userId],
+      );
+      const eventId = eventRes.rows[0].id;
+
+      await pg.query(
+        `insert into public.event_sources (event_id, url, label, sort_order)
+           values ($1, $2, $3, $4)`,
+        [eventId, 'https://test.example/trial', 'Trial Source', 0],
+      );
+
+      // delete the trial -- _cleanup_polymorphic_refs fires with v_type='trial'
+      await pg.query(`delete from public.trials where id = $1`, [trialId]);
+
+      const evtRes = await pg.query<{ count: string }>(
+        `select count(*) from public.events where id = $1`,
+        [eventId],
+      );
+      const srcRes = await pg.query<{ count: string }>(
+        `select count(*) from public.event_sources where event_id = $1`,
+        [eventId],
+      );
+
+      if (parseInt(evtRes.rows[0].count) !== 0) {
+        throw new Error(
+          `expected event deleted after trial delete, got count=${evtRes.rows[0].count}`,
+        );
+      }
+      if (parseInt(srcRes.rows[0].count) !== 0) {
+        throw new Error(
+          `expected event_sources deleted after trial delete, got count=${srcRes.rows[0].count}`,
+        );
+      }
+    } finally {
+      await pg.end();
+    }
+  });
+
+  it('deleting an asset removes its anchored event and event_sources', async () => {
+    const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
+    await pg.connect();
+    try {
+      const coRes = await pg.query<{ id: string }>(
+        `insert into public.companies (space_id, name, created_by)
+           values ($1, $2, $3) returning id`,
+        [spaceId, 'Cascade Co Asset', userId],
+      );
+      const companyId = coRes.rows[0].id;
+
+      const assetRes = await pg.query<{ id: string }>(
+        `insert into public.assets (space_id, company_id, name, created_by)
+           values ($1, $2, $3, $4) returning id`,
+        [spaceId, companyId, 'Cascade Asset', userId],
+      );
+      const assetId = assetRes.rows[0].id;
+
+      const eventRes = await pg.query<{ id: string }>(
+        `insert into public.events
+           (space_id, event_type_id, title, event_date, anchor_type, anchor_id, created_by)
+           values ($1, $2, $3, $4, 'asset', $5, $6) returning id`,
+        [spaceId, eventTypeId, 'Cascade Asset Event', '2026-01-01', assetId, userId],
+      );
+      const eventId = eventRes.rows[0].id;
+
+      await pg.query(
+        `insert into public.event_sources (event_id, url, label, sort_order)
+           values ($1, $2, $3, $4)`,
+        [eventId, 'https://test.example/asset', 'Asset Source', 0],
+      );
+
+      // delete the asset -- _cleanup_polymorphic_refs fires with v_type='asset'
+      await pg.query(`delete from public.assets where id = $1`, [assetId]);
+
+      const evtRes = await pg.query<{ count: string }>(
+        `select count(*) from public.events where id = $1`,
+        [eventId],
+      );
+      const srcRes = await pg.query<{ count: string }>(
+        `select count(*) from public.event_sources where event_id = $1`,
+        [eventId],
+      );
+
+      if (parseInt(evtRes.rows[0].count) !== 0) {
+        throw new Error(
+          `expected event deleted after asset delete, got count=${evtRes.rows[0].count}`,
+        );
+      }
+      if (parseInt(srcRes.rows[0].count) !== 0) {
+        throw new Error(
+          `expected event_sources deleted after asset delete, got count=${srcRes.rows[0].count}`,
+        );
+      }
+    } finally {
+      await pg.end();
+    }
+  });
+
+  it('deleting a company removes its anchored event and event_sources', async () => {
+    const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
+    await pg.connect();
+    try {
+      const coRes = await pg.query<{ id: string }>(
+        `insert into public.companies (space_id, name, created_by)
+           values ($1, $2, $3) returning id`,
+        [spaceId, 'Cascade Co Company', userId],
+      );
+      const companyId = coRes.rows[0].id;
+
+      const eventRes = await pg.query<{ id: string }>(
+        `insert into public.events
+           (space_id, event_type_id, title, event_date, anchor_type, anchor_id, created_by)
+           values ($1, $2, $3, $4, 'company', $5, $6) returning id`,
+        [spaceId, eventTypeId, 'Cascade Company Event', '2026-01-01', companyId, userId],
+      );
+      const eventId = eventRes.rows[0].id;
+
+      await pg.query(
+        `insert into public.event_sources (event_id, url, label, sort_order)
+           values ($1, $2, $3, $4)`,
+        [eventId, 'https://test.example/company', 'Company Source', 0],
+      );
+
+      // delete the company -- _cleanup_polymorphic_refs fires with v_type='company'
+      await pg.query(`delete from public.companies where id = $1`, [companyId]);
+
+      const evtRes = await pg.query<{ count: string }>(
+        `select count(*) from public.events where id = $1`,
+        [eventId],
+      );
+      const srcRes = await pg.query<{ count: string }>(
+        `select count(*) from public.event_sources where event_id = $1`,
+        [eventId],
+      );
+
+      if (parseInt(evtRes.rows[0].count) !== 0) {
+        throw new Error(
+          `expected event deleted after company delete, got count=${evtRes.rows[0].count}`,
+        );
+      }
+      if (parseInt(srcRes.rows[0].count) !== 0) {
+        throw new Error(
+          `expected event_sources deleted after company delete, got count=${srcRes.rows[0].count}`,
+        );
+      }
+    } finally {
+      await pg.end();
+    }
   });
 });

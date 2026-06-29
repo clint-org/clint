@@ -1,11 +1,14 @@
 /**
  * Unit tests for TrialService. Focus is the new cascade-safety surface
  * (previewDelete) plus regression coverage for the existing CRUD methods.
+ *
+ * The mapEventToMarker and TRIAL_SELECT exports are tested as pure contracts so
+ * the event->Marker mapping can be verified without mounting Supabase.
  */
 import { Injector, runInInjectionContext } from '@angular/core';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-import { TrialService } from './trial.service';
+import { TrialService, mapEventToMarker, TRIAL_SELECT } from './trial.service';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -18,6 +21,7 @@ interface QueryBuilderStub {
   or: ReturnType<typeof vi.fn>;
   order: ReturnType<typeof vi.fn>;
   limit: ReturnType<typeof vi.fn>;
+  in: ReturnType<typeof vi.fn>;
   single: ReturnType<typeof vi.fn>;
   maybeSingle: ReturnType<typeof vi.fn>;
   throwOnError: ReturnType<typeof vi.fn>;
@@ -35,6 +39,7 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
     or: vi.fn(),
     order: vi.fn(),
     limit: vi.fn(),
+    in: vi.fn(),
     single: vi.fn(),
     maybeSingle: vi.fn(),
     throwOnError: vi.fn(),
@@ -57,6 +62,7 @@ function makeQueryBuilder(data: unknown, error: unknown = null): QueryBuilderStu
   qb.or.mockReturnValue(qb);
   qb.order.mockReturnValue(qb);
   qb.limit.mockReturnValue(qb);
+  qb.in.mockReturnValue(qb);
   qb.throwOnError.mockReturnValue(qb);
   qb.single.mockImplementation(() => {
     const s = { throwOnError: vi.fn() } as Record<string, unknown>;
@@ -222,6 +228,46 @@ describe('TrialService.listByAsset', () => {
     expect(opts.tags).toEqual(['asset:asset-1:trials']);
     expect(result).toEqual([{ id: 't-1', name: 'Trial 1' }]);
   });
+
+  it('fetches anchored events and attaches them as markers on the returned trials', async () => {
+    const eventRow = {
+      id: 'ev-1',
+      space_id: 'space-1',
+      anchor_id: 't-1',
+      anchor_type: 'trial',
+      event_type_id: 'et-1',
+      title: 'Data Readout',
+      event_types: {
+        id: 'et-1',
+        name: 'DR',
+        event_type_categories: { id: 'cat-1', name: 'Clinical' },
+      },
+    };
+    const trialsQb = makeQueryBuilder([{ id: 't-1', name: 'Trial 1' }]);
+    const eventsQb = makeQueryBuilder([eventRow]);
+    const from = vi.fn()
+      .mockReturnValueOnce(trialsQb)
+      .mockReturnValue(eventsQb);
+    // The RpcCache shim delegates straight to the fetch callback so we exercise
+    // the real PostgREST query path (trials + events merge).
+    const cacheGet = vi.fn().mockImplementation((_name, _params, opts) => opts.fetch());
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn() } },
+      { get: cacheGet, invalidateTags: vi.fn() }
+    );
+
+    const result = await service.listByAsset('asset-1');
+
+    expect(from).toHaveBeenCalledWith('events');
+    expect(eventsQb.eq).toHaveBeenCalledWith('anchor_type', 'trial');
+    expect(eventsQb.in).toHaveBeenCalledWith('anchor_id', ['t-1']);
+    expect(result[0].markers).toHaveLength(1);
+    expect(result[0].markers![0].marker_type_id).toBe('et-1');
+    expect(result[0].markers![0].marker_types?.marker_categories).toEqual({
+      id: 'cat-1',
+      name: 'Clinical',
+    });
+  });
 });
 
 describe('TrialService.create', () => {
@@ -231,14 +277,16 @@ describe('TrialService.create', () => {
       if (name === 'create_trial') Object.assign(captured, params);
       return makeRpcResult(newId);
     });
-    // getById round-trip after create.
+    // getById round-trip after create: one from('trials') then one from('events').
     const getByIdQb = makeQueryBuilder({
       id: newId,
       space_id: 'space-1',
       asset_id: 'asset-1',
-      marker_assignments: [],
     });
-    const from = vi.fn().mockReturnValue(getByIdQb);
+    const eventsQb = makeQueryBuilder([]);
+    const from = vi.fn()
+      .mockReturnValueOnce(getByIdQb)
+      .mockReturnValue(eventsQb);
     const service = makeService(
       { from, rpc, auth: { getUser: vi.fn() } },
       { get: vi.fn(), invalidateTags: vi.fn() }
@@ -320,15 +368,19 @@ describe('TrialService.update with phase fields', () => {
 
 describe('TrialService.listBySpace preclinical filtering', () => {
   // RpcCache shim runs the fetch closure so we exercise the PostgREST query build.
+  // from is called twice when trials are returned: once for trials, once for events.
   function setup(rows: unknown[]) {
     const qb = makeQueryBuilder(rows);
-    const from = vi.fn().mockReturnValue(qb);
+    const eventsQb = makeQueryBuilder([]);
+    const from = vi.fn()
+      .mockReturnValueOnce(qb)
+      .mockReturnValue(eventsQb);
     const cacheGet = vi.fn().mockImplementation((_name, _params, opts) => opts.fetch());
     const service = makeService(
       { from, rpc: vi.fn(), auth: { getUser: vi.fn() } },
       { get: cacheGet, invalidateTags: vi.fn() }
     );
-    return { service, from, qb, cacheGet };
+    return { service, from, qb, eventsQb, cacheGet };
   }
 
   it('omits the preclinical filter and keys the cache as tracking when showPreclinical=true', async () => {
@@ -460,5 +512,250 @@ describe('TrialService.getLatestSnapshotsForSpace', () => {
     expect(result.size).toBe(2);
     expect(result.get('t-1')).toEqual({ x: 1 });
     expect(result.get('t-2')).toEqual({ x: 2 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// New tests for the events schema cutover (Stage 1 / Phase B)
+// ---------------------------------------------------------------------------
+
+describe('TRIAL_SELECT', () => {
+  it('does not embed marker_assignments (those tables were dropped in Stage 1)', () => {
+    expect(TRIAL_SELECT).not.toContain('marker_assignments');
+  });
+
+  it('retains the assets embed for the phase-bar and manage page', () => {
+    expect(TRIAL_SELECT).toContain('assets!trials_asset_id_fkey');
+  });
+});
+
+describe('mapEventToMarker', () => {
+  const baseEvent: Record<string, unknown> = {
+    id: 'event-1',
+    space_id: 'space-1',
+    anchor_id: 'trial-1',
+    anchor_type: 'trial',
+    created_by: 'user-1',
+    event_type_id: 'et-1',
+    title: 'Phase 2 Data Readout',
+    projection: 'actual',
+    event_date: '2024-06-01',
+    date_precision: 'day',
+    end_date: null,
+    end_date_precision: 'day',
+    is_ongoing: false,
+    description: 'Topline P2 results',
+    source_url: null,
+    metadata: null,
+    is_projected: false,
+    no_longer_expected: false,
+    significance: 'high',
+    visibility: null,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+    updated_by: null,
+    event_types: {
+      id: 'et-1',
+      name: 'Data Readout',
+      category_id: 'cat-1',
+      event_type_categories: {
+        id: 'cat-1',
+        name: 'Clinical Readout',
+      },
+    },
+  };
+
+  it('renames event_type_id to marker_type_id', () => {
+    const marker = mapEventToMarker(baseEvent);
+    expect(marker.marker_type_id).toBe('et-1');
+  });
+
+  it('renames event_types to marker_types', () => {
+    const marker = mapEventToMarker(baseEvent);
+    expect(marker.marker_types).toBeDefined();
+    expect(marker.marker_types!.id).toBe('et-1');
+    expect(marker.marker_types!.name).toBe('Data Readout');
+  });
+
+  it('renames event_type_categories to marker_categories inside marker_types', () => {
+    const marker = mapEventToMarker(baseEvent);
+    expect(marker.marker_types!.marker_categories).toEqual({
+      id: 'cat-1',
+      name: 'Clinical Readout',
+    });
+  });
+
+  it('preserves other Marker fields unchanged', () => {
+    const marker = mapEventToMarker(baseEvent);
+    expect(marker.id).toBe('event-1');
+    expect(marker.title).toBe('Phase 2 Data Readout');
+    expect(marker.significance).toBe('high');
+    expect(marker.is_projected).toBe(false);
+    expect(marker.event_date).toBe('2024-06-01');
+  });
+
+  it('sets marker_types to null when event_types is null', () => {
+    const marker = mapEventToMarker({ ...baseEvent, event_types: null });
+    expect(marker.marker_types).toBeNull();
+  });
+
+  it('sets marker_categories to null when event_type_categories is null', () => {
+    const event = {
+      ...baseEvent,
+      event_types: { id: 'et-1', name: 'Data Readout', event_type_categories: null },
+    };
+    const marker = mapEventToMarker(event);
+    expect(marker.marker_types!.marker_categories).toBeNull();
+  });
+});
+
+describe('TrialService.listBySpace event merging', () => {
+  function setupWithEvents(trialRows: unknown[], eventRows: unknown[] = []) {
+    const trialsQb = makeQueryBuilder(trialRows);
+    const eventsQb = makeQueryBuilder(eventRows);
+    const from = vi.fn()
+      .mockReturnValueOnce(trialsQb)
+      .mockReturnValue(eventsQb);
+    const cacheGet = vi.fn().mockImplementation((_name, _params, opts) => opts.fetch());
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn() } },
+      { get: cacheGet, invalidateTags: vi.fn() },
+    );
+    return { service, from, trialsQb, eventsQb };
+  }
+
+  it('queries the events table with anchor_type=trial and the returned trial ids', async () => {
+    const { service, from, eventsQb } = setupWithEvents([{ id: 't-1', space_id: 'space-1' }]);
+
+    await service.listBySpace('space-1');
+
+    expect(from).toHaveBeenCalledWith('events');
+    expect(eventsQb.eq).toHaveBeenCalledWith('anchor_type', 'trial');
+    expect(eventsQb.in).toHaveBeenCalledWith('anchor_id', ['t-1']);
+  });
+
+  it('attaches mapped events as markers on the matching trial', async () => {
+    const eventRow = {
+      id: 'ev-1',
+      space_id: 'space-1',
+      anchor_id: 't-1',
+      anchor_type: 'trial',
+      created_by: 'user-1',
+      event_type_id: 'et-1',
+      title: 'Data Readout',
+      projection: 'actual',
+      event_date: '2025-01-01',
+      date_precision: 'day',
+      end_date: null,
+      end_date_precision: 'day',
+      is_ongoing: false,
+      description: null,
+      source_url: null,
+      metadata: null,
+      is_projected: false,
+      no_longer_expected: false,
+      significance: null,
+      visibility: null,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      updated_by: null,
+      event_types: {
+        id: 'et-1',
+        name: 'DR',
+        event_type_categories: { id: 'cat-1', name: 'Clinical' },
+      },
+    };
+
+    const { service } = setupWithEvents(
+      [{ id: 't-1', space_id: 'space-1' }],
+      [eventRow],
+    );
+
+    const trials = await service.listBySpace('space-1');
+
+    expect(trials[0].markers).toHaveLength(1);
+    expect(trials[0].markers![0].marker_type_id).toBe('et-1');
+    expect(trials[0].markers![0].marker_types?.marker_categories).toEqual({
+      id: 'cat-1',
+      name: 'Clinical',
+    });
+  });
+
+  it('skips the events query when no trials are returned', async () => {
+    const { service, from } = setupWithEvents([]);
+
+    await service.listBySpace('space-1');
+
+    expect(from).not.toHaveBeenCalledWith('events');
+    expect(from).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves markers empty when no events are anchored to a trial', async () => {
+    const { service } = setupWithEvents([{ id: 't-1', space_id: 'space-1' }], []);
+
+    const trials = await service.listBySpace('space-1');
+
+    expect(trials[0].markers).toEqual([]);
+  });
+});
+
+describe('TrialService.getById event anchoring', () => {
+  // getById makes two from() calls: one from('trials').single(), then a
+  // separate from('events') query keyed by the single trial id (no .in()).
+  function setup(trialRow: unknown, eventRows: unknown[] = []) {
+    const trialsQb = makeQueryBuilder(trialRow);
+    const eventsQb = makeQueryBuilder(eventRows);
+    const from = vi.fn()
+      .mockReturnValueOnce(trialsQb)
+      .mockReturnValue(eventsQb);
+    const service = makeService(
+      { from, rpc: vi.fn(), auth: { getUser: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() },
+    );
+    return { service, from, trialsQb, eventsQb };
+  }
+
+  it('queries the events table with anchor_type=trial and the requested trial id', async () => {
+    const { service, from, eventsQb } = setup({ id: 'trial-1', space_id: 'space-1' });
+
+    await service.getById('trial-1');
+
+    expect(from).toHaveBeenCalledWith('events');
+    expect(eventsQb.eq).toHaveBeenCalledWith('anchor_type', 'trial');
+    expect(eventsQb.eq).toHaveBeenCalledWith('anchor_id', 'trial-1');
+  });
+
+  it('attaches the anchored events as markers on the returned trial', async () => {
+    const eventRow = {
+      id: 'ev-1',
+      space_id: 'space-1',
+      anchor_id: 'trial-1',
+      anchor_type: 'trial',
+      event_type_id: 'et-1',
+      title: 'Data Readout',
+      event_types: {
+        id: 'et-1',
+        name: 'DR',
+        event_type_categories: { id: 'cat-1', name: 'Clinical' },
+      },
+    };
+    const { service } = setup({ id: 'trial-1', space_id: 'space-1' }, [eventRow]);
+
+    const trial = await service.getById('trial-1');
+
+    expect(trial.markers).toHaveLength(1);
+    expect(trial.markers![0].marker_type_id).toBe('et-1');
+    expect(trial.markers![0].marker_types?.marker_categories).toEqual({
+      id: 'cat-1',
+      name: 'Clinical',
+    });
+  });
+
+  it('leaves markers empty when the trial has no anchored events', async () => {
+    const { service } = setup({ id: 'trial-1', space_id: 'space-1' }, []);
+
+    const trial = await service.getById('trial-1');
+
+    expect(trial.markers).toEqual([]);
   });
 });

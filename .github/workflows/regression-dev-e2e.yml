@@ -1,0 +1,124 @@
+name: Dev e2e regression (manual)
+# Whole-app Playwright regression suite against DEPLOYED dev.clintapp.com.
+# See src/client/e2e-dev/README.md + docs/notes/dev-regression-suite.md.
+#
+# NOT a PR gate. It depends on the deployed env + a live DB + (for some specs)
+# external services, so it runs on demand. Manual dispatch only for now.
+#
+# CLOUDFLARE GATE: the suite must run HEADED; headless never clears the dev
+# managed challenge, and a GitHub-runner (datacenter IP) is challenged even
+# headed. So the test job is gated behind the `DEV_E2E_ENABLED` repo variable
+# and stays off until a Cloudflare WAF bypass (e.g. a secret-header skip rule)
+# is configured for the runner. Until then this workflow's value is the
+# always-on preflight (secrets + dev reachability) + a ready-to-flip test job.
+#
+# To enable real CI execution later:
+#   1. Add a Cloudflare WAF custom rule that skips bot protection for a secret
+#      header, and have the suite send it (use.extraHTTPHeaders in the config).
+#   2. Set repo variable DEV_E2E_ENABLED=true.
+#   3. Optionally add a `workflow_run` trigger after the dev deploy (below).
+
+on:
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Playwright --grep filter (e.g. @firewall). Empty = full suite.'
+        required: false
+        default: ''
+  # Post-deploy trigger (enable once a Cloudflare bypass exists):
+  # workflow_run:
+  #   workflows: ['Deploy dev']
+  #   types: [completed]
+
+permissions:
+  contents: read
+  id-token: write # mint GitHub OIDC token for Infisical auth
+
+concurrency:
+  group: dev-e2e-regression
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ vars.DEV_E2E_ENABLED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Infisical CLI
+        run: |
+          curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash
+          sudo apt-get install -y -qq infisical
+      - name: Authenticate to Infisical via GitHub OIDC
+        id: auth
+        env:
+          IDENTITY_ID: ${{ secrets.INFISICAL_MACHINE_IDENTITY_ID }}
+        run: |
+          oidc="$(curl -s "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://infisical.com" \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" | jq -r '.value')"
+          token="$(infisical login --method=oidc-auth --machine-identity-id="$IDENTITY_ID" \
+            --jwt="$oidc" --plain --silent)"
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+      - name: Install pg
+        working-directory: src/client
+        run: npm ci
+      - name: Preflight (pooler + dev schema reachable)
+        working-directory: src/client
+        env:
+          INFISICAL_TOKEN: ${{ steps.auth.outputs.token }}
+        # Double-quoted JS strings only (no single quotes) so nothing needs shell
+        # escaping. "select 1 from public.events" errors if the table is absent.
+        run: |
+          infisical run --projectId 7c227e8b-b355-46cb-8912-701104e2415b --env dev --path /supabase -- \
+            node -e 'const {Client}=require("pg"); (async()=>{ const c=new Client({connectionString:process.env.SUPABASE_DEV_DB_POOLER_URL}); await c.connect(); await c.query("select 1 from public.events limit 0"); await c.end(); console.log("preflight OK"); })().catch(e=>{console.error(e.message);process.exit(1)});'
+
+  e2e:
+    needs: preflight
+    if: needs.preflight.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install deps
+        run: npm ci
+      - name: Install Playwright Chrome
+        run: npx playwright install --with-deps chrome
+      - name: Install Infisical CLI
+        working-directory: .
+        run: |
+          curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash
+          sudo apt-get install -y -qq infisical
+      - name: Authenticate to Infisical via GitHub OIDC
+        id: auth
+        working-directory: .
+        env:
+          IDENTITY_ID: ${{ secrets.INFISICAL_MACHINE_IDENTITY_ID }}
+        run: |
+          oidc="$(curl -s "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://infisical.com" \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" | jq -r '.value')"
+          token="$(infisical login --method=oidc-auth --machine-identity-id="$IDENTITY_ID" \
+            --jwt="$oidc" --plain --silent)"
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+      - name: Run dev e2e (headed under xvfb)
+        env:
+          INFISICAL_TOKEN: ${{ steps.auth.outputs.token }}
+        run: |
+          xvfb-run -a infisical run \
+            --projectId 7c227e8b-b355-46cb-8912-701104e2415b --env dev --path /supabase -- \
+            npx playwright test --config=playwright.dev.config.ts ${{ github.event.inputs.grep && format('--grep {0}', github.event.inputs.grep) || '' }}
+      - name: Upload report + traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-e2e-report
+          path: |
+            src/client/playwright-report/
+            src/client/test-results/
+          retention-days: 14

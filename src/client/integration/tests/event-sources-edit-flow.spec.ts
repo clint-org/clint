@@ -16,7 +16,7 @@ import { as, expectCode, expectOk } from '../harness/as';
 
 let p: Personas;
 let admin: SupabaseClient;
-let systemCategoryId: string;
+let systemEventTypeId: string;
 
 const eventIds: string[] = [];
 
@@ -24,13 +24,13 @@ beforeAll(async () => {
   p = await buildPersonas();
   admin = adminClient();
 
-  const { data: cat } = await admin
-    .from('event_categories')
+  const { data: et } = await admin
+    .from('event_types')
     .select('id')
     .is('space_id', null)
     .limit(1)
     .single();
-  systemCategoryId = cat!.id as string;
+  systemEventTypeId = et!.id as string;
 }, 120_000);
 
 afterAll(async () => {
@@ -44,9 +44,10 @@ async function createEvent(title: string): Promise<string> {
     .from('events')
     .insert({
       space_id: p.org.spaceId,
-      category_id: systemCategoryId,
+      event_type_id: systemEventTypeId,
       title,
       event_date: '2026-06-01',
+      anchor_type: 'space',
       created_by: p.ids.contributor,
     })
     .select('id')

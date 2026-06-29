@@ -68,11 +68,35 @@ export class DashboardService {
  * Exported as a pure function so the mapping can be unit-tested without mocking
  * Supabase (mirrors filterDashboardData).
  */
+/**
+ * Normalizes a raw marker/event array from get_dashboard_data into the client
+ * marker shape: renames the flat `marker_type` object to `marker_types` and
+ * synthesizes the `marker_categories` ref from the flattened category fields.
+ * The top-level `significance` / `visibility` fields survive via the `...m`
+ * spread. Used for trial markers and for company / asset anchored events, which
+ * share the same JSON shape.
+ */
+function normalizeMarkers(arr: any[]): any[] {
+  return (arr ?? []).map((m: any) => ({
+    ...m,
+    marker_types: m.marker_type
+      ? {
+          ...m.marker_type,
+          category_id: m.marker_type.category_id ?? null,
+          marker_categories: m.marker_type.category_name
+            ? { id: m.marker_type.category_id, name: m.marker_type.category_name }
+            : null,
+        }
+      : null,
+  }));
+}
+
 export function mapDashboardCompanies(data: any[]): any[] {
   return (data ?? []).map((c: any) => ({
     ...c,
     has_intelligence: c.has_intelligence ?? false,
     intelligence_headline: c.intelligence_headline ?? null,
+    events: normalizeMarkers(c.events),
     assets: (c.assets ?? []).map((p: any) => {
       const byTrialId = new Map<string, any>();
       for (const ind of p.indications ?? []) {
@@ -101,23 +125,13 @@ export function mapDashboardCompanies(data: any[]): any[] {
         ...p,
         has_intelligence: p.has_intelligence ?? false,
         intelligence_headline: p.intelligence_headline ?? null,
+        events: normalizeMarkers(p.events),
         indications: (p.indications ?? []).filter((ind: any) => !(ind.is_unspecified === true || ind.id == null)),
         trials: allTrials.map((t: any) => ({
           ...t,
           identifier: t.identifier ?? null,
           phase_type: t.phase_data?.phase_type ?? null,
-          markers: (t.markers ?? []).map((m: any) => ({
-            ...m,
-            marker_types: m.marker_type
-              ? {
-                  ...m.marker_type,
-                  category_id: m.marker_type.category_id ?? null,
-                  marker_categories: m.marker_type.category_name
-                    ? { id: m.marker_type.category_id, name: m.marker_type.category_name }
-                    : null,
-                }
-              : null,
-          })),
+          markers: normalizeMarkers(t.markers),
           ctgov_withdrawn_at: t.ctgov_withdrawn_at ?? null,
           has_intelligence: t.has_intelligence ?? false,
           intelligence_headline: t.intelligence_headline ?? null,

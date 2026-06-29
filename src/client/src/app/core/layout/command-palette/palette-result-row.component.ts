@@ -1,6 +1,17 @@
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { PaletteItem } from '../../models/palette.model';
 
+/**
+ * The badge label for a palette row's kind. 'catalyst' is a retired user-facing
+ * noun; legacy pinned rows can still carry the stored discriminator, so render them
+ * under the unified "Event" label. Pure + exported for unit coverage.
+ */
+export function paletteKindLabel(kind: PaletteItem['kind']): string {
+  if (kind === 'command') return 'Command';
+  if (kind === 'catalyst') return 'Event';
+  return kind.charAt(0).toUpperCase() + kind.slice(1);
+}
+
 @Component({
   selector: 'app-palette-result-row',
   standalone: true,
@@ -50,9 +61,7 @@ export class PaletteResultRowComponent {
     return it.secondary;
   }
   kindLabel() {
-    const it = this.item();
-    if (it.kind === 'command') return 'Command';
-    return it.kind.charAt(0).toUpperCase() + it.kind.slice(1);
+    return paletteKindLabel(this.item().kind);
   }
   kindColor() {
     const it = this.item();

@@ -1,0 +1,184 @@
+<form (ngSubmit)="onSubmit()" class="space-y-4">
+  @if (error()) {
+    <p-message severity="error" [closable]="false">{{ error() }}</p-message>
+  }
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <app-form-field
+      label="Category"
+      fieldId="et-category"
+      [required]="true"
+      [error]="categoryInvalid() ? 'Category is required.' : null"
+      spacing="sm:col-span-2"
+    >
+      <p-select
+        #categorySelect
+        inputId="et-category"
+        [options]="categories()"
+        [ngModel]="categoryId()"
+        (ngModelChange)="categoryId.set($event)"
+        name="categoryId"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Select or type to create a category"
+        styleClass="w-full"
+        class="mt-1"
+        [filter]="true"
+        filterBy="name"
+        [resetFilterOnHide]="true"
+        (onFilter)="onCategoryFilter($event.filter)"
+        (onBlur)="categoryBlurred.set(true)"
+        [attr.aria-required]="true"
+        [attr.aria-invalid]="categoryInvalid()"
+        [attr.aria-describedby]="categoryInvalid() ? 'et-category-error' : null"
+      >
+        <ng-template pTemplate="footer">
+          @if (showCreateCategory()) {
+            <div class="border-t border-slate-200 px-3 py-2">
+              <button
+                type="button"
+                class="flex w-full items-center gap-2 text-left text-sm font-medium text-brand-700 hover:underline focus-visible:underline disabled:opacity-50"
+                [disabled]="creatingCategory()"
+                [attr.aria-label]="'Create category ' + createCategoryLabel()"
+                (click)="createCategoryFromFilter()"
+              >
+                <span aria-hidden="true" class="text-base leading-none">+</span>
+                <span>Create "{{ createCategoryLabel() }}"</span>
+              </button>
+            </div>
+          }
+        </ng-template>
+      </p-select>
+    </app-form-field>
+
+    <app-form-field
+      label="Name"
+      fieldId="et-name"
+      [required]="true"
+      [error]="nameInvalid() ? 'Name is required.' : null"
+      spacing="sm:col-span-2"
+    >
+      <input
+        pInputText
+        id="et-name"
+        class="w-full mt-1"
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+        name="name"
+        required
+        placeholder="e.g. FDA Approval, Data Readout"
+        (blur)="nameBlurred.set(true)"
+        [attr.aria-required]="true"
+        [attr.aria-invalid]="nameInvalid()"
+        [attr.aria-describedby]="nameInvalid() ? 'et-name-error' : null"
+      />
+    </app-form-field>
+
+    <app-form-field label="Shape" fieldId="et-shape" spacing="">
+      <p-select
+        inputId="et-shape"
+        [options]="shapeOptions"
+        [ngModel]="shape()"
+        (ngModelChange)="shape.set($event)"
+        name="shape"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        class="mt-1"
+      />
+    </app-form-field>
+
+    <app-form-field label="Fill" fieldId="et-fill-style" spacing="">
+      <p-select
+        inputId="et-fill-style"
+        [options]="fillStyleOptions"
+        [ngModel]="fillStyle()"
+        (ngModelChange)="fillStyle.set($event)"
+        name="fillStyle"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        class="mt-1"
+      />
+    </app-form-field>
+
+    <app-form-field label="Color" fieldId="et-color" spacing="">
+      <p-colorpicker
+        [ngModel]="color()"
+        (ngModelChange)="color.set($event)"
+        name="color"
+        inputId="et-color"
+      />
+    </app-form-field>
+
+    <app-form-field label="Inner mark" fieldId="et-inner-mark" spacing="">
+      <p-select
+        inputId="et-inner-mark"
+        [options]="innerMarkOptions"
+        [ngModel]="innerMark()"
+        (ngModelChange)="innerMark.set($event)"
+        name="innerMark"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        class="mt-1"
+      />
+    </app-form-field>
+
+    <app-form-field label="Default significance" fieldId="et-significance" spacing="">
+      <p-select
+        inputId="et-significance"
+        [options]="significanceOptions"
+        [ngModel]="defaultSignificance()"
+        (ngModelChange)="defaultSignificance.set($event)"
+        name="defaultSignificance"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        class="mt-1"
+      />
+    </app-form-field>
+
+    <app-form-field label="Display order" fieldId="et-display-order" spacing="">
+      <p-inputnumber
+        inputId="et-display-order"
+        [ngModel]="displayOrder()"
+        (ngModelChange)="displayOrder.set($event)"
+        name="displayOrder"
+        [min]="0"
+        styleClass="w-full"
+        class="mt-1"
+      />
+    </app-form-field>
+  </div>
+
+  <!-- Live glyph preview: renders through the shared MarkerIconComponent so the
+       shape, fill, color, and inner mark match the timeline exactly. -->
+  <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
+    <p class="mb-2 text-sm font-medium text-slate-700">Preview</p>
+    <div class="flex items-center gap-3">
+      <span
+        class="inline-flex h-9 w-9 items-center justify-center rounded bg-white ring-1 ring-slate-200"
+        role="img"
+        [attr.aria-label]="'Preview: ' + fillStyle() + ' ' + shape() + ' with ' + innerMark() + ' inner mark'"
+      >
+        <app-marker-icon
+          [shape]="shape()"
+          [color]="color()"
+          [fillStyle]="fillStyle()"
+          [innerMark]="innerMark()"
+          [size]="24"
+        />
+      </span>
+      <span class="text-sm text-slate-600"
+        >{{ name() || 'Untitled' }}, {{ shape() }}, {{ fillStyle() }}</span
+      >
+    </div>
+  </div>
+
+  <app-form-actions
+    [submitLabel]="eventType() ? 'Update event type' : 'Create event type'"
+    [loading]="saving()"
+    (cancelled)="cancelled.emit()"
+  />
+</form>

@@ -165,6 +165,45 @@ describe('LandscapeStateService marker references', () => {
   });
 });
 
+/**
+ * Detail-level depth selector for the timeline grid. The grid redesign replaced
+ * the old independent Company/Asset/Trials row toggles + Compare preset with a
+ * single `detailLevel` ('companies' | 'assets' | 'trials'); the grid computes
+ * row visibility from it. Mirroring the rest of this spec, these are asserted by
+ * source contract: the service builds a persistence effect() in a field
+ * initializer, which needs the zoneless ChangeDetectionScheduler not available
+ * in this plain-node runner, so the service cannot be instantiated here.
+ */
+describe('LandscapeStateService detail-level depth', () => {
+  it('defaults detailLevel to trials', () => {
+    expect(stateSrc).toContain("readonly detailLevel = signal<DetailLevel>('trials')");
+  });
+
+  it('declares detailLevel on PersistedLandscapeState', () => {
+    const ifaceStart = stateSrc.indexOf('interface PersistedLandscapeState');
+    const ifaceBody = stateSrc.slice(ifaceStart, stateSrc.indexOf('}', ifaceStart));
+    expect(ifaceBody).toContain('detailLevel: DetailLevel;');
+  });
+
+  it('serializes detailLevel in the persistence effect', () => {
+    expect(stateSrc).toContain('detailLevel: this.detailLevel()');
+  });
+
+  it('restores detailLevel from persisted state, guarding on the allowed values', () => {
+    const restoreStart = stateSrc.indexOf('private restorePersistedState');
+    const restoreBody = stateSrc.slice(restoreStart, stateSrc.indexOf('// ─── Pure', restoreStart));
+    expect(restoreBody).toContain("saved.detailLevel === 'companies'");
+    expect(restoreBody).toContain("saved.detailLevel === 'assets'");
+    expect(restoreBody).toContain("saved.detailLevel === 'trials'");
+    expect(restoreBody).toContain('this.detailLevel.set(saved.detailLevel)');
+  });
+
+  it('no longer exposes the removed independent toggles or Compare preset', () => {
+    expect(stateSrc).not.toContain('showCompanyEvents');
+    expect(stateSrc).not.toContain('applyComparePreset');
+  });
+});
+
 describe('LandscapeStateService.init', () => {
   it('exposes an init method that accepts an optional opts arg', () => {
     expect(typeof LandscapeStateService.prototype.init).toBe('function');

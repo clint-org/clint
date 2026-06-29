@@ -95,7 +95,7 @@ environment.
      set session_replication_role = default;
      SQL
      ```
-7. Sanity-check: `select count(*) from public.marker_types;` (> 0) and
+7. Sanity-check: `select count(*) from public.event_types;` (> 0) and
    `select count(*) from auth.users;` (matches the manifest's recorded count).
 8. Repoint the app's Supabase connection / DNS to the restored instance.
 
@@ -163,7 +163,7 @@ disruptive than a full cutover.
 
 #### Worked example: recover a single hard-deleted space (no PITR)
 Deleting a space cascades `ON DELETE CASCADE` into ~29 `space_id`-scoped tables
-(companies, assets, trials, markers, marker_changes, materials, members, invites,
+(companies, assets, trials, events, event_sources, materials, members, invites,
 ...), so a hard delete wipes the whole subtree in one transaction. We do not have
 PITR, so the side copy comes from the freshest off-site bundle, not a
 second-precise clone. Steps:
@@ -194,8 +194,8 @@ second-precise clone. Steps:
                      to 'space_spaces.csv' csv header"
    ```
    A few tables hang off a parent rather than the space directly (e.g.
-   `marker_changes` via its marker); extract those filtered on the parent ids you
-   just pulled.
+   `event_changes` via its event, `event_sources` via its event); extract those
+   filtered on the parent ids you just pulled.
 5. **Re-insert into live prod with checks deferred and triggers off** so circular
    FKs load, original UUIDs are preserved, and audit columns keep their historical
    values (do NOT route this through the `create_*` RPCs - load rows raw):

@@ -59,13 +59,13 @@ import { LoaderComponent } from '../../shared/components/loader/loader.component
               mode="drawer"
               [detail]="state.selectedDetail()"
               [spaceId]="state.spaceIdSig()"
-              [surfaceKey]="viewMode() === 'catalysts' ? 'key_catalysts_panel' : 'timeline_detail'"
+              [surfaceKey]="viewMode() === 'future-events' ? 'key_catalysts_panel' : 'timeline_detail'"
               [showEditAction]="true"
               [open]="!!state.selectedMarkerId()"
               [references]="state.selectedMarkerReferences()"
+              [entityIntelligence]="state.selectedEntityIntelligence()"
               (panelClose)="state.clearSelection()"
               (markerClick)="state.selectMarker($event)"
-              (eventClick)="onEventClick($event)"
               (trialClick)="onTrialClick($event)"
               (openIntelligence)="onOpenIntelligence($event)"
               (editMarkerClick)="onEditMarker($event)"
@@ -169,10 +169,6 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
     return ['/t', this.tenantId(), 's', this.spaceId()];
   }
 
-  onEventClick(eventId: string): void {
-    this.router.navigate([...this.spaceBase(), 'events'], { queryParams: { eventId } });
-  }
-
   onTrialClick(trialId: string): void {
     this.router.navigate([...this.spaceBase(), 'profiles', 'trials', trialId]);
   }
@@ -245,8 +241,8 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
       if (groupParam && ['company', 'indication', 'moa', 'roa', 'asset'].includes(groupParam)) {
         this.state.spokeGrouping.set(groupParam as SpokeGrouping);
       }
-    } else if (allSegments.includes('catalysts')) {
-      this.viewMode.set('catalysts');
+    } else if (allSegments.includes('future-events')) {
+      this.viewMode.set('future-events');
       this.entityId.set(null);
     } else if (allSegments.includes('timeline')) {
       this.viewMode.set('timeline');

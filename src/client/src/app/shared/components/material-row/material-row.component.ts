@@ -46,29 +46,19 @@ interface MaterialLinkChip {
   standalone: true,
   imports: [RouterLink, TooltipModule],
   template: `
-    <div
-      class="group flex w-full items-start gap-3 rounded-sm border border-slate-200 bg-white p-3 transition-colors hover:border-slate-300 hover:bg-slate-50"
-    >
+    <div [class]="rootClass()">
       <!-- File-type tile: slate document with a folded corner; the extension
            label is tinted by kind (PPTX amber, PDF red, DOCX blue, other slate). -->
-      <span
-        class="relative flex h-12 w-10 shrink-0 items-end justify-center rounded-sm border border-slate-300 bg-white pb-1.5"
-        aria-hidden="true"
-      >
+      <span [class]="tileClass()" aria-hidden="true">
         <span
           class="absolute right-0 top-0 h-2.5 w-2.5 border-b border-l border-slate-300 bg-slate-100"
         ></span>
-        <span [class]="'font-mono text-[8px] font-bold tracking-wider ' + iconColor()">{{
-          extLabel()
-        }}</span>
+        <span [class]="tileLabelClass()">{{ extLabel() }}</span>
       </span>
 
       <!-- Content: title (hero) + meta line + linked-entity chips -->
-      <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-        <h3
-          class="line-clamp-2 text-sm font-semibold leading-snug text-slate-900"
-          [title]="material().title"
-        >
+      <div [class]="contentClass()">
+        <h3 [class]="titleClass()" [title]="material().title">
           {{ material().title }}
         </h3>
 
@@ -155,6 +145,18 @@ export class MaterialRowComponent {
   readonly material = input.required<Material>();
   readonly showLinks = input<boolean>(true);
   /**
+   * `compact` shrinks the tile, padding, and title for dense lists (e.g. the
+   * engagement-landing recent-materials feed). `default` is the full-size card
+   * used on the materials browse page and entity detail sections.
+   */
+  readonly density = input<'default' | 'compact'>('default');
+  /**
+   * Drop the `space` linked-entity chip. Set on space-scoped surfaces where the
+   * space is implied by context, so the chip would just point back to the
+   * current page.
+   */
+  readonly hideSpaceChip = input<boolean>(false);
+  /**
    * Tenant/space context for building linked-entity chip routes. Optional:
    * when not supplied the row derives them from the route ancestry. When
    * neither yields a value, chips render as non-link text.
@@ -169,6 +171,42 @@ export class MaterialRowComponent {
   // artifact, not personal to the uploader. Mirrors delete_material's
   // has_space_access(owner/editor) gate (server remains authoritative).
   protected readonly canDelete = computed(() => this.spaceRole.canEdit());
+
+  private readonly compact = computed(() => this.density() === 'compact');
+
+  /** Card shell: tighter gap + padding when compact. */
+  protected readonly rootClass = computed(
+    () =>
+      'group flex w-full items-start rounded-sm border border-slate-200 bg-white transition-colors hover:border-slate-300 hover:bg-slate-50 ' +
+      (this.compact() ? 'gap-2.5 p-2.5' : 'gap-3 p-3')
+  );
+
+  /** File-type tile: smaller footprint when compact. */
+  protected readonly tileClass = computed(
+    () =>
+      'relative flex shrink-0 items-end justify-center rounded-sm border border-slate-300 bg-white ' +
+      (this.compact() ? 'h-9 w-7 pb-1' : 'h-12 w-10 pb-1.5')
+  );
+
+  /** Extension label tinted by file kind; smaller when compact. */
+  protected readonly tileLabelClass = computed(
+    () =>
+      'font-mono font-bold tracking-wider ' +
+      this.iconColor() +
+      (this.compact() ? ' text-[7px]' : ' text-[8px]')
+  );
+
+  /** Content column gap. */
+  protected readonly contentClass = computed(
+    () => 'flex min-w-0 flex-1 flex-col ' + (this.compact() ? 'gap-1' : 'gap-1.5')
+  );
+
+  /** Title hero: one size down when compact. */
+  protected readonly titleClass = computed(
+    () =>
+      'line-clamp-2 font-semibold leading-snug text-slate-900 ' +
+      (this.compact() ? 'text-[13px]' : 'text-sm')
+  );
 
   protected readonly kind = computed<MaterialFileKind>(() =>
     classifyMaterialMime(this.material().mime_type, this.material().file_name)
@@ -234,8 +272,18 @@ export class MaterialRowComponent {
   protected readonly chips = computed<MaterialLinkChip[]>(() => {
     const tenant = this.resolvedTenantId();
     const space = this.resolvedSpaceId();
-    return this.material().links.map((link, i) => this.toChip(link, i, tenant, space));
+    return this.visibleLinks().map((link, i) => this.toChip(link, i, tenant, space));
   });
+
+  /**
+   * Links rendered as chips, after dropping the `space` link on space-scoped
+   * surfaces (`hideSpaceChip`) where it would just point back to the current page.
+   */
+  private readonly visibleLinks = computed<MaterialLink[]>(() =>
+    this.material().links.filter(
+      (link) => !(this.hideSpaceChip() && link.entity_type === 'space')
+    )
+  );
 
   /**
    * Legacy single-vs-multi summary, used only when chips carry no names at all
@@ -243,7 +291,7 @@ export class MaterialRowComponent {
    * without inventing labels.
    */
   protected readonly fallbackSummary = computed(() => {
-    const links = this.material().links;
+    const links = this.visibleLinks();
     if (this.chips().some((c) => !!c.name)) return '';
     if (links.length > 1) return `Linked to ${links.length} entities`;
     if (links.length === 1) return `${this.entityLabel(links[0].entity_type)} link`;

@@ -20,7 +20,7 @@ const src = readFileSync(join(__dirname, 'pi-detail-section.component.ts'), 'utf
 describe('PiDetailSection owned-PI block', () => {
   it('renders the brand-tinted PI block gated on a headline', () => {
     expect(src).toContain('@if (hasOwned())');
-    expect(src).toContain('Primary intelligence');
+    expect(src).toContain('Intelligence');
     expect(src).toContain('{{ headline() }}');
     expect(src).toContain('{{ summary() }}');
     expect(src).toContain('<app-pi-mark');
@@ -56,6 +56,6 @@ describe('PiDetailSection reference list', () => {
     // Sanity-check the map the component delegates to.
     expect(ENTITY_TYPE_LABEL.trial).toBe('Trial');
     expect(ENTITY_TYPE_LABEL.product).toBe('Asset');
-    expect(ENTITY_TYPE_LABEL.marker).toBe('Marker');
+    expect(ENTITY_TYPE_LABEL.event).toBe('Event');
   });
 });

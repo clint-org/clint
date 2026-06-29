@@ -256,7 +256,7 @@ export class TrialEditDialogComponent {
             date_precision: plan.create!.date_precision,
             metadata: plan.create!.metadata,
           },
-          [trial.id],
+          trial.id,
         );
         break;
       case 'update':

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { CtgovMarkerMetadata } from '../../core/models/catalyst.model';
+import { CtgovMarkerMetadata } from '../../core/models/event-detail.model';
 
 /**
  * Small slate badge that signals "this marker (or row) was auto-derived

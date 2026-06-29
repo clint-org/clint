@@ -31,7 +31,7 @@ Company
 - Blue flags/bars -- Approval/Launch events
 - Orange/red arrows/X -- Change/status events
 
-Each marker carries a `Mon 'YY` date caption. Captions decollide per trial row: `DashboardGridComponent` keeps a caption only when it sits at least 38 px right of the previously kept one (greedy left-to-right, `marker-label-layout.ts`), so clustered catalysts no longer overprint at year zoom. Suppressed dates remain available in the marker hover tooltip.
+Each marker carries a `Mon 'YY` date caption. Captions decollide per trial row: `DashboardGridComponent` keeps a caption only when it sits at least 38 px right of the previously kept one (greedy left-to-right, `marker-label-layout.ts`), so clustered events no longer overprint at year zoom. Suppressed dates remain available in the marker hover tooltip.
 
 **Entity-page surfaces.** The timeline now mounts on trial, asset, and company detail pages with a per-page `LandscapeStateService` instance whose filters are locked to that entity and persistence is disabled. Each page also embeds `EntityEventsPanelComponent`, which lists external events scoped to the same entity via the hierarchical `get_events_page_data` RPC (trial -> product -> company rollup). Company detail passes explicit `[startYear]` / `[endYear]` for a forward-2-year window; trial and product pages use the default window. See `docs/superpowers/specs/2026-05-10-catalysts-events-on-entity-pages-design.md` for full design context.
 
@@ -71,7 +71,7 @@ All filter values are passed as arrays to the `get_dashboard_data()` RPC functio
 A horizontal strip (`TimelineInsightStripComponent`) between the filter bar and the grid that surfaces three sections:
 
 - **READ** -- auto-generated competitive intelligence one-liner computed by `buildCompetitiveRead()` in `competitive-read.ts`. Identifies the leader (most late-stage trials), deepest P3 pipeline, and most active company (by recent changes count). Handles edge cases: single company shows a sole-entrant summary; suppresses duplicate names when one company wins both deepest and most-active.
-- **STATS** -- company, asset, trial, and catalyst counts. Catalyst count covers markers with `event_date` in the next 90 days, computed by `computeTimelineStats()`.
+- **STATS** -- company, asset, trial, and event counts. Event count covers events with `event_date` in the next 90 days, computed by `computeTimelineStats()`.
 - **COLUMNS** -- checkbox toggles for MOA, ROA, and Indication column visibility. These signals live on `LandscapeStateService` (`showMoaColumn`, `showRoaColumn`, `showIndicationColumn`) and are persisted to sessionStorage alongside other landscape state. `DashboardGridComponent` reads column visibility from the service via optional injection (falls back to all-visible when used outside the landscape shell, e.g. on entity detail pages).
 
 ## Legend
@@ -88,14 +88,15 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   rpcs:
     - get_dashboard_data
     - _dashboard_trial_obj
+    - _dashboard_anchor_events
   tables:
     - companies
     - assets
     - indications
     - asset_indications
     - trials
-    - markers
-    - marker_types
+    - events
+    - event_types
   related:
     - timeline-zoom
     - timeline-filtering
@@ -123,9 +124,9 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
   rpcs:
     - get_dashboard_data
   tables:
-    - markers
-    - marker_types
-    - marker_categories
+    - events
+    - event_types
+    - event_type_categories
   related:
     - timeline-grid
     - timeline-legend
@@ -148,12 +149,12 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - events
   related:
     - timeline-grid
-    - events-feed
+    - event-feed
   user_facing: true
   role: viewer
   status: active
 - id: timeline-insight-strip
-  summary: Horizontal strip above the grid with competitive read (leader, deepest pipeline, most active), summary stats (companies, assets, trials, catalysts in 90d), and column visibility toggles (MOA, ROA, Indication).
+  summary: Horizontal strip above the grid with competitive read (leader, deepest pipeline, most active), summary stats (companies, assets, trials, events in 90d), and column visibility toggles (MOA, ROA, Indication).
   routes:
     - /t/:tenantId/s/:spaceId/timeline
   rpcs:
@@ -162,7 +163,7 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - companies
     - assets
     - trials
-    - markers
+    - events
   related:
     - timeline-grid
     - competitive-read-bar
@@ -201,8 +202,8 @@ A grouped reference panel (`LegendComponent`) showing all marker types with thei
     - /t/:tenantId/s/:spaceId/timeline
   rpcs: []
   tables:
-    - marker_types
-    - marker_categories
+    - event_types
+    - event_type_categories
   related:
     - timeline-event-markers
     - in-app-help-markers

@@ -50,17 +50,12 @@ export class PaletteCommandRegistry {
       },
       {
         id: 'go-catalysts',
-        label: 'Go to Future Catalysts',
+        label: 'Go to Future Events',
         hint: 'Navigation',
         run: () =>
-          void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/catalysts`),
-      },
-      {
-        id: 'go-events',
-        label: 'Go to Events',
-        hint: 'Navigation',
-        run: () =>
-          void this.router.navigateByUrl(`/t/${currentTenantId}/s/${currentSpaceId}/events`),
+          void this.router.navigateByUrl(
+            `/t/${currentTenantId}/s/${currentSpaceId}/future-events`
+          ),
       },
       ...this.topbarState.exportActions().map((action) => ({
         id: `export-${action.format}`,

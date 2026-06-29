@@ -12,7 +12,6 @@ import { spaceOwnerGuard } from './core/guards/space-owner.guard';
 import { marketingLandingGuard } from './core/guards/marketing-landing.guard';
 import { sourceImportGuard } from './core/guards/source-import.guard';
 import { sourceImportDeactivateGuard } from './core/guards/source-import-deactivate.guard';
-import { activityRedirectGuard } from './core/guards/activity-redirect.guard';
 import { tenantRootRedirectGuard } from './core/guards/tenant-root-redirect.guard';
 import { importGuard } from './core/guards/import.guard';
 import { editGuard } from './core/guards/edit.guard';
@@ -335,12 +334,13 @@ export const routes: Routes = [
               { path: 'positioning/by-company', redirectTo: 'heatmap/by-company' },
               { path: 'positioning/by-roa', redirectTo: 'heatmap/by-roa' },
               {
-                path: 'catalysts',
+                path: 'future-events',
                 loadComponent: () =>
-                  import('./features/catalysts/catalysts-page.component').then(
-                    (m) => m.CatalystsPageComponent
+                  import('./features/future-events/future-events-page.component').then(
+                    (m) => m.FutureEventsPageComponent
                   ),
               },
+              { path: 'catalysts', redirectTo: 'future-events', pathMatch: 'full' },
             ],
           },
           {
@@ -359,10 +359,14 @@ export const routes: Routes = [
           },
           {
             path: 'activity',
-            canActivate: [activityRedirectGuard],
-            // Guard always redirects; component is never rendered.
-            children: [],
+            loadComponent: () =>
+              import('./features/activity/activity-page.component').then(
+                (m) => m.ActivityPageComponent
+              ),
           },
+          // Stage 3 events->activity split: the legacy Events feed was de-routed;
+          // any lingering /events link lands on the read-only Activity log.
+          { path: 'events', redirectTo: 'activity', pathMatch: 'full' },
           // Redirects: old /landscape/* paths -> /bullseye
           { path: 'landscape', pathMatch: 'full', redirectTo: 'bullseye' },
           { path: 'landscape/by-therapy-area', redirectTo: 'bullseye' },
@@ -425,22 +429,9 @@ export const routes: Routes = [
               ),
           },
           // Settings routes (moved from manage)
-          {
-            path: 'settings/marker-types',
-            canActivate: [editGuard],
-            loadComponent: () =>
-              import('./features/manage/marker-types/marker-type-list.component').then(
-                (m) => m.MarkerTypeListComponent
-              ),
-          },
-          {
-            path: 'settings/marker-categories',
-            canActivate: [editGuard],
-            loadComponent: () =>
-              import('./features/manage/marker-categories/marker-category-list.component').then(
-                (m) => m.MarkerCategoryListComponent
-              ),
-          },
+          // marker-types and marker-categories routes removed: de-routed in
+          // Stage-3 cutover (feat/event-model). The components remain as dead
+          // code and will be rebuilt in Stage 3 against the unified taxonomy.
           {
             path: 'settings/taxonomies',
             canActivate: [editGuard],
@@ -481,11 +472,8 @@ export const routes: Routes = [
                 (m) => m.SpaceAuditLogComponent
               ),
           },
-          {
-            path: 'events',
-            loadComponent: () =>
-              import('./features/events/events-page.component').then((m) => m.EventsPageComponent),
-          },
+          // Legacy 'events' feed de-routed in the Stage-3 cutover; the read-only
+          // Activity log above (with the events->activity redirect) replaces it.
           {
             path: 'seed-demo',
             loadComponent: () =>

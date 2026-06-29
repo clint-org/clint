@@ -17,6 +17,7 @@ import { DiamondIconComponent } from '../../../shared/components/svg-icons/diamo
 import { FlagIconComponent } from '../../../shared/components/svg-icons/flag-icon.component';
 import { TriangleIconComponent } from '../../../shared/components/svg-icons/triangle-icon.component';
 import { SquareIconComponent } from '../../../shared/components/svg-icons/square-icon.component';
+import { HexagonIconComponent } from '../../../shared/components/svg-icons/hexagon-icon.component';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 
 @Component({
@@ -30,6 +31,7 @@ import { LoaderComponent } from '../../../shared/components/loader/loader.compon
     FlagIconComponent,
     TriangleIconComponent,
     SquareIconComponent,
+    HexagonIconComponent,
     LoaderComponent,
   ],
   templateUrl: './legend.component.html',

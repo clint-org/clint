@@ -5,7 +5,7 @@ spec: docs/superpowers/specs/2026-04-12-unified-landscape-design.md
 
 # Landscape Views
 
-The landscape area provides cross-cutting views of the same space dataset -- Timeline, Bullseye, Heatmap, and Future Catalysts -- each rendered as a sibling under the shared landscape shell. The filter bar and detail panels are shared across views as described under [Timeline Dashboard](timeline-dashboard.md) and [Future Catalysts](catalysts.md).
+The landscape area provides cross-cutting views of the same space dataset -- Timeline, Bullseye, Heatmap, and Future Events -- each rendered as a sibling under the shared landscape shell. The filter bar and detail panels are shared across views as described under [Timeline Dashboard](timeline-dashboard.md) and [Future Events](events.md).
 
 ## Bullseye
 
@@ -27,14 +27,14 @@ The Heatmap view renders a competitive heatmap: rows are the grouping dimension 
 
 ```yaml
 - id: landscape-shell
-  summary: Shared landscape shell hosting Timeline, Bullseye, Heatmap, and Future Catalysts tabs with cross-tab filter and detail-panel continuity.
+  summary: Shared landscape shell hosting Timeline, Bullseye, Heatmap, and Future Events tabs with cross-tab filter and detail-panel continuity.
   routes:
     - /t/:tenantId
   rpcs: []
   tables: []
   related:
     - timeline-grid
-    - catalysts-list
+    - event-feed
   user_facing: true
   role: viewer
   status: active
@@ -53,7 +53,7 @@ The Heatmap view renders a competitive heatmap: rows are the grouping dimension 
     - companies
     - assets
     - trials
-    - markers
+    - events
     - indications
     - asset_indications
     - mechanisms_of_action
@@ -68,7 +68,7 @@ The Heatmap view renders a competitive heatmap: rows are the grouping dimension 
   role: viewer
   status: active
 - id: competitive-read-bar
-  summary: Auto-generated one-line competitive read, labeled "At a glance" in the UI, shared across radial, heatmap, and timeline views. Single source of truth at `competitive-read/index.ts` (`buildLandscapeRead`). Adaptive headline (5 competitive shapes for Company group-by, 4 distributional shapes for Indication/MoA/RoA, count summary for Asset), view-flavored second clause (radial = competitive standing, heatmap = concentration, timeline = upcoming catalysts), optional momentum clause for non-leader recent activity. Replaces three copy-pasted generators that shared a bug class where the runner-up "deepest pipeline" claim fired even when the leader had more P3 assets.
+  summary: Auto-generated one-line competitive read, labeled "At a glance" in the UI, shared across radial, heatmap, and timeline views. Single source of truth at `competitive-read/index.ts` (`buildLandscapeRead`). Adaptive headline (5 competitive shapes for Company group-by, 4 distributional shapes for Indication/MoA/RoA, count summary for Asset), view-flavored second clause (radial = competitive standing, heatmap = concentration, timeline = upcoming events), optional momentum clause for non-leader recent activity. Replaces three copy-pasted generators that shared a bug class where the runner-up "deepest pipeline" claim fired even when the leader had more P3 assets.
   routes: []
   rpcs: []
   tables: []

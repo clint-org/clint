@@ -20,6 +20,7 @@ import { CompanyService } from '../../../core/services/company.service';
 import { TrialService } from '../../../core/services/trial.service';
 import { AssetFormComponent } from './asset-form.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
+import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
 import { RowActionsComponent } from '../../../shared/components/row-actions.component';
 import { GridToolbarComponent } from '../../../shared/components/grid-toolbar.component';
 import { TableSkeletonBodyComponent } from '../../../shared/components/skeleton/table-skeleton-body.component';
@@ -56,6 +57,7 @@ interface AssetRow {
     MessageModule,
     AssetFormComponent,
     ManagePageShellComponent,
+    BrandLogoComponent,
     RowActionsComponent,
     GridToolbarComponent,
     TableSkeletonBodyComponent,

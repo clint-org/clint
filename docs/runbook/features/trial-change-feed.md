@@ -39,7 +39,7 @@ flowchart LR
 - **Unified Events page** at `/t/:tenantId/s/:spaceId/events?source=detected`: detected change events appear as a third source type alongside analyst events and markers. The standalone `/activity` route has been retired and redirects to `/events?source=detected` via `activityRedirectGuard`.
 - **What-changed widget** on the engagement landing: top recent events at a glance, with entity context labels per row and an asset count summary. The widget links to `/events?source=detected` (previously linked to `/activity`).
 - **Trial row badges** on the timeline and tables: small change-count dots per trial. When the most-recent change is a detected/analyst event (not an intel note), the dot is a button that deep-links to that exact event in the Events page via `?detectedId=<changeEventId>`; the dashboard and bullseye RPCs surface `most_recent_change_event_id` for this, and `get_events_page_data` resolves a single detected row via `p_change_event_id`. Intel-only dots are non-interactive.
-- **Marker history panel** on the marker detail panel: analyst-side audit trail per marker.
+- **Event history panel** on the event detail panel: analyst-side audit trail per event.
 - **Intel feed mixing** in the existing intelligence feed: change events interleave with primary intelligence rows.
 - **Trial-detail Activity section**: per-trial change log on the trial detail page.
 
@@ -57,18 +57,16 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   routes: []
   rpcs:
     - ingest_ctgov_snapshot
-    - _emit_events_from_marker_change
-    - _log_marker_change
+    - _log_event_change
     - _classify_change
     - _compute_field_diffs
     - recompute_trial_change_events
-    - create_marker
   tables:
     - trial_change_events
     - trial_field_changes
     - trial_ctgov_snapshots
-    - marker_changes
-    - markers
+    - event_changes
+    - events
     - trials
   related:
     - ctgov-snapshot-ingest
@@ -76,9 +74,8 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   role: viewer
   status: active
 - id: trial-change-feed-unified-events
-  summary: Detected change events merged into the unified Events page as source_type='detected', with amber badge, rich summary rendering, signal bar, and annotation indicator. The detail panel deep-links via ?detectedId=<changeEventId> (recent-change dot click-through) and renders company/asset as links to their manage pages. The standalone /activity route redirects to /events?source=detected.
-  routes:
-    - /t/:tenantId/s/:spaceId/events
+  summary: Detected change events surfaced via get_events_page_data as source_type='detected', with amber badge, rich summary rendering, signal bar, and annotation indicator. The events-feed page UI is de-routed pending the Stage 3 Events->Activity rework; the read RPC remains live.
+  routes: []
   rpcs:
     - get_events_page_data
     - upsert_change_event_annotation
@@ -91,7 +88,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
     - trials
   related:
     - trial-change-feed-pipeline
-    - events-feed
+    - event-feed
   user_facing: true
   role: viewer
   status: active
@@ -123,17 +120,15 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   role: viewer
   status: active
 - id: trial-change-feed-marker-history
-  summary: Analyst-side audit trail of marker edits surfaced on the marker detail panel.
+  summary: Analyst-side audit trail of event edits surfaced on the event detail panel.
   routes:
-    - /t/:tenantId/s/:spaceId/catalysts
-  rpcs:
-    - get_marker_history
-    - backfill_marker_history
+    - /t/:tenantId/s/:spaceId/future-events
+  rpcs: []
   tables:
-    - marker_changes
-    - markers
+    - event_changes
+    - events
   related:
-    - catalysts-detail-panel
+    - event-detail
   user_facing: true
   role: viewer
   status: active
@@ -172,7 +167,7 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   tables:
     - trial_change_events
     - companies
-    - marker_types
+    - event_types
   related:
     - trial-change-feed-unified-events
     - trial-change-feed-what-changed-widget

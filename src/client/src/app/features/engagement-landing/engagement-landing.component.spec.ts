@@ -112,17 +112,17 @@ function buildComputeds(
         windowLabel: 'next 90d',
         value: v(s?.p3_readouts_90d),
         display: s?.p3_readouts_90d == null ? '' : String(s.p3_readouts_90d),
-        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        route: hasRoute ? ['/t', tid, 's', sid, 'future-events'] : null,
         queryParams: hasRoute ? { phase: 'P3', within: '90d' } : null,
         warn: (s?.p3_readouts_90d ?? 0) > 0,
       },
       {
         key: 'catalysts',
-        label: pluralize(s?.catalysts_90d, 'Catalyst'),
+        label: pluralize(s?.catalysts_90d, 'Event'),
         windowLabel: 'next 90d',
         value: v(s?.catalysts_90d),
         display: s?.catalysts_90d == null ? '' : String(s.catalysts_90d),
-        route: hasRoute ? ['/t', tid, 's', sid, 'catalysts'] : null,
+        route: hasRoute ? ['/t', tid, 's', sid, 'future-events'] : null,
         queryParams: hasRoute ? { within: '90d' } : null,
         warn: (s?.catalysts_90d ?? 0) > 0,
       },
@@ -242,7 +242,7 @@ describe('EngagementLandingComponent header computeds', () => {
     );
     const byKey = Object.fromEntries(motionStats().map((cell) => [cell.key, cell]));
     expect(byKey['p3Readouts'].label).toBe('P3 readout');
-    expect(byKey['catalysts'].label).toBe('Catalyst');
+    expect(byKey['catalysts'].label).toBe('Event');
     expect(byKey['newIntel'].label).toBe('New intelligence entry');
     expect(byKey['trialMoves'].label).toBe('Trial move');
   });
@@ -254,7 +254,7 @@ describe('EngagementLandingComponent header computeds', () => {
     );
     const byKey = Object.fromEntries(motionStats().map((cell) => [cell.key, cell]));
     expect(byKey['p3Readouts'].label).toBe('P3 readouts');
-    expect(byKey['catalysts'].label).toBe('Catalysts');
+    expect(byKey['catalysts'].label).toBe('Events');
     expect(byKey['newIntel'].label).toBe('New intelligence entries');
     expect(byKey['trialMoves'].label).toBe('Trial moves');
   });

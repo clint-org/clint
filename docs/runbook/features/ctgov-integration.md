@@ -106,8 +106,7 @@ Helper methods in the sync service handle phase mapping, masking conversion, spo
     - _create_trial_date_markers
     - _guard_ctgov_locked_markers
   tables:
-    - markers
-    - marker_assignments
+    - events
   related:
     - ctgov-snapshot-history
     - ctgov-field-mapping

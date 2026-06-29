@@ -9,25 +9,31 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import {
   BullseyeData,
   BullseyeDimension,
   BullseyeAsset,
+  BullseyeMarker,
   PHASE_COLOR,
   RingPhase,
   visibleRingOrder,
 } from '../../core/models/landscape.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { CTGOV_BULLSEYE_DEFAULT_PATHS } from '../../core/models/ctgov-field.model';
 import { LandscapeStateService } from './landscape-state.service';
+import { deriveBullseyeEventBuckets } from './bullseye-events';
 import {
   AssetIntelligenceNote,
   IntelligenceEntityType,
   PiReference,
 } from '../../core/models/primary-intelligence.model';
 import { DEVELOPMENT_STATUS_LABELS, phaseShortLabel } from '../../core/models/phase-colors';
-import { resolveScopeFromRoute } from '../../core/utils/route-scope';
 import { recentChangeLabel } from '../../shared/components/change-badge/change-badge.logic';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
@@ -117,22 +123,16 @@ export class BullseyeDetailPanelComponent {
 
   protected readonly recentChangeLabel = recentChangeLabel;
 
-  private readonly router = inject(Router);
-
-  protected openChangeEvent(changeEventId: string): void {
-    const { tenantId, spaceId } = resolveScopeFromRoute(this.route);
-    if (!tenantId || !spaceId) return;
-    // Scope the events feed to this asset and filter to detected changes, so
-    // the list is the asset's recent changes (its trials roll up) rather than
-    // the global feed -- while still opening the most-recent one in the panel.
-    const assetId = this.selectedAsset()?.id ?? null;
-    void this.router.navigate(['/t', tenantId, 's', spaceId, 'events'], {
-      queryParams: {
-        detectedId: changeEventId,
-        ...(assetId ? { entityLevel: 'product', entityId: assetId, source: 'detected' } : {}),
-      },
-    });
-  }
+  /**
+   * Split the focused asset's events into Recent (past) and Upcoming (future)
+   * buckets so the panel renders two symmetric lists from the single
+   * `recent_markers` source the bullseye RPC returns.
+   */
+  protected readonly eventBuckets = computed(() =>
+    deriveBullseyeEventBuckets(this.selectedAsset()?.recent_markers ?? [])
+  );
+  protected readonly recentEvents = computed(() => this.eventBuckets().recent);
+  protected readonly upcomingEvents = computed(() => this.eventBuckets().upcoming);
 
   private readonly showAllTrials = signal(false);
 
@@ -354,6 +354,15 @@ export class BullseyeDetailPanelComponent {
 
   protected onMarkerRowClick(markerId: string): void {
     this.openMarker.emit(markerId);
+  }
+
+  /** Projection tier badge + forecast dash, matching the timeline glyph. */
+  protected markerBadge(marker: BullseyeMarker): ProjectionBadge {
+    return projectionBadge(marker.projection);
+  }
+
+  protected markerOutlineDash(marker: BullseyeMarker): boolean {
+    return projectionOutlineDash(marker.projection);
   }
 
   protected onIntelligenceClick(ref: PiReference): void {

@@ -1,0 +1,50 @@
+<app-manage-page-shell>
+  <app-grid-toolbar
+    [state]="grid"
+    searchPlaceholder="Search future events..."
+    searchAlignment="end"
+  >
+    <div gridToolbarStart class="flex items-baseline gap-3">
+      <span
+        class="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400"
+      >
+        Future events
+      </span>
+      <p class="m-0 max-w-xl text-[12px] leading-relaxed text-slate-500">
+        Upcoming regulatory, trial, and commercial events that may move the competitive landscape.
+      </p>
+      @if (markersHelpLink(); as link) {
+        <a
+          [routerLink]="link"
+          class="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-slate-400 hover:text-slate-600 focus-visible:text-slate-600"
+          pTooltip="Open event glyphs guide"
+          tooltipPosition="top"
+          aria-label="Open event glyphs guide"
+        >
+          <span>Event glyphs</span>
+          <i class="fa-solid fa-circle-question text-[10px]" aria-hidden="true"></i>
+        </a>
+      }
+    </div>
+    <app-export-button gridToolbarEnd [actions]="exportActions" />
+  </app-grid-toolbar>
+
+  <app-event-table
+    [catalysts]="flatCatalysts()"
+    [loading]="state.dataLoading()"
+    [selectedId]="state.selectedMarkerId()"
+    [categoryOptions]="categoryOptions()"
+    [companyOptions]="companyOptions()"
+    [gridFilters]="grid.primengFilters()"
+    [query]="grid.debouncedGlobalSearch()"
+    (rowSelect)="onRowClick($event)"
+    (rowHover)="onRowHover($event)"
+    (filterChange)="grid.onLazyLoad($event)"
+  />
+</app-manage-page-shell>
+
+<app-event-row-tooltip
+  [catalyst]="hoveredCatalyst()"
+  [x]="hoverX()"
+  [y]="hoverY()"
+/>

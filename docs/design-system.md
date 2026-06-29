@@ -51,8 +51,12 @@ decoration: markers pop, phase bars recede, structure guides the eye.
   eye lands on later phases; P3 is the hero teal; P4 violet marks the regulatory transition;
   OBS amber sits caution-adjacent. Do not invent phase colors -- read them from this file.
 - **Marker colors** (data=green, trial milestone=slate, regulatory=orange, approval=blue,
-  launch=violet, LOE=amber) are seeded data; the authoritative role-to-color mapping is in
-  [`brand.md`](./brand.md#marker-colors-from-seed-data).
+  launch and commercial availability=violet, LOE=amber, corporate=rose) are seeded data; the
+  authoritative role-to-color mapping is in
+  [`brand.md`](./brand.md#marker-colors-from-seed-data). The **allocation rule**: color is the
+  editorial family, shape is that family's signature glyph (hexagon = commercial/corporate),
+  and the inner mark (none/dot/dash/check/x) is the specific type within a family. Teal is
+  reserved for brand + phase bars and is never an event color.
 - **Live references** that render the real tokens: the in-app `help/phases` and
   `help/markers` pages (they import the same descriptors, so they cannot drift).
 

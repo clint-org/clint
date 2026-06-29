@@ -13,6 +13,7 @@ import { GLYPH_RATIOS, GLYPH_STROKES } from '../../../core/models/marker-visual'
       [attr.fill]="fillStyle() === 'outline' ? 'white' : color()"
       [attr.stroke]="color()"
       [attr.stroke-width]="S.shape"
+      [attr.stroke-dasharray]="outlineDash() ? dashPattern : null"
     />
     @if (innerMark() === 'dot') {
       <svg:circle
@@ -41,9 +42,11 @@ export class CircleIconComponent {
   readonly color = input<string>('#000000');
   readonly fillStyle = input<FillStyle>('filled');
   readonly innerMark = input<InnerMark>('none');
+  readonly outlineDash = input<boolean>(false);
 
   protected readonly R = GLYPH_RATIOS;
   protected readonly S = GLYPH_STROKES;
+  protected readonly dashPattern = GLYPH_STROKES.outlineDashPattern.join(',');
 
   readonly markColor = computed(() => (this.fillStyle() === 'outline' ? this.color() : 'white'));
 }

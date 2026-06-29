@@ -5,9 +5,9 @@ import {
 
 /**
  * Builds the router-link command array for an intelligence entity.
- * Returns null when tenant or space is missing, or for marker link
- * targets (markers are inline-edited on the trial page and do not have
- * their own detail route — callers should render a non-anchor span).
+ * Returns null when tenant or space is missing, or for event link
+ * targets (events are edited via the events page and do not have
+ * their own detail route -- callers should render a non-anchor span).
  * Engagement (space) is a singleton per space and therefore has no id
  * segment.
  */
@@ -26,7 +26,7 @@ export function buildEntityRouterLink(
       return [...base, 'companies', entityId];
     case 'product':
       return [...base, 'assets', entityId];
-    case 'marker':
+    case 'event':
       return null;
     case 'space':
       return [...base, 'engagement'];

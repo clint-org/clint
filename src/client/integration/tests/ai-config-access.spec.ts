@@ -316,7 +316,6 @@ describe('get_ai_usage_rollup failure log', () => {
       companies: 2,
       assets: 0,
       trials: 0,
-      markers: 0,
       events: 0,
     });
 

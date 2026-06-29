@@ -31,20 +31,31 @@ export function computeTimelineStats(companies: Company[], today?: string): Time
   const seenTrials = new Set<string>();
   const seenCatalysts = new Set<string>();
 
+  // Events exist at every anchor level: company-anchored (company.events),
+  // asset-anchored (asset.events), and trial-anchored (trial.markers). Count all
+  // three so this 90d total matches the backend landing-stats catalysts_90d, which
+  // counts events with no anchor filter. (Previously this walked only trial.markers,
+  // so an asset/company future event was missed here while the stat bar counted it.)
+  const countIfInWindow = (eventDate: string | null | undefined, id: string): void => {
+    if (eventDate && eventDate >= todayStr && eventDate <= cutoffStr) {
+      seenCatalysts.add(id);
+    }
+  };
+
   for (const co of companies) {
     companyCount++;
+    for (const marker of co.events ?? []) {
+      countIfInWindow(marker.event_date, marker.id);
+    }
     for (const asset of co.assets ?? []) {
       assetCount++;
+      for (const marker of asset.events ?? []) {
+        countIfInWindow(marker.event_date, marker.id);
+      }
       for (const trial of asset.trials ?? []) {
         seenTrials.add(trial.id);
         for (const marker of trial.markers ?? []) {
-          if (
-            marker.event_date &&
-            marker.event_date >= todayStr &&
-            marker.event_date <= cutoffStr
-          ) {
-            seenCatalysts.add(marker.id);
-          }
+          countIfInWindow(marker.event_date, marker.id);
         }
       }
     }

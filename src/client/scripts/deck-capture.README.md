@@ -41,9 +41,18 @@ PNG basenames):
 ONLY=timeline,materials,bullseye node scripts/capture-deck-shots.mjs
 ```
 
-Shot names: `whitelabel-stout-login`, `engagement-landing`, `timeline`,
-`heatmap`, `activity`, `bullseye`, `catalysts`, `events`, `source-import`,
+Shot names: `whitelabel-stout-login`, `engagement-landing`, `intelligence-feed`,
+`timeline`, `heatmap`, `bullseye`, `future-events`, `activity`, `source-import`,
 `command-palette`, `materials`, `intelligence`, `trial-detail`.
+
+`intelligence-feed` is the space-level Intelligence Feed ("Latest from Stout",
+intelligence + events interleaved by recency) at `/intelligence`; `intelligence`
+is the per-trial published read on a trial-detail page. `future-events` is the
+upcoming-event calendar at `/future-events` (the old `/catalysts` route, renamed
+from "Future Catalysts"). `activity` is the read-only detected-changes log at
+`/activity` (the old standalone Events feed, now CT.gov + analyst deltas). `whitelabel-stout-login` only captures when logged
+out, and the script now skips it (rather than overwriting the committed shot) if
+the login lands on a Cloudflare challenge instead of the branded page.
 
 ## Editing what a shot shows
 
@@ -59,10 +68,10 @@ Three shots rely on data that the demo seed must provide, so they only look righ
 against a space seeded by the current `seed_demo_data()` (migration
 `20260626120000` and later):
 
-- **events** selects a threaded event (the seeded "Pfizer oral GLP-1 retreat"
-  thread) so the detail pane renders its Thread section.
+- **activity** opens the first row of the detected-changes log so the panel
+  renders a change's before/after (no longer thread-dependent).
 - **trial-detail** pins **REDEFINE-2** (`NCT05394519`), which the seed gives
-  trial-scoped events, a referenced-in published read, activity, and markers, so
+  trial-scoped events, a referenced-in published read, activity, and events, so
   every section is populated.
 - **intelligence** pins **ATTRibute-CM** (`NCT03860935`): published intelligence
   + CT.gov-synced.
@@ -80,17 +89,32 @@ also written).
 ## Other options
 
 - `HIDE=0` keep the env banner + AI-incident banner visible (hidden by default)
-- `HEADLESS=1` run headless (only works once a login profile exists)
+- `HEADLESS=1` run headless. Unreliable against prod whitelabel hosts: the
+  cookie-based `sb-auth` session is not reliably reused headless, so the run can
+  land on `/login` and stall. Prefer the default headed run, which reuses the
+  persisted profile without a re-login.
 - `SYNC=1` click CT.gov "Sync" on the intelligence/trial-detail trials first
   (needed right after a fresh space reseed; see above)
 - `INTEL_TRIAL_ID=<uuid>` / `DETAIL_TRIAL_ID=<uuid>` pin the intelligence /
   trial-detail trials instead of resolving them by NCT
 
+## Cache-busting
+
+Screenshots keep stable filenames, so a browser/CDN can serve a stale copy after
+a refresh overwrites a PNG in place. To prevent that, every capture run ends by
+calling `stamp-deck-cache-busters.mjs`, which rewrites each `img/NAME.png`
+reference in `stout-intro.html` to `img/NAME.png?v=<sha256[:10]>` from the PNG's
+current bytes. A changed image gets a new URL (fetched fresh); an unchanged one
+keeps its hash. So a refresh also modifies `stout-intro.html` — commit it with
+the PNGs. To re-stamp without capturing (e.g. after hand-swapping a PNG), run
+`node scripts/stamp-deck-cache-busters.mjs`.
+
 ## Verify and commit
 
 Eyeball the new PNGs (a near-empty file usually means a too-early capture or a
-guard redirect). Stage only the changed PNGs explicitly, never `git add -A`
-here, because the gitignored profile holds a real session.
+guard redirect). Stage the changed PNGs **and** `stout-intro.html` (the
+cache-buster restamp) explicitly, never `git add -A` here, because the gitignored
+profile holds a real session.
 
 The repo's pre-push hook runs the full e2e suite, which flakes on cold-start
 timeouts unrelated to image assets. For an assets-only change you can push with

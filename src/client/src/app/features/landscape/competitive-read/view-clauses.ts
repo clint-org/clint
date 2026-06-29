@@ -184,7 +184,7 @@ export function distributionalTimelineClause(
     };
   }
 
-  const detail = `${leader.name} bucket quiet, no catalysts in next 90 days`;
+  const detail = `${leader.name} bucket quiet, no events in next 90 days`;
   return {
     segment: { clause: 'view', shape: 'bucket-quiet', detail },
     text: detail,
@@ -203,7 +203,7 @@ export function timelineViewClause(
     const cats = allStats[0].upcomingCatalysts ?? [];
     const next = cats.filter((c) => c.daysOut >= 0).sort((a, b) => a.daysOut - b.daysOut)[0];
     if (next && next.daysOut <= 90) {
-      const detail = `next catalyst in ${next.daysOut} days: ${next.trialName} readout`;
+      const detail = `next event in ${next.daysOut} days: ${next.trialName} readout`;
       return {
         segment: { clause: 'view', shape: 'next-catalyst', detail },
         text: detail,
@@ -213,7 +213,7 @@ export function timelineViewClause(
   }
 
   if (totalInWindow === 0) {
-    const detail = 'no near-term catalysts (next readout > 12 months)';
+    const detail = 'no near-term events (next readout > 12 months)';
     return {
       segment: { clause: 'view', shape: 'no-near-term-catalysts', detail },
       text: detail,
@@ -230,7 +230,7 @@ export function timelineViewClause(
   }
 
   const breakdownText = breakdown.map((b) => `${b.count} ${b.entity}`).join(', ');
-  const detail = `${totalInWindow} ${totalInWindow === 1 ? 'catalyst' : 'catalysts'} in next 90 days (${breakdownText})`;
+  const detail = `${totalInWindow} ${totalInWindow === 1 ? 'event' : 'events'} in next 90 days (${breakdownText})`;
   return {
     segment: { clause: 'view', shape: 'catalyst-window', detail },
     text: detail,

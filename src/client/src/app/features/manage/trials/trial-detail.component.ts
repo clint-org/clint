@@ -20,13 +20,11 @@ import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.
 import { SourceProvenanceLineComponent } from '../../../shared/components/source-provenance/source-provenance-line.component';
 import { sectionHashUrl } from './section-hash-url';
 import { Trial } from '../../../core/models/trial.model';
-import { Marker } from '../../../core/models/marker.model';
 import { buildEntityActionMenu } from '../../../shared/entity-actions/entity-action-menu';
 import { runEntityDelete } from '../../../shared/entity-actions/run-entity-delete';
 import { phaseShortLabel } from '../../../core/models/phase-colors';
 import { shouldShowTrialSecondaryName } from '../../../core/utils/display-fallbacks';
 import { TrialService } from '../../../core/services/trial.service';
-import { MarkerService } from '../../../core/services/marker.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { ChangeEventService } from '../../../core/services/change-event.service';
 import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
@@ -43,7 +41,7 @@ import { deriveTrialPhaseSpan } from '../../../core/models/trial-phase-span';
 import { selectTrialStartMarker, selectTrialEndMarker, isCtgovOwnedMarker } from '../../../core/models/trial-date-marker';
 import { markerStartCaption } from '../../../core/models/marker-date-precision';
 
-import { MarkerFormComponent } from './marker-form.component';
+import { EventFormDialogComponent } from '../../events/event-form/event-form-dialog.component';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
 import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.component';
 import { ReferencedInPanelComponent } from '../../../shared/components/referenced-in-panel/referenced-in-panel.component';
@@ -64,12 +62,11 @@ import { ChangeEventRowComponent } from '../../../shared/components/change-event
 import { TrialEditDialogComponent } from './trial-edit-dialog.component';
 import { fetchIndicationsSafe } from './trial-indications';
 import { ctgovRemovedChip } from './ctgov-removed-chip';
-import { confirmDelete } from '../../../shared/utils/confirm-delete';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
 import { TimelineViewComponent } from '../../landscape/timeline-view.component';
 import { EntityMarkerDrawerComponent } from '../../landscape/entity-marker-drawer.component';
+import { EntityEventsSectionComponent } from '../../../shared/components/entity-events-section/entity-events-section.component';
 import { LandscapeStateService } from '../../landscape/landscape-state.service';
-import { EntityEventsPanelComponent } from '../../../shared/components/entity-events-panel/entity-events-panel.component';
 import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 
 @Component({
@@ -84,7 +81,7 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     TooltipModule,
     SkeletonComponent,
     SourceProvenanceLineComponent,
-    MarkerFormComponent,
+    EventFormDialogComponent,
     SectionCardComponent,
     PiMarkComponent,
     ReferencedInPanelComponent,
@@ -105,7 +102,7 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     TrialEditDialogComponent,
     TimelineViewComponent,
     EntityMarkerDrawerComponent,
-    EntityEventsPanelComponent,
+    EntityEventsSectionComponent,
   ],
   providers: [LandscapeStateService],
   templateUrl: './trial-detail.component.html',
@@ -124,16 +121,11 @@ export class TrialDetailComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private trialService = inject(TrialService);
-  private markerService = inject(MarkerService);
   private intelligenceService = inject(PrimaryIntelligenceService);
   private readonly changeEventService = inject(ChangeEventService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
-
-  // Stable menu-item references per marker id, keyed with a prefix
-  // (see CompanyListComponent comment).
-  private readonly menuCache = new Map<string, MenuItem[]>();
 
   // Entity overflow menu (Edit details / Delete), rendered in the content
   // section-header instead of the topbar. Empty for viewers.
@@ -215,23 +207,12 @@ export class TrialDetailComponent {
     initialValue: this.route.snapshot.paramMap,
   });
 
-  // Query params as a signal so ?marker=<id> opens the inline editor even on
-  // a same-page navigation. The "Edit" action on the read-only marker drawer
-  // round-trips through the URL; the trial id is unchanged, so loadTrial never
-  // re-runs and a one-shot read would miss it (see markerEditParamEffect).
-  private readonly queryParamMapSig = toSignal(this.route.queryParamMap, {
-    initialValue: this.route.snapshot.queryParamMap,
-  });
-
   readonly trial = signal<Trial | null>(null);
   readonly indications = signal<{ id: string; name: string }[]>([]);
   readonly trialId = computed(() => this.paramMapSig().get('id') ?? '');
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   protected readonly legendVisible = signal(false);
-
-  readonly addingMarker = signal(false);
-  readonly editingMarker = signal<Marker | null>(null);
 
   // Primary intelligence
   readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
@@ -307,9 +288,8 @@ export class TrialDetailComponent {
     () => this.route.snapshot.paramMap.get('tenantId') ?? this.findAncestorParam('tenantId')
   );
 
-  // Header count badges for the events / materials cards, fed by each panel's
-  // (loaded) output since those counts are fetched inside the child component.
-  protected readonly eventsCount = signal(0);
+  // Header count badge for the materials card, fed by the panel's (loaded)
+  // output since the count is fetched inside the child component.
   protected readonly materialsCount = signal(0);
 
   private readonly landscape = inject(LandscapeStateService);
@@ -354,68 +334,6 @@ export class TrialDetailComponent {
     void this.loadFieldVisibility();
   });
 
-  // When ?marker=<id> is present, open that marker in the inline editor and
-  // scroll to the markers section. Markers have no detail page; the read-only
-  // drawer's "Edit" action and catalyst-panel "Edit marker" both route here
-  // via the URL. Reactive (not a one-shot in loadTrial) so it fires on a
-  // same-page navigation where trialId is unchanged. The lastApplied guard
-  // stops it re-opening after a save reloads the trial with the param still set.
-  private lastAppliedMarkerParam: string | null = null;
-  private readonly markerEditParamEffect = effect(() => {
-    const markerId = this.queryParamMapSig().get('marker');
-    const trial = this.trial();
-    if (!trial) return;
-    if (!markerId) {
-      this.lastAppliedMarkerParam = null;
-      return;
-    }
-    if (markerId === this.lastAppliedMarkerParam) return;
-    const target = trial.markers?.find((m) => m.id === markerId);
-    if (!target) return;
-    this.lastAppliedMarkerParam = markerId;
-    // Close the read-only drawer as we transition into editing.
-    this.landscape.clearSelection();
-    this.editingMarker.set(target);
-    this.addingMarker.set(false);
-    // Double-rAF defers the scroll until Angular has committed both the loaded
-    // trial and the expanded editor, so #markers exists at its final height.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        document.getElementById('markers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    });
-  });
-
-  // When ?markerId=<id> is present, open that marker in the read-only detail
-  // drawer (the repo-wide deep-link convention used by the catalysts and
-  // landscape pages). Distinct from ?marker=<id>, which opens the inline editor.
-  // A material's MARKER chip deep-links here since markers have no standalone
-  // page. openMarker (not selectMarker) so a restored selection of the same
-  // marker is not toggled closed; the lastApplied guard stops it re-opening
-  // after the user dismisses the drawer with the param still in the URL.
-  private lastAppliedMarkerIdParam: string | null = null;
-  private readonly markerViewParamEffect = effect(() => {
-    const markerId = this.queryParamMapSig().get('markerId');
-    const trial = this.trial();
-    if (!trial) return;
-    if (!markerId) {
-      this.lastAppliedMarkerIdParam = null;
-      return;
-    }
-    if (markerId === this.lastAppliedMarkerIdParam) return;
-    this.lastAppliedMarkerIdParam = markerId;
-    void this.landscape.openMarker(markerId);
-  });
-
-  /**
-   * Open the read-only marker detail drawer (Field / Date type / Last synced /
-   * source link) for a markers-table row, mirroring the embedded timeline's
-   * marker click. The drawer's "Edit" action (editors only) round-trips through
-   * ?marker=<id> to the inline editor via markerEditParamEffect.
-   */
-  protected viewMarkerDetail(marker: Marker): void {
-    void this.landscape.selectMarker(marker.id);
-  }
 
   private async loadFieldVisibility(): Promise<void> {
     const spaceId = this.route.snapshot.paramMap.get('spaceId');
@@ -467,33 +385,6 @@ export class TrialDetailComponent {
     }
   }
 
-  // Mirror the marker-icon fill rule used on the timeline grid and marker
-  // drawer: projected markers render outline, actuals render filled. A marker
-  // is projected when its is_projected flag is set or its projection is not
-  // the literal 'actual'.
-  protected markerFillStyle(marker: Marker): 'outline' | 'filled' {
-    const projected =
-      marker.is_projected || (!!marker.projection && marker.projection !== 'actual');
-    return projected ? 'outline' : 'filled';
-  }
-
-  markerMenu(marker: Marker): MenuItem[] {
-    const key = `marker:${marker.id}`;
-    const cached = this.menuCache.get(key);
-    if (cached) return cached;
-    const items = buildEntityActionMenu({
-      canEdit: this.spaceRole.canEdit(),
-      editLabel: 'Edit',
-      onEdit: () => {
-        this.editingMarker.set(marker);
-        this.addingMarker.set(false);
-      },
-      onDelete: () => void this.deleteMarker(marker.id),
-    });
-    this.menuCache.set(key, items);
-    return items;
-  }
-
   async onTrialEdited(updated: Trial): Promise<void> {
     // The dialog returns the bare row from PostgREST without the embedded
     // markers / notes / TA join, so reload through the full select instead
@@ -515,7 +406,6 @@ export class TrialDetailComponent {
     try {
       const trial = await this.trialService.getById(id);
       this.trial.set(trial);
-      this.menuCache.clear();
       this.indications.set(await fetchIndicationsSafe(() => this.trialService.listIndications(id)));
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Failed to load trial');
@@ -585,67 +475,6 @@ export class TrialDetailComponent {
         severity: 'error',
         summary: 'Purge failed',
         detail: err instanceof Error ? err.message : 'Check your connection and try again.',
-        life: 4000,
-      });
-    }
-  }
-
-  async onMarkerSaved(): Promise<void> {
-    this.addingMarker.set(false);
-    this.editingMarker.set(null);
-    this.clearMarkerParam();
-    await this.loadTrial();
-    this.messageService.add({ severity: 'success', summary: 'Marker saved.', life: 3000 });
-  }
-
-  // Close the inline marker editor (cancel path) and drop any ?marker= param so
-  // re-editing the same marker from the read-only drawer navigates cleanly
-  // rather than hitting Angular's same-URL no-op.
-  protected onMarkerEditClosed(): void {
-    this.addingMarker.set(false);
-    this.editingMarker.set(null);
-    this.clearMarkerParam();
-  }
-
-  private clearMarkerParam(): void {
-    if (!this.route.snapshot.queryParamMap.has('marker')) return;
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { marker: null },
-      queryParamsHandling: 'merge',
-      replaceUrl: true,
-    });
-  }
-
-  async deleteMarker(id: string): Promise<void> {
-    // Auto-derived markers (Trial Start / PCD / Trial End seeded by
-    // ingest_ctgov_snapshot) get re-created on the next CT.gov sync because
-    // the seeder dedups by "marker of this type already exists for this
-    // trial". Surface that quirk in the confirm so analysts aren't surprised
-    // by a resurrected marker on the next pull.
-    const marker = this.trial()?.markers?.find((m) => m.id === id);
-    const isCtgovSourced =
-      (marker?.metadata as { source?: string } | null | undefined)?.source === 'ctgov';
-    const ok = await confirmDelete(this.confirmation, {
-      header: 'Delete marker',
-      message: isCtgovSourced
-        ? 'This marker was auto-derived from clinicaltrials.gov. Deleting it removes it from the timeline now, but the next CT.gov sync may re-create it. To suppress permanently, replace it with a manual marker of the same type.'
-        : 'Delete this marker?',
-      // Unnamed-item path: require the literal word 'delete' to enable
-      // submit. Friction parity with named-entity deletes per cascade-safety T12.
-      requireTypedConfirmation: true,
-      typedConfirmationValue: 'delete',
-    });
-    if (!ok) return;
-    try {
-      await this.markerService.delete(id);
-      await this.loadTrial();
-      this.messageService.add({ severity: 'success', summary: 'Marker deleted.', life: 3000 });
-    } catch (e) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Could not delete marker',
-        detail: e instanceof Error ? e.message : 'Check your connection and try again.',
         life: 4000,
       });
     }

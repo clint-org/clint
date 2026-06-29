@@ -4,10 +4,11 @@
  * drops it via direct SQL. Cleanup is idempotent -- safe to call after the
  * RPC under test already destroyed the entity.
  *
- * Cascade order matches public.permanently_delete_space (migration
- * 20260521120400): markers must be deleted before their parent space to
- * satisfy the marker_changes_space_id_fkey audit constraint that fires from
- * the _log_marker_change trigger during cascade.
+ * Cascade order matches public.permanently_delete_space: events must be
+ * deleted before their parent space to satisfy the event_changes.space_id FK
+ * audit constraint that fires from the _log_event_change trigger during
+ * cascade. (The marker tables this fixture used to clean up were dropped in
+ * the event-model cutover.)
  *
  * Naming: scratch entities use a recognizable prefix so any leak across runs
  * is bounded by the persona-graph wipe in buildPersonas(), which sweeps by
@@ -125,11 +126,11 @@ async function deleteSpaceCascade(spaceId: string): Promise<void> {
   const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
   try {
     await pg.connect();
-    // Mirror public.permanently_delete_space: markers first (so the trigger
-    // inserts marker_changes audit rows while the space still exists for FK),
+    // Mirror public.permanently_delete_space: events first (so the trigger
+    // inserts event_changes audit rows while the space still exists for FK),
     // then the space (cascade handles space_members, companies, assets,
-    // trials, trial_change_events, marker_changes, marker_types).
-    await pg.query(`delete from public.markers where space_id = $1`, [spaceId]);
+    // trials, trial_change_events, event_changes).
+    await pg.query(`delete from public.events where space_id = $1`, [spaceId]);
     await pg.query(`delete from public.spaces where id = $1`, [spaceId]);
   } finally {
     await pg.end();
@@ -141,7 +142,7 @@ async function deleteTenantCascade(tenantId: string): Promise<void> {
   try {
     await pg.connect();
     await pg.query(
-      `delete from public.markers where space_id in
+      `delete from public.events where space_id in
          (select id from public.spaces where tenant_id = $1)`,
       [tenantId]
     );
@@ -157,7 +158,7 @@ async function deleteAgencyCascade(agencyId: string): Promise<void> {
   try {
     await pg.connect();
     await pg.query(
-      `delete from public.markers where space_id in (
+      `delete from public.events where space_id in (
          select s.id from public.spaces s
          join public.tenants t on s.tenant_id = t.id
          where t.agency_id = $1

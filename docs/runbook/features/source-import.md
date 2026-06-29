@@ -42,8 +42,8 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - create_company
     - create_asset
     - create_trial
+    - _phase_label_from_type
     - set_trial_assets
-    - create_marker
     - create_event
     - get_space_inventory_snapshot
   tables:
@@ -55,9 +55,7 @@ Agency analysts import data into an engagement via three modes: paste NCT IDs (C
     - trial_conditions
     - condition_indication_map
     - asset_indications
-    - markers
-    - marker_assignments
-    - marker_changes
+    - event_changes
     - trial_change_events
     - events
     - mechanisms_of_action

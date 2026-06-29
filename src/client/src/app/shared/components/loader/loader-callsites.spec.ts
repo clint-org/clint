@@ -33,7 +33,6 @@ const htmlSurfaces = [
   'features/manage/companies/company-detail.component',
   'features/events/event-detail-panel.component',
   'shared/components/materials-section/materials-section.component',
-  'shared/components/entity-events-panel/entity-events-panel.component',
 ];
 
 describe('loader call sites', () => {

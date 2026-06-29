@@ -27,8 +27,10 @@ const inventory: InventorySnapshot = {
     },
   ],
   indications: [],
-  marker_types: [{ id: 'mt1', name: 'Topline Data' }],
-  event_categories: [{ id: 'ec1', name: 'Clinical' }],
+  event_types: [{ id: 'et1', name: 'Topline Data' }],
+  event_type_categories: [{ id: 'etc1', name: 'Clinical' }],
+  mechanisms_of_action: [],
+  routes_of_administration: [],
   hash: 'golden',
 };
 
@@ -41,8 +43,7 @@ describe('golden fixture', () => {
       expect(r.result.companies).toHaveLength(2);
       expect(r.result.assets).toHaveLength(2);
       expect(r.result.trials).toHaveLength(2);
-      expect(r.result.markers).toHaveLength(2);
-      expect(r.result.events).toHaveLength(1);
+      expect(r.result.events).toHaveLength(3);
     }
   });
 });

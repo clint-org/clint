@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { resolveMarkerVisual, GLYPH_RATIOS } from './marker-visual';
+import {
+  resolveMarkerVisual,
+  projectionBadge,
+  projectionOutlineDash,
+  GLYPH_RATIOS,
+} from './marker-visual';
 import type { Marker, MarkerType } from './marker.model';
 
 function markerType(over: Partial<MarkerType> = {}): MarkerType {
@@ -49,9 +54,59 @@ describe('resolveMarkerVisual', () => {
   });
 
   it('non-actual projection renders outline', () => {
-    expect(resolveMarkerVisual(marker({ projection: 'stout' })).fillStyle).toBe('outline');
+    expect(resolveMarkerVisual(marker({ projection: 'forecasted' })).fillStyle).toBe('outline');
     expect(resolveMarkerVisual(marker({ projection: 'company' })).fillStyle).toBe('outline');
     expect(resolveMarkerVisual(marker({ projection: 'primary' })).fillStyle).toBe('outline');
+  });
+
+  it('badges only the deviating tiers; actual and trial/registry primary carry none', () => {
+    expect(resolveMarkerVisual(marker({ projection: 'actual' })).projectionBadge).toBeNull();
+    // primary with no anchor context, or on a trial, is the CT.gov registry default: no letter
+    expect(resolveMarkerVisual(marker({ projection: 'primary' })).projectionBadge).toBeNull();
+    expect(
+      resolveMarkerVisual(marker({ projection: 'primary', anchor_type: 'trial' })).projectionBadge,
+    ).toBeNull();
+    expect(resolveMarkerVisual(marker({ projection: 'company' })).projectionBadge).toBe('c');
+    expect(resolveMarkerVisual(marker({ projection: 'forecasted' })).projectionBadge).toBe('f');
+  });
+
+  it("badges primary as 'p' on asset/company anchors (non-registry primary source)", () => {
+    expect(
+      resolveMarkerVisual(marker({ projection: 'primary', anchor_type: 'asset' })).projectionBadge,
+    ).toBe('p');
+    expect(
+      resolveMarkerVisual(marker({ projection: 'primary', anchor_type: 'company' })).projectionBadge,
+    ).toBe('p');
+    // the 'p' rule is specific to the primary tier; other tiers keep their own letters
+    expect(
+      resolveMarkerVisual(marker({ projection: 'company', anchor_type: 'asset' })).projectionBadge,
+    ).toBe('c');
+    expect(
+      resolveMarkerVisual(marker({ projection: 'forecasted', anchor_type: 'asset' }))
+        .projectionBadge,
+    ).toBe('f');
+    // a confirmed actual on an asset still carries no badge
+    expect(
+      resolveMarkerVisual(marker({ projection: 'actual', anchor_type: 'asset' })).projectionBadge,
+    ).toBeNull();
+  });
+
+  it('dims opacity only at the forecasted tier (actual/company/primary all solid)', () => {
+    const actual = resolveMarkerVisual(marker({ projection: 'actual' })).opacity;
+    const company = resolveMarkerVisual(marker({ projection: 'company' })).opacity;
+    const primary = resolveMarkerVisual(marker({ projection: 'primary' })).opacity;
+    const forecasted = resolveMarkerVisual(marker({ projection: 'forecasted' })).opacity;
+    expect(actual).toBe(1);
+    expect(company).toBeLessThanOrEqual(actual);
+    expect(primary).toBeLessThanOrEqual(company);
+    expect(forecasted).toBeLessThan(primary);
+  });
+
+  it('dashes the outline only for the forecasted tier', () => {
+    expect(resolveMarkerVisual(marker({ projection: 'forecasted' })).outlineDash).toBe(true);
+    expect(resolveMarkerVisual(marker({ projection: 'actual' })).outlineDash).toBe(false);
+    expect(resolveMarkerVisual(marker({ projection: 'company' })).outlineDash).toBe(false);
+    expect(resolveMarkerVisual(marker({ projection: 'primary' })).outlineDash).toBe(false);
   });
 
   it('passes through shape, color, and inner mark from the marker type', () => {
@@ -73,6 +128,43 @@ describe('resolveMarkerVisual', () => {
     expect(v.shape).toBe('circle');
     expect(v.innerMark).toBe('none');
     expect(v.color).toBe('#64748b');
+  });
+});
+
+describe('projectionBadge (pure helper shared by detail pane + tooltip)', () => {
+  it('mirrors the resolver rule from loose projection/anchor strings', () => {
+    expect(projectionBadge('actual')).toBeNull();
+    expect(projectionBadge('company')).toBe('c');
+    expect(projectionBadge('forecasted')).toBe('f');
+    // primary is the registry default on a trial / unknown anchor: no letter
+    expect(projectionBadge('primary')).toBeNull();
+    expect(projectionBadge('primary', 'trial')).toBeNull();
+    // primary on a non-trial anchor is a non-registry source: badges 'p'
+    expect(projectionBadge('primary', 'asset')).toBe('p');
+    expect(projectionBadge('primary', 'company')).toBe('p');
+  });
+
+  it('the p-rule is specific to the primary tier', () => {
+    expect(projectionBadge('company', 'asset')).toBe('c');
+    expect(projectionBadge('forecasted', 'asset')).toBe('f');
+    expect(projectionBadge('actual', 'asset')).toBeNull();
+  });
+
+  it('falls back to no badge for nullish or unknown projections', () => {
+    expect(projectionBadge(null)).toBeNull();
+    expect(projectionBadge(undefined)).toBeNull();
+    expect(projectionBadge('')).toBeNull();
+    expect(projectionBadge('bogus')).toBeNull();
+  });
+});
+
+describe('projectionOutlineDash', () => {
+  it('dashes only the forecasted tier', () => {
+    expect(projectionOutlineDash('forecasted')).toBe(true);
+    expect(projectionOutlineDash('actual')).toBe(false);
+    expect(projectionOutlineDash('company')).toBe(false);
+    expect(projectionOutlineDash('primary')).toBe(false);
+    expect(projectionOutlineDash(null)).toBe(false);
   });
 });
 

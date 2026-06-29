@@ -106,21 +106,6 @@ export function validateExtraction(
     validTrialIndices.add(i);
   }
 
-  for (let i = 0; i < data.markers.length; i++) {
-    const marker = data.markers[i];
-    const bad = marker.trial_refs.find(
-      (r) => r < 0 || r >= data.trials.length,
-    );
-    if (bad !== undefined) {
-      dropped.push({
-        type: 'marker',
-        index: i,
-        name: marker.title,
-        reason: `trial_refs contains out-of-bounds index ${bad}`,
-      });
-    }
-  }
-
   for (let i = 0; i < data.events.length; i++) {
     const event = data.events[i];
     const ref = event.anchor.ref;
@@ -188,65 +173,13 @@ export function validateExtraction(
   data.assets.forEach((a, i) => checkExistingId(a, 'asset', i));
   data.trials.forEach((t, i) => checkExistingId(t, 'trial', i));
 
-  // --- Step 4b: Marker/event existing-id check (id-in-inventory, cross-trial/anchor, one-to-one) ---
+  // --- Step 4b: Event existing-id check (id-in-inventory, anchor-match, one-to-one) ---
 
-  const inventoryMarkerById = new Map(
-    (inventory.markers ?? []).map((m) => [m.id, m]),
-  );
   const inventoryEventById = new Map(
     (inventory.events ?? []).map((e) => [e.id, e]),
   );
 
-  const claimedMarkerIds = new Set<string>();
   const claimedEventIds = new Set<string>();
-
-  for (let i = 0; i < data.markers.length; i++) {
-    if (isDropped('marker', i)) continue;
-    const marker = data.markers[i];
-    if (marker.match.kind !== 'existing') continue;
-
-    const id = marker.match.id;
-
-    // 1. ID must be in the inventory marker set.
-    if (!inventoryMarkerById.has(id)) {
-      warnings.push(
-        `marker[${i}] claimed existing id ${id} not found in inventory; demoted to new`,
-      );
-      (marker as any).match = { kind: 'new' };
-      continue;
-    }
-
-    // 2. The matched inventory marker must belong to the same trial the proposal resolves to.
-    const firstTrialRef = marker.trial_refs[0];
-    const proposedTrial =
-      firstTrialRef !== undefined ? data.trials[firstTrialRef] : undefined;
-    if (!proposedTrial || proposedTrial.match.kind === 'new') {
-      warnings.push(
-        `marker[${i}] claimed existing id ${id} but resolved trial is new; demoted to new`,
-      );
-      (marker as any).match = { kind: 'new' };
-      continue;
-    }
-    const resolvedTrialId = proposedTrial.match.id;
-    const inventoryMarker = inventoryMarkerById.get(id)!;
-    if (inventoryMarker.trial_id !== resolvedTrialId) {
-      warnings.push(
-        `marker[${i}] claimed existing id ${id} but trial mismatch (inventory has ${inventoryMarker.trial_id}, proposal resolves to ${resolvedTrialId}); demoted to new`,
-      );
-      (marker as any).match = { kind: 'new' };
-      continue;
-    }
-
-    // 3. One-to-one: only the first proposal may claim a given id.
-    if (claimedMarkerIds.has(id)) {
-      warnings.push(
-        `marker[${i}] claimed existing id ${id} already claimed by an earlier proposal; demoted to new`,
-      );
-      (marker as any).match = { kind: 'new' };
-      continue;
-    }
-    claimedMarkerIds.add(id);
-  }
 
   for (let i = 0; i < data.events.length; i++) {
     if (isDropped('event', i)) continue;
@@ -402,24 +335,6 @@ export function validateExtraction(
       }
     }
 
-    for (let i = 0; i < data.markers.length; i++) {
-      if (isDropped('marker', i)) continue;
-      const marker = data.markers[i];
-      const hasGroundedTrial = marker.trial_refs.some((ref) =>
-        groundedTrial.has(ref),
-      );
-      if (!hasGroundedTrial) {
-        dropped.push({
-          type: 'marker',
-          index: i,
-          name: marker.title,
-          reason: 'no trial_refs point to a grounded trial',
-        });
-        droppedByTypeIndex.get('marker')?.add(i) ??
-          droppedByTypeIndex.set('marker', new Set([i]));
-      }
-    }
-
     for (let i = 0; i < data.events.length; i++) {
       if (isDropped('event', i)) continue;
       const event = data.events[i];
@@ -453,7 +368,6 @@ export function validateExtraction(
     companies: data.companies.filter((_, i) => !isDropped('company', i)),
     assets: data.assets.filter((_, i) => !isDropped('asset', i)),
     trials: data.trials.filter((_, i) => !isDropped('trial', i)),
-    markers: data.markers.filter((_, i) => !isDropped('marker', i)),
     events: data.events.filter((_, i) => !isDropped('event', i)),
   };
 

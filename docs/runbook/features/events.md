@@ -1,135 +1,124 @@
 ---
 surface: Events
-spec: docs/specs/events-system/spec.md
+spec: docs/superpowers/specs/2026-06-28-unified-events-timeline-design.md
 ---
 
-# Events (Intelligence Feed)
+# Events
 
-A unified chronological feed showing analyst-created events, timeline markers, and detected change events together. Events capture competitive intelligence at four entity levels: space (industry-wide), company, product, and trial. Detected change events (from the trial change feed pipeline) are merged as a third source type.
+The unified dated-fact entity that powers the timeline, the Intelligence feed,
+Future Events, and Activity.
 
-**Route:** `/t/:tenantId/s/:spaceId/events`. Honors `?eventId=<id>` to deep-link a specific event into the detail panel on load (used by the command palette). Honors `?source=detected` to filter to detected change events (used by the `/activity` redirect and the what-changed widget link). Honors `?entityLevel=<trial|product|company>` + `?entityId=<id>` to scope the feed server-side to one entity and everything beneath it (hierarchical rollup); set by the "See all" link on the entity-events panel embedded in trial / asset / company detail pages, and surfaced as a dismissible scope banner with a "View all events" clear control.
+## Event sources
 
-**Layout:** Data table (p-table) with sortable/filterable columns + a right-side overlay detail panel (340px, absolute-positioned, `@slidePanel` animation) that slides in on row click and hides when nothing is selected. The RPC `get_events_page_data` returns `{items, total}` instead of a flat array, enabling server-side pagination.
+Sources are three orthogonal things, not one field.
 
-| Column | Content |
-|---|---|
-| Date | Event date, sorted descending by default |
-| Source | Badge: "EVENT" (green), "MARKER" (slate), or "DETECTED" (amber) |
-| Title | Event title with thread indicator if applicable; tags render as `#hashtag` chips beneath the title |
-| Category | 6 system event categories: Leadership, Regulatory, Financial, Strategic, Clinical, Commercial. Marker-source rows lead the cell with their fixed marker-taxonomy glyph (shape + color, outline when projected); the colour also drives the overview distribution bars |
-| Entity | Company / Product / Trial name, or "Industry" for space-level |
-| Status | Marker rows: a Projected / Confirmed pill (amber / brand). Detected date-moves: an amber "+Nd later / earlier" shift chip. Events: a High-priority pill or a "News" tag |
-| Priority | Red dot for high, empty for low |
+**Attached citations (`event_sources` table).** An event has zero or more labeled
+citations added by an analyst or AI import. Each citation is a row in `event_sources`
+(`event_id` FK -> `events(id) ON DELETE CASCADE`, `url NOT NULL`, `label NULL`,
+`sort_order`). There is no `events.source_url` column; it was removed. Where a
+compact display needs a single primary link, take the first `event_sources` row by
+`(sort_order, created_at)`. Write paths: `create_event` accepts an optional
+`p_sources jsonb` array of `{url, label}` objects and writes `event_sources` rows
+atomically in the same SECURITY DEFINER transaction. `update_event_sources` replaces
+an event's full citation set. `event_sources` inherits space-level RLS from its
+parent event (SELECT = `has_space_access`; write = owner/editor only).
 
-**Detail panel (340px overlay):** For analyst events and markers: description, source URLs, tags, thread context (ordered list of events in the narrative), related events (ad-hoc links), and created timestamp. For detected events: structured change detail with annotation CRUD (create, edit, delete via `AnnotationService`), annotation indicator, and signal bar.
+**CT.gov registry link (derived, never stored).** The CT.gov page for a trial-anchored
+event is `https://clinicaltrials.gov/study/<trial.identifier>`. It is identical for
+every event on a trial, so it is never stored in `event_sources` or any column. The
+CT.gov ingest producer writes zero source rows. Readers derive the link at render time
+from the anchor trial's identifier. The SQL helper `event_registry_url` and the
+TypeScript util `ctgovRegistryUrl` are the single homes for this format; the link is
+shown alongside the `event_sources` citation list, not inside it.
 
-**Event features:** Free-form tags, multiple source URLs with labels, threads (sequential narrative chains), ad-hoc links between related events, high/low priority. Detected events additionally carry `change_event_type`, `change_payload`, `change_source`, `has_annotation`, `observed_at`, and `company_logo_url` fields on the `FeedItem` interface. Marker-source items also carry `is_projected`, `marker_type_shape`, `marker_type_color`, `marker_type_inner_mark`, and `category_color` (returned by `get_events_page_data`) so the table can render the category glyph and the projected/confirmed status without an extra fetch.
+**Ingest provenance (`source_doc_id`).** The AI-ingest provenance pointer (which source
+document an event was extracted from) is orthogonal to citations and is stored directly
+on the `events` row. It is unchanged by the sources model.
 
 ## Capabilities
 
 ```yaml
-- id: events-feed
-  summary: Unified chronological data table mixing analyst events, timeline markers, and detected change events across four entity levels. Server-side pagination via {items, total} return shape. Marker rows show their category glyph and a projected/confirmed status; the overview pane shows a colour-coded category distribution.
-  routes:
-    - /t/:tenantId/s/:spaceId/events
+- id: event-authoring
+  summary: Create and edit events (the merged marker/event entity) with date model, provenance, significance, anchor, and pin/hide.
+  routes: []
   rpcs:
-    - get_events_page_data
-    - _humanize_phase
-    - _humanize_status
+    - create_event
+    - update_event
   tables:
     - events
-    - markers
-    - event_categories
-    - trial_change_events
-    - change_event_annotations
-  related:
-    - events-detail-panel
-    - trial-change-feed-unified-events
-  user_facing: true
-  role: viewer
+    - event_types
+    - event_type_categories
+    - event_changes
+  related: []
+  user_facing: false
+  role: editor
   status: active
-- id: events-deep-link
-  summary: Query-param eventId opens the detail panel on load, used by the command palette.
-  routes:
-    - /t/:tenantId/s/:spaceId/events
-  rpcs:
-    - get_event_detail
-  tables:
-    - events
-  related:
-    - palette-activation-targets
-  user_facing: true
-  role: viewer
-  status: active
-- id: events-entity-scope
-  summary: Query-params entityLevel + entityId scope the feed server-side (hierarchically rolled up) to one entity and everything beneath it, surfaced via a dismissible banner with a clear control. Set by the "See all" link on the entity-events panel on trial / asset / company detail pages.
-  routes:
-    - /t/:tenantId/s/:spaceId/events
+- id: event-feed
+  summary: Unified events feed read path (get_events_page_data) listing analyst-created events and future milestones, filterable by source, date, company, and type. The /events page UI is de-routed pending the Stage 3 Events->Activity rework; the read RPCs remain live.
+  routes: []
   rpcs:
     - get_events_page_data
   tables:
     - events
+    - event_types
+    - event_type_categories
+    - event_sources
   related:
-    - events-feed
-    - events-detail-panel
+    - event-authoring
   user_facing: true
   role: viewer
   status: active
-- id: events-detail-panel
-  summary: 340px sliding overlay with description, source URLs, tags, thread context, related events, and created timestamp.
-  routes:
-    - /t/:tenantId/s/:spaceId/events
+- id: event-detail
+  summary: Detail panel for a single event; renders date, type, significance, provenance, source citations, and linked materials. get_event_detail is the read path (returns the unified shape incl. event_type_id/anchor/significance/visibility for edit-hydration); event_registry_url derives the CT.gov registry link from the event anchor.
+  routes: []
   rpcs:
     - get_event_detail
-    - get_event_thread
+    - event_registry_url
+  tables:
+    - events
+    - event_types
+    - event_sources
+  related:
+    - event-feed
+  user_facing: true
+  role: viewer
+  status: active
+- id: event-sources
+  summary: Citation write path for attaching external URL references to an event; stored in the event_sources table.
+  routes: []
+  rpcs:
     - update_event_sources
   tables:
     - events
     - event_sources
-    - event_links
-    - event_threads
   related:
-    - events-feed
-  user_facing: true
-  role: viewer
+    - event-authoring
+  user_facing: false
+  role: editor
   status: active
-- id: events-threads
-  summary: Sequential narrative chains group related events into ordered threads.
-  routes:
-    - /t/:tenantId/s/:spaceId/events
+- id: event-change-log
+  summary: Append-only event-change audit trail written by the _log_event_change trigger on every insert/update/delete of an events row; surfaced on the event detail panel.
+  routes: []
   rpcs:
-    - get_event_thread
-  tables:
-    - event_threads
-    - events
-  related:
-    - events-detail-panel
-  user_facing: true
-  role: viewer
-  status: active
-- id: events-ad-hoc-links
-  summary: Free-form related-event links surfaced in the detail panel.
-  routes:
-    - /t/:tenantId/s/:spaceId/events
-  rpcs:
-    - get_event_detail
-    - update_event_links
-  tables:
-    - event_links
-  related:
-    - events-detail-panel
-  user_facing: true
-  role: viewer
-  status: active
-- id: events-priority
-  summary: High vs low priority flag rendered as a red dot in the feed.
-  routes:
-    - /t/:tenantId/s/:spaceId/events
-  rpcs: []
+    - _log_event_change
   tables:
     - events
-  related: []
-  user_facing: true
+    - event_changes
+  related:
+    - event-authoring
+  user_facing: false
+  role: viewer
+  status: active
+- id: event-formatting-helpers
+  summary: Internal SQL helpers that humanize phase and status codes for human-readable display in event summaries and feed rows.
+  routes: []
+  rpcs:
+    - _humanize_phase
+    - _humanize_status
+  tables: []
+  related:
+    - event-feed
+  user_facing: false
   role: viewer
   status: active
 ```

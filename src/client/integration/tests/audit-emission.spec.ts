@@ -330,7 +330,7 @@ describe('permanently_delete_space emits space.deleted', () => {
       // The new RPC writes a count breakdown plus the space name and the
       // was_archived / platform_admin_override flags. Spot-check the shape.
       expect(typeof meta['name']).toBe('string');
-      expect(typeof meta['markers']).toBe('number');
+      expect(typeof meta['events']).toBe('number');
       expect(typeof meta['materials']).toBe('number');
       expect(typeof meta['trials']).toBe('number');
       expect(meta['was_archived']).toBe(true);

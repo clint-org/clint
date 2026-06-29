@@ -7,7 +7,7 @@
   </div>
 
   <!-- Scrollable grid area -->
-  <div class="overflow-x-auto">
+  <div class="overflow-x-auto" (mouseleave)="hoveredRowKey.set(null)">
     <!-- w-max so this flex track shrink-wraps the full content width; otherwise it
          stays viewport-width and the sticky left pane unsticks once you scroll past
          (trackWidth - paneWidth). -->
@@ -16,363 +16,176 @@
       <div
         class="sticky left-0 z-20 bg-white border-r border-slate-200 flex-none shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
       >
-        <!-- Header row -->
+        <!-- Header row: a single Program label (the company / asset / trial
+             hierarchy and its inline attributes live in the Program column). -->
         <div class="flex border-b border-slate-300 bg-slate-800 h-8 items-center">
-          @if (!hideCompanyColumn()) {
-            <div
-              class="hidden lg:flex items-center h-full text-[10px] font-bold uppercase tracking-widest text-slate-400 transition-all duration-200"
-              [class.w-36]="!companyColumnCollapsed()"
-              [class.w-10]="companyColumnCollapsed()"
-              [class.px-3]="!companyColumnCollapsed()"
-              [class.justify-between]="!companyColumnCollapsed()"
-              [class.justify-center]="companyColumnCollapsed()"
-            >
-              @if (!companyColumnCollapsed()) {
-                <span>Company</span>
-              }
-              <button
-                type="button"
-                class="flex shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:text-slate-100"
-                (click)="companyColumnCollapsed.set(!companyColumnCollapsed())"
-                [pTooltip]="companyColumnCollapsed() ? 'Expand company names' : 'Collapse to logos'"
-                tooltipPosition="bottom"
-                [attr.aria-label]="
-                  companyColumnCollapsed()
-                    ? 'Expand company column to names'
-                    : 'Collapse company column to logos'
-                "
-                [attr.aria-pressed]="companyColumnCollapsed()"
-              >
-                <svg
-                  class="h-3 w-3 transition-transform duration-200"
-                  [class.rotate-180]="!companyColumnCollapsed()"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
-            </div>
-          }
-          @if (!hideAssetColumn()) {
-            <div
-              class="w-28 md:w-32 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 lg:border-l border-slate-700"
-            >
-              Asset
-            </div>
-          }
-          @if (showMoaColumn() && !hideMoaColumn()) {
-            <div
-              class="w-28 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
-            >
-              MOA
-            </div>
-          }
-          @if (showRoaColumn() && !hideRoaColumn()) {
-            <div
-              class="w-24 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
-            >
-              ROA
-            </div>
-          }
-          @if (showIndicationColumn() && !hideIndicationColumn()) {
-            <div
-              class="w-36 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
-            >
-              Indication
-            </div>
-          }
-          @if (!hideTrialColumn()) {
-            <div
-              class="w-36 md:w-48 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-l border-slate-700"
-            >
-              Trial
-            </div>
-          }
+          <div class="w-80 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            Program
+          </div>
         </div>
         @if (hasSubColumns()) {
           <div class="flex border-b border-slate-200 bg-slate-100">
-            @if (!hideCompanyColumn()) {
-              <div
-                class="hidden lg:block px-3 py-0.5 text-xs text-slate-400 transition-all duration-200"
-                [class.w-36]="!companyColumnCollapsed()"
-                [class.w-10]="companyColumnCollapsed()"
-              >
-                &nbsp;
-              </div>
-            }
-            @if (!hideAssetColumn()) {
-              <div
-                class="w-28 md:w-32 px-3 py-0.5 text-xs text-slate-400 lg:border-l border-slate-200"
-              >
-                &nbsp;
-              </div>
-            }
-            @if (showMoaColumn() && !hideMoaColumn()) {
-              <div class="w-28 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
-                &nbsp;
-              </div>
-            }
-            @if (showRoaColumn() && !hideRoaColumn()) {
-              <div class="w-24 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
-                &nbsp;
-              </div>
-            }
-            @if (showIndicationColumn() && !hideIndicationColumn()) {
-              <div class="w-36 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200">
-                &nbsp;
-              </div>
-            }
-            @if (!hideTrialColumn()) {
-              <div
-                class="w-36 md:w-48 px-3 py-0.5 text-xs text-slate-400 border-l border-slate-200"
-              >
-                &nbsp;
-              </div>
-            }
+            <div class="w-80 px-3 py-0.5 text-xs text-slate-400">&nbsp;</div>
           </div>
         }
 
         <!-- Row labels -->
-        @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
+        @for (row of gridRows(); track rowKey(row)) {
           <div
-            class="flex border-l-2 border-slate-200"
+            class="flex"
+            (mouseenter)="hoveredRowKey.set(rowKey(row))"
             [class.border-b-2]="row.isLastInCompany"
             [class.border-b]="!row.isLastInCompany"
             [class.border-slate-300]="row.isLastInCompany"
-            [class.bg-white]="idx % 2 === 0"
-            [class.bg-slate-50]="idx % 2 !== 0"
-            [class.border-l-brand-500]="row.isFirstInCompany"
-            [class.border-l-transparent]="!row.isFirstInCompany"
-            [style.height.px]="36"
+            [class.border-slate-100]="!row.isLastInCompany"
+            [class.bg-slate-100]="row.kind === 'company' && detailLevel() !== 'companies'"
+            [class.bg-white]="
+              row.kind === 'asset' ||
+              (row.kind === 'trial' && $even) ||
+              (row.kind === 'company' && detailLevel() === 'companies')
+            "
+            [class.bg-slate-50]="row.kind === 'trial' && $odd"
+            [style.background-color]="isRowHovered(row) ? hoverWash : null"
+            [style.height.px]="rowHeightFor(row)"
           >
-            <!-- Company column (hidden below lg, collapses to logo on scroll) -->
-            @if (!hideCompanyColumn()) {
-              <div
-                class="group relative hidden lg:flex items-center transition-all duration-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700"
-                [class.w-36]="!companyColumnCollapsed()"
-                [class.px-3]="!companyColumnCollapsed()"
-                [class.gap-1.5]="!companyColumnCollapsed()"
-                [class.w-10]="companyColumnCollapsed()"
-                [class.justify-center]="companyColumnCollapsed()"
-                [class.gap-1]="companyColumnCollapsed()"
-                [class.truncate]="!companyColumnCollapsed()"
-                [title]="row.companyName"
-                role="button"
-                tabindex="0"
-                (click)="onCompanyClick(row.companyId)"
-                (keydown.enter)="onCompanyClick(row.companyId)"
-                (keydown.space)="onCompanyClick(row.companyId)"
-              >
-                @if (row.isFirstInCompany) {
-                  @if (row.companyLogoUrl) {
-                    <app-brand-logo
-                      [url]="row.companyLogoUrl"
-                      [alt]="row.companyName"
-                      [width]="20"
-                      [height]="20"
-                      imgClass="h-5 w-5 rounded object-contain flex-none"
-                    />
-                  }
-                  @if (!companyColumnCollapsed()) {
-                    <div class="flex min-w-0 flex-col justify-center">
-                      <span class="flex min-w-0 items-center gap-1">
-                        <span
-                          class="font-bold text-[11px] uppercase tracking-wider text-slate-700 truncate"
-                          >{{ row.companyName }}</span
-                        >
-                        @if (
-                          row.companyHasIntelligence &&
-                          !(showIntelligenceHeadlines() && row.companyIntelligenceHeadline)
-                        ) {
-                          <app-pi-mark [size]="10" class="shrink-0" />
-                        }
-                      </span>
-                      @if (
-                        showIntelligenceHeadlines() &&
-                        row.companyHasIntelligence &&
-                        row.companyIntelligenceHeadline
-                      ) {
-                        <span
-                          class="flex min-w-0 items-center gap-1 text-[10px] leading-tight text-brand-700"
-                        >
-                          <app-pi-mark [size]="9" class="shrink-0" />
-                          <span class="truncate">{{ row.companyIntelligenceHeadline }}</span>
-                        </span>
-                      }
-                    </div>
-                  } @else {
-                    <!-- Collapsed to logo: keep the same intelligence mark visible -->
-                    @if (row.companyHasIntelligence) {
-                      <app-pi-mark [size]="10" class="shrink-0" />
+            @switch (row.kind) {
+              @case ('company') {
+                <!-- Company band: inline company logo + uppercase company name -->
+                <div
+                  class="flex w-80 min-w-0 items-center gap-2 pl-4 pr-2 cursor-pointer hover:bg-brand-50/40"
+                  role="button"
+                  tabindex="0"
+                  [title]="row.companyName"
+                  (click)="onCompanyClick(row.companyId)"
+                  (keydown.enter)="onCompanyClick(row.companyId)"
+                  (keydown.space)="onCompanyClick(row.companyId)"
+                >
+                  @if (!hideCompanyColumn()) {
+                    @if (row.companyLogoUrl) {
+                      <app-brand-logo
+                        [url]="row.companyLogoUrl"
+                        [alt]="row.companyName"
+                        [width]="20"
+                        [height]="20"
+                        imgClass="h-5 w-5 rounded object-contain flex-none"
+                      />
+                    } @else {
+                      <i
+                        class="fa-solid fa-building text-[10px] text-slate-400 shrink-0"
+                        aria-hidden="true"
+                      ></i>
                     }
-                    <!-- ...and reveal the company name on hover -->
-                    <div
-                      class="pointer-events-none absolute left-full top-1/2 z-30 ml-1 hidden -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-md border border-slate-200 bg-white px-2 py-1 shadow-lg group-hover:flex"
-                    >
+                  }
+                  <span class="truncate text-xs font-bold uppercase tracking-wider text-slate-800">{{
+                    row.companyName
+                  }}</span>
+                  @if (row.companyHasIntelligence) {
+                    <app-pi-mark [size]="10" class="shrink-0" />
+                  }
+                </div>
+              }
+              @case ('asset') {
+                <!-- Asset header: the asset's identity + level attributes (MOA/ROA
+                     inline, gated by the COLUMNS toggles) + lead-phase chip. When
+                     this is the first rendered row of its company (no company band
+                     row), it carries a compact company eyebrow so the company
+                     identity never disappears. -->
+                <div
+                  class="flex w-80 min-w-0 flex-col justify-center gap-0.5 pl-[34px] pr-2 cursor-pointer hover:bg-brand-50/40"
+                  role="button"
+                  tabindex="0"
+                  [title]="row.companyName + ' / ' + row.assetName"
+                  (click)="onAssetClick(row.assetId)"
+                  (keydown.enter)="onAssetClick(row.assetId)"
+                  (keydown.space)="onAssetClick(row.assetId)"
+                >
+                  @if (row.isFirstInCompany && !hideCompanyColumn()) {
+                    <span class="flex min-w-0 items-center gap-1">
+                      @if (row.companyLogoUrl) {
+                        <app-brand-logo
+                          [url]="row.companyLogoUrl"
+                          [alt]="row.companyName"
+                          [width]="16"
+                          [height]="16"
+                          imgClass="h-4 w-4 rounded object-contain flex-none"
+                        />
+                      } @else {
+                        <i
+                          class="fa-solid fa-building text-[9px] text-slate-400 shrink-0"
+                          aria-hidden="true"
+                        ></i>
+                      }
                       <span
-                        class="font-bold text-[11px] uppercase tracking-wider text-slate-700"
+                        class="truncate text-[9px] font-bold uppercase tracking-wider leading-none text-slate-500"
                         >{{ row.companyName }}</span
                       >
-                      @if (row.companyHasIntelligence) {
-                        <app-pi-mark [size]="10" class="shrink-0" />
-                      }
-                    </div>
+                    </span>
                   }
-                }
-              </div>
-            }
-            <!-- Asset column -->
-            @if (!hideAssetColumn()) {
-              <div
-                class="w-28 md:w-32 px-3 flex items-center gap-1.5 truncate lg:border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700"
-                [title]="row.assetName"
-                role="button"
-                tabindex="0"
-                (click)="onAssetClick(row.assetId)"
-                (keydown.enter)="onAssetClick(row.assetId)"
-                (keydown.space)="onAssetClick(row.assetId)"
-              >
-                @if (row.isFirstInAsset) {
-                  <div class="flex min-w-0 flex-col justify-center">
-                    <span class="flex min-w-0 items-center gap-1">
-                      <span class="text-sm text-slate-600 font-medium truncate">{{
-                        row.assetName
-                      }}</span>
-                      @if (
-                        row.assetHasIntelligence &&
-                        !(showIntelligenceHeadlines() && row.assetIntelligenceHeadline)
-                      ) {
-                        <app-pi-mark [size]="10" class="shrink-0" />
+                  <span class="flex min-w-0 items-center gap-1.5">
+                    <i
+                      class="fa-solid fa-capsules text-[10px] text-slate-400 shrink-0"
+                      aria-hidden="true"
+                    ></i>
+                    <span class="truncate text-sm font-semibold text-slate-700">{{
+                      row.assetName
+                    }}</span>
+                    <app-phase-chip class="shrink-0" [phase]="row.leadPhase" />
+                    @if (row.assetHasIntelligence) {
+                      <app-pi-mark [size]="10" class="shrink-0" />
+                    }
+                  </span>
+                  <!-- Attribute line: labeled MOA / ROA so each is self-describing
+                       and the full list shows rather than a single truncated chip
+                       competing with the asset name. -->
+                  @if (assetHasAttributesLine(row)) {
+                    <span class="flex min-w-0 items-center gap-2.5 pl-[22px] text-[10px] leading-none">
+                      @if (showMoaColumn() && !hideMoaColumn() && row.assetMoas.length > 0) {
+                        <span class="flex min-w-0 items-center gap-1">
+                          <span class="shrink-0 text-[8px] font-bold uppercase tracking-wider text-slate-400"
+                            >MOA</span
+                          >
+                          <span class="truncate text-slate-600" [title]="moaTooltipText(row.assetMoas)">{{
+                            moaTooltipText(row.assetMoas)
+                          }}</span>
+                        </span>
+                      }
+                      @if (showRoaColumn() && !hideRoaColumn() && row.assetRoas.length > 0) {
+                        <span class="flex shrink-0 items-center gap-1">
+                          <span class="shrink-0 text-[8px] font-bold uppercase tracking-wider text-slate-400"
+                            >ROA</span
+                          >
+                          <span class="text-slate-600" [title]="roaTooltipText(row.assetRoas)">{{
+                            roaInlineText(row.assetRoas)
+                          }}</span>
+                        </span>
                       }
                     </span>
-                    @if (
-                      showIntelligenceHeadlines() &&
-                      row.assetHasIntelligence &&
-                      row.assetIntelligenceHeadline
-                    ) {
-                      <span
-                        class="flex min-w-0 items-center gap-1 text-[10px] leading-tight text-brand-700"
-                      >
-                        <app-pi-mark [size]="9" class="shrink-0" />
-                        <span class="truncate">{{ row.assetIntelligenceHeadline }}</span>
-                      </span>
-                    }
-                  </div>
-                }
-              </div>
-            }
-            <!-- MOA column -->
-            @if (showMoaColumn() && !hideMoaColumn()) {
-              <div
-                class="w-28 px-2 flex items-center border-l border-slate-200 overflow-hidden"
-                [title]="row.isFirstInAsset ? moaTooltipText(row.assetMoas) : ''"
-              >
-                @if (row.isFirstInAsset) {
-                  @if (row.assetMoas.length > 0) {
-                    <div class="flex flex-col gap-0.5 min-w-0">
-                      @for (moa of row.assetMoas.slice(0, 2); track moa.id) {
-                        <span
-                          class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate"
-                          >{{ moa.name }}</span
-                        >
-                      }
-                      @if (row.assetMoas.length > 2) {
-                        <span class="text-[10px] text-slate-500"
-                          >+{{ row.assetMoas.length - 2 }}</span
-                        >
-                      }
-                    </div>
-                  } @else {
-                    <span class="text-slate-400 text-[10px]">None</span>
                   }
-                }
-              </div>
-            }
-            <!-- ROA column -->
-            @if (showRoaColumn() && !hideRoaColumn()) {
-              <div
-                class="w-24 px-2 flex items-center border-l border-slate-200 overflow-hidden"
-                [title]="row.isFirstInAsset ? roaTooltipText(row.assetRoas) : ''"
-              >
-                @if (row.isFirstInAsset) {
-                  @if (row.assetRoas.length > 0) {
-                    <div class="flex flex-col gap-0.5 min-w-0">
-                      @for (roa of row.assetRoas.slice(0, 2); track roa.id) {
-                        <span
-                          class="inline-block rounded-sm bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 truncate"
-                          >{{ roa.abbreviation ?? roa.name }}</span
-                        >
-                      }
-                      @if (row.assetRoas.length > 2) {
-                        <span class="text-[10px] text-slate-500"
-                          >+{{ row.assetRoas.length - 2 }}</span
-                        >
-                      }
-                    </div>
-                  } @else {
-                    <span class="text-slate-400 text-[10px]">None</span>
-                  }
-                }
-              </div>
-            }
-            <!-- Indication column (per-trial: a trial can span several of its asset's indications) -->
-            @if (showIndicationColumn() && !hideIndicationColumn()) {
-              <div
-                class="w-36 px-2.5 flex items-center border-l border-slate-200 overflow-hidden"
-                [title]="indicationTooltipText(row.trialIndications)"
-              >
-                @if (row.trialIndications.length > 0) {
-                  <!-- Chips flow inline and wrap: short indications sit side by side
-                       on one line (so two fit comfortably in the 36px row); longer
-                       sets wrap to a second line. -->
-                  <div class="flex flex-wrap items-center gap-1 min-w-0">
-                    @for (ind of row.trialIndications.slice(0, 2); track ind.id) {
-                      <span
-                        class="inline-block max-w-full rounded-sm bg-slate-100 text-slate-700 text-[10px] leading-tight px-1.5 py-0.5 truncate"
-                        >{{ ind.name }}</span
-                      >
-                    }
-                    @if (row.trialIndications.length > 2) {
-                      <span class="text-[10px] leading-tight text-slate-500"
-                        >+{{ row.trialIndications.length - 2 }}</span
-                      >
-                    }
-                  </div>
-                } @else {
-                  <span
-                    class="inline-block rounded-sm bg-slate-50 text-slate-500 text-[10px] leading-tight px-1.5 py-0.5 italic"
-                    pTooltip="No indication set. Classify to group this trial."
-                    tooltipPosition="top"
-                    >Unclassified</span
-                  >
-                }
-              </div>
-            }
-            <!-- Trial column -->
-            @if (!hideTrialColumn()) {
-              <div
-                class="w-36 md:w-48 px-3 flex items-center text-sm border-l border-slate-200 cursor-pointer hover:bg-brand-50 hover:text-brand-700 text-slate-700 transition-colors"
-                [title]="
-                  row.companyName +
-                  ' / ' +
-                  row.assetName +
-                  ' / ' +
-                  (row.trial.acronym ?? row.trial.name)
-                "
-                role="button"
-                tabindex="0"
-                (click)="onTrialClick(row.trial)"
-                (keydown.enter)="onTrialClick(row.trial)"
-                (keydown.space)="onTrialClick(row.trial)"
-              >
-                <div class="flex min-w-0 flex-col justify-center">
-                  <span class="flex min-w-0 items-center gap-1">
+                </div>
+              }
+              @case ('trial') {
+                <!-- Trial row (the company identity sits on the company band or the
+                     first-asset eyebrow above; trial rows nest under their asset). -->
+                <div
+                  class="flex w-80 min-w-0 flex-col justify-center gap-0.5 cursor-pointer py-0.5 pl-[52px] pr-2 hover:bg-brand-50/40 text-slate-700"
+                  role="button"
+                  tabindex="0"
+                  [title]="
+                    row.companyName +
+                    ' / ' +
+                    row.assetName +
+                    ' / ' +
+                    (row.trial.acronym ?? row.trial.name)
+                  "
+                  (click)="onTrialClick(row.trial)"
+                  (keydown.enter)="onTrialClick(row.trial)"
+                  (keydown.space)="onTrialClick(row.trial)"
+                >
+                  <span class="flex min-w-0 items-center gap-1.5">
+                    <i
+                      class="fa-solid fa-flask text-[9px] text-slate-300 shrink-0"
+                      aria-hidden="true"
+                    ></i>
                     @if (row.trial.ctgov_withdrawn_at) {
                       <i
                         class="fa-solid fa-ban text-[9px] text-amber-700 shrink-0"
@@ -381,7 +194,7 @@
                         aria-label="Removed from CT.gov registry"
                       ></i>
                     }
-                    <span class="truncate">{{ row.trial.acronym ?? row.trial.name }}</span>
+                    <span class="truncate text-sm">{{ row.trial.acronym ?? row.trial.name }}</span>
                     @if (
                       row.trial.has_intelligence &&
                       !(showIntelligenceHeadlines() && row.trial.intelligence_headline)
@@ -389,13 +202,29 @@
                       <app-pi-mark [size]="11" class="shrink-0" />
                     }
                     <app-change-badge
-                      class="inline-flex items-center"
+                      class="inline-flex shrink-0 items-center"
                       [count]="row.trial.recent_changes_count ?? 0"
                       [type]="row.trial.most_recent_change_type ?? null"
                       [eventId]="row.trial.most_recent_change_event_id ?? null"
                     />
+                    @if (
+                      showIndicationColumn() &&
+                      !hideIndicationColumn() &&
+                      row.trialIndications.length > 0
+                    ) {
+                      <span class="flex min-w-0 shrink items-center gap-1">
+                        <span class="shrink-0 text-[8px] font-bold uppercase tracking-wider text-slate-400"
+                          >IND</span
+                        >
+                        <span
+                          class="truncate text-[10px] text-slate-600"
+                          [title]="indicationTooltipText(row.trialIndications)"
+                          >{{ indicationInlineText(row.trialIndications) }}</span
+                        >
+                      </span>
+                    }
                     @if (row.trial.identifier) {
-                      <span class="text-[10px] text-slate-400 font-mono">{{
+                      <span class="shrink-0 font-mono text-[10px] text-slate-400">{{
                         row.trial.identifier
                       }}</span>
                     }
@@ -406,14 +235,14 @@
                     row.trial.intelligence_headline
                   ) {
                     <span
-                      class="flex min-w-0 items-center gap-1 text-[10px] leading-tight text-brand-700"
+                      class="flex min-w-0 items-center gap-1 pl-4 text-[10px] leading-tight text-brand-700"
                     >
                       <app-pi-mark [size]="9" class="shrink-0" />
                       <span class="truncate">{{ row.trial.intelligence_headline }}</span>
                     </span>
                   }
                 </div>
-              </div>
+              }
             }
           </div>
         }
@@ -430,17 +259,25 @@
 
         <!-- Trial rows -->
         <div [style.width.px]="totalWidth()">
-          @for (row of flattenedTrials(); track row.trial.id; let idx = $index) {
+          @for (row of gridRows(); track rowKey(row)) {
             <div
-              class="relative border-slate-200"
+              class="relative"
+              (mouseenter)="hoveredRowKey.set(rowKey(row))"
               [class.border-b-2]="row.isLastInCompany"
               [class.border-b]="!row.isLastInCompany"
               [class.border-slate-300]="row.isLastInCompany"
-              [class.bg-white]="idx % 2 === 0"
-              [class.bg-slate-50]="idx % 2 !== 0"
-              [style.height.px]="36"
+              [class.border-slate-100]="!row.isLastInCompany"
+              [class.bg-slate-100]="row.kind === 'company' && detailLevel() !== 'companies'"
+              [class.bg-white]="
+                row.kind === 'asset' ||
+                (row.kind === 'trial' && $even) ||
+                (row.kind === 'company' && detailLevel() === 'companies')
+              "
+              [class.bg-slate-50]="row.kind === 'trial' && $odd"
+              [style.box-shadow]="isRowHovered(row) ? hoverShadowRight : null"
+              [style.height.px]="rowHeightFor(row)"
             >
-              <!-- Vertical grid lines -->
+              <!-- Vertical grid lines (common to every row level) -->
               @for (col of columns(); track col.label) {
                 <div
                   class="absolute top-0 bottom-0 border-l border-slate-100"
@@ -456,58 +293,106 @@
                 }
               }
 
-              <!-- Phase bar (SVG overlay) -->
-              @if (row.trial.phase_type && row.phaseSpan.start) {
-                <svg
-                  class="absolute top-0 left-0"
-                  [attr.width]="totalWidth()"
-                  [attr.height]="36"
-                  aria-hidden="true"
-                >
-                  <g
-                    app-phase-bar
-                    [phaseType]="row.trial.phase_type"
-                    [startDate]="row.phaseSpan.start"
-                    [endDate]="row.phaseSpan.end"
-                    [startPrecision]="row.phaseSpan.startPrecision"
-                    [endPrecision]="row.phaseSpan.endPrecision"
-                    [startYear]="startYear()"
-                    [endYear]="endYear()"
-                    [totalWidth]="totalWidth()"
-                    [withdrawn]="!!row.trial.ctgov_withdrawn_at"
-                    (phaseClick)="onPhaseClick(row.trial)"
-                  />
-                </svg>
-              }
-
-              <!-- Today reference line (subtle, behind markers) -->
+              <!-- Today reference line (time orientation, behind markers). Marks
+                   the present; does not encode projection. -->
               @if (todayMarkerX() !== null) {
                 <div
-                  class="pointer-events-none absolute top-0 bottom-0 border-l border-dashed border-slate-300"
+                  class="pointer-events-none absolute top-0 bottom-0 border-l border-slate-300"
                   [style.left.px]="todayMarkerX()"
                   aria-hidden="true"
                 ></div>
               }
 
-              <!-- Markers (absolute positioned) -->
-              @if (row.trial.markers && row.trial.markers.length > 0) {
-                @for (marker of row.trial.markers; track marker.id) {
-                  @if (isMarkerInWindow(marker)) {
-                    <app-marker
-                      [marker]="marker"
-                      [startYear]="startYear()"
-                      [endYear]="endYear()"
-                      [totalWidth]="totalWidth()"
-                      [showDateLabel]="dateLabelVisible(row.trial.id, marker.id)"
-                      [showEndLabel]="endLabelVisible(row.trial.id, marker.id)"
-                      [trialName]="row.trial.acronym ?? row.trial.name"
-                      [trialPhase]="row.trial.phase_type ?? ''"
-                      [recruitmentStatus]="row.trial.recruitment_status ?? ''"
-                      [companyName]="row.companyName"
-                      [companyLogoUrl]="row.companyLogoUrl"
-                      [assetName]="row.assetName"
-                      (markerClick)="onMarkerClick($event)"
-                    />
+              @switch (row.kind) {
+                @case ('trial') {
+                  <!-- Phase bar (SVG overlay) -->
+                  @if (row.trial.phase_type && row.phaseSpan.start) {
+                    <svg
+                      class="absolute top-0 left-0"
+                      [attr.width]="totalWidth()"
+                      [attr.height]="rowHeight()"
+                      aria-hidden="true"
+                    >
+                      <g
+                        app-phase-bar
+                        [compact]="compact()"
+                        [phaseType]="row.trial.phase_type"
+                        [startDate]="row.phaseSpan.start"
+                        [endDate]="row.phaseSpan.end"
+                        [startPrecision]="row.phaseSpan.startPrecision"
+                        [endPrecision]="row.phaseSpan.endPrecision"
+                        [startYear]="startYear()"
+                        [endYear]="endYear()"
+                        [totalWidth]="totalWidth()"
+                        [withdrawn]="!!row.trial.ctgov_withdrawn_at"
+                        (phaseClick)="onPhaseClick(row.trial)"
+                      />
+                    </svg>
+                  }
+
+                  <!-- Trial-anchored markers (absolute positioned) -->
+                  @if (row.trial.markers && row.trial.markers.length > 0) {
+                    @for (marker of row.trial.markers; track marker.id) {
+                      @if (isMarkerInWindow(marker)) {
+                        <app-marker
+                          [marker]="marker"
+                          [compact]="compact()"
+                          [startYear]="startYear()"
+                          [endYear]="endYear()"
+                          [totalWidth]="totalWidth()"
+                          [showDateLabel]="dateLabelVisible(rowKey(row), marker.id)"
+                          [showEndLabel]="endLabelVisible(rowKey(row), marker.id)"
+                          [trialName]="row.trial.acronym ?? row.trial.name"
+                          [trialPhase]="row.trial.phase_type ?? ''"
+                          [recruitmentStatus]="row.trial.recruitment_status ?? ''"
+                          [companyName]="row.companyName"
+                          [companyLogoUrl]="row.companyLogoUrl"
+                          [assetName]="row.assetName"
+                          (markerClick)="onMarkerClick($event)"
+                        />
+                      }
+                    }
+                  }
+                }
+                @case ('asset') {
+                  <!-- Asset-anchored events on the asset lane -->
+                  @for (event of row.events; track event.id) {
+                    @if (isMarkerInWindow(event)) {
+                      <app-marker
+                        [marker]="event"
+                        [compact]="compact()"
+                        [startYear]="startYear()"
+                        [endYear]="endYear()"
+                        [totalWidth]="totalWidth()"
+                        [showDateLabel]="dateLabelVisible(rowKey(row), event.id)"
+                        [showEndLabel]="endLabelVisible(rowKey(row), event.id)"
+                        [trialName]="row.assetName"
+                        [companyName]="row.companyName"
+                        [companyLogoUrl]="row.companyLogoUrl"
+                        [assetName]="row.assetName"
+                        (markerClick)="onMarkerClick($event)"
+                      />
+                    }
+                  }
+                }
+                @case ('company') {
+                  <!-- Company-anchored events on the company band -->
+                  @for (event of row.events; track event.id) {
+                    @if (isMarkerInWindow(event)) {
+                      <app-marker
+                        [marker]="event"
+                        [compact]="compact()"
+                        [startYear]="startYear()"
+                        [endYear]="endYear()"
+                        [totalWidth]="totalWidth()"
+                        [showDateLabel]="dateLabelVisible(rowKey(row), event.id)"
+                        [showEndLabel]="endLabelVisible(rowKey(row), event.id)"
+                        [trialName]="row.companyName"
+                        [companyName]="row.companyName"
+                        [companyLogoUrl]="row.companyLogoUrl"
+                        (markerClick)="onMarkerClick($event)"
+                      />
+                    }
                   }
                 }
               }

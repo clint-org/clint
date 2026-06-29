@@ -26,7 +26,7 @@ import { PiMarkComponent } from '../pi-mark/pi-mark.component';
           <app-pi-mark [size]="12" class="mt-0.5" />
           <div class="min-w-0 flex-1">
             <p class="text-[10px] font-semibold uppercase tracking-wider text-brand-700">
-              Primary intelligence
+              Intelligence
             </p>
             <p class="mt-1 text-[13px] font-medium leading-snug text-slate-800">
               {{ headline() }}

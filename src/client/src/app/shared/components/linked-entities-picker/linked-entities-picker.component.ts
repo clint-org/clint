@@ -30,7 +30,7 @@ interface EntityOption {
 
 /**
  * Chip picker rendered at the bottom of the authoring drawer. Lets the
- * author attach trials, markers, companies, and assets with a
+ * author attach trials, events, companies, and assets with a
  * relationship type. Loads options from the current space on demand.
  */
 @Component({
@@ -144,7 +144,7 @@ export class LinkedEntitiesPickerComponent implements OnInit {
 
   protected readonly entityTypeOptions = [
     { label: 'Trial', value: 'trial' },
-    { label: 'Marker', value: 'marker' },
+    { label: 'Event', value: 'event' },
     { label: 'Company', value: 'company' },
     { label: 'Asset', value: 'product' },
   ];
@@ -242,10 +242,10 @@ export class LinkedEntitiesPickerComponent implements OnInit {
     const sid = this.spaceId();
     const client = this.supabase.client;
 
-    const [trials, markers, companies, assets] = await Promise.all([
+    const [trials, events, companies, assets] = await Promise.all([
       client.from('trials').select('id, name, identifier').eq('space_id', sid).order('name'),
       client
-        .from('markers')
+        .from('events')
         .select('id, title, event_date')
         .eq('space_id', sid)
         .order('event_date', { ascending: false })
@@ -271,12 +271,12 @@ export class LinkedEntitiesPickerComponent implements OnInit {
         sub_label: t.identifier ?? '',
       });
     }
-    for (const m of (markers.data ?? []) as { id: string; title: string; event_date: string }[]) {
+    for (const e of (events.data ?? []) as { id: string; title: string; event_date: string }[]) {
       opts.push({
-        entity_type: 'marker',
-        entity_id: m.id,
-        label: m.title,
-        sub_label: m.event_date,
+        entity_type: 'event',
+        entity_id: e.id,
+        label: e.title,
+        sub_label: e.event_date,
       });
     }
     for (const c of (companies.data ?? []) as { id: string; name: string }[]) {

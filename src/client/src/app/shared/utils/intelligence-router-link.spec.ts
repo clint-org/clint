@@ -41,8 +41,8 @@ test.describe('buildEntityRouterLink', () => {
     ]);
   });
 
-  test('returns null for marker link targets (no detail route; inline-edited on trial page)', () => {
-    expect(buildEntityRouterLink(T, S, 'marker', 'm-1')).toBeNull();
+  test('returns null for event link targets (no detail route; inline-edited on trial page)', () => {
+    expect(buildEntityRouterLink(T, S, 'event', 'm-1')).toBeNull();
   });
 
   test('routes a space (engagement) to the engagement page (no id segment)', () => {

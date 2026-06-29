@@ -40,7 +40,6 @@ afterAll(async () => {
   // Reverse order: source_documents FK on ai_calls, entities FK on source_documents.
   // Delete entities that reference source docs first.
   for (const docId of createdSourceDocIds) {
-    await admin.from('markers').delete().eq('source_doc_id', docId);
     await admin.from('events').delete().eq('source_doc_id', docId);
     await admin.from('trials').delete().eq('source_doc_id', docId);
     await admin.from('assets').delete().eq('source_doc_id', docId);
@@ -423,6 +422,7 @@ describe('commit_source_import', () => {
     return {
       source_kind: 'text',
       source_text: `Integration test content ${uniqueSuffix()}`,
+      source_url: `https://example.com/import-${uniqueSuffix()}`,
       text_hash: textHash ?? `hash-${uniqueSuffix()}`,
       source_title: 'Test Document',
       fetch_outcome: 'paste',
@@ -453,22 +453,19 @@ describe('commit_source_import', () => {
           status: 'Active',
         },
       ],
-      markers: [
-        {
-          marker_type: 'Topline Data',
-          title: `Test readout ${uniqueSuffix()}`,
-          event_date: '2026-06-01',
-          projection: 'company',
-          trial_refs: [0],
-        },
-      ],
       events: [
         {
-          category: 'Regulatory',
+          event_type: 'Topline Data',
+          title: `Test readout ${uniqueSuffix()}`,
+          event_date: '2026-06-01',
+          significance: 'high',
+          anchor: { level: 'trial', ref: 0 },
+        },
+        {
+          event_type: 'Regulatory Filing',
           title: `Test filing ${uniqueSuffix()}`,
           event_date: '2026-06-15',
-          priority: 'high',
-          tags: [],
+          significance: 'high',
           anchor: { level: 'company', ref: 0 },
         },
       ],
@@ -528,8 +525,9 @@ describe('commit_source_import', () => {
     expect(created.companies.length).toBe(1);
     expect(created.assets.length).toBe(1);
     expect(created.trials.length).toBe(1);
-    expect(created.markers.length).toBe(1);
-    expect(created.events.length).toBe(1);
+    // Unified events: one trial-anchored (Topline Data) and one company-anchored
+    // (Regulatory Filing), both in created.events.
+    expect(created.events.length).toBe(2);
 
     // Verify source_doc_id provenance on each entity.
     const docId = result.source_doc_id as string;
@@ -554,19 +552,34 @@ describe('commit_source_import', () => {
       .single();
     expect(trial!.source_doc_id).toBe(docId);
 
-    const { data: marker } = await admin
-      .from('markers')
-      .select('source_doc_id')
-      .eq('id', created.markers[0])
-      .single();
-    expect(marker!.source_doc_id).toBe(docId);
-
-    const { data: event } = await admin
+    // First event: Topline Data, trial-anchored.
+    const { data: trialEvent } = await admin
       .from('events')
-      .select('source_doc_id')
+      .select('source_doc_id, anchor_type')
       .eq('id', created.events[0])
       .single();
-    expect(event!.source_doc_id).toBe(docId);
+    expect(trialEvent!.source_doc_id).toBe(docId);
+    expect(trialEvent!.anchor_type).toBe('trial');
+
+    // Second event: Regulatory Filing, company-anchored.
+    const { data: companyEvent } = await admin
+      .from('events')
+      .select('source_doc_id, anchor_type')
+      .eq('id', created.events[1])
+      .single();
+    expect(companyEvent!.source_doc_id).toBe(docId);
+    expect(companyEvent!.anchor_type).toBe('company');
+
+    // Source citation path: the imported document's source_url lands as one
+    // event_sources row on each created event (via create_event p_sources).
+    for (const eventId of [created.events[0], created.events[1]]) {
+      const { data: srcRows } = await admin
+        .from('event_sources')
+        .select('url')
+        .eq('event_id', eventId);
+      expect(srcRows, `event ${eventId} must have a source citation`).toHaveLength(1);
+      expect(srcRows![0].url).toBe(sourceDoc.source_url);
+    }
 
     // Verify source_documents row.
     const { data: srcDoc } = await admin
@@ -708,8 +721,8 @@ describe('commit_source_import', () => {
     expect((result.warnings as string[]).includes('inventory_drift')).toBe(true);
   });
 
-  it('skips existing-matched markers and events; reports them in skipped', async () => {
-    // First commit: create baseline entities including one marker and one event.
+  it('skips existing-matched events; reports them in skipped.events', async () => {
+    // First commit: create baseline entities including two unified events.
     const aiCallId1 = await openAndCloseAiCall();
     const snap1 = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
       p_space_id: p.org.spaceId,
@@ -725,10 +738,13 @@ describe('commit_source_import', () => {
     const result1 = expectOk(r1) as Record<string, unknown>;
     createdSourceDocIds.push(result1.source_doc_id as string);
     const created1 = result1.created as Record<string, string[]>;
-    const existingMarkerId = created1.markers[0];
-    const existingEventId = created1.events[0];
+    // After unified contract: events[0] is the trial-anchored Topline Data event,
+    // events[1] is the company-anchored Regulatory Filing event.
+    const existingEventId1 = created1.events[0]; // trial-anchored
+    const existingEventId2 = created1.events[1]; // company-anchored
 
-    // Second commit: one marker and one event match existing entities; one of each is new.
+    // Second commit: one trial-anchored and one company-anchored event match
+    // existing rows; one new event of each type serves as a regression guard.
     const aiCallId2 = await openAndCloseAiCall();
     const snap2 = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
       p_space_id: p.org.spaceId,
@@ -738,41 +754,39 @@ describe('commit_source_import', () => {
     const newEventTitle = `New event dedup ${uniqueSuffix()}`;
 
     const proposal2 = makeProposal({
-      markers: [
-        // Matched to existing: should be skipped, not inserted again.
+      events: [
+        // Matched to existing trial-anchored event: should be skipped.
         {
-          marker_type: 'Topline Data',
+          event_type: 'Topline Data',
           title: 'Existing readout (skip me)',
           event_date: '2026-06-01',
-          projection: 'company',
-          match: { kind: 'existing', id: existingMarkerId },
+          significance: 'high',
+          anchor: { level: 'trial', ref: 0 },
+          match: { kind: 'existing', id: existingEventId1 },
         },
-        // New: should be created.
+        // New trial-anchored event: should be created.
         {
-          marker_type: 'Topline Data',
+          event_type: 'Topline Data',
           title: newMarkerTitle,
           event_date: '2026-07-01',
-          projection: 'company',
+          significance: 'high',
+          anchor: { level: 'trial', ref: 0 },
         },
-      ],
-      events: [
-        // Matched to existing: should be skipped.
+        // Matched to existing company-anchored event: should be skipped.
         {
-          category: 'Regulatory',
+          event_type: 'Regulatory Filing',
           title: 'Existing filing (skip me)',
           event_date: '2026-06-15',
-          priority: 'high',
-          tags: [],
+          significance: 'high',
           anchor: { level: 'company', ref: 0 },
-          match: { kind: 'existing', id: existingEventId },
+          match: { kind: 'existing', id: existingEventId2 },
         },
-        // New: should be created.
+        // New company-anchored event: should be created.
         {
-          category: 'Regulatory',
+          event_type: 'Regulatory Filing',
           title: newEventTitle,
           event_date: '2026-08-01',
-          priority: 'low',
-          tags: [],
+          significance: 'low',
           anchor: { level: 'company', ref: 0 },
         },
       ],
@@ -788,33 +802,34 @@ describe('commit_source_import', () => {
     const result2 = expectOk(r2) as Record<string, unknown>;
     createdSourceDocIds.push(result2.source_doc_id as string);
 
-    // skipped field lists the bypassed ids.
+    // skipped.events lists both bypassed event ids.
     const skipped = result2['skipped'] as Record<string, string[]>;
     expect(skipped, 'skipped field must exist in result').toBeTruthy();
-    expect(skipped.markers).toContain(existingMarkerId);
-    expect(skipped.events).toContain(existingEventId);
+    expect(skipped.events).toContain(existingEventId1);
+    expect(skipped.events).toContain(existingEventId2);
 
-    // created lists only the genuinely new rows.
+    // created lists only the genuinely new events (one trial-anchored, one company-anchored).
     const created2 = result2.created as Record<string, string[]>;
-    expect(created2.markers).toHaveLength(1);
-    expect(created2.events).toHaveLength(1);
-    expect(created2.markers).not.toContain(existingMarkerId);
-    expect(created2.events).not.toContain(existingEventId);
+    expect(created2.events).toHaveLength(2);
+    expect(created2.events).not.toContain(existingEventId1);
+    expect(created2.events).not.toContain(existingEventId2);
 
-    // DB check: no duplicate marker row.
+    // DB check: no duplicate row for the existing trial-anchored event.
     const { count: markerCount } = await admin
-      .from('markers')
+      .from('events')
       .select('*', { count: 'exact', head: true })
-      .eq('id', existingMarkerId);
+      .eq('id', existingEventId1);
     expect(markerCount).toBe(1);
 
-    // Regression guard: the genuinely new marker was created with the correct title.
+    // Regression guard: the genuinely new trial-anchored event was created with
+    // the correct title and anchor type.
     const { data: newMarkerRow } = await admin
-      .from('markers')
-      .select('title')
-      .eq('id', created2.markers[0])
+      .from('events')
+      .select('title, anchor_type')
+      .eq('id', created2.events[0])
       .single();
     expect(newMarkerRow!.title).toBe(newMarkerTitle);
+    expect(newMarkerRow!.anchor_type).toBe('trial');
   });
 });
 

@@ -11,9 +11,17 @@ import {
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, ActivatedRouteSnapshot, RouterLink } from '@angular/router';
 
-import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/catalyst.model';
+import {
+  CatalystDetail,
+  CtgovMarkerMetadata,
+  UpcomingMarker,
+} from '../../core/models/event-detail.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { MarkerChangeRow } from '../../core/models/change-event.model';
-import { phaseShortLabel } from '../../core/models/phase-colors';
 import {
   CTGOV_FIELD_CATALOGUE,
   CTGOV_KEY_CATALYSTS_DEFAULT_PATHS,
@@ -47,6 +55,7 @@ import { PiDetailSectionComponent } from './pi-detail-section/pi-detail-section.
 import { PiReference } from '../../core/models/primary-intelligence.model';
 import { MarkerIconComponent } from './svg-icons/marker-icon.component';
 import { MaterialsSectionComponent } from './materials-section/materials-section.component';
+import { PhaseChipComponent } from './phase-chip.component';
 
 export type CtgovMarkerSurfaceKey = 'timeline_detail' | 'key_catalysts_panel';
 
@@ -85,6 +94,7 @@ interface CtgovProvenanceBlock {
     ExternalLinkComponent,
     MarkerIconComponent,
     MaterialsSectionComponent,
+    PhaseChipComponent,
     SourceProvenanceLineComponent,
   ],
   template: `
@@ -115,17 +125,32 @@ interface CtgovProvenanceBlock {
         </div>
       }
 
-      <!-- Asset + Trial identity grid: two bordered cells with a vertical
-           divider, matching the standardized affiliation scaffold. -->
-      @if (d.catalyst.company_name || (d.catalyst.trial_acronym ?? d.catalyst.trial_name)) {
-        <div class="mt-4 grid grid-cols-2 border border-slate-200">
-          <!-- Asset cell -->
-          <div class="min-w-0 border-r border-slate-200 px-3 py-2.5">
-            <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              Asset
-            </p>
-            @if (d.catalyst.company_name) {
-              <div class="flex items-center gap-2">
+      <!-- Company / Asset / Trial affiliation. Company gets a full-width header
+           cell (logo, or the building entity icon as fallback, + name); the
+           Asset | Trial row sits beneath. Mirrors the building/capsule/flask
+           entity vocabulary used in the nav and timeline. -->
+      @if (
+        d.catalyst.company_name ||
+        d.catalyst.asset_name ||
+        (d.catalyst.trial_acronym ?? d.catalyst.trial_name)
+      ) {
+        <div class="mt-4 border border-slate-200">
+          <!-- Company header cell: the whole row (logo + name) is the link. -->
+          @if (d.catalyst.company_name) {
+            @if (d.catalyst.company_id && tenantIdSig() && spaceId()) {
+              <a
+                [routerLink]="[
+                  '/t',
+                  tenantIdSig(),
+                  's',
+                  spaceId(),
+                  'profiles',
+                  'companies',
+                  d.catalyst.company_id,
+                ]"
+                appDetailPanelEntityLink
+                class="flex items-center gap-2 border-b border-slate-200 px-3 py-2.5"
+              >
                 @if (d.catalyst.company_logo_url) {
                   <img
                     [ngSrc]="d.catalyst.company_logo_url"
@@ -134,106 +159,120 @@ interface CtgovProvenanceBlock {
                     height="20"
                     class="h-5 w-5 flex-none rounded object-contain"
                   />
+                } @else {
+                  <span class="flex h-5 w-5 flex-none items-center justify-center text-slate-400">
+                    <i class="fa-solid fa-building text-[13px]" aria-hidden="true"></i>
+                  </span>
                 }
-                <div class="min-w-0">
-                  @if (d.catalyst.company_id && tenantIdSig() && spaceId()) {
-                    <a
-                      [routerLink]="[
-                        '/t',
-                        tenantIdSig(),
-                        's',
-                        spaceId(),
-                        'profiles',
-                        'companies',
-                        d.catalyst.company_id,
-                      ]"
-                      appDetailPanelEntityLink
-                      class="block truncate text-[11px] font-semibold uppercase tracking-wide"
-                    >
-                      {{ d.catalyst.company_name }}
-                    </a>
-                  } @else {
-                    <span class="block truncate text-[11px] font-semibold uppercase tracking-wide text-slate-700">
-                      {{ d.catalyst.company_name }}
-                    </span>
-                  }
-                  @if (d.catalyst.asset_name) {
-                    @if (d.catalyst.asset_id && tenantIdSig() && spaceId()) {
-                      <a
-                        [routerLink]="[
-                          '/t',
-                          tenantIdSig(),
-                          's',
-                          spaceId(),
-                          'profiles',
-                          'assets',
-                          d.catalyst.asset_id,
-                        ]"
-                        appDetailPanelEntityLink
-                        class="mt-0.5 block truncate text-[12px]"
-                      >
-                        {{ d.catalyst.asset_name }}
-                      </a>
-                    } @else {
-                      <span class="mt-0.5 block truncate text-[12px] text-slate-700">
-                        {{ d.catalyst.asset_name }}
-                      </span>
-                    }
-                  }
-                </div>
-              </div>
+                <span class="min-w-0 truncate text-[11px] font-semibold uppercase tracking-wide">
+                  {{ d.catalyst.company_name }}
+                </span>
+              </a>
             } @else {
-              <p class="text-[12px] text-slate-400">No asset linked</p>
+              <div class="flex items-center gap-2 border-b border-slate-200 px-3 py-2.5">
+                @if (d.catalyst.company_logo_url) {
+                  <img
+                    [ngSrc]="d.catalyst.company_logo_url"
+                    [alt]="d.catalyst.company_name"
+                    width="20"
+                    height="20"
+                    class="h-5 w-5 flex-none rounded object-contain"
+                  />
+                } @else {
+                  <span class="flex h-5 w-5 flex-none items-center justify-center text-slate-400">
+                    <i class="fa-solid fa-building text-[13px]" aria-hidden="true"></i>
+                  </span>
+                }
+                <span class="min-w-0 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-700">
+                  {{ d.catalyst.company_name }}
+                </span>
+              </div>
             }
-          </div>
+          }
 
-          <!-- Trial cell -->
-          <div class="min-w-0 px-3 py-2.5">
-            <p class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-              Trial
-            </p>
-            @if (d.catalyst.trial_acronym ?? d.catalyst.trial_name; as trialLabel) {
-              @if (d.catalyst.trial_id; as trialId) {
-                <button
-                  type="button"
-                  class="group flex w-full items-center justify-between gap-2 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  (click)="trialClick.emit(trialId)"
-                >
-                  <span
-                    class="inline-flex min-w-0 items-center gap-1 text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
+          <div class="grid grid-cols-2">
+            <!-- Asset cell -->
+            <div class="min-w-0 border-r border-slate-200 px-3 py-2.5">
+              <p
+                class="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+              >
+                <i class="fa-solid fa-capsules text-[11px]" aria-hidden="true"></i>
+                Asset
+              </p>
+              @if (d.catalyst.asset_name) {
+                @if (d.catalyst.asset_id && tenantIdSig() && spaceId()) {
+                  <a
+                    [routerLink]="[
+                      '/t',
+                      tenantIdSig(),
+                      's',
+                      spaceId(),
+                      'profiles',
+                      'assets',
+                      d.catalyst.asset_id,
+                    ]"
+                    appDetailPanelEntityLink
+                    class="block truncate text-[12px]"
                   >
-                    <span class="truncate">{{ trialLabel }}</span>
+                    {{ d.catalyst.asset_name }}
+                  </a>
+                } @else {
+                  <span class="block truncate text-[12px] text-slate-700">
+                    {{ d.catalyst.asset_name }}
+                  </span>
+                }
+              } @else {
+                <p class="text-[12px] text-slate-400">No asset linked</p>
+              }
+            </div>
+
+            <!-- Trial cell -->
+            <div class="min-w-0 px-3 py-2.5">
+              <p
+                class="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400"
+              >
+                <i class="fa-solid fa-flask text-[11px]" aria-hidden="true"></i>
+                Trial
+              </p>
+              @if (d.catalyst.trial_acronym ?? d.catalyst.trial_name; as trialLabel) {
+                <!-- Trial name on its own full-width row so it is never
+                     condensed by the phase pill (which now sits on the
+                     status row below). -->
+                @if (d.catalyst.trial_id; as trialId) {
+                  <button
+                    type="button"
+                    class="group flex w-full items-center gap-1 text-left focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    (click)="trialClick.emit(trialId)"
+                  >
+                    <span
+                      class="truncate text-[13px] font-medium text-slate-900 group-hover:text-brand-700"
+                      >{{ trialLabel }}</span
+                    >
                     <i
                       class="fa-solid fa-arrow-right shrink-0 text-[10px] text-slate-300 group-hover:text-brand-600"
                       aria-hidden="true"
                     ></i>
-                  </span>
-                  @if (phaseLabel(d.catalyst.trial_phase); as phase) {
-                    <span
-                      class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
-                      >{{ phase }}</span
-                    >
-                  }
-                </button>
-              } @else {
-                <div class="flex w-full items-center justify-between gap-2">
-                  <span class="truncate text-[13px] font-medium text-slate-900">{{
+                  </button>
+                } @else {
+                  <span class="block truncate text-[13px] font-medium text-slate-900">{{
                     trialLabel
                   }}</span>
-                  @if (phaseLabel(d.catalyst.trial_phase); as phase) {
-                    <span
-                      class="shrink-0 border border-slate-200 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-slate-600"
-                      >{{ phase }}</span
-                    >
-                  }
-                </div>
+                }
+                <!-- Status + phase: status sits left, phase chip right-aligned. -->
+                @if (d.catalyst.recruitment_status || d.catalyst.trial_phase) {
+                  <div class="mt-1 flex items-center gap-2">
+                    @if (d.catalyst.recruitment_status) {
+                      <p class="min-w-0 truncate text-[11px] text-slate-500">
+                        {{ d.catalyst.recruitment_status }}
+                      </p>
+                    }
+                    <app-phase-chip class="ml-auto" [phase]="d.catalyst.trial_phase" />
+                  </div>
+                }
+              } @else {
+                <p class="text-[12px] text-slate-400">No trial linked</p>
               }
-              @if (d.catalyst.recruitment_status) {
-                <p class="mt-1 text-[11px] text-slate-500">{{ d.catalyst.recruitment_status }}</p>
-              }
-            } @else {
-              <p class="text-[12px] text-slate-400">No trial linked</p>
-            }
+            </div>
           </div>
         </div>
       }
@@ -253,7 +292,9 @@ interface CtgovProvenanceBlock {
         </app-detail-panel-section>
       }
 
-      <!-- Source provenance -->
+      <!-- Source provenance: the derived CT.gov registry link (registry_url is
+           derived server-side, never stored) plus the attached citation list
+           (sources). The legacy source_url is only a mid-transition fallback. -->
       @if (ctgovProvenance(); as prov) {
         <app-detail-panel-section label="Source">
           <dl class="grid grid-cols-[auto,1fr] gap-x-3 gap-y-0.5 text-[11px]">
@@ -273,17 +314,45 @@ interface CtgovProvenanceBlock {
               </dd>
             }
           </dl>
-          @if (d.catalyst.source_url) {
-            <app-external-link [href]="d.catalyst.source_url" class="mt-2 block">
+          @if (registryUrl(); as reg) {
+            <app-external-link [href]="reg" class="mt-2 block">
               View on ClinicalTrials.gov
             </app-external-link>
           }
+          @if (citations().length > 0) {
+            <ul class="mt-2 space-y-1">
+              @for (src of citations(); track src.url) {
+                <li>
+                  <app-external-link [href]="src.url">{{
+                    src.label || extractDomain(src.url)
+                  }}</app-external-link>
+                </li>
+              }
+            </ul>
+          }
         </app-detail-panel-section>
-      } @else if (d.catalyst.source_url) {
+      } @else if (registryUrl() || citations().length > 0 || d.catalyst.source_url) {
         <app-detail-panel-section label="Source">
-          <app-external-link [href]="d.catalyst.source_url">
-            {{ extractDomain(d.catalyst.source_url) }}
-          </app-external-link>
+          @if (registryUrl(); as reg) {
+            <app-external-link [href]="reg" class="block">
+              View on ClinicalTrials.gov
+            </app-external-link>
+          }
+          @if (citations().length > 0) {
+            <ul class="space-y-1" [class.mt-2]="registryUrl()">
+              @for (src of citations(); track src.url) {
+                <li>
+                  <app-external-link [href]="src.url">{{
+                    src.label || extractDomain(src.url)
+                  }}</app-external-link>
+                </li>
+              }
+            </ul>
+          } @else if (!registryUrl() && d.catalyst.source_url) {
+            <app-external-link [href]="d.catalyst.source_url">
+              {{ extractDomain(d.catalyst.source_url) }}
+            </app-external-link>
+          }
         </app-detail-panel-section>
       }
 
@@ -296,6 +365,18 @@ interface CtgovProvenanceBlock {
         </div>
       }
 
+      @if (entityIntelligence().length > 0) {
+        <app-detail-panel-section
+          [label]="'Intelligence (' + entityIntelligence().length + ')'"
+          [piMark]="true"
+        >
+          <app-pi-detail-section
+            [references]="entityIntelligence()"
+            (referenceClick)="onReferenceClick($event)"
+          />
+        </app-detail-panel-section>
+      }
+
       @if (references().length > 0) {
         <app-detail-panel-section label="Referenced in intelligence" [piMark]="true">
           <app-pi-detail-section
@@ -306,28 +387,78 @@ interface CtgovProvenanceBlock {
         </app-detail-panel-section>
       }
 
-      @if (d.upcoming_markers.length > 0) {
-        <app-detail-panel-section label="Upcoming for this trial">
+      <!-- Program context: future then past events sharing this event's anchor
+           (parent asset / company / space), mirroring the bullseye drawer's
+           symmetric Upcoming / Recent split. -->
+      @if (upcomingMarkers().length > 0) {
+        <app-detail-panel-section label="Upcoming events">
           <app-detail-panel-entity-list>
-            @for (um of d.upcoming_markers; track um.marker_id) {
+            @for (um of upcomingMarkers(); track um.marker_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(um.marker_id)">
                 <app-marker-icon
-                  class="shrink-0"
+                  class="mt-0.5 shrink-0 self-start"
                   [shape]="um.marker_type_shape"
                   [color]="um.marker_type_color"
                   [size]="12"
                   [fillStyle]="um.is_projected ? 'outline' : 'filled'"
                   [innerMark]="um.marker_type_inner_mark"
                   [isNle]="um.no_longer_expected"
+                  [projectionBadge]="markerBadge(um)"
+                  [outlineDash]="markerOutlineDash(um)"
                 />
-                <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
-                  um.event_date | date: 'MMM yyyy'
+                <span class="w-[5.25rem] shrink-0 self-start font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
+                  um.event_date | date: 'mediumDate'
                 }}</span>
-                <span class="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-700">{{
-                  um.marker_type_name
-                }}</span>
+                <span class="flex min-w-0 flex-1 flex-col">
+                  <span class="truncate text-[12px] font-medium text-slate-700">{{
+                    um.marker_type_name
+                  }}</span>
+                  @if (um.trial_acronym ?? um.trial_name; as trialLabel) {
+                    <span class="truncate font-mono text-[10px] uppercase tracking-wide text-slate-400">{{
+                      trialLabel
+                    }}</span>
+                  }
+                </span>
                 @if (um.is_projected) {
-                  <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
+                  <span class="mt-0.5 shrink-0 self-start font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
+                }
+              </app-detail-panel-entity-row>
+            }
+          </app-detail-panel-entity-list>
+        </app-detail-panel-section>
+      }
+
+      @if (recentMarkers().length > 0) {
+        <app-detail-panel-section label="Recent events">
+          <app-detail-panel-entity-list>
+            @for (rm of recentMarkers(); track rm.marker_id) {
+              <app-detail-panel-entity-row (rowClick)="markerClick.emit(rm.marker_id)">
+                <app-marker-icon
+                  class="mt-0.5 shrink-0 self-start"
+                  [shape]="rm.marker_type_shape"
+                  [color]="rm.marker_type_color"
+                  [size]="12"
+                  [fillStyle]="rm.is_projected ? 'outline' : 'filled'"
+                  [innerMark]="rm.marker_type_inner_mark"
+                  [isNle]="rm.no_longer_expected"
+                  [projectionBadge]="markerBadge(rm)"
+                  [outlineDash]="markerOutlineDash(rm)"
+                />
+                <span class="w-[5.25rem] shrink-0 self-start font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
+                  rm.event_date | date: 'mediumDate'
+                }}</span>
+                <span class="flex min-w-0 flex-1 flex-col">
+                  <span class="truncate text-[12px] font-medium text-slate-700">{{
+                    rm.marker_type_name
+                  }}</span>
+                  @if (rm.trial_acronym ?? rm.trial_name; as trialLabel) {
+                    <span class="truncate font-mono text-[10px] uppercase tracking-wide text-slate-400">{{
+                      trialLabel
+                    }}</span>
+                  }
+                </span>
+                @if (rm.is_projected) {
+                  <span class="mt-0.5 shrink-0 self-start font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
               </app-detail-panel-entity-row>
             }
@@ -425,6 +556,12 @@ export class MarkerDetailContentComponent {
    * never own PI, so this pane only ever shows references, never an owned block.
    */
   readonly references = input<PiReference[]>([]);
+  /**
+   * Owned intelligence for this marker's parent trial and asset. Surfaced as an
+   * "Intelligence" section so the timeline pane matches the bullseye/heatmap
+   * panels, which show the selected entity's briefs.
+   */
+  readonly entityIntelligence = input<PiReference[]>([]);
   readonly markerClick = output<string>();
   readonly eventClick = output<string>();
   readonly trialClick = output<string>();
@@ -439,10 +576,6 @@ export class MarkerDetailContentComponent {
 
   protected onReferenceClick(ref: PiReference): void {
     this.openIntelligence.emit({ entityType: ref.entity_type, entityId: ref.entity_id });
-  }
-
-  protected phaseLabel(p: string | null | undefined): string {
-    return p ? phaseShortLabel(p) : '';
   }
 
   /** True when the date is an estimate (projection pill tone is amber). */
@@ -469,7 +602,7 @@ export class MarkerDetailContentComponent {
   protected readonly statusSource = computed<string | null>(() => {
     const projection = this.detail()?.catalyst.projection;
     const estimateSource: Record<string, string> = {
-      stout: 'Stout estimate',
+      forecasted: 'Forecasted',
       company: 'Company guidance',
       primary: 'Primary source estimate',
     };
@@ -587,6 +720,35 @@ export class MarkerDetailContentComponent {
       dateTypeLabel: dateType === 'ACTUAL' ? 'Actual' : 'Anticipated by sponsor',
     };
   });
+
+  /** Derived CT.gov registry link emitted by get_event_detail (or null). */
+  protected readonly registryUrl = computed<string | null>(
+    () => this.detail()?.catalyst.registry_url ?? null
+  );
+
+  /** Attached citations from event_sources (empty when none are attached). */
+  protected readonly citations = computed<{ url: string; label: string | null }[]>(
+    () => this.detail()?.catalyst.sources ?? []
+  );
+
+  /** Future events sharing this event's anchor (parent asset / company / space). */
+  protected readonly upcomingMarkers = computed(() => this.detail()?.upcoming_markers ?? []);
+  /** Past events sharing the same anchor, most-recent first. Symmetric with upcoming. */
+  protected readonly recentMarkers = computed(() => this.detail()?.recent_markers ?? []);
+
+  /**
+   * Projection tier badge / forecast dash for an Upcoming or Recent marker row,
+   * so these glyphs match the timeline + header (same `app-marker-icon`, same
+   * inputs). Upcoming/Recent markers share the parent event's anchor, so the
+   * `primary`-on-non-trial nuance keys off the parent catalyst's anchor_type.
+   */
+  protected markerBadge(m: UpcomingMarker): ProjectionBadge {
+    return projectionBadge(m.projection, this.detail()?.catalyst.anchor_type);
+  }
+
+  protected markerOutlineDash(m: UpcomingMarker): boolean {
+    return projectionOutlineDash(m.projection);
+  }
 
   protected isAutoDescription(desc: string): boolean {
     return desc.toLowerCase().startsWith('auto-derived from');

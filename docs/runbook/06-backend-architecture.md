@@ -38,29 +38,28 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_audit_trigger_space_members` | - | spaces |
 | `_auto_derive_asset_indication_status` | - | trial_assets |
 | `_auto_derive_on_trial_condition_change` | - | trial_assets |
-| `_cleanup_orphan_marker` | markers | marker_assignments |
-| `_cleanup_polymorphic_refs` | material_links, primary_intelligence_anchors, primary_intelligence_links | - |
-| `_create_trial_date_markers` | marker_assignments, markers | - |
-| `_dashboard_trial_obj` | - | marker_assignments, marker_categories, marker_types, markers, primary_intelligence, primary_intelligence_anchors, trial_change_events |
-| `_emit_events_from_marker_change` | trial_change_events | marker_assignments, marker_changes, marker_types |
+| `_cleanup_polymorphic_refs` | events, material_links, primary_intelligence_anchors, primary_intelligence_links | - |
+| `_create_trial_date_markers` | events | - |
+| `_dashboard_anchor_events` | - | event_sources, event_type_categories, event_types, events, trials |
+| `_dashboard_trial_obj` | - | primary_intelligence, primary_intelligence_anchors, trial_change_events |
 | `_enqueue_r2_delete` | r2_pending_deletes | - |
-| `_log_marker_change` | marker_changes | - |
+| `_log_event_change` | event_changes | - |
 | `_materialize_trial_from_snapshot` | trial_change_events, trials | - |
 | `_promote_next_intelligence_lead` | primary_intelligence_anchors | primary_intelligence |
 | `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_assets, trial_conditions, trials |
-| `_seed_ctgov_marker_upsert` | marker_assignments, markers | - |
+| `_seed_ctgov_marker_upsert` | events | - |
 | `_seed_ctgov_markers` | - | trials |
-| `_seed_demo_activity_variety` | marker_assignments, markers, trial_change_events | trials |
+| `_seed_demo_activity_variety` | events, trial_change_events | trials |
 | `_seed_demo_asset_indications` | asset_indications | - |
 | `_seed_demo_assets` | assets | - |
 | `_seed_demo_companies` | companies | - |
-| `_seed_demo_events` | event_threads, events | assets |
+| `_seed_demo_events` | event_sources, events | assets |
 | `_seed_demo_indications` | condition_indication_map, conditions, indications | - |
-| `_seed_demo_markers` | marker_assignments, markers | events, materials |
+| `_seed_demo_markers` | events | - |
 | `_seed_demo_materials` | material_links, materials | - |
 | `_seed_demo_moa_roa` | asset_mechanisms_of_action, asset_routes_of_administration, mechanisms_of_action, routes_of_administration | - |
 | `_seed_demo_primary_intelligence` | primary_intelligence, primary_intelligence_anchors, primary_intelligence_links | assets, companies, events |
-| `_seed_demo_recent_activity` | marker_assignments, markers | trials |
+| `_seed_demo_recent_activity` | events | trials |
 | `_seed_demo_trial_notes` | trial_notes | - |
 | `_seed_demo_trials` | trial_conditions, trials | - |
 | `_sync_asset_indications` | asset_indications | assets, condition_indication_map, trial_assets, trial_conditions, trials |
@@ -77,17 +76,14 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `ai_resolve_model` | - | ai_model_pricing |
 | `archive_space` | spaces | tenants |
 | `assign_primary_intelligence_version` | - | primary_intelligence |
-| `auto_join_demo_tenant_local` | agency_members, space_members, tenant_members | agencies, tenants |
-| `backfill_marker_history` | marker_changes | markers |
-| `build_intelligence_payload_for_row` | - | assets, companies, markers, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trials |
+| `build_intelligence_payload_for_row` | - | assets, companies, events, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trials |
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
-| `commit_source_import` | ai_calls, indications, mechanisms_of_action, routes_of_administration, source_documents | assets, companies, event_categories, events, marker_types, markers, spaces, trials |
+| `commit_source_import` | ai_calls, indications, mechanisms_of_action, routes_of_administration, source_documents | assets, companies, event_types, events, spaces, trials |
 | `create_asset` | assets | - |
 | `create_company` | companies | - |
-| `create_event` | events | - |
-| `create_marker` | marker_assignments, markers | marker_changes, trials |
+| `create_event` | event_sources, events | assets, companies, trials |
 | `create_space` | space_members, spaces | tenant_members, tenants |
 | `create_trial` | asset_indications, condition_indication_map, conditions, indications, trial_conditions, trials | - |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
@@ -104,39 +100,35 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `enforce_tenant_member_guards` | - | agency_members, tenant_members, tenants |
 | `export_audit_events_csv` | - | audit_events |
 | `finalize_material` | materials | - |
-| `get_activity_feed` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
-| `get_ai_call_detail` | - | ai_calls, assets, companies, events, markers, source_documents, trials |
-| `get_ai_usage_rollup` | - | ai_calls, ai_config, assets, companies, events, indications, markers, source_documents, spaces, tenants, trials |
+| `get_activity_feed` | - | assets, companies, event_type_categories, event_types, events, trial_change_events, trials |
+| `get_ai_call_detail` | - | ai_calls, assets, companies, events, source_documents, trials |
+| `get_ai_usage_rollup` | - | ai_calls, ai_config, assets, companies, events, indications, source_documents, spaces, tenants, trials |
 | `get_asset_detail_with_intelligence` | - | assets |
 | `get_brand_by_host` | - | agencies, tenants |
-| `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, primary_intelligence, primary_intelligence_anchors, routes_of_administration, trial_assets, trial_change_events, trials |
+| `get_bullseye_assets` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, event_type_categories, event_types, events, indications, mechanisms_of_action, primary_intelligence, primary_intelligence_anchors, routes_of_administration, trial_assets, trial_change_events, trials |
 | `get_bullseye_by_company` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, mechanisms_of_action, routes_of_administration, trial_conditions, trials |
 | `get_bullseye_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action, trials |
 | `get_bullseye_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration, trials |
-| `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, marker_assignments, marker_categories, marker_types, markers, mechanisms_of_action, routes_of_administration, trial_assets, trial_conditions, trials |
-| `get_catalyst_detail` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trials |
+| `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, event_type_categories, event_types, events, indications, mechanisms_of_action, routes_of_administration, trial_assets, trial_conditions, trials |
 | `get_company_detail_with_intelligence` | - | companies |
-| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, indications, mechanisms_of_action, primary_intelligence, primary_intelligence_anchors, routes_of_administration, trial_assets, trial_conditions, trials |
-| `get_event_detail` | - | assets, companies, event_categories, event_links, event_sources, event_threads, events, trials |
-| `get_event_thread` | - | event_categories, event_threads, events |
-| `get_events_page_data` | - | assets, change_event_annotations, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, trial_assets, trial_change_events, trials |
+| `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, events, indications, mechanisms_of_action, primary_intelligence, primary_intelligence_anchors, routes_of_administration, trial_assets, trial_conditions, trials |
+| `get_event_detail` | - | assets, companies, event_sources, event_type_categories, event_types, events, trials |
+| `get_events_page_data` | - | assets, change_event_annotations, companies, event_sources, event_type_categories, event_types, events, trial_assets, trial_change_events, trials |
 | `get_intelligence_notes_for_asset` | - | assets, primary_intelligence, primary_intelligence_anchors, trials |
-| `get_key_catalysts` | - | assets, companies, marker_assignments, marker_categories, marker_types, markers, trials |
 | `get_landscape_index` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_company` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action |
 | `get_landscape_index_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration |
 | `get_latest_sync_run` | - | ctgov_sync_runs |
-| `get_marker_history` | - | marker_changes |
 | `get_positioning_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, indications, mechanisms_of_action, primary_intelligence, primary_intelligence_anchors, routes_of_administration, trial_assets, trials |
-| `get_primary_intelligence_history` | - | assets, companies, events, markers, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trials |
+| `get_primary_intelligence_history` | - | assets, companies, events, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trials |
 | `get_source_document` | - | ai_calls, source_documents |
-| `get_space_inventory_snapshot` | - | assets, companies, event_categories, events, indications, marker_assignments, marker_types, markers, mechanisms_of_action, routes_of_administration, trials |
-| `get_space_landing_stats` | - | assets, companies, marker_assignments, marker_types, markers, primary_intelligence, trial_change_events, trials |
+| `get_space_inventory_snapshot` | - | assets, companies, event_type_categories, event_types, events, indications, mechanisms_of_action, routes_of_administration, trials |
+| `get_space_landing_stats` | - | assets, companies, event_types, events, primary_intelligence, trial_change_events, trials |
 | `get_space_tags` | - | events |
 | `get_tenant_access_settings` | - | tenants |
 | `get_tenant_ai_status` | - | ai_calls, ai_config |
-| `get_trial_activity` | - | assets, companies, marker_categories, marker_types, markers, trial_change_events, trials |
+| `get_trial_activity` | - | assets, companies, event_type_categories, event_types, events, trial_change_events, trials |
 | `get_trial_detail_with_intelligence` | - | trials |
 | `get_trial_indications` | - | condition_indication_map, indications, trial_conditions, trials |
 | `get_trials_for_polling` | - | trials |
@@ -154,12 +146,13 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `list_agency_members` | - | agency_members |
 | `list_audit_events` | - | audit_events |
 | `list_draft_intelligence_for_space` | - | primary_intelligence, primary_intelligence_anchors |
+| `list_intelligence_feed` | - | assets, companies, event_type_categories, event_types, events, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trials |
 | `list_intelligence_for_entity` | - | primary_intelligence, primary_intelligence_anchors |
 | `list_latest_snapshots_for_space` | - | trial_ctgov_snapshots |
-| `list_materials_for_entity` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
-| `list_materials_for_space` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
+| `list_materials_for_entity` | - | assets, companies, events, material_links, materials, spaces, trials |
+| `list_materials_for_space` | - | assets, companies, events, material_links, materials, spaces, trials |
 | `list_primary_intelligence` | - | primary_intelligence, primary_intelligence_anchors, primary_intelligence_links |
-| `list_recent_materials_for_space` | - | assets, companies, events, marker_assignments, markers, material_links, materials, spaces, trials |
+| `list_recent_materials_for_space` | - | assets, companies, events, material_links, materials, spaces, trials |
 | `list_space_members` | - | space_members |
 | `list_tenant_members` | - | agency_members, tenant_members, tenants |
 | `lookup_user_by_email` | - | agency_members |
@@ -168,18 +161,18 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `mark_r2_delete_succeeded` | r2_pending_deletes | - |
 | `mark_trials_ctgov_withdrawn` | trial_change_events, trials | - |
 | `normalize_sample_material` | - | materials |
-| `palette_empty_state` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
+| `palette_empty_state` | - | assets, companies, event_type_categories, event_types, events, palette_pinned, palette_recents, trials |
 | `palette_set_pinned` | palette_pinned | - |
 | `palette_touch_recent` | palette_recents | - |
 | `palette_unpin` | palette_pinned | - |
-| `permanently_delete_space` | markers, primary_intelligence_anchors, spaces | assets, companies, events, marker_types, materials, primary_intelligence, tenants, trials |
+| `permanently_delete_space` | events, primary_intelligence_anchors, spaces | assets, companies, materials, primary_intelligence, tenants, trials |
 | `platform_admin_set_ai_enabled` | ai_config | - |
 | `platform_admin_update_ai_config` | ai_config | ai_model_pricing |
 | `platform_admin_upsert_ai_model_pricing` | ai_model_pricing | - |
 | `prepare_material_upload` | - | materials |
-| `preview_asset_delete` | - | assets, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_assets, trial_notes, trials |
-| `preview_company_delete` | - | assets, companies, events, marker_assignments, material_links, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_notes, trials |
-| `preview_trial_delete` | - | events, marker_assignments, material_links, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_notes, trials |
+| `preview_asset_delete` | - | assets, events, material_links, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_assets, trial_notes, trials |
+| `preview_company_delete` | - | assets, companies, events, material_links, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_notes, trials |
+| `preview_trial_delete` | - | events, material_links, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_notes, trials |
 | `provision_agency` | agencies, agency_invites, agency_members | - |
 | `provision_tenant` | tenant_members, tenants | agencies |
 | `purge_primary_intelligence` | primary_intelligence, primary_intelligence_anchors | - |
@@ -197,8 +190,9 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `reset_asset_indication_status` | asset_indications | assets |
 | `restore_space` | spaces | tenants |
 | `retire_hostname_on_change` | retired_hostnames | agencies, tenants |
-| `search_palette` | - | assets, companies, event_categories, events, marker_assignments, marker_categories, marker_types, markers, palette_pinned, palette_recents, trials |
-| `seed_demo_data` | trials | companies, space_members |
+| `search_palette` | - | assets, companies, event_type_categories, event_types, events, palette_pinned, palette_recents, trials |
+| `seed_demo_data` | events, trials | companies, space_members |
+| `seed_events_model_qa` | assets, companies, primary_intelligence, primary_intelligence_anchors, primary_intelligence_links, trial_assets, trials | events, space_members |
 | `self_join_tenant` | tenant_members | tenants |
 | `set_intelligence_lead` | primary_intelligence_anchors | primary_intelligence |
 | `set_trial_assets` | trial_assets | trials |
@@ -210,9 +204,8 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `update_agency_branding` | agencies | - |
 | `update_asset_mechanisms` | asset_mechanisms_of_action | assets |
 | `update_asset_routes` | asset_routes_of_administration | assets |
-| `update_event_links` | event_links | events |
+| `update_event` | events, trial_change_events | assets, companies, trials |
 | `update_event_sources` | event_sources | events |
-| `update_marker_assignments` | marker_assignments | markers, trials |
 | `update_material` | material_links, materials | - |
 | `update_space_field_visibility` | spaces | - |
 | `update_space_show_preclinical` | spaces | - |
@@ -318,7 +311,7 @@ The intelligence helper runs as `security definer` because the `primary_intellig
 
 Dropped briefly on 2026-05-01 (migration 81) when its sole caller, an auto-seed-on-empty-companies heuristic in `landscape-state.service.ts`, was removed. Resurrected the same day in migration 82 with a permission gate that the original version lacked: caller must hold a `space_members` row with `role='owner'` for the target space, OR be a platform admin. Tenant ownership alone is not sufficient (consistent with migration 75's firewall: tenant owners get no implicit space data access).
 
-Invoked only via the explicit URL `/t/:tenantId/s/:spaceId/seed-demo`, which routes to `SeedDemoComponent` and calls `dashboardService.seedDemoData(spaceId)`. There is no auto-trigger; the URL is the entire surface. The component shows a centered spinner while the RPC runs, then redirects to the catalysts page on success or shows the error message with a back link on failure (the most common error being `Insufficient permissions` for non-owners).
+Invoked only via the explicit URL `/t/:tenantId/s/:spaceId/seed-demo`, which routes to `SeedDemoComponent` and calls `dashboardService.seedDemoData(spaceId)`. There is no auto-trigger; the URL is the entire surface. The component shows a centered spinner while the RPC runs, then redirects to the Future Events page on success or shows the error message with a back link on failure (the most common error being `Insufficient permissions` for non-owners).
 
 ### has_space_access
 
@@ -379,7 +372,7 @@ An entity (engagement, company, asset, or trial) can own many intelligence brief
 
 `primary_intelligence` rows are **versions** of an anchor, referenced via `anchor_id`. Entity binding (`entity_type`, `entity_id`) is NOT on version rows. Each version carries `state in ('draft','published','archived','withdrawn')`, a per-anchor `version_number` stamped on entry into `published` by a BEFORE trigger, and four lifecycle columns: `publish_note` + `published_by` (stamped at publish time), `archived_at` (stamped on the prior published row when a newer version publishes over it), and `withdraw_note` (stamped at withdraw). A unique partial index on `state = 'published'` enforces one published row per anchor; multiple drafts can co-exist.
 
-`primary_intelligence_links` is the child table for cross-entity relations (`relationship_type`, optional gloss). Marker rows are valid link targets but are not anchor owners; the marker description carries the catalyst-level write-up.
+`primary_intelligence_links` is the child table for cross-entity relations (`relationship_type`, optional gloss). Marker rows are valid link targets but are not anchor owners; the marker description carries the event-level write-up.
 
 ### RPCs
 
@@ -616,7 +609,7 @@ Deno-runtime handler triggered by a Supabase database webhook on `INSERT` into `
 
 ## Trial change feed RPCs
 
-The trial change feed has four pipeline pieces: a Cloudflare Worker pulls daily from CT.gov on cron, calls `ingest_ctgov_snapshot` per changed trial which writes to `trial_ctgov_snapshots`, computes diffs into `trial_field_changes`, and classifies them into the typed `trial_change_events` stream the UI reads. Marker edits flow into the same `trial_change_events` table via a BEFORE trigger on `markers` that writes `marker_changes` audit rows.
+The trial change feed has four pipeline pieces: a Cloudflare Worker pulls daily from CT.gov on cron, calls `ingest_ctgov_snapshot` per changed trial which writes to `trial_ctgov_snapshots`, computes diffs into `trial_field_changes`, and classifies them into the typed `trial_change_events` stream the UI reads. Analyst event edits flow into `trial_change_events` via the `update_event` RPC, which captures the old date/anchor before the update and emits one `trial_change_events` row. The `_log_event_change` trigger separately writes `event_changes` audit rows for every INSERT/UPDATE/DELETE on `events`.
 
 ```mermaid
 flowchart TD
@@ -644,9 +637,9 @@ flowchart TD
   H -->|yes| J --> K --> L --> M --> N --> O
 ```
 
-**Snapshot materialization (`_materialize_trial_from_snapshot`).** The materialize step writes trial row fields from each snapshot in two coalesce directions. Most ct.gov-derived fields (`phase`, `phase_type`, `recruitment_status`, `study_type`, `last_update_posted_date`, `acronym`) use `coalesce(derived, existing)` -- the new ct.gov value overwrites the prior; a missing path keeps the prior. The single analyst-owned field is `status`, which uses `coalesce(existing, derived)` -- ct.gov seeds it on first sync so newly-created NCT-linked trials appear on the trial-list Status column without analyst intervention, but a value the analyst has subsequently set is never overwritten. `phase_type` is derived by `_derive_phase_type` from the CT.gov phases array (multi-phase designs collapse to the max bucket because `P1_2` / `P2_3` are not handled by the bullseye rank). `status` is derived by `_derive_status` from CT.gov `overallStatus`, collapsing the verbatim enum (still preserved in `recruitment_status`) to the coarser analyst lifecycle bucket -- Planned / Active / Completed / Terminated / Withdrawn. Trial dates (start and end) are no longer written here; they live as markers managed by `_seed_ctgov_markers`.
+**Snapshot materialization (`_materialize_trial_from_snapshot`).** The materialize step writes trial row fields from each snapshot in two coalesce directions. Most ct.gov-derived fields (`phase`, `phase_type`, `recruitment_status`, `study_type`, `last_update_posted_date`, `acronym`) use `coalesce(derived, existing)` -- the new ct.gov value overwrites the prior; a missing path keeps the prior. The single analyst-owned field is `status`, which uses `coalesce(existing, derived)` -- ct.gov seeds it on first sync so newly-created NCT-linked trials appear on the trial-list Status column without analyst intervention, but a value the analyst has subsequently set is never overwritten. `phase_type` is derived by `_derive_phase_type` from the CT.gov phases array (multi-phase designs collapse to the max bucket because `P1_2` / `P2_3` are not handled by the bullseye rank). `status` is derived by `_derive_status` from CT.gov `overallStatus`, collapsing the verbatim enum (still preserved in `recruitment_status`) to the coarser analyst lifecycle bucket -- Planned / Active / Completed / Terminated / Withdrawn. Trial dates (start and end) are no longer written here; they live as events managed by `_seed_ctgov_markers`.
 
-**CT.gov marker seeding (`_seed_ctgov_markers` + `_seed_ctgov_marker_upsert`).** Immediately after materialization, the ingest pipeline upserts the three system markers in the Clinical Trial category that have an unambiguous CT.gov source: Trial Start (from `startDateStruct.date`), Primary Completion Date (from `primaryCompletionDateStruct.date`), and Trial End (from `completionDateStruct.date`). These are now the sole source of truth for trial dates; the former `trials.phase_start_date` / `phase_end_date` columns were dropped. Date strings are resolved to a full date and a precision label by `_ctgov_resolve_partial_date` (exact: YYYY-MM-DD; month: YYYY-MM resolved to the 15th; year: YYYY resolved to July 1), setting `markers.date_precision` and enabling precision-aware rendering on the phase bar. CT.gov `ACTUAL` becomes `projection='actual'` (`is_projected=false`); `ANTICIPATED` or absent becomes `projection='company'` (`is_projected=true`). Each call dispatches through `_seed_ctgov_marker_upsert`, which follows a three-priority rule: (a) a ct.gov-owned marker (`metadata.source='ctgov'`) already exists for this trial -- update its date, precision, and projection in place; (b) exactly one un-owned marker of that type exists -- adopt it by re-stamping `source='ctgov'` and refreshing the date while preserving any analyst-authored description and source_url; (c) otherwise insert a fresh ct.gov-owned marker plus assignment. A null resolved date is a no-op. All ct.gov-owned markers carry `metadata` with `field` / `snapshot_id` / `ctgov_date_type` for provenance and a `source_url` pointing at `https://clinicaltrials.gov/study/<NCT>`. Ct.gov-owned markers are write-locked by the BEFORE UPDATE/DELETE trigger `_guard_ctgov_locked_markers` -- analysts cannot edit or delete them directly; only the seeder (via the `clint.ctgov_seeding` GUC bypass) may modify them. To suppress ct.gov management for a marker, add a manually-authored marker of the same type (leaving the un-owned marker so there are now two un-owned candidates, which bypasses adoption and inserts a new ct.gov-owned one). The other system marker types (Topline Data, Regulatory Filing, Approval, Launch, LOE, etc.) are not derivable from CT.gov and remain analyst-curated. The `ingest_ctgov_snapshot` summary jsonb gains a `markers_seeded` field (count of markers created or updated in the call).
+**CT.gov event seeding (`_seed_ctgov_markers` + `_seed_ctgov_marker_upsert`).** Immediately after materialization, the ingest pipeline upserts the three system events in the Trial Dates event type that have an unambiguous CT.gov source: Trial Start (from `startDateStruct.date`), Primary Completion Date (from `primaryCompletionDateStruct.date`), and Trial End (from `completionDateStruct.date`). These are now the sole source of truth for trial dates; the former `trials.phase_start_date` / `phase_end_date` columns were dropped. Date strings are resolved to a full date and a precision label by `_ctgov_resolve_partial_date` (exact: YYYY-MM-DD; month: YYYY-MM resolved to the 15th; year: YYYY resolved to July 1), setting `events.date_precision` and enabling precision-aware rendering on the phase bar. CT.gov `ACTUAL` becomes `projection='actual'` (`is_projected=false`); `ANTICIPATED` or absent becomes `projection='company'` (`is_projected=true`). Each call dispatches through `_seed_ctgov_marker_upsert`, which follows a three-priority rule: (a) a ct.gov-owned event (`metadata.source='ctgov'`) already exists for this trial -- update its date, precision, and projection in place; (b) exactly one un-owned event of that type exists -- adopt it by re-stamping `source='ctgov'` and refreshing the date while preserving any analyst-authored description; (c) otherwise insert a fresh ct.gov-owned event. A null resolved date is a no-op. All ct.gov-owned events carry `metadata` with `field` / `snapshot_id` / `ctgov_date_type` for provenance; the CT.gov registry link (`https://clinicaltrials.gov/study/<NCT>`) is derived at read time from the anchor trial's identifier, not stored. CT.gov-owned events are write-locked by the BEFORE UPDATE/DELETE trigger `_guard_ctgov_locked_markers` -- analysts cannot edit or delete them directly; only the seeder (via the `clint.ctgov_seeding` GUC bypass) may modify them. To suppress ct.gov management for an event, add a manually-authored event of the same type (leaving the un-owned event so there are now two un-owned candidates, which bypasses adoption and inserts a new ct.gov-owned one). The other system event types (Topline Data, Regulatory Filing, Approval, Launch, LOE, etc.) are not derivable from CT.gov and remain analyst-curated. The `ingest_ctgov_snapshot` summary jsonb gains a `markers_seeded` field (count of events created or updated in the call).
 
 **Worker-side RPCs** (gated by `_verify_ctgov_worker_secret`; the Worker calls Supabase as anon and presents the secret as an argument):
 
@@ -657,9 +650,8 @@ flowchart TD
 
 **User-facing RPCs** (gated by `has_space_access`; called from the Angular client):
 
-- `get_activity_feed(p_space_id, p_filters, p_cursor_observed_at, p_cursor_id, p_limit)`: backs the activity page; reads `trial_change_events` joined to trial (incl. `assets` + `companies` for the row eyebrow), marker, and `marker_types` (current + `from_type_id` / `to_type_id` for `marker_reclassified`). Two-axis keyset cursor on `(observed_at desc, id desc)`.
+- `get_activity_feed(p_space_id, p_filters, p_cursor_observed_at, p_cursor_id, p_limit)`: backs the activity page; reads `trial_change_events` joined to trial (incl. `assets` + `companies` for the row eyebrow) and `event_types` / `event_type_categories`. Two-axis keyset cursor on `(observed_at desc, id desc)`.
 - `get_trial_activity(p_trial_id, p_limit, p_offset)`: backs the trial-detail Activity section.
-- `get_marker_history(p_marker_id)`: backs the marker history panel; reads `marker_changes` joined to `auth.users` for the author email. SECURITY DEFINER (the auth.users join requires elevated perms); access gated on `has_space_access(space_id)` so non-members get errcode 42501 and never see the marker.
 - `trigger_single_trial_sync(p_trial_id)`: POSTs to the Worker's `/admin/ctgov-backfill` endpoint scoped to one NCT; the "Sync from CT.gov" button on trial-detail.
 - `update_space_field_visibility(p_space_id, p_visibility)`: writes the per-space field-visibility map that drives which CT.gov columns render on trial-detail.
 - `recompute_trial_change_events(p_trial_id)`: admin-only; replays the classifier over existing `trial_field_changes` for a trial. Used after classifier rule changes.
@@ -682,18 +674,17 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_audit_trigger_tenant_suspension`
 - `_auto_derive_asset_indication_status`
 - `_auto_derive_on_trial_condition_change`
-- `_cleanup_orphan_marker`
 - `_cleanup_polymorphic_refs`
 - `_create_trial_date_markers`
+- `_dashboard_anchor_events`
 - `_dashboard_trial_obj`
-- `_emit_events_from_marker_change`
 - `_enqueue_r2_delete`
 - `_guard_ctgov_locked_phase_fields`
 - `_humanize_phase`
 - `_humanize_status`
-- `_log_marker_change`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
+- `_phase_label_from_type`
 - `_safe_iso_date`
 - `_set_created_by`
 - `_set_updated_audit`
@@ -710,18 +701,16 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `ai_resolve_model`
 - `archive_space`
 - `assign_primary_intelligence_version`
-- `auto_join_demo_tenant_local`
-- `backfill_marker_history`
 - `claim_pending_r2_deletes`
 - `commit_source_import`
 - `create_asset`
 - `create_company`
 - `create_event`
-- `create_marker`
 - `create_trial`
 - `delete_change_event_annotation`
 - `delete_material`
 - `discard_pending_material`
+- `event_registry_url`
 - `export_audit_events_csv`
 - `finalize_material`
 - `get_ai_call_detail`
@@ -732,13 +721,10 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_bullseye_by_moa`
 - `get_bullseye_by_roa`
 - `get_bullseye_data`
-- `get_catalyst_detail`
 - `get_company_detail_with_intelligence`
 - `get_event_detail`
-- `get_event_thread`
 - `get_events_page_data`
 - `get_intelligence_notes_for_asset`
-- `get_key_catalysts`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`
@@ -758,6 +744,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `link_asset_moa_roa`
 - `list_audit_events`
 - `list_draft_intelligence_for_space`
+- `list_intelligence_feed`
 - `list_latest_snapshots_for_space`
 - `list_materials_for_entity`
 - `list_materials_for_space`
@@ -792,6 +779,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `resolve_user_display_names`
 - `restore_space`
 - `search_palette`
+- `seed_events_model_qa`
 - `set_trial_assets`
 - `set_trial_indications`
 - `source_duplicate_check`
@@ -799,9 +787,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `tenant_owner_update_ai_config`
 - `update_asset_mechanisms`
 - `update_asset_routes`
-- `update_event_links`
 - `update_event_sources`
-- `update_marker_assignments`
 - `update_material`
 - `update_space_show_preclinical`
 - `upsert_change_event_annotation`

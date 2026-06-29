@@ -66,12 +66,12 @@ describe('diffLinks', () => {
     expect(realChange.changed[0].glossChanged).toBe(true);
   });
 
-  it('keys on entity_type so a marker and a company with the same UUID do not collide', () => {
+  it('keys on entity_type so an event and a company with the same UUID do not collide', () => {
     const id = '00000000-0000-0000-0000-000000000001';
-    const base = [link({ entity_type: 'marker', entity_id: id, relationship_type: 'Partner' })];
+    const base = [link({ entity_type: 'event', entity_id: id, relationship_type: 'Partner' })];
     const next = [link({ entity_type: 'company', entity_id: id, relationship_type: 'Partner' })];
     const out = diffLinks(base, next);
     expect(out.added.map((l) => l.entity_type)).toEqual(['company']);
-    expect(out.removed.map((l) => l.entity_type)).toEqual(['marker']);
+    expect(out.removed.map((l) => l.entity_type)).toEqual(['event']);
   });
 });

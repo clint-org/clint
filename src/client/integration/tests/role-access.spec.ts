@@ -18,12 +18,15 @@ beforeAll(async () => {
   p = await buildPersonas();
 }, 120_000);
 
-// 'Leadership' system event category seeded by migration 20260413120000.
-const LEADERSHIP_CATEGORY_ID = 'e0000000-0000-0000-0000-000000000001';
+// 'Leadership Change' system event_type (seeded by the event_types migration).
+const LEADERSHIP_TYPE_ID = 'a0000000-0000-0000-0000-000000000050';
 
+// Unified events shape: anchor_type='space' needs no anchor_id; created_by is
+// set server-side by trg_events_set_created_by from auth.uid().
 const eventBody = (overrides: Record<string, unknown> = {}) => ({
   space_id: p.org.spaceId,
-  category_id: LEADERSHIP_CATEGORY_ID,
+  event_type_id: LEADERSHIP_TYPE_ID,
+  anchor_type: 'space',
   title: `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   event_date: '2026-05-01',
   ...overrides,

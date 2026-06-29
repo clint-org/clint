@@ -1,3 +1,4 @@
+import { Marker } from './marker.model';
 import type { DevelopmentStatus } from './phase-colors';
 import { Trial } from './trial.model';
 
@@ -37,6 +38,9 @@ export interface Asset {
   // created by an AI import. Null for manually created entities.
   source_doc_id: string | null;
   trials?: Trial[];
+  // Asset-anchored events (unified event model). Same JSON shape as a trial
+  // marker; rendered on the asset lane per effectiveVisibility.
+  events?: Marker[];
   indications?: AssetIndication[];
   mechanisms_of_action?: { id: string; name: string }[];
   routes_of_administration?: { id: string; name: string; abbreviation: string | null }[];

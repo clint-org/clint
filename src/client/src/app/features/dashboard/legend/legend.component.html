@@ -4,13 +4,13 @@
   </div>
 } @else if (groupedMarkerTypes().length === 0) {
   <div class="border-t border-slate-200 bg-slate-800 px-4 py-2">
-    <span class="text-[10px] text-slate-400">No marker types configured</span>
+    <span class="text-[10px] text-slate-400">No event types configured</span>
   </div>
 } @else {
   <div
     class="border-t border-slate-700 bg-slate-800 px-4 py-2"
     role="list"
-    aria-label="Marker type legend"
+    aria-label="Event type legend"
   >
     <div class="flex flex-wrap items-center gap-x-6 gap-y-1.5">
       <div class="flex items-center gap-x-3 mr-2">
@@ -91,6 +91,15 @@
                         [innerMark]="mt.inner_mark"
                       />
                     }
+                    @case ('hexagon') {
+                      <g
+                        app-hexagon-icon
+                        [size]="12"
+                        [color]="mt.color"
+                        fillStyle="filled"
+                        [innerMark]="mt.inner_mark"
+                      />
+                    }
                   }
                 </svg>
               }
@@ -108,11 +117,11 @@
           <a
             [routerLink]="link"
             class="inline-flex items-center gap-1 text-[9px] uppercase tracking-widest text-slate-400 hover:text-slate-200"
-            pTooltip="Open markers guide"
+            pTooltip="Open event glyphs guide"
             tooltipPosition="top"
-            aria-label="Open markers guide"
+            aria-label="Open event glyphs guide"
           >
-            <span>Markers</span>
+            <span>Event glyphs</span>
             <i class="fa-solid fa-circle-question text-[10px]" aria-hidden="true"></i>
           </a>
         }

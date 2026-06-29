@@ -58,56 +58,28 @@
       </div>
 
       <!-- Recent-activity band: orange signal-ring dot + amber wash with a
-           left accent rule, matching the bullseye legend's activity ring. -->
+           left accent rule, matching the bullseye legend's activity ring.
+           Navigation to /events removed (Stage-3 cutover); Stage 3 will
+           re-route this to /activity. -->
       @if (asset.has_recent_activity) {
-        @if (asset.most_recent_change_event_id; as aeid) {
-          <button
-            type="button"
-            class="mt-4 flex w-full items-center gap-3 border-l-[3px] border-amber-300 bg-amber-50 px-3.5 py-2.5 text-left hover:bg-amber-100/70 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            [attr.aria-label]="
-              recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type) +
-              ' (open in feed)'
-            "
-            (click)="openChangeEvent(aeid)"
-          >
+        <div
+          class="mt-4 flex w-full items-center gap-3 border-l-[3px] border-amber-300 bg-amber-50 px-3.5 py-2.5"
+          [attr.aria-label]="recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)"
+        >
+          <span
+            class="box-border h-[9px] w-[9px] shrink-0 rounded-full border-2 border-[#f97316]"
+            aria-hidden="true"
+          ></span>
+          <span class="min-w-0 flex-1">
             <span
-              class="box-border h-[9px] w-[9px] shrink-0 rounded-full border-2 border-[#f97316]"
-              aria-hidden="true"
-            ></span>
-            <span class="min-w-0 flex-1">
-              <span
-                class="block font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-amber-800"
-                >Recent activity</span
-              >
-              <span class="mt-0.5 block text-[13px] text-amber-800/90">{{
-                recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
-              }}</span>
-            </span>
-            <span
-              class="shrink-0 font-mono text-[10px] font-bold tracking-[0.1em] text-amber-800"
-              aria-hidden="true"
-              >VIEW →</span
+              class="block font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-amber-800"
+              >Recent activity</span
             >
-          </button>
-        } @else {
-          <div
-            class="mt-4 flex w-full items-center gap-3 border-l-[3px] border-amber-300 bg-amber-50 px-3.5 py-2.5"
-          >
-            <span
-              class="box-border h-[9px] w-[9px] shrink-0 rounded-full border-2 border-[#f97316]"
-              aria-hidden="true"
-            ></span>
-            <span class="min-w-0 flex-1">
-              <span
-                class="block font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-amber-800"
-                >Recent activity</span
-              >
-              <span class="mt-0.5 block text-[13px] text-amber-800/90">{{
-                recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
-              }}</span>
-            </span>
-          </div>
-        }
+            <span class="mt-0.5 block text-[13px] text-amber-800/90">{{
+              recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
+            }}</span>
+          </span>
+        </div>
       }
 
       <!-- Position · Phase: the bullseye coordinates made explicit. Ladder is
@@ -232,8 +204,6 @@
                       [count]="trial.recent_changes_count ?? 0"
                       [type]="trial.most_recent_change_type ?? null"
                       [eventId]="trial.most_recent_change_event_id ?? null"
-                      entityLevel="trial"
-                      [entityId]="trial.id"
                     />
                   </span>
                   <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
@@ -282,16 +252,56 @@
         }
       </app-detail-panel-section>
 
-      @if (asset.recent_markers.length > 0) {
-        <app-detail-panel-section label="Recent markers">
+      @if (upcomingEvents().length > 0) {
+        <app-detail-panel-section label="Upcoming events">
           <app-detail-panel-entity-list>
-            @for (marker of asset.recent_markers; track marker.id) {
+            @for (marker of upcomingEvents(); track marker.id) {
               <app-detail-panel-entity-row (rowClick)="onMarkerRowClick(marker.id)">
                 <app-marker-icon
                   [shape]="marker.shape"
                   [color]="marker.color"
                   [size]="14"
                   [fillStyle]="marker.projection === 'actual' ? 'filled' : 'outline'"
+                  [projectionBadge]="markerBadge(marker)"
+                  [outlineDash]="markerOutlineDash(marker)"
+                  aria-hidden="true"
+                />
+                <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                  marker.event_date | date: 'mediumDate'
+                }}</span>
+                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                  marker.marker_type_name
+                }}</span>
+                @if (marker.category_name) {
+                  <span
+                    class="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+                    >{{ marker.category_name }}</span
+                  >
+                }
+                @if (marker.projection && marker.projection !== 'actual') {
+                  <span
+                    class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium leading-none text-amber-700"
+                    >{{ marker.projection }}</span
+                  >
+                }
+              </app-detail-panel-entity-row>
+            }
+          </app-detail-panel-entity-list>
+        </app-detail-panel-section>
+      }
+
+      @if (recentEvents().length > 0) {
+        <app-detail-panel-section label="Recent events">
+          <app-detail-panel-entity-list>
+            @for (marker of recentEvents(); track marker.id) {
+              <app-detail-panel-entity-row (rowClick)="onMarkerRowClick(marker.id)">
+                <app-marker-icon
+                  [shape]="marker.shape"
+                  [color]="marker.color"
+                  [size]="14"
+                  [fillStyle]="marker.projection === 'actual' ? 'filled' : 'outline'"
+                  [projectionBadge]="markerBadge(marker)"
+                  [outlineDash]="markerOutlineDash(marker)"
                   aria-hidden="true"
                 />
                 <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{

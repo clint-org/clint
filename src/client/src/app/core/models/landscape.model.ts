@@ -316,13 +316,13 @@ export interface LandscapeIndexEntry {
   products_missing_phase: number;
 }
 
-export type ViewMode = 'timeline' | 'bullseye' | 'heatmap' | 'catalysts';
+export type ViewMode = 'timeline' | 'bullseye' | 'heatmap' | 'future-events';
 
 export const VIEW_MODE_OPTIONS: { label: string; value: ViewMode }[] = [
   { label: 'Timeline', value: 'timeline' },
   { label: 'Bullseye', value: 'bullseye' },
   { label: 'Heatmap', value: 'heatmap' },
-  { label: 'Future Catalysts', value: 'catalysts' },
+  { label: 'Future Events', value: 'future-events' },
 ];
 
 export const DIMENSION_OPTIONS: { label: string; value: BullseyeDimension }[] = [

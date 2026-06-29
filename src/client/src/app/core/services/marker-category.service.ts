@@ -27,7 +27,7 @@ export class MarkerCategoryService {
         tags: ['markers:types'],
         fetch: async () => {
           let query = this.supabase.client
-            .from('marker_categories')
+            .from('event_type_categories')
             .select('*')
             .order('display_order');
 
@@ -46,7 +46,7 @@ export class MarkerCategoryService {
     // Place new custom categories after the highest existing order (system + this space)
     // so they sort below the system categories in the legend.
     const { data: maxRows } = await this.supabase.client
-      .from('marker_categories')
+      .from('event_type_categories')
       .select('display_order')
       .or(`is_system.eq.true,space_id.eq.${spaceId}`)
       .order('display_order', { ascending: false })
@@ -56,7 +56,7 @@ export class MarkerCategoryService {
       (((maxRows as { display_order: number }[] | null)?.[0]?.display_order ?? 0) as number) + 1;
 
     const { data } = await this.supabase.client
-      .from('marker_categories')
+      .from('event_type_categories')
       .insert({ name, space_id: spaceId, is_system: false, display_order: nextOrder })
       .select()
       .single()
@@ -70,7 +70,7 @@ export class MarkerCategoryService {
     changes: { name?: string; display_order?: number }
   ): Promise<MarkerCategory> {
     const { data } = await this.supabase.client
-      .from('marker_categories')
+      .from('event_type_categories')
       .update(changes)
       .eq('id', id)
       .select()
@@ -82,7 +82,7 @@ export class MarkerCategoryService {
 
   async delete(id: string): Promise<void> {
     try {
-      await this.supabase.client.from('marker_categories').delete().eq('id', id).throwOnError();
+      await this.supabase.client.from('event_type_categories').delete().eq('id', id).throwOnError();
     } catch (e) {
       if (e && typeof e === 'object' && 'code' in e && e.code === '23503') {
         throw new MarkerCategoryInUseError();

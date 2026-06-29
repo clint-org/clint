@@ -1,89 +1,22 @@
 -- seed data for the clinical trial dashboard
 -- this file is executed after all migrations on `supabase start` and `supabase db reset`.
--- it populates system marker types and a small set of sample markers for local dev.
+--
+-- Event model, Stage 4 (lite): a single populated demo space so the timeline
+-- renders out of the box. The unified event_type_categories and event_types ship
+-- as system rows inside their migrations, so this file only bootstraps a demo
+-- tenant/space and a small competitive landscape (one company, one asset, two
+-- trials) plus a handful of events authored through the shared create_event RPC.
+--
+-- Everything here is idempotent: the demo bootstrap rows use fixed UUIDs in the
+-- 00000000-...-0000000d range, and the content block short-circuits when the
+-- space already has companies, so re-running `supabase db reset` is safe.
+-- Integration tests build their own personas/spaces and do not depend on this file.
 
 -- =============================================================================
--- system marker categories (idempotent)
--- =============================================================================
-
-insert into public.marker_categories (id, space_id, name, display_order, is_system, created_by)
-values
-  ('c0000000-0000-0000-0000-000000000001', null, 'Clinical Trial',       1, true, null),
-  ('c0000000-0000-0000-0000-000000000002', null, 'Data',                 2, true, null),
-  ('c0000000-0000-0000-0000-000000000003', null, 'Regulatory',           3, true, null),
-  ('c0000000-0000-0000-0000-000000000004', null, 'Approval',             4, true, null),
-  ('c0000000-0000-0000-0000-000000000005', null, 'Loss of Exclusivity',  5, true, null)
-on conflict (id) do update set
-  name          = excluded.name,
-  display_order = excluded.display_order,
-  is_system     = excluded.is_system;
-
--- =============================================================================
--- system marker types (idempotent)
--- category_id references the system marker_categories seeded in the redesign
--- migration (20260412130100). category UUIDs follow the c0000000-... pattern.
--- =============================================================================
-
-insert into public.marker_types (id, space_id, created_by, name, shape, fill_style, color, inner_mark, is_system, display_order, category_id)
-values
-  -- Data category (c...0002)
-  ('a0000000-0000-0000-0000-000000000013', null, null, 'Topline Data',      'circle',      'filled', '#4ade80', 'dot',  true,  1, 'c0000000-0000-0000-0000-000000000002'),
-  ('a0000000-0000-0000-0000-000000000030', null, null, 'Interim Data',      'circle',      'filled', '#22c55e', 'dash', true,  2, 'c0000000-0000-0000-0000-000000000002'),
-  ('a0000000-0000-0000-0000-000000000031', null, null, 'Full Data',         'circle',      'filled', '#16a34a', 'none', true,  3, 'c0000000-0000-0000-0000-000000000002'),
-  -- Regulatory category (c...0003)
-  ('a0000000-0000-0000-0000-000000000032', null, null, 'Regulatory Filing', 'diamond',     'filled', '#f97316', 'dot',  true,  4, 'c0000000-0000-0000-0000-000000000003'),
-  ('a0000000-0000-0000-0000-000000000033', null, null, 'Submission',        'diamond',     'filled', '#f97316', 'none', true,  5, 'c0000000-0000-0000-0000-000000000003'),
-  ('a0000000-0000-0000-0000-000000000034', null, null, 'Acceptance',        'diamond',     'filled', '#f97316', 'check',true,  6, 'c0000000-0000-0000-0000-000000000003'),
-  -- Clinical Trial category (c...0001)
-  ('a0000000-0000-0000-0000-000000000008', null, null, 'Primary Completion Date (PCD)', 'circle',   'filled', '#475569', 'none', true,  7, 'c0000000-0000-0000-0000-000000000001'),
-  ('a0000000-0000-0000-0000-000000000011', null, null, 'Trial Start',       'dashed-line', 'filled', '#94a3b8', 'none', true,  8, 'c0000000-0000-0000-0000-000000000001'),
-  ('a0000000-0000-0000-0000-000000000012', null, null, 'Trial End',         'dashed-line', 'filled', '#94a3b8', 'none', true,  9, 'c0000000-0000-0000-0000-000000000001'),
-  -- Approval category (c...0004)
-  ('a0000000-0000-0000-0000-000000000035', null, null, 'Approval',          'flag',        'filled', '#3b82f6', 'none', true, 10, 'c0000000-0000-0000-0000-000000000004'),
-  ('a0000000-0000-0000-0000-000000000036', null, null, 'Launch',            'triangle',    'filled', '#7c3aed', 'none', true, 11, 'c0000000-0000-0000-0000-000000000004'),
-  -- Loss of Exclusivity category (c...0005)
-  ('a0000000-0000-0000-0000-000000000020', null, null, 'LOE Date',          'square',      'filled', '#78350f', 'x',    true, 12, 'c0000000-0000-0000-0000-000000000005'),
-  ('a0000000-0000-0000-0000-000000000021', null, null, 'Generic Entry Date','square',      'filled', '#d97706', 'none', true, 13, 'c0000000-0000-0000-0000-000000000005')
-on conflict (id) do update set
-  name          = excluded.name,
-  shape         = excluded.shape,
-  fill_style    = excluded.fill_style,
-  color         = excluded.color,
-  inner_mark    = excluded.inner_mark,
-  is_system     = excluded.is_system,
-  display_order = excluded.display_order,
-  category_id   = excluded.category_id;
-
--- =============================================================================
--- system event categories (idempotent)
--- =============================================================================
-
-insert into public.event_categories (id, space_id, name, display_order, is_system, created_by)
-values
-  ('e0000000-0000-0000-0000-000000000001', null, 'Leadership',  1, true, null),
-  ('e0000000-0000-0000-0000-000000000002', null, 'Regulatory',  2, true, null),
-  ('e0000000-0000-0000-0000-000000000003', null, 'Financial',   3, true, null),
-  ('e0000000-0000-0000-0000-000000000004', null, 'Strategic',   4, true, null),
-  ('e0000000-0000-0000-0000-000000000005', null, 'Clinical',    5, true, null),
-  ('e0000000-0000-0000-0000-000000000006', null, 'Commercial',  6, true, null)
-on conflict (id) do update set
-  name          = excluded.name,
-  display_order = excluded.display_order,
-  is_system     = excluded.is_system;
-
--- =============================================================================
--- LOCAL DEV demo tenant + space (stable across `supabase db reset`).
--- Combined with the auto_join_demo_on_signup trigger at the bottom of this
--- file, any Google sign-in is automatically granted owner access to the demo
--- tenant and space, so a developer never loses their seeded workspace after a
--- reset. In production this block is harmless: the trigger checks for the
--- demo tenant by fixed UUID and no-ops when it is absent.
+-- LOCAL DEV demo user, tenant, and space (stable across `supabase db reset`).
 -- =============================================================================
 
 -- bootstrap user owns the demo content (created_by FKs into auth.users).
--- raw_user_meta_data.full_name gives the demo author a plausible analyst name
--- so the intelligence contributors line reads "Daniel Reyes" rather than the
--- UUID-prefix fallback the UI shows when no display name resolves (P1.2).
 insert into auth.users (id, email, raw_user_meta_data)
 values (
   '00000000-0000-0000-0000-00000000000d',
@@ -94,44 +27,15 @@ on conflict (id) do update
   set raw_user_meta_data =
     jsonb_set(coalesce(auth.users.raw_user_meta_data, '{}'::jsonb), '{full_name}', '"Daniel Reyes"');
 
--- Demo agency that owns the demo tenant. Required so a real Google sign-in
--- (auto-joined to the demo tenant via the trigger below) can also be added
--- as an agency owner, which is what is_agency_member_of_space() gates on for
--- intelligence write RPCs (upsert/withdraw/delete_primary_intelligence).
--- Without this, the demo space publishes through seed_demo_data() (SECURITY
--- DEFINER) but no user can edit intelligence through the UI.
-insert into public.agencies (
-  id, name, slug, subdomain, app_display_name, contact_email, primary_color
-)
-values (
-  '00000000-0000-0000-0000-0000000d0001',
-  'Stout',
-  'demo-stout',
-  'stout',
-  'Stout',
-  'stout@clint.local',
-  '#0d9488'
-)
-on conflict (id) do nothing;
-
-insert into public.tenants (
-  id, agency_id, name, slug, subdomain, app_display_name, primary_color, email_self_join_enabled
-)
+insert into public.tenants (id, name, slug, subdomain, app_display_name)
 values (
   '00000000-0000-0000-0000-0000000d0010',
-  '00000000-0000-0000-0000-0000000d0001',
   'Demo Pharma CI',
   'demo-pharma-ci',
   'demo',
-  'Demo Pharma CI',
-  '#0d9488',
-  true
+  'Demo Pharma CI'
 )
 on conflict (id) do nothing;
-
-insert into public.tenant_members (tenant_id, user_id, role)
-values ('00000000-0000-0000-0000-0000000d0010', '00000000-0000-0000-0000-00000000000d', 'owner')
-on conflict (tenant_id, user_id) do nothing;
 
 insert into public.spaces (id, tenant_id, name, description, created_by)
 values (
@@ -147,163 +51,119 @@ insert into public.space_members (space_id, user_id, role)
 values ('00000000-0000-0000-0000-0000000d0100', '00000000-0000-0000-0000-00000000000d', 'owner')
 on conflict (space_id, user_id) do nothing;
 
--- Fill the demo space with companies, trials, markers, events, and
--- intelligence via the existing seed_demo_data RPC. Spoof auth.uid() to the
--- bootstrap user since the RPC asserts an authenticated session. Skip if the
--- space already has content (idempotent across re-runs of seed.sql).
+-- =============================================================================
+-- Demo competitive landscape + events.
+-- Companies/assets/trials are inserted directly as the seeding superuser (RLS is
+-- bypassed; created_by supplied explicitly). Events go through the shared
+-- create_event RPC, which asserts has_space_access -- so we spoof the demo
+-- user's JWT and switch to the authenticated role for those calls only. The
+-- whole block is skipped when the space already has companies (idempotent).
+-- =============================================================================
 do $$
 declare
+  v_space   uuid := '00000000-0000-0000-0000-0000000d0100';
+  v_user    uuid := '00000000-0000-0000-0000-00000000000d';
+  v_company uuid := '00000000-0000-0000-0000-0000000d0200';
+  v_asset   uuid := '00000000-0000-0000-0000-0000000d0300';
+  v_trial1  uuid := '00000000-0000-0000-0000-0000000d0400';  -- SURMOUNT-1
+  v_trial2  uuid := '00000000-0000-0000-0000-0000000d0401';  -- SURMOUNT-2
+  -- system event_type UUIDs (seeded by migrations)
+  et_trial_start  uuid := 'a0000000-0000-0000-0000-000000000011';
+  et_topline      uuid := 'a0000000-0000-0000-0000-000000000013';
+  et_approval     uuid := 'a0000000-0000-0000-0000-000000000035';
+  et_launch       uuid := 'a0000000-0000-0000-0000-000000000036';
+  et_distribution uuid := 'a0000000-0000-0000-0000-000000000040';
+  et_strategic    uuid := 'a0000000-0000-0000-0000-000000000070';
+  et_leadership   uuid := 'a0000000-0000-0000-0000-000000000050';
+  et_financial    uuid := 'a0000000-0000-0000-0000-000000000060';
   v_existing int;
 begin
-  select count(*) into v_existing
-  from public.companies
-  where space_id = '00000000-0000-0000-0000-0000000d0100';
+  select count(*) into v_existing from public.companies where space_id = v_space;
   if v_existing > 0 then return; end if;
 
+  -- company -> asset -> trials
+  insert into public.companies (id, name, space_id, created_by, display_order)
+  values (v_company, 'Eli Lilly', v_space, v_user, 1);
+
+  insert into public.assets (id, company_id, name, generic_name, space_id, created_by, display_order)
+  values (v_asset, v_company, 'Zepbound', 'tirzepatide', v_space, v_user, 1);
+
+  insert into public.trials (id, asset_id, name, acronym, identifier, status, phase, phase_type, recruitment_status, study_type, space_id, created_by, display_order)
+  values
+    (v_trial1, v_asset, 'A Study of Tirzepatide in Adults With Obesity', 'SURMOUNT-1', 'NCT04184622', 'Completed',  'Phase 3', 'P3', 'Completed',  'Interventional', v_space, v_user, 1),
+    (v_trial2, v_asset, 'A Study of Tirzepatide in Adults With Obesity and Type 2 Diabetes', 'SURMOUNT-2', 'NCT04657003', 'Active', 'Phase 3', 'P3', 'Active, not recruiting', 'Interventional', v_space, v_user, 2);
+
+  -- trial<->asset link (get_dashboard_data surfaces trials through trial_assets).
+  -- trg_trial_assets_bootstrap already backfills this from trials.asset_id on
+  -- insert; the explicit upsert is a harmless safety net.
+  insert into public.trial_assets (trial_id, asset_id, is_primary, source)
+  values
+    (v_trial1, v_asset, true, 'analyst'),
+    (v_trial2, v_asset, true, 'analyst')
+  on conflict (trial_id, asset_id) do nothing;
+
+  -- spoof the demo user's JWT so create_event's has_space_access check passes
   perform set_config(
     'request.jwt.claims',
-    json_build_object(
-      'sub', '00000000-0000-0000-0000-00000000000d',
-      'role', 'authenticated'
-    )::text,
+    json_build_object('sub', v_user, 'role', 'authenticated')::text,
     true
   );
   set local role authenticated;
-  perform public.seed_demo_data('00000000-0000-0000-0000-0000000d0100'::uuid);
+
+  -- SURMOUNT-1 (trial-anchored)
+  perform public.create_event(v_space, et_trial_start, 'SURMOUNT-1 study initiated', date '2021-01-01', 'trial', v_trial1, 'actual',  'year');
+  perform public.create_event(v_space, et_topline,     'SURMOUNT-1 topline results', date '2023-04-01', 'trial', v_trial1, 'actual',  'quarter');
+  perform public.create_event(v_space, et_approval,    'Zepbound FDA approval (obesity)', date '2023-11-01', 'trial', v_trial1, 'actual', 'month');
+
+  -- SURMOUNT-2 (trial-anchored)
+  perform public.create_event(v_space, et_trial_start, 'SURMOUNT-2 study initiated', date '2022-01-01', 'trial', v_trial2, 'actual', 'year');
+  perform public.create_event(v_space, et_topline,     'SURMOUNT-2 topline results', date '2024-01-01', 'trial', v_trial2, 'actual', 'year');
+
+  -- Zepbound (asset-anchored)
+  perform public.create_event(v_space, et_distribution, 'Zepbound commercial distribution', date '2024-01-01', 'asset', v_asset, 'actual', 'quarter');
+  perform public.create_event(v_space, et_launch,       'Zepbound US launch', date '2024-01-01', 'asset', v_asset, 'actual', 'year');
+  perform public.create_event(
+    v_space, et_distribution, 'Projected vials to pens switch', date '2026-10-01', 'asset', v_asset,
+    'primary',                 -- projection
+    'quarter'                  -- date_precision
+  );
+
+  -- Eli Lilly (company-anchored). Strategic/Leadership types default to low
+  -- significance (feed-only). The manufacturing expansion is pinned, so it
+  -- surfaces a glyph on the company band; the leadership change stays feed-only,
+  -- exercising effectiveVisibility (pinned -> show, low + unpinned -> hidden).
+  perform public.create_event(
+    v_space, et_strategic, 'Lilly $9B Indiana API manufacturing expansion', date '2024-04-01', 'company', v_company,
+    'actual',                  -- projection
+    'month',                   -- date_precision
+    null,                      -- end_date
+    'exact',                   -- end_date_precision
+    false,                     -- is_ongoing
+    null,                      -- description
+    null,                      -- source_url
+    null,                      -- significance (falls to type default 'low')
+    'pinned'                   -- visibility: promoted onto the timeline
+  );
+  perform public.create_event(
+    v_space, et_leadership, 'New Chief Commercial Officer named', date '2024-02-01', 'company', v_company,
+    'actual',                  -- projection
+    'month'                    -- date_precision
+  );
+  -- Financial (rose hexagon, dot mark): pinned so the dot glyph surfaces on the
+  -- company band, completing the corporate glyph set (none/dot/dash) for reference
+  -- alongside the leadership (none) and strategic (dash) events above.
+  perform public.create_event(
+    v_space, et_financial, 'Lilly Q4 incretin revenue tops consensus', date '2024-02-06', 'company', v_company,
+    'actual',                  -- projection
+    'month',                   -- date_precision
+    null,                      -- end_date
+    'exact',                   -- end_date_precision
+    false,                     -- is_ongoing
+    null,                      -- description
+    null,                      -- source_url
+    null,                      -- significance (falls to type default 'low')
+    'pinned'                   -- visibility: promoted onto the timeline
+  );
+
   reset role;
-
-  -- The active P3 trials ship without a Trial End marker, so their phase bars
-  -- feather to "today" on the demo timeline instead of running to completion.
-  -- Give them their projected primary-completion dates as Trial End markers
-  -- (the bar now derives from markers) so the demo reads correctly. (Run as the
-  -- seeding superuser, after reset role, so RLS does not block the insert.)
-  declare
-    r record;
-  begin
-    for r in
-      select t.id, t.space_id, t.created_by, v.end_date
-      from public.trials t
-      join (values
-        ('NCT05556512', date '2025-10-31'),  -- SURMOUNT-MMO
-        ('NCT05929066', date '2026-11-30'),  -- TRIUMPH-1
-        ('NCT06081894', date '2026-06-30')   -- ACACIA-HCM
-      ) as v(nct, end_date) on v.nct = t.identifier
-      where t.space_id = '00000000-0000-0000-0000-0000000d0100'
-        and not exists (
-          select 1 from public.marker_assignments ma
-          join public.markers m on m.id = ma.marker_id
-          where ma.trial_id = t.id
-            and m.marker_type_id = 'a0000000-0000-0000-0000-000000000012'
-        )
-    loop
-      perform public._create_trial_date_markers(r.id, r.space_id, r.created_by, null, r.end_date);
-    end loop;
-  end;
-
-  -- A completed trial's data readouts (topline / interim / full data) happened
-  -- by the time the trial finished, so they must read as confirmed, not as a
-  -- future projection. Mark them actual and clamp any post-completion date to
-  -- the trial end (now the latest Trial End marker's event_date). Data category
-  -- only -- approval / launch / LOE legitimately post-date completion and stay
-  -- as-is.
-  update public.markers m
-  set projection = 'actual',
-      event_date = case
-        when te.end_date is not null and m.event_date > te.end_date
-          then te.end_date
-        else m.event_date
-      end
-  from public.marker_assignments ma
-  join public.trials t on t.id = ma.trial_id
-  left join lateral (
-    select max(em.event_date) as end_date
-    from public.marker_assignments ema
-    join public.markers em on em.id = ema.marker_id
-    where ema.trial_id = t.id
-      and em.marker_type_id = 'a0000000-0000-0000-0000-000000000012'
-  ) te on true
-  where ma.marker_id = m.id
-    and t.space_id = '00000000-0000-0000-0000-0000000d0100'
-    and lower(t.status) in ('completed', 'terminated', 'withdrawn')
-    and m.projection <> 'actual'
-    and m.marker_type_id in (
-      select mt.id from public.marker_types mt
-      where mt.category_id = 'c0000000-0000-0000-0000-000000000002'
-        and mt.name <> 'Full Data'
-    );
-
-  -- _seed_demo_trials creates a generic "Trial Start" marker for every trial so
-  -- the marker-derived phase bar renders. A few trials also get a narratively
-  -- titled Trial Start ("... study initiated") from _seed_demo_markers; drop the
-  -- generic duplicate for those, keeping the richer narrative marker.
-  delete from public.markers m
-  using public.marker_assignments ma
-  where ma.marker_id = m.id
-    and m.space_id = '00000000-0000-0000-0000-0000000d0100'
-    and m.marker_type_id = 'a0000000-0000-0000-0000-000000000011'
-    and m.title = 'Trial Start'
-    and exists (
-      select 1
-      from public.marker_assignments ma2
-      join public.markers m2 on m2.id = ma2.marker_id
-      where ma2.trial_id = ma.trial_id
-        and m2.marker_type_id = 'a0000000-0000-0000-0000-000000000011'
-        and m2.id <> m.id
-    );
-end
-$$;
-
--- Auto-join: every new auth.users row is added to the demo tenant + space as
--- owner, and to the demo agency as owner. The trigger is a no-op in
--- environments where the demo tenant does not exist (production), so this is
--- safe to ship in seed.sql. Agency membership is what is_agency_member_of_space()
--- checks before allowing intelligence write RPCs, so a real Google sign-in
--- needs this row to publish through the UI.
-create or replace function public.auto_join_demo_tenant_local()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_demo_agency uuid := '00000000-0000-0000-0000-0000000d0001';
-  v_demo_tenant uuid := '00000000-0000-0000-0000-0000000d0010';
-  v_demo_space  uuid := '00000000-0000-0000-0000-0000000d0100';
-begin
-  if not exists (select 1 from public.tenants where id = v_demo_tenant) then
-    return new;
-  end if;
-  -- Skip integration-test personas and other fixture accounts. The
-  -- role-access.spec asserts that a fresh persona sees zero tenants and
-  -- zero spaces; auto-joining them to the demo tenant breaks that
-  -- invariant. Real Google-OAuth dev users always pass through.
-  if new.email is null
-     or new.email like '%@personas.test'
-     or new.email like '%@clint.local'
-     or new.email like 'e2e-%'
-  then
-    return new;
-  end if;
-  insert into public.tenant_members (tenant_id, user_id, role)
-  values (v_demo_tenant, new.id, 'owner')
-  on conflict (tenant_id, user_id) do nothing;
-  insert into public.space_members (space_id, user_id, role)
-  values (v_demo_space, new.id, 'owner')
-  on conflict (space_id, user_id) do nothing;
-  -- FK-guard the agency insert so a missing demo agency row never blocks
-  -- sign-in. The matching insert at the top of seed.sql normally guarantees
-  -- this row exists.
-  if exists (select 1 from public.agencies where id = v_demo_agency) then
-    insert into public.agency_members (agency_id, user_id, role)
-    values (v_demo_agency, new.id, 'owner')
-    on conflict (agency_id, user_id) do nothing;
-  end if;
-  return new;
-end;
-$$;
-
-drop trigger if exists auto_join_demo_on_signup on auth.users;
-create trigger auto_join_demo_on_signup
-  after insert on auth.users
-  for each row
-  execute function public.auto_join_demo_tenant_local();
+end $$;

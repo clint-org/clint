@@ -13,26 +13,28 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
-import { CatalystDetail } from '../../core/models/catalyst.model';
+import { CatalystDetail } from '../../core/models/event-detail.model';
 import {
-  EventCategory,
   EventCategoryDistribution,
   EventDetail,
   FeedItem,
 } from '../../core/models/event.model';
 import { FillStyle, MarkerCategory } from '../../core/models/marker.model';
+import {
+  ProjectionBadge,
+  projectionBadge,
+  projectionOutlineDash,
+} from '../../core/models/marker-visual';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { DetailPanelPillComponent } from '../../shared/components/detail-panel-pill.component';
-import { CatalystService } from '../../core/services/catalyst.service';
+import { EventDetailService } from '../../core/services/event-detail.service';
 import { EventService } from '../../core/services/event.service';
-import { EventCategoryService } from '../../core/services/event-category.service';
 import { MarkerCategoryService } from '../../core/services/marker-category.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
@@ -48,7 +50,7 @@ import {
   type RichSummary,
 } from '../../shared/utils/change-event-summary';
 import { EventDetailPanelComponent } from './event-detail-panel.component';
-import { EventFormComponent } from './event-form.component';
+import { EventFormDialogComponent } from './event-form/event-form-dialog.component';
 import { confirmDelete } from '../../shared/utils/confirm-delete';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { SpaceRoleService } from '../../core/services/space-role.service';
@@ -86,7 +88,6 @@ const DETECTED_CATEGORY_NAMES = [
     DatePipe,
     FormsModule,
     ButtonModule,
-    Dialog,
     MessageModule,
     LoaderComponent,
     SelectModule,
@@ -97,7 +98,7 @@ const DETECTED_CATEGORY_NAMES = [
     GridToolbarComponent,
     TableSkeletonBodyComponent,
     EventDetailPanelComponent,
-    EventFormComponent,
+    EventFormDialogComponent,
     HighlightPipe,
     ExportButtonComponent,
     MarkerIconComponent,
@@ -109,8 +110,7 @@ const DETECTED_CATEGORY_NAMES = [
 })
 export class EventsPageComponent implements OnInit, OnDestroy {
   private eventService = inject(EventService);
-  private catalystService = inject(CatalystService);
-  private eventCategoryService = inject(EventCategoryService);
+  private catalystService = inject(EventDetailService);
   private markerCategoryService = inject(MarkerCategoryService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -126,7 +126,9 @@ export class EventsPageComponent implements OnInit, OnDestroy {
 
   // Data
   readonly feedItems = signal<FeedItem[]>([]);
-  readonly eventCategories = signal<EventCategory[]>([]);
+  // The unified event taxonomy (event_type_categories). One taxonomy now backs
+  // both markers and analyst events; the separate event_categories table was
+  // dropped in the Stage 1 cutover.
   readonly markerCategories = signal<MarkerCategory[]>([]);
 
   // Overview aggregates over the FULL filtered set (not the loaded page), so
@@ -190,7 +192,6 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   // a real chip label rather than the raw "<value>" fallback.
   readonly allCategoryOptions = computed(() => {
     const names = new Set<string>();
-    for (const c of this.eventCategories()) names.add(c.name);
     for (const c of this.markerCategories()) names.add(c.name);
     for (const n of DETECTED_CATEGORY_NAMES) names.add(n);
     return [...names]
@@ -368,6 +369,15 @@ export class EventsPageComponent implements OnInit, OnDestroy {
    */
   protected markerFillStyle(item: FeedItem): FillStyle {
     return item.is_projected ? 'outline' : 'filled';
+  }
+
+  /** Projection tier badge + forecast dash, matching the timeline glyph. */
+  protected markerBadge(item: FeedItem): ProjectionBadge {
+    return projectionBadge(item.projection);
+  }
+
+  protected markerOutlineDash(item: FeedItem): boolean {
+    return projectionOutlineDash(item.projection);
   }
 
   /**
@@ -772,12 +782,7 @@ export class EventsPageComponent implements OnInit, OnDestroy {
   private async loadCategoryOptions(): Promise<void> {
     const sid = this.spaceId();
     try {
-      const [eCats, mCats] = await Promise.all([
-        this.eventCategoryService.list(sid),
-        this.markerCategoryService.list(sid),
-      ]);
-      this.eventCategories.set(eCats);
-      this.markerCategories.set(mCats);
+      this.markerCategories.set(await this.markerCategoryService.list(sid));
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'Failed to load categories.');
     }

@@ -28,13 +28,13 @@ import { LandscapeStateService } from './landscape-state.service';
         <app-marker-detail-panel
           mode="page-drawer"
           [detail]="state.selectedDetail()"
+          [references]="state.selectedMarkerReferences()"
           [spaceId]="state.spaceIdSig()"
           surfaceKey="timeline_detail"
           [showEditAction]="true"
           [open]="!!state.selectedMarkerId()"
           (panelClose)="state.clearSelection()"
           (markerClick)="state.selectMarker($event)"
-          (eventClick)="onEventClick($event)"
           (trialClick)="onTrialClick($event)"
           (editMarkerClick)="onEditMarker($event)"
         />
@@ -50,12 +50,6 @@ export class EntityMarkerDrawerComponent {
 
   private readonly tenantId = this.findRouteParam('tenantId') ?? '';
   private readonly spaceId = this.findRouteParam('spaceId') ?? '';
-
-  protected onEventClick(eventId: string): void {
-    this.router.navigate(['/t', this.tenantId, 's', this.spaceId, 'events'], {
-      queryParams: { eventId },
-    });
-  }
 
   protected onTrialClick(trialId: string): void {
     if (!trialId) return;

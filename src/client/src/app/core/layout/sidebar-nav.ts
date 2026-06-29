@@ -20,7 +20,7 @@ export interface NavItem {
   ownerOnly?: boolean;
   /**
    * When true, the item is hidden from non-editors (viewers). Used for the
-   * reference-settings management pages (Taxonomies, Marker Types); the route
+   * reference-settings management pages (Taxonomies); the route
    * is also guarded by `editGuard` so a deep-link is denied too. Viewers get
    * the read-only guides in the Reference group instead.
    */
@@ -58,7 +58,7 @@ export const NAV_SECTIONS: NavSection[] = [
         route: 'heatmap',
         icon: NAV_ICONS['heatmap'],
       },
-      { label: 'Future Catalysts', route: 'catalysts', icon: NAV_ICONS['catalysts'] },
+      { label: 'Future Events', route: 'future-events', icon: NAV_ICONS['catalysts'] },
     ],
   },
   {
@@ -76,7 +76,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: NAV_ICONS['engagement'],
         requiresEngagement: true,
       },
-      { label: 'Events', route: 'events', icon: NAV_ICONS['events'] },
+      { label: 'Activity', route: 'activity', icon: NAV_ICONS['events'] },
       { label: 'Materials', route: 'materials', icon: NAV_ICONS['materials'] },
     ],
   },
@@ -104,12 +104,6 @@ export const NAV_SECTIONS: NavSection[] = [
         editorOnly: true,
       },
       {
-        label: 'Marker Types',
-        route: 'settings/marker-types',
-        icon: NAV_ICONS['marker-types'],
-        editorOnly: true,
-      },
-      {
         label: 'Audit log',
         route: 'settings/audit-log',
         icon: NAV_ICONS['audit-log'],
@@ -123,7 +117,7 @@ export const NAV_SECTIONS: NavSection[] = [
     bottom: true,
     items: [
       { label: 'Taxonomies guide', route: 'help/taxonomies', icon: NAV_ICONS['taxonomies'] },
-      { label: 'Markers guide', route: 'help/markers', icon: NAV_ICONS['marker-types'] },
+      { label: 'Event glyphs guide', route: 'help/markers', icon: NAV_ICONS['marker-types'] },
       { label: 'Phases guide', route: 'help/phases', icon: NAV_ICONS['phases'] },
     ],
   },
@@ -135,7 +129,7 @@ export const ORG_ONLY_SECTIONS: NavSection[] = [];
  * Filter the nav sections for the current space role. Pure (no Angular deps)
  * so it can be unit-tested directly:
  * - `ownerOnly` items (General, Members, Fields, Audit log) drop for non-owners,
- * - `editorOnly` items (Taxonomies / Marker Types management) drop for viewers,
+ * - `editorOnly` items (Taxonomies management) drop for viewers,
  * - `requiresEngagement` items (Engagement) drop for every role when the space
  *   has no engagement write-up (`hasEngagement` false),
  * - the Profiles and Reference sections carry no flags, so they survive for all

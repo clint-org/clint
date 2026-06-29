@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 
 import { Marker } from '../models/marker.model';
+import { EVENTS_SELECT, mapEventToMarker } from '../models/event-to-marker';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -17,130 +18,140 @@ function trialDetailTags(trialIds: string[]): string[] {
   return trialIds.map((id) => `trial:${id}:detail`);
 }
 
+/**
+ * Manage/trials marker authoring, repointed onto the unified `events` model.
+ * Every marker is a single-anchor trial event (`anchor_type='trial'`); there
+ * is no separate assignment concept. Inserts go through the `create_event`
+ * SECURITY DEFINER RPC; metadata, partial updates, and deletes are inline
+ * writes to `events` (the same established pattern as `event.service.ts`).
+ * The Marker output shape is preserved via `mapEventToMarker` so the manage
+ * list, phase-bar derivation, and edit-prefill are unaffected.
+ */
 @Injectable({ providedIn: 'root' })
 export class MarkerService {
   private supabase = inject(SupabaseService);
   private cache = inject(RpcCache);
 
-  async create(spaceId: string, marker: Partial<Marker>, trialIds: string[]): Promise<Marker> {
+  async create(spaceId: string, marker: Partial<Marker>, trialId: string): Promise<Marker> {
     const { data: newId } = await this.supabase.client
-      .rpc('create_marker', {
+      .rpc('create_event', {
         p_space_id: spaceId,
-        p_marker_type_id: marker.marker_type_id!,
+        p_event_type_id: marker.marker_type_id!,
         p_title: marker.title!,
-        p_projection: marker.projection!,
         p_event_date: marker.event_date!,
-        p_end_date: marker.end_date ?? null,
-        p_description: marker.description ?? null,
-        p_source_url: marker.source_url ?? null,
-        p_trial_ids: trialIds.length > 0 ? trialIds : null,
-        p_metadata: marker.metadata ?? null,
-        p_change_source: 'analyst',
+        p_anchor_type: 'trial',
+        p_anchor_id: trialId,
+        p_projection: marker.projection!,
         p_date_precision: marker.date_precision ?? 'exact',
+        p_end_date: marker.end_date ?? null,
         p_end_date_precision: marker.end_date_precision ?? 'exact',
         p_is_ongoing: marker.is_ongoing ?? false,
+        p_description: marker.description ?? null,
+        // The manage form has one Source URL field -> one citation. Writes go
+        // through event_sources (p_sources), never the legacy scalar.
+        p_sources: marker.source_url ? [{ url: marker.source_url, label: null }] : null,
       })
       .throwOnError();
 
-    this.cache.invalidateTags([...spaceTagsFor(spaceId), ...trialDetailTags(trialIds)]);
+    const eventId = newId as string;
 
-    const created = await this.getById(newId as string);
+    // metadata is not a create_event param; round-trip it with an inline
+    // events update so the regulatory-pathway / trial-date metadata persists.
+    if (marker.metadata !== null && marker.metadata !== undefined) {
+      await this.supabase.client
+        .from('events')
+        .update({ metadata: marker.metadata })
+        .eq('id', eventId)
+        .throwOnError();
+    }
+
+    this.cache.invalidateTags([...spaceTagsFor(spaceId), ...trialDetailTags([trialId])]);
+
+    const created = await this.getById(eventId);
     if (!created) throw new Error('Marker not found after creation');
     return created;
   }
 
   async update(id: string, changes: Partial<Marker>): Promise<Marker> {
-    // Capture trial assignments before the mutation so we can invalidate
-    // the right trial-detail caches even if the change does not return them.
-    const { data: assignmentRows } = await this.supabase.client
-      .from('marker_assignments')
-      .select('trial_id')
-      .eq('marker_id', id);
-    const trialIds = (assignmentRows ?? []).map((r) => r.trial_id as string);
+    // Map marker fields to event columns. Every field is 1:1 except
+    // marker_type_id -> event_type_id. Only include keys present in `changes`
+    // so this stays a partial update (update_event is full-replace and unsafe
+    // for the partial date-only writes trial-edit-dialog performs).
+    const mapped: Record<string, unknown> = {};
+    if ('marker_type_id' in changes) mapped['event_type_id'] = changes.marker_type_id;
+    const passthrough = [
+      'title',
+      'event_date',
+      'projection',
+      'date_precision',
+      'end_date',
+      'end_date_precision',
+      'is_ongoing',
+      'description',
+      'metadata',
+      'significance',
+      'visibility',
+    ] as const;
+    for (const key of passthrough) {
+      if (key in changes) mapped[key] = (changes as Record<string, unknown>)[key];
+    }
 
     const { data } = await this.supabase.client
-      .from('markers')
-      .update(changes)
+      .from('events')
+      .update(mapped)
       .eq('id', id)
       .select()
       .single()
       .throwOnError();
 
-    const updated = data as Marker;
-    this.cache.invalidateTags([
-      ...spaceTagsFor(updated.space_id),
-      ...trialDetailTags(trialIds),
-      `catalyst:${id}:detail`,
-    ]);
+    // source_url is no longer an events column: route the single Source URL
+    // field to the citations via update_event_sources (replace-all to one
+    // citation, or clear when blank).
+    if (changes.source_url !== undefined) {
+      await this.supabase.client
+        .rpc('update_event_sources', {
+          p_event_id: id,
+          p_urls: changes.source_url ? [changes.source_url] : [],
+          p_labels: changes.source_url ? [null] : [],
+        })
+        .throwOnError();
+    }
 
-    return updated;
-  }
+    const row = data as Record<string, unknown>;
+    const spaceId = row['space_id'] as string;
+    const anchorId = row['anchor_id'] as string | null;
+    const tags: string[] = [...spaceTagsFor(spaceId), `catalyst:${id}:detail`];
+    if (anchorId) tags.push(...trialDetailTags([anchorId]));
+    this.cache.invalidateTags(tags);
 
-  async updateAssignments(markerId: string, trialIds: string[]): Promise<void> {
-    // Capture the marker's space + the union of previous and new trialIds
-    // so we invalidate every trial-detail cache that this change touches.
-    const { data: marker } = await this.supabase.client
-      .from('markers')
-      .select('space_id')
-      .eq('id', markerId)
-      .single();
-    const { data: oldRows } = await this.supabase.client
-      .from('marker_assignments')
-      .select('trial_id')
-      .eq('marker_id', markerId);
-    const previousTrialIds = (oldRows ?? []).map((r) => r.trial_id as string);
-
-    // Delegate to the SECURITY DEFINER RPC. A client-side DELETE+INSERT pair
-    // splits into two PostgREST transactions; the AFTER DELETE
-    // _cleanup_orphan_marker trigger fires the moment the last assignment is
-    // deleted and drops the parent marker, so the subsequent INSERT then
-    // fails RLS WITH CHECK ("violates RLS for marker_assignments"). The RPC
-    // inserts first then prunes inside one transaction, so the marker always
-    // has at least one live assignment.
-    await this.supabase.client
-      .rpc('update_marker_assignments', {
-        p_marker_id: markerId,
-        p_trial_ids: trialIds,
-      })
-      .throwOnError();
-
-    const affectedTrialIds = Array.from(new Set([...previousTrialIds, ...trialIds]));
-    const tags: string[] = trialDetailTags(affectedTrialIds);
-    if (marker?.space_id) tags.push(...spaceTagsFor(marker.space_id));
-    tags.push(`catalyst:${markerId}:detail`);
-    if (tags.length > 0) this.cache.invalidateTags(tags);
+    return mapEventToMarker(row);
   }
 
   async delete(id: string): Promise<void> {
-    const { data: marker } = await this.supabase.client
-      .from('markers')
-      .select('space_id')
+    const { data: row } = await this.supabase.client
+      .from('events')
+      .select('space_id, anchor_id')
       .eq('id', id)
-      .single();
-    const { data: assignmentRows } = await this.supabase.client
-      .from('marker_assignments')
-      .select('trial_id')
-      .eq('marker_id', id);
-    const trialIds = (assignmentRows ?? []).map((r) => r.trial_id as string);
+      .single<{ space_id: string; anchor_id: string | null }>();
 
-    await this.supabase.client.from('markers').delete().eq('id', id).throwOnError();
+    await this.supabase.client.from('events').delete().eq('id', id).throwOnError();
 
-    const tags: string[] = trialDetailTags(trialIds);
-    if (marker?.space_id) tags.push(...spaceTagsFor(marker.space_id));
-    tags.push(`catalyst:${id}:detail`);
-    if (tags.length > 0) this.cache.invalidateTags(tags);
+    const tags: string[] = [`catalyst:${id}:detail`];
+    if (row?.space_id) tags.push(...spaceTagsFor(row.space_id));
+    if (row?.anchor_id) tags.push(...trialDetailTags([row.anchor_id]));
+    this.cache.invalidateTags(tags);
   }
 
   async getById(id: string): Promise<Marker | null> {
     const { data, error } = await this.supabase.client
-      .from('markers')
-      .select('*, marker_types(name, marker_categories(name))')
+      .from('events')
+      .select(EVENTS_SELECT)
       .eq('id', id)
       .single();
     if (error) {
       if ((error as { code?: string }).code === 'PGRST116') return null;
       throw error;
     }
-    return data as Marker;
+    return mapEventToMarker(data as Record<string, unknown>);
   }
 }

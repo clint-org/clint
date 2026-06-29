@@ -14,12 +14,15 @@ import {
 import { Company } from '../../../core/models/company.model';
 import { ZoomLevel } from '../../../core/models/dashboard.model';
 import { Marker } from '../../../core/models/marker.model';
+import { effectiveVisibility } from '../../../core/models/marker-visibility';
+import { phaseOrder } from '../../../core/models/phase-colors';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
 import { deriveTrialPhaseSpan, TrialPhaseSpan } from '../../../core/models/trial-phase-span';
-import { LandscapeStateService } from '../../landscape/landscape-state.service';
+import { DetailLevel, GridDensity, LandscapeStateService } from '../../landscape/landscape-state.service';
 import { markerPeriodLabel, markerStartCaption } from '../../../core/models/marker-date-precision';
 import { MARKER_ICON_SIZE } from '../../../shared/utils/grid-constants';
+import { PhaseChipComponent } from '../../../shared/components/phase-chip.component';
 import { computeInitialScrollLeft } from './initial-scroll';
 import {
   CaptionInterval,
@@ -57,6 +60,64 @@ export interface FlattenedTrial {
   assetIntelligenceHeadline: string | null;
 }
 
+/**
+ * The timeline grid renders three row levels (company band, asset lane, trial
+ * rows) as one ordered list. Each row carries only the events anchored to its
+ * own entity (no roll-up); the per-level visibility toggles add or drop whole
+ * levels. `events` on the band/lane rows is pre-filtered to effectively-visible
+ * events (pinned, or high significance) -- feed-only events never get a glyph.
+ */
+export interface CompanyBandRow {
+  kind: 'company';
+  companyId: string;
+  companyName: string;
+  companyLogoUrl: string | null;
+  companyHasIntelligence: boolean;
+  companyIntelligenceHeadline: string | null;
+  events: Marker[];
+  isFirstInCompany: boolean;
+  isLastInCompany: boolean;
+}
+
+export interface AssetLaneRow {
+  kind: 'asset';
+  companyId: string;
+  companyName: string;
+  companyLogoUrl: string | null;
+  assetId: string;
+  assetName: string;
+  assetLogoUrl: string | null;
+  assetHasIntelligence: boolean;
+  assetIntelligenceHeadline: string | null;
+  assetMoas: { id: string; name: string }[];
+  assetRoas: { id: string; name: string; abbreviation: string | null }[];
+  events: Marker[];
+  /** Highest phase across the asset's trials; shown as a chip. */
+  leadPhase: string | null;
+  isFirstInCompany: boolean;
+  isLastInCompany: boolean;
+}
+
+export type TrialGridRow = FlattenedTrial & { kind: 'trial' };
+
+export type GridRow = CompanyBandRow | AssetLaneRow | TrialGridRow;
+
+/** Highest clinical phase across an asset's trials, by phase rank. Null when none. */
+export function assetLeadPhase(trials: Trial[]): string | null {
+  let best: string | null = null;
+  let bestRank = -Infinity;
+  for (const t of trials) {
+    const phase = t.phase_type;
+    if (!phase) continue;
+    const rank = phaseOrder(phase);
+    if (rank > bestRank) {
+      bestRank = rank;
+      best = phase;
+    }
+  }
+  return best;
+}
+
 @Component({
   selector: 'app-dashboard-grid',
   imports: [
@@ -65,6 +126,7 @@ export interface FlattenedTrial {
     GridHeaderComponent,
     MarkerComponent,
     PhaseBarComponent,
+    PhaseChipComponent,
     PiMarkComponent,
     TooltipModule,
   ],
@@ -104,17 +166,100 @@ export class DashboardGridComponent implements AfterViewInit {
   readonly assetClick = output<string>();
 
   /**
-   * Whether the company column is collapsed to logos (the default) or expanded
-   * to full names. Toggled only by the header control, never by scrolling, so
-   * the state stays fully predictable. When collapsed, each logo keeps its
-   * intelligence mark and reveals the company name on hover.
+   * Row the pointer is over, tracked by key so the frozen label pane and the
+   * timeline area -- two separate DOM subtrees -- highlight the same row in
+   * sync. Set on row mouseenter; cleared when the pointer leaves the scroller.
+   * Gives the eye a single focused row across the full width (label + markers).
    */
-  readonly companyColumnCollapsed = signal(true);
+  readonly hoveredRowKey = signal<string | null>(null);
+  protected isRowHovered(row: GridRow): boolean {
+    return this.hoveredRowKey() === this.rowKey(row);
+  }
+
+  /**
+   * Hovered-row treatment, split by what each half holds. The frozen label pane
+   * has no data to obscure, so it gets a faint brand wash. The timeline half
+   * holds the phase bars and markers, so it gets only a light brand outline
+   * (inset shadow: top/bottom/right) -- no fill -- and the data reads through
+   * untouched. Inset shadow adds no layout shift; the two halves join into one
+   * row at the pane divider.
+   */
+  private static readonly HOVER_EDGE =
+    'color-mix(in srgb, var(--color-brand-500, #14b8a6) 38%, transparent)';
+  protected readonly hoverWash =
+    'color-mix(in srgb, var(--color-brand-500, #14b8a6) 7%, transparent)';
+  protected readonly hoverShadowRight = `inset 0 1px 0 0 ${DashboardGridComponent.HOVER_EDGE}, inset 0 -1px 0 0 ${DashboardGridComponent.HOVER_EDGE}, inset -1px 0 0 0 ${DashboardGridComponent.HOVER_EDGE}`;
   readonly showMoaColumn = computed(() => this.landscapeState?.showMoaColumn() ?? true);
   readonly showRoaColumn = computed(() => this.landscapeState?.showRoaColumn() ?? true);
   readonly showIndicationColumn = computed(
     () => this.landscapeState?.showIndicationColumn() ?? false
   );
+
+  // Detail level (company > asset > trial depth) drives row visibility. Company
+  // bands always render; 'assets' adds asset rows (the old Compare); 'trials'
+  // adds trial detail. Optional service fallback keeps embedded/export grids
+  // (no LandscapeStateService) at full detail.
+  readonly detailLevel = computed<DetailLevel>(() => this.landscapeState?.detailLevel() ?? 'trials');
+  /** Asset header rows render at 'assets' and 'trials' depth, not at 'companies'. */
+  readonly showAssetRows = computed(() => this.detailLevel() !== 'companies');
+  /** Trial rows render only at full 'trials' depth. */
+  readonly showTrials = computed(() => this.detailLevel() === 'trials');
+  /** Asset-level event glyphs show wherever asset rows are present. */
+  readonly showAssetEvents = computed(() => this.showAssetRows());
+
+  /**
+   * Vertical density. Comfortable keeps the established rhythm; compact tightens
+   * each row and (via the compact flag threaded to markers and phase bars)
+   * shrinks the glyphs so more programs fit per screen while date captions stay.
+   */
+  readonly density = computed<GridDensity>(() => this.landscapeState?.density() ?? 'comfortable');
+  readonly compact = computed(() => this.density() === 'compact');
+  readonly rowHeight = computed(() => (this.compact() ? 30 : 36));
+
+  /** Vertical room a trial row gains so its intelligence-headline second line breathes. */
+  private static readonly HEADLINE_ROW_EXTRA_PX = 14;
+
+  /** Vertical room an asset row gains for its labeled MOA/ROA attribute line. */
+  private static readonly ATTR_ROW_EXTRA_PX = 13;
+
+  /**
+   * The company band is a section header, not a data row, so it gets extra height
+   * to give the logo + tracked company name room to breathe rather than sitting
+   * cramped between the company divider above and the first asset below. The extra
+   * scales with density so compact tightens the section headers too.
+   */
+  private companyRowExtraPx(): number {
+    return this.compact() ? 2 : 6;
+  }
+
+  /** A trial row that is currently rendering its intelligence-headline second line. */
+  protected hasVisibleHeadline(row: GridRow): boolean {
+    return (
+      row.kind === 'trial' &&
+      this.showIntelligenceHeadlines() &&
+      !!row.trial.has_intelligence &&
+      !!row.trial.intelligence_headline
+    );
+  }
+
+  /**
+   * Per-row height. The headline rows grow by a fixed amount so the second line
+   * is not crammed against the row divider; the markers and phase bar stay in the
+   * base-height top band (the extra height is padding below them), and both panes
+   * use this same value so rows stay aligned across the frozen/timeline split.
+   */
+  protected rowHeightFor(row: GridRow): number {
+    if (row.kind === 'company') {
+      return this.rowHeight() + this.companyRowExtraPx();
+    }
+    if (this.assetHasAttributesLine(row)) {
+      return this.rowHeight() + DashboardGridComponent.ATTR_ROW_EXTRA_PX;
+    }
+    return (
+      this.rowHeight() +
+      (this.hasVisibleHeadline(row) ? DashboardGridComponent.HEADLINE_ROW_EXTRA_PX : 0)
+    );
+  }
 
   constructor() {
     // On load (and when the data/range changes) anchor the horizontal scroll on
@@ -163,15 +308,16 @@ export class DashboardGridComponent implements AfterViewInit {
     return x >= 0 && x <= this.totalWidth() ? x : null;
   });
 
-  /** Pixel x-position of the latest marker event across all trials. */
+  /** Pixel x-position of the latest event across all rendered rows. */
   private readonly lastEventX = computed<number | null>(() => {
-    const trials = this.flattenedTrials();
-    if (trials.length === 0) return null;
+    const rows = this.gridRows();
+    if (rows.length === 0) return null;
 
     let latestMs = -Infinity;
-    for (const row of trials) {
-      for (const marker of row.trial.markers ?? []) {
-        const t = new Date(marker.event_date).getTime();
+    for (const row of rows) {
+      const events = row.kind === 'trial' ? (row.trial.markers ?? []) : row.events;
+      for (const event of events) {
+        const t = new Date(event.event_date).getTime();
         if (t > latestMs) latestMs = t;
       }
     }
@@ -182,48 +328,118 @@ export class DashboardGridComponent implements AfterViewInit {
     return this.timeline.dateToX(dateStr, this.startYear(), this.endYear(), this.totalWidth());
   });
 
-  readonly flattenedTrials = computed<FlattenedTrial[]>(() => {
-    const rows: FlattenedTrial[] = [];
+  /**
+   * The ordered render list across all three row levels. For each company: a
+   * company header band (whenever the company toggle is on, regardless of whether
+   * it owns events), then each asset's header lane, then the asset's trial rows
+   * (when the Trials toggle is on). isFirstInCompany marks the first rendered row
+   * of a company; isLastInCompany marks the last (the heavy divider).
+   */
+  readonly gridRows = computed<GridRow[]>(() => {
+    const rows: GridRow[] = [];
+    const showAssetRows = this.showAssetRows();
+    const showTrials = this.showTrials();
+
     for (const company of this.companies()) {
+      const companyStartLen = rows.length;
       let isFirstInCompany = true;
-      const assets = company.assets ?? [];
-      for (const asset of assets) {
-        let isFirstInAsset = true;
+
+      // Company bands always render -- the company is the top of the hierarchy
+      // and the grouping header at every detail level. Company events render on
+      // this band's lane.
+      const companyEvents = (company.events ?? []).filter((e) => effectiveVisibility(e));
+      rows.push({
+        kind: 'company',
+        companyId: company.id,
+        companyName: company.name,
+        companyLogoUrl: company.logo_url ?? null,
+        companyHasIntelligence: company.has_intelligence ?? false,
+        companyIntelligenceHeadline: company.intelligence_headline ?? null,
+        events: companyEvents,
+        isFirstInCompany,
+        isLastInCompany: false,
+      });
+      isFirstInCompany = false;
+
+      for (const asset of company.assets ?? []) {
+        // 'companies' detail level shows company bands only -- no asset rows.
+        if (!showAssetRows) break;
         const trials = asset.trials ?? [];
-        for (const trial of trials) {
-          rows.push({
-            companyName: company.name,
-            companyId: company.id,
-            companyLogoUrl: company.logo_url ?? null,
-            assetName: asset.name,
-            assetId: asset.id,
-            assetLogoUrl: asset.logo_url ?? null,
-            assetMoas: asset.mechanisms_of_action ?? [],
-            assetRoas: asset.routes_of_administration ?? [],
-            trialIndications: (trial._indications ?? []).map((i) => ({
-              id: i.indication_id,
-              name: i.indication_name,
-            })),
-            trial,
-            phaseSpan: deriveTrialPhaseSpan(trial.markers ?? []),
-            isFirstInCompany,
-            isFirstInAsset,
-            isLastInCompany: false,
-            companyHasIntelligence: company.has_intelligence ?? false,
-            companyIntelligenceHeadline: company.intelligence_headline ?? null,
-            assetHasIntelligence: asset.has_intelligence ?? false,
-            assetIntelligenceHeadline: asset.intelligence_headline ?? null,
-          });
-          isFirstInCompany = false;
-          isFirstInAsset = false;
+        // Asset header is structural at 'assets'/'trials' depth: the asset's
+        // identity + level attributes (MOA/ROA) + asset-anchored events.
+        const assetEvents = (asset.events ?? []).filter((e) => effectiveVisibility(e));
+        rows.push({
+          kind: 'asset',
+          companyId: company.id,
+          companyName: company.name,
+          companyLogoUrl: company.logo_url ?? null,
+          assetId: asset.id,
+          assetName: asset.name,
+          assetLogoUrl: asset.logo_url ?? null,
+          assetHasIntelligence: asset.has_intelligence ?? false,
+          assetIntelligenceHeadline: asset.intelligence_headline ?? null,
+          assetMoas: asset.mechanisms_of_action ?? [],
+          assetRoas: asset.routes_of_administration ?? [],
+          events: assetEvents,
+          leadPhase: assetLeadPhase(trials),
+          isFirstInCompany,
+          isLastInCompany: false,
+        });
+        isFirstInCompany = false;
+
+        if (showTrials) {
+          let isFirstInAsset = true;
+          for (const trial of trials) {
+            rows.push({
+              kind: 'trial',
+              companyName: company.name,
+              companyId: company.id,
+              companyLogoUrl: company.logo_url ?? null,
+              assetName: asset.name,
+              assetId: asset.id,
+              assetLogoUrl: asset.logo_url ?? null,
+              assetMoas: asset.mechanisms_of_action ?? [],
+              assetRoas: asset.routes_of_administration ?? [],
+              trialIndications: (trial._indications ?? []).map((i) => ({
+                id: i.indication_id,
+                name: i.indication_name,
+              })),
+              trial,
+              phaseSpan: deriveTrialPhaseSpan(trial.markers ?? []),
+              isFirstInCompany,
+              isFirstInAsset,
+              isLastInCompany: false,
+              companyHasIntelligence: company.has_intelligence ?? false,
+              companyIntelligenceHeadline: company.intelligence_headline ?? null,
+              assetHasIntelligence: asset.has_intelligence ?? false,
+              assetIntelligenceHeadline: asset.intelligence_headline ?? null,
+            });
+            isFirstInCompany = false;
+            isFirstInAsset = false;
+          }
         }
       }
-      if (rows.length > 0) {
+
+      if (rows.length > companyStartLen) {
         rows[rows.length - 1].isLastInCompany = true;
       }
     }
     return rows;
   });
+
+  /** Trial rows only -- backs the caption-layout and scroll computeds. */
+  readonly flattenedTrials = computed<TrialGridRow[]>(() =>
+    this.gridRows().filter((r): r is TrialGridRow => r.kind === 'trial')
+  );
+
+  /** Stable @for key across the three row kinds. */
+  protected rowKey(row: GridRow): string {
+    return row.kind === 'trial'
+      ? `t:${row.trial.id}`
+      : row.kind === 'asset'
+        ? `a:${row.assetId}`
+        : `c:${row.companyId}`;
+  }
 
   /**
    * Start captions are centered on the icon; two whose centers are closer than
@@ -238,21 +454,29 @@ export class DashboardGridComponent implements AfterViewInit {
   /** End-cap caption text is left-anchored at `tailEndX - 12` (see template). */
   private static readonly END_LABEL_OFFSET_PX = 12;
 
+  /** The markers/events a row carries: trial markers, or band/lane events. */
+  private rowMarkers(row: GridRow): Marker[] {
+    return row.kind === 'trial' ? (row.trial.markers ?? []) : row.events;
+  }
+
   /**
-   * Per trial row, the caption keys allowed to render. Start captions use the
-   * marker id; the secondary range end-cap caption uses `<id>:end`. Start
-   * captions win their slots first (greedy by x); end-cap captions render only
-   * where they clear every kept caption -- they are width-aware because their
-   * left-anchored text can be wider than the start container and lands at the
-   * tail end, not under the icon.
+   * Per row (trial, asset lane, or company band), the caption keys allowed to
+   * render. Start captions use the marker id; the secondary range end-cap
+   * caption uses `<id>:end`. Start captions win their slots first (greedy by x);
+   * end-cap captions render only where they clear every kept caption -- they are
+   * width-aware because their left-anchored text can be wider than the start
+   * container and lands at the tail end, not under the icon. Keyed by `rowKey`
+   * so band/lane events de-collide identically to trial markers.
    */
   private readonly visibleDateLabels = computed<Map<string, Set<string>>>(() => {
     const sy = this.startYear();
     const ey = this.endYear();
     const tw = this.totalWidth();
     const map = new Map<string, Set<string>>();
-    for (const row of this.flattenedTrials()) {
-      const inWindow = (row.trial.markers ?? []).filter((m) => this.isMarkerInWindow(m));
+    for (const row of this.gridRows()) {
+      const markers = this.rowMarkers(row);
+      if (markers.length === 0) continue;
+      const inWindow = markers.filter((m) => this.isMarkerInWindow(m));
 
       const startX = new Map<string, number>();
       for (const m of inWindow) {
@@ -289,7 +513,7 @@ export class DashboardGridComponent implements AfterViewInit {
       )) {
         kept.add(key);
       }
-      map.set(row.trial.id, kept);
+      map.set(this.rowKey(row), kept);
     }
     return map;
   });
@@ -315,12 +539,12 @@ export class DashboardGridComponent implements AfterViewInit {
     return { anchorX: endX, width: estimateCaptionWidthPx(`~${period}`) };
   }
 
-  protected dateLabelVisible(trialId: string, markerId: string): boolean {
-    return this.visibleDateLabels().get(trialId)?.has(markerId) ?? true;
+  protected dateLabelVisible(rowKey: string, markerId: string): boolean {
+    return this.visibleDateLabels().get(rowKey)?.has(markerId) ?? true;
   }
 
-  protected endLabelVisible(trialId: string, markerId: string): boolean {
-    return this.visibleDateLabels().get(trialId)?.has(`${markerId}:end`) ?? true;
+  protected endLabelVisible(rowKey: string, markerId: string): boolean {
+    return this.visibleDateLabels().get(rowKey)?.has(`${markerId}:end`) ?? true;
   }
 
   ngAfterViewInit(): void {
@@ -364,8 +588,30 @@ export class DashboardGridComponent implements AfterViewInit {
     return roas.map((r) => r.name).join(' \u00B7 ');
   }
 
+  /** Inline route list (abbreviations preferred) for the asset attribute line. */
+  roaInlineText(roas: { id: string; name: string; abbreviation: string | null }[]): string {
+    return roas.map((r) => r.abbreviation ?? r.name).join(', ');
+  }
+
+  /**
+   * True when an asset row should render its second (attribute) line -- i.e. it
+   * has MOA or ROA to show and the column is toggled on. Drives the row-height
+   * bump so the labeled attribute line never crowds the asset name.
+   */
+  protected assetHasAttributesLine(row: GridRow): boolean {
+    if (row.kind !== 'asset') return false;
+    const moa = this.showMoaColumn() && !this.hideMoaColumn() && row.assetMoas.length > 0;
+    const roa = this.showRoaColumn() && !this.hideRoaColumn() && row.assetRoas.length > 0;
+    return moa || roa;
+  }
+
   indicationTooltipText(indications: { id: string; name: string }[]): string {
     return indications.map((i) => i.name).join(' \u00B7 ');
+  }
+
+  /** Inline indication list for the labeled trial-row treatment (shows all, not +N). */
+  indicationInlineText(indications: { id: string; name: string }[]): string {
+    return indications.map((i) => i.name).join(', ');
   }
 
   protected isMarkerInWindow(marker: Marker): boolean {

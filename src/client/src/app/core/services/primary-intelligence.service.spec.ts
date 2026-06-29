@@ -96,7 +96,7 @@ describe('PrimaryIntelligenceService.getMarkerReferences', () => {
       'list_primary_intelligence',
       expect.objectContaining({
         p_space_id: 'space1',
-        p_referencing_entity_type: 'marker',
+        p_referencing_entity_type: 'event',
         p_referencing_entity_id: 'marker1',
       })
     );

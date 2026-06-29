@@ -3,7 +3,8 @@
  * populate created_by from auth.uid() on INSERT and updated_by + updated_at
  * on UPDATE. The client never sends these fields.
  *
- * Covers: companies, assets, trials, markers, events, trial_notes.
+ * Covers: companies, assets, trials, events, trial_notes.
+ * (markers sub-test removed: markers table dropped in the event-model cutover.)
  */
 
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -111,53 +112,27 @@ describe('entity audit columns (server-side triggers)', () => {
     expect(updated!.updated_at).toBeTruthy();
   });
 
-  it('markers: trigger sets created_by and updated_by from JWT', async () => {
-    const userId = p.ids.contributor;
-    const client = as(p, 'contributor');
-
-    const { data: mtRow } = await admin
-      .from('marker_types')
-      .select('id')
-      .eq('is_system', true)
-      .limit(1)
-      .single();
-
-    const { data: inserted } = await client
-      .from('markers')
-      .insert({
-        space_id: p.org.spaceId,
-        marker_type_id: mtRow!.id,
-        title: 'Audit Marker',
-        event_date: '2026-06-01',
-        projection: 'actual',
-      })
-      .select('id, created_by, updated_by')
-      .single();
-    expectOk({ data: inserted, error: null });
-    expect(inserted!.created_by).toBe(userId);
-    expect(inserted!.updated_by).toBeNull();
-
-    const { data: updated } = await client
-      .from('markers')
-      .update({ title: 'Audit Marker Renamed' })
-      .eq('id', inserted!.id)
-      .select('updated_by')
-      .single();
-    expectOk({ data: updated, error: null });
-    expect(updated!.updated_by).toBe(userId);
-  });
+  // markers sub-test removed: markers table dropped in the event-model cutover.
+  // Event audit trigger coverage is provided by the repointed events sub-test below.
 
   it('events: trigger sets created_by and updated_by from JWT', async () => {
     const userId = p.ids.contributor;
     const client = as(p, 'contributor');
 
-    const { data: catRow } = await admin.from('event_categories').select('id').limit(1).single();
+    // Fetch a system event_type (space_id IS NULL) to satisfy the NOT NULL FK.
+    const { data: etRow } = await admin
+      .from('event_types')
+      .select('id')
+      .is('space_id', null)
+      .limit(1)
+      .single();
 
     const { data: inserted } = await client
       .from('events')
       .insert({
         space_id: p.org.spaceId,
-        category_id: catRow!.id,
+        event_type_id: etRow!.id,
+        anchor_type: 'space',
         title: 'Audit Event',
         event_date: '2026-06-01',
       })

@@ -141,8 +141,17 @@
                 'companies',
                 row.companyId,
               ]"
-              class="text-brand-700 hover:underline"
+              class="flex items-center gap-2 text-brand-700 hover:underline"
             >
+              @if (row.companyLogoUrl) {
+                <app-brand-logo
+                  [url]="row.companyLogoUrl"
+                  [alt]="row.companyName"
+                  [width]="20"
+                  [height]="20"
+                  imgClass="h-5 w-5 rounded object-contain flex-none"
+                />
+              }
               <span [innerHTML]="row.companyName | highlight: grid.debouncedGlobalSearch()"></span>
             </a>
           } @else {

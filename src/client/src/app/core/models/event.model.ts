@@ -1,14 +1,3 @@
-export interface EventCategory {
-  id: string;
-  space_id: string | null;
-  name: string;
-  display_order: number;
-  is_system: boolean;
-  created_by: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface EventThread {
   id: string;
   space_id: string;
@@ -111,7 +100,22 @@ export interface FeedItem {
   has_thread: boolean;
   thread_id: string | null;
   description: string | null;
+  /**
+   * Legacy single citation column. Retained until S5 drops it. The detected
+   * Source block prefers `registry_url`; this is the mid-transition fallback.
+   */
   source_url: string | null;
+  /**
+   * Attached citations from `event_sources` ({url, label}), emitted by
+   * get_events_page_data. Optional for forward-compat with rows built without
+   * the embed.
+   */
+  sources?: { url: string; label: string | null }[];
+  /**
+   * Derived ClinicalTrials.gov link for trial-anchored items, emitted by
+   * get_events_page_data from the anchor trial's identifier. Never stored.
+   */
+  registry_url?: string | null;
   change_event_type: ChangeEventType | null;
   change_payload: Record<string, unknown> | null;
   change_source: ChangeEventSource | null;
@@ -127,6 +131,12 @@ export interface FeedItem {
    * client-side category palette).
    */
   is_projected: boolean | null;
+  /**
+   * Projection tier ('actual' | 'company' | 'primary' | 'forecasted'), emitted by
+   * get_events_page_data for marker rows. Drives the projection badge ('c'/'f')
+   * so the feed glyph matches the timeline row. Null on event / detected rows.
+   */
+  projection: string | null;
   marker_type_shape: MarkerShape | null;
   marker_type_color: string | null;
   marker_type_inner_mark: InnerMark | null;
@@ -159,6 +169,12 @@ export interface EventDetail {
   company_id: string | null;
   asset_id: string | null;
   sources: { id: string; url: string; label: string | null }[];
+  /**
+   * Derived ClinicalTrials.gov registry link for a trial-anchored event
+   * (event_registry_url over the anchor trial's identifier). Null otherwise.
+   * Surfaced as a separate affordance from the attached citations.
+   */
+  registry_url: string | null;
   thread: {
     id: string;
     title: string;

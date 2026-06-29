@@ -1,18 +1,22 @@
 /**
  * End-to-end re-import idempotency test.
  *
- * Exercises the full SNAPSHOT -> MATCH -> COMMIT chain:
+ * Exercises the full SNAPSHOT -> MATCH -> COMMIT chain with the unified
+ * events contract (migration 20260629050100):
  *
- *   1. First commit_source_import: creates a trial + 3 markers + 2 events.
- *   2. get_space_inventory_snapshot: reads back the marker/event ids from
- *      the live snapshot (not from the commit result directly -- this mimics
- *      the AI extraction validator flow).
- *   3. Second commit_source_import: 3 markers and 1 event carry
- *      match:{kind:'existing', id} resolved from the snapshot; 1 new marker
- *      and 1 new event serve as regression guards.
- *   4. Assertions: skipped contains the 3 matched marker ids and the 1 matched
- *      event id; created contains only the new ones; the DB row count for the
- *      trial's markers increased by exactly 1.
+ *   1. First commit_source_import: creates a trial + 5 unified events
+ *      (3 trial-anchored Topline Data + 2 company-anchored Regulatory Filing).
+ *      All land in public.events; the commit returns created.events with 5 ids.
+ *   2. get_space_inventory_snapshot: reads back the event ids from the
+ *      live snapshot's unified `events` array (not from the commit result
+ *      directly -- this mimics the AI extraction validator flow).
+ *   3. Second commit_source_import: 3 trial-anchored events and 1
+ *      company-anchored event carry match:{kind:'existing', id} resolved from
+ *      the snapshot; 1 new trial-anchored and 1 new company-anchored event
+ *      serve as regression guards.
+ *   4. Assertions: skipped.events contains all 4 matched ids; created.events
+ *      contains only the 2 new ones; the matched event rows are not duplicated
+ *      (still exactly 1 row each in public.events).
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -45,8 +49,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
   for (const docId of createdSourceDocIds) {
-    await admin.from('marker_assignments').delete().eq('marker_id', docId); // no-op: marker_id is uuid, not doc
-    await admin.from('markers').delete().eq('source_doc_id', docId);
     await admin.from('events').delete().eq('source_doc_id', docId);
     await admin.from('trials').delete().eq('source_doc_id', docId);
     await admin.from('assets').delete().eq('source_doc_id', docId);
@@ -96,9 +98,9 @@ async function freshSnapHash(): Promise<string> {
 // Core idempotency spec
 // ---------------------------------------------------------------------------
 
-describe('re-import is idempotent for markers and events', () => {
+describe('re-import is idempotent for events', () => {
   it(
-    'skips matched markers/events and only creates the genuinely new ones',
+    'skips matched events and only creates the genuinely new ones',
     async () => {
       // ------------------------------------------------------------------
       // Step 1: first commit -- creates trial + 3 markers + 2 events.
@@ -140,44 +142,42 @@ describe('re-import is idempotent for markers and events', () => {
             status: 'Active',
           },
         ],
-        markers: [
+        events: [
+          // Three trial-anchored Topline Data events (was markers block).
           {
-            marker_type: 'Topline Data',
+            event_type: 'Topline Data',
             title: `Readout A ${suffix()}`,
             event_date: '2026-07-01',
-            projection: 'company',
-            trial_refs: [0],
+            significance: 'high',
+            anchor: { level: 'trial', ref: 0 },
           },
           {
-            marker_type: 'Topline Data',
+            event_type: 'Topline Data',
             title: `Readout B ${suffix()}`,
             event_date: '2026-08-01',
-            projection: 'company',
-            trial_refs: [0],
+            significance: 'high',
+            anchor: { level: 'trial', ref: 0 },
           },
           {
-            marker_type: 'Topline Data',
+            event_type: 'Topline Data',
             title: `Readout C ${suffix()}`,
             event_date: '2026-09-01',
-            projection: 'company',
-            trial_refs: [0],
+            significance: 'high',
+            anchor: { level: 'trial', ref: 0 },
           },
-        ],
-        events: [
+          // Two company-anchored Regulatory Filing events (was events block).
           {
-            category: 'Regulatory',
+            event_type: 'Regulatory Filing',
             title: `Filing X ${suffix()}`,
             event_date: '2026-10-01',
-            priority: 'high',
-            tags: [],
+            significance: 'high',
             anchor: { level: 'company', ref: 0 },
           },
           {
-            category: 'Regulatory',
+            event_type: 'Regulatory Filing',
             title: `Filing Y ${suffix()}`,
             event_date: '2026-11-01',
-            priority: 'low',
-            tags: [],
+            significance: 'low',
             anchor: { level: 'company', ref: 0 },
           },
         ],
@@ -202,18 +202,18 @@ describe('re-import is idempotent for markers and events', () => {
       createdSourceDocIds.push(result1.source_doc_id as string);
 
       const created1 = result1.created as Record<string, string[]>;
-      expect(created1.markers).toHaveLength(3);
-      expect(created1.events).toHaveLength(2);
+      // 5 unified events: 3 trial-anchored (Topline Data) + 2 company-anchored (Regulatory Filing).
+      expect(created1.events).toHaveLength(5);
 
-      // Capture the IDs from the commit result for later comparison.
-      const firstCommitMarkerIds = created1.markers as string[];
-      const firstCommitEventIds = created1.events as string[];
+      // Capture ids by position: first 3 are trial-anchored, next 2 are company-anchored.
+      const trialAnchoredIds = created1.events.slice(0, 3) as string[];
+      const firstCompanyEventId = created1.events[3] as string;
 
       // ------------------------------------------------------------------
-      // Step 2: call get_space_inventory_snapshot and read the marker/event
-      // instances it now returns. Use THESE ids for the second proposal --
-      // this is the key difference: we resolve ids from the snapshot exactly
-      // as the AI extraction validator would, not from the commit result.
+      // Step 2: call get_space_inventory_snapshot and resolve event ids from
+      // the unified `events` array. Use these ids for the second proposal --
+      // this mirrors the AI extraction validator flow: ids come from the
+      // snapshot, not from the commit result directly.
       // ------------------------------------------------------------------
       const snapR2 = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
         p_space_id: p.org.spaceId,
@@ -221,23 +221,20 @@ describe('re-import is idempotent for markers and events', () => {
       const snap2 = expectOk(snapR2) as Record<string, unknown>;
       const snapHash2 = snap2.hash as string;
 
-      const snapMarkers = snap2['markers'] as Array<Record<string, unknown>>;
       const snapEvents = snap2['events'] as Array<Record<string, unknown>>;
-
-      expect(Array.isArray(snapMarkers)).toBe(true);
       expect(Array.isArray(snapEvents)).toBe(true);
 
-      // Every marker from the first commit must appear in the snapshot.
-      const snappedMarkerIds = firstCommitMarkerIds.map((id) => {
-        const found = snapMarkers.find((m) => m['id'] === id);
-        expect(found, `marker ${id} must appear in snapshot`).toBeTruthy();
+      // Every trial-anchored event from the first commit must appear in the snapshot.
+      const snappedMarkerIds = trialAnchoredIds.map((id) => {
+        const found = snapEvents.find((m) => m['id'] === id);
+        expect(found, `trial-anchored event ${id} must appear in snapshot`).toBeTruthy();
         return found!['id'] as string;
       });
       expect(snappedMarkerIds).toHaveLength(3);
 
-      // At least 1 event from the first commit must appear in the snapshot.
-      const firstEventInSnapshot = snapEvents.find((e) => e['id'] === firstCommitEventIds[0]);
-      expect(firstEventInSnapshot, 'first event must appear in snapshot').toBeTruthy();
+      // The first company-anchored event from the first commit must appear too.
+      const firstEventInSnapshot = snapEvents.find((e) => e['id'] === firstCompanyEventId);
+      expect(firstEventInSnapshot, 'first company-anchored event must appear in snapshot').toBeTruthy();
       const matchedEventId = firstEventInSnapshot!['id'] as string;
 
       // ------------------------------------------------------------------
@@ -268,56 +265,55 @@ describe('re-import is idempotent for markers and events', () => {
             status: 'Active',
           },
         ],
-        markers: [
-          // Three matched markers resolved from the snapshot: must be skipped.
+        events: [
+          // Three matched trial-anchored events resolved from snapshot: must be skipped.
           {
-            marker_type: 'Topline Data',
+            event_type: 'Topline Data',
             title: 'Existing readout A (skip)',
             event_date: '2026-07-01',
-            projection: 'company',
+            significance: 'high',
+            anchor: { level: 'trial', ref: 0 },
             match: { kind: 'existing', id: snappedMarkerIds[0] },
           },
           {
-            marker_type: 'Topline Data',
+            event_type: 'Topline Data',
             title: 'Existing readout B (skip)',
             event_date: '2026-08-01',
-            projection: 'company',
+            significance: 'high',
+            anchor: { level: 'trial', ref: 0 },
             match: { kind: 'existing', id: snappedMarkerIds[1] },
           },
           {
-            marker_type: 'Topline Data',
+            event_type: 'Topline Data',
             title: 'Existing readout C (skip)',
             event_date: '2026-09-01',
-            projection: 'company',
+            significance: 'high',
+            anchor: { level: 'trial', ref: 0 },
             match: { kind: 'existing', id: snappedMarkerIds[2] },
           },
-          // One genuinely new marker: must be created.
+          // One genuinely new trial-anchored event: must be created.
           {
-            marker_type: 'Topline Data',
+            event_type: 'Topline Data',
             title: newMarkerTitle,
             event_date: '2026-12-01',
-            projection: 'company',
-            trial_refs: [0],
+            significance: 'high',
+            anchor: { level: 'trial', ref: 0 },
           },
-        ],
-        events: [
-          // One matched event resolved from the snapshot: must be skipped.
+          // One matched company-anchored event resolved from snapshot: must be skipped.
           {
-            category: 'Regulatory',
+            event_type: 'Regulatory Filing',
             title: 'Existing filing X (skip)',
             event_date: '2026-10-01',
-            priority: 'high',
-            tags: [],
+            significance: 'high',
             anchor: { level: 'company', ref: 0 },
             match: { kind: 'existing', id: matchedEventId },
           },
-          // One genuinely new event: must be created.
+          // One genuinely new company-anchored event: must be created.
           {
-            category: 'Regulatory',
+            event_type: 'Regulatory Filing',
             title: newEventTitle,
             event_date: '2027-01-01',
-            priority: 'low',
-            tags: [],
+            significance: 'low',
             anchor: { level: 'company', ref: 0 },
           },
         ],
@@ -345,62 +341,59 @@ describe('re-import is idempotent for markers and events', () => {
       // Step 4: assertions.
       // ------------------------------------------------------------------
 
-      // skipped.markers must contain all 3 matched ids.
+      // skipped.events must contain all 4 matched ids (3 trial-anchored + 1 company-anchored).
       const skipped = result2['skipped'] as Record<string, string[]>;
       expect(skipped, 'result must include a skipped field').toBeTruthy();
-      expect(skipped.markers, 'skipped.markers must be present').toBeTruthy();
-      expect(skipped.markers).toHaveLength(3);
-      for (const id of snappedMarkerIds) {
-        expect(skipped.markers, `skipped.markers must contain ${id}`).toContain(id);
-      }
-
-      // created.markers must contain exactly the 1 new marker.
-      const created2 = result2.created as Record<string, string[]>;
-      expect(created2.markers).toHaveLength(1);
-      expect(created2.markers).not.toContain(snappedMarkerIds[0]);
-      expect(created2.markers).not.toContain(snappedMarkerIds[1]);
-      expect(created2.markers).not.toContain(snappedMarkerIds[2]);
-
-      // skipped.events must contain the 1 matched event.
       expect(skipped.events, 'skipped.events must be present').toBeTruthy();
+      expect(skipped.events).toHaveLength(4);
+      for (const id of snappedMarkerIds) {
+        expect(skipped.events, `skipped.events must contain ${id}`).toContain(id);
+      }
       expect(skipped.events).toContain(matchedEventId);
 
-      // created.events must contain exactly the 1 new event.
-      expect(created2.events).toHaveLength(1);
+      // created.events must contain exactly the 2 new events (1 trial-anchored + 1 company-anchored).
+      const created2 = result2.created as Record<string, string[]>;
+      expect(created2.events).toHaveLength(2);
+      expect(created2.events).not.toContain(snappedMarkerIds[0]);
+      expect(created2.events).not.toContain(snappedMarkerIds[1]);
+      expect(created2.events).not.toContain(snappedMarkerIds[2]);
       expect(created2.events).not.toContain(matchedEventId);
 
-      // DB-level: the matched marker ids each still have exactly 1 row (no
-      // duplicate was inserted).
+      // DB-level: the matched trial-anchored events each still have exactly 1 row.
       for (const id of snappedMarkerIds) {
         const { count } = await admin
-          .from('markers')
+          .from('events')
           .select('*', { count: 'exact', head: true })
           .eq('id', id);
-        expect(count, `marker ${id} must have exactly 1 DB row`).toBe(1);
+        expect(count, `trial-anchored event ${id} must have exactly 1 DB row`).toBe(1);
       }
 
-      // DB-level: the new marker was created with the correct title.
+      // DB-level: the new trial-anchored event was created with the correct
+      // title and is trial-anchored (anchor.level='trial', ref=0).
       const { data: newMarkerRow } = await admin
-        .from('markers')
-        .select('title')
-        .eq('id', created2.markers[0])
+        .from('events')
+        .select('title, anchor_type')
+        .eq('id', created2.events[0])
         .single();
       expect(newMarkerRow!.title).toBe(newMarkerTitle);
+      expect(newMarkerRow!.anchor_type).toBe('trial');
 
-      // DB-level: the matched event still has exactly 1 row.
+      // DB-level: the matched company-anchored event still has exactly 1 row.
       const { count: eventCount } = await admin
         .from('events')
         .select('*', { count: 'exact', head: true })
         .eq('id', matchedEventId);
       expect(eventCount, 'matched event must have exactly 1 DB row').toBe(1);
 
-      // DB-level: the new event was created with the correct title.
+      // DB-level: the new company-anchored event was created with the correct
+      // title and is company-anchored (anchor.level='company', ref=0).
       const { data: newEventRow } = await admin
         .from('events')
-        .select('title')
-        .eq('id', created2.events[0])
+        .select('title, anchor_type')
+        .eq('id', created2.events[1])
         .single();
       expect(newEventRow!.title).toBe(newEventTitle);
+      expect(newEventRow!.anchor_type).toBe('company');
     },
     120_000,
   );

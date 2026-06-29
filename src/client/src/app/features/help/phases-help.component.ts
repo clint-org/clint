@@ -19,7 +19,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
           <p class="mt-1 max-w-xl text-sm text-slate-500">
             Phase bars are the timeline backdrop. Color encodes the development phase so the eye can
             scan a portfolio and identify where pivotal (P3) and launched assets sit. Bars recede so
-            markers stay the visual foreground.
+            events stay the visual foreground.
           </p>
         </header>
 
@@ -59,14 +59,14 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
             <ul class="space-y-2 list-disc pl-5">
               <li>
                 A bar runs from the trial's earliest <span class="font-medium">Trial Start</span>
-                marker to its latest <span class="font-medium">Trial End</span> marker (the
-                <span class="font-medium">Primary Completion Date</span> marker stands in when there
-                is no Trial End). The bar has no dates of its own, so the markers are the bar: correct
-                a date on the marker and the bar follows.
+                event to its latest <span class="font-medium">Trial End</span> event (the
+                <span class="font-medium">Primary Completion Date</span> event stands in when there
+                is no Trial End). The bar has no dates of its own, so the events are the bar: correct
+                a date on the event and the bar follows.
               </li>
               <li>
-                Color and label come from the trial's phase, not its markers. A trial with no Trial
-                Start or Trial End marker has no span, so no bar renders.
+                Color and label come from the trial's phase, not its events. A trial with no Trial
+                Start or Trial End event has no span, so no bar renders.
               </li>
               <li>
                 Color intensity rises through PH 1 → PH 2 → PH 3 so the pivotal phase is the most

@@ -2,12 +2,12 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
  * Empty-state primitive for detail panes. Renders the action prompt eyebrow
- * ("Click a catalyst to see details") and projects the rest of the body so
+ * ("Click an event to see details") and projects the rest of the body so
  * each surface composes its own count summary, histogram section, and
  * recent-activity section using <app-detail-panel-section> + entity rows.
  *
  * Caller is responsible for picking the right shell mode: a muted-tone
- * shell label like "Catalysts · overview" goes in the shell's `label`,
+ * shell label like "Future events · overview" goes in the shell's `label`,
  * not here.
  */
 @Component({

@@ -2,7 +2,26 @@
  * ctgov-marker-precision-over-time.spec.ts
  *
  * End-to-end integration proof for the CT.gov trial dates + marker precision
- * change (migration 20260626120000_ctgov_trial_dates_markers.sql).
+ * drift behavior. As of the event-model cutover (migration
+ * 20260628270000_ctgov_sync_emits_events.sql) the CT.gov sync emits clinical
+ * EVENTS anchored to the trial (anchor_type='trial', anchor_id=<trial>,
+ * event_type_id=<system id>) instead of the dropped public.markers /
+ * public.marker_assignments tables. The drift logic (UPSERT-by
+ * (trial, event_type, metadata.source='ctgov'), analyst adoption on first sync,
+ * one event per type, in-place date/precision/projection updates) is unchanged,
+ * so every precision-over-time assertion below is preserved -- the reads simply
+ * target public.events now.
+ *
+ * Two things changed in the event model and are reflected here:
+ *   - The DB-level ct.gov write-lock trigger (formerly on public.markers) is
+ *     GONE; there is no equivalent on public.events and the clint.ctgov_seeding
+ *     GUC is inert. The old "analyst direct edit rejected by trigger" coverage
+ *     is re-scoped (see group 4): ownership is now a frontend-only concern keyed
+ *     on metadata.source. What is retained is the proof that a ct.gov re-sync
+ *     still updates its owned event in place.
+ *   - CT.gov events carry NO source_url and NO event_sources rows; the registry
+ *     link is derived by readers from the trial NCT (tested separately via the
+ *     read RPC's registry_url). This spec never asserts a stored registry link.
  *
  * All assertions go through the live `ingest_ctgov_snapshot` RPC and the real
  * DB, pinning SQL resolver output to the TS `precisionMidpointISO` source of
@@ -12,7 +31,7 @@
  * migration and set SUPABASE_SERVICE_ROLE_KEY from `supabase status -o env`.
  *
  * Run in isolation:
- *   npm run test:integration -- ctgov-marker-precision-over-time
+ *   npm run test:integration -- ctgov-marker-precision
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -64,31 +83,30 @@ async function pgQuery<T = Record<string, unknown>>(
 }
 
 /**
- * Delete all markers for an agency's spaces with the ctgov_seeding GUC set,
- * then cascade delete the rest (spaces -> tenants -> agency).
- * This bypasses the BEFORE DELETE marker lock trigger that fires even for
- * the superuser/service role, matching the teardown pattern from the
- * migration smoke (set_config + delete in the same transaction).
+ * Cascade-delete an agency's spaces -> tenants -> agency.
+ *
+ * In the event model there is no DB-level ct.gov write-lock trigger (it lived on
+ * the dropped public.markers table), so the old GUC-bypass teardown is no longer
+ * needed. We DO delete the trial-anchored events first, though: events carry a
+ * BEFORE DELETE audit trigger (_log_event_change) that inserts an event_changes
+ * row referencing the event's space_id. If we deleted the spaces directly, the
+ * space-delete cascade would fire that trigger after the space is gone and
+ * violate event_changes_space_id_fkey. Deleting events while their space still
+ * exists lets the audit insert succeed; the space delete then cascades the
+ * event_changes rows away.
  */
-async function cleanupAgencyWithGucBypass(agencyId: string): Promise<void> {
+async function cleanupAgency(agencyId: string): Promise<void> {
   const client = new PgClient({ connectionString: SUPABASE_DB_URL });
   await client.connect();
   try {
-    await client.query('BEGIN');
-    // Set GUC before the DELETE so the lock trigger sees ctgov_seeding = 'on'.
-    await client.query(`select set_config('clint.ctgov_seeding', 'on', true)`);
     await client.query(
-      `delete from public.markers where space_id in (
+      `delete from public.events where space_id in (
          select s.id from public.spaces s
          join public.tenants t on s.tenant_id = t.id
          where t.agency_id = $1
        )`,
       [agencyId]
     );
-    await client.query(`select set_config('clint.ctgov_seeding', 'off', true)`);
-    await client.query('COMMIT');
-
-    // Cascade rest outside the GUC transaction (no markers remain to fire on)
     await client.query(
       `delete from public.spaces where tenant_id in
          (select id from public.tenants where agency_id = $1)`,
@@ -96,9 +114,6 @@ async function cleanupAgencyWithGucBypass(agencyId: string): Promise<void> {
     );
     await client.query(`delete from public.tenants where agency_id = $1`, [agencyId]);
     await client.query(`delete from public.agencies where id = $1`, [agencyId]);
-  } catch (err) {
-    await client.query('ROLLBACK').catch(() => undefined);
-    throw err;
   } finally {
     await client.end();
   }
@@ -136,13 +151,19 @@ interface MarkerRow {
   metadata: Record<string, unknown>;
 }
 
-/** Query all markers of a given type assigned to a trial. */
+/**
+ * Query all events of a given type anchored to a trial. (Event model: the
+ * "marker of type T on trial X" lookup is now a trial-anchored event filtered by
+ * anchor_type/anchor_id/event_type_id -- there is no assignment table. The
+ * `markerTypeId` argument IS the event_type_id: the system UUIDs are identical.)
+ */
 async function queryMarkers(trialId: string, markerTypeId: string): Promise<MarkerRow[]> {
   return pgQuery<MarkerRow>(
-    `select m.id, m.event_date::text, m.date_precision, m.projection, m.metadata
-       from public.marker_assignments ma
-       join public.markers m on m.id = ma.marker_id
-      where ma.trial_id = $1 and m.marker_type_id = $2`,
+    `select e.id, e.event_date::text, e.date_precision, e.projection, e.metadata
+       from public.events e
+      where e.anchor_type = 'trial'
+        and e.anchor_id = $1
+        and e.event_type_id = $2`,
     [trialId, markerTypeId]
   );
 }
@@ -247,19 +268,16 @@ let p: Personas;
 let svc: SupabaseClient;
 
 beforeAll(async () => {
-  // Preamble: remove any ctgov-owned markers left by a prior failed test run.
+  // Preamble: remove any trial-anchored events left by a prior failed test run.
   // buildPersonas() wipes pftest-tx-* agencies by cascading agency -> space ->
-  // markers, but the BEFORE DELETE trigger raises for ctgov-owned markers unless
-  // the GUC is set first. This step sets the GUC in the same transaction as the
-  // marker delete so the trigger allows it, matching the migration smoke teardown.
+  // events. In the event model there is no BEFORE DELETE write-lock trigger
+  // (it lived on the dropped markers table), so a plain delete suffices.
   {
     const pg = new PgClient({ connectionString: SUPABASE_DB_URL });
     await pg.connect();
     try {
-      await pg.query('BEGIN');
-      await pg.query(`select set_config('clint.ctgov_seeding', 'on', true)`);
       await pg.query(`
-        delete from public.markers
+        delete from public.events
          where space_id in (
            select s.id from public.spaces s
            join public.tenants t on s.tenant_id = t.id
@@ -267,10 +285,7 @@ beforeAll(async () => {
            where a.subdomain like 'pftest-tx-%'
          )
       `);
-      await pg.query(`select set_config('clint.ctgov_seeding', 'off', true)`);
-      await pg.query('COMMIT');
     } catch (_err) {
-      await pg.query('ROLLBACK').catch(() => undefined);
       // Non-fatal: if nothing was left, proceed.
     } finally {
       await pg.end();
@@ -299,9 +314,8 @@ describe('precision over time, date slip event, and ct.gov marker lock', () => {
   let markerV3: MarkerRow;
   let markerIdAfterV1: string;
 
-  // Captured state for group 4 (lock) assertions
-  let lockThrew: boolean;
-  let markerValueAfterLockAttempt: string;
+  // Captured state for group 4 (re-sync ownership) assertions
+  let analystEditThrew: boolean;
   let markerValueAfterV4: string;
 
   beforeAll(async () => {
@@ -366,28 +380,25 @@ describe('precision over time, date slip event, and ct.gov marker lock', () => {
     if (v3Markers.length !== 1) throw new Error(`Expected 1 Trial Start after v3, got ${v3Markers.length}`);
     markerV3 = v3Markers[0]!;
 
-    // ---- Group 4 setup: lock test ----
-    // Attempt a direct analyst update of the ctgov-owned marker.
-    // The BEFORE UPDATE trigger (trg_guard_ctgov_locked_markers) raises P0001
-    // regardless of Postgres role (triggers are not bypassed by service role).
-    lockThrew = false;
+    // ---- Group 4 setup: re-sync ownership ----
+    // Event model: the DB-level ct.gov write-lock trigger is GONE (it lived on
+    // the dropped markers table). A direct analyst update of the ct.gov-owned
+    // event now SUCCEEDS at the DB layer -- ownership/locking is a frontend-only
+    // concern keyed on metadata.source. We capture whether the raw update threw
+    // (it should NOT) to document the removed lock, then prove the next ct.gov
+    // sync re-asserts ownership by overwriting the date in place.
+    analystEditThrew = false;
     try {
       await pgQuery(
-        `update public.markers set event_date = '2030-01-01' where id = $1`,
+        `update public.events set event_date = '2030-01-01' where id = $1`,
         [markerV3.id]
       );
     } catch (_err) {
-      // Any error on this update counts as the lock having fired.
-      lockThrew = true;
+      analystEditThrew = true;
     }
 
-    const [afterAttempt] = await pgQuery<{ event_date: string }>(
-      `select event_date::text from public.markers where id = $1`,
-      [markerV3.id]
-    );
-    markerValueAfterLockAttempt = afterAttempt?.event_date ?? '';
-
-    // v4: ct.gov sync STILL updates the locked marker (ct.gov retains ownership)
+    // v4: ct.gov sync still owns and updates its event in place (overwrites the
+    // direct edit above).
     await ingest(svc, trialAId, spaceId, nctA, 4, '2026-04-01', {
       protocolSection: {
         statusModule: { startDateStruct: { date: '2027-01-15', type: 'ACTUAL' } },
@@ -395,14 +406,14 @@ describe('precision over time, date slip event, and ct.gov marker lock', () => {
     });
 
     const [afterV4] = await pgQuery<{ event_date: string }>(
-      `select event_date::text from public.markers where id = $1`,
+      `select event_date::text from public.events where id = $1`,
       [markerV3.id]
     );
     markerValueAfterV4 = afterV4?.event_date ?? '';
   }, 120_000);
 
   afterAll(async () => {
-    if (agencyId) await cleanupAgencyWithGucBypass(agencyId);
+    if (agencyId) await cleanupAgency(agencyId);
   });
 
   // --- Group 1: precision and projection evolve over CT.gov versions ---
@@ -462,50 +473,61 @@ describe('precision over time, date slip event, and ct.gov marker lock', () => {
     });
   });
 
-  // --- Group 3: date slip emits exactly one date_moved event, sourced ctgov ---
-
-  describe('group 3: date slip emits date_moved events sourced ctgov only', () => {
-    it('date_moved events exist after date changes between versions', async () => {
-      const events = await queryEvents(trialAId, 'date_moved');
-      // v1 is the first insert (marker_added only, no prior snapshot to diff against).
-      // v2/v3/v4 each changed the date -> 3 date_moved events.
-      expect(events.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it('all date_moved events have source === ctgov (not analyst)', async () => {
-      const events = await queryEvents(trialAId, 'date_moved');
-      for (const ev of events) {
-        expect(ev.source).toBe('ctgov');
-      }
-    });
-
-    it('no duplicate date_moved events per sync (single emitter, spec A3)', async () => {
-      // Before this fix: ingest emitted date_moved TWICE per date change
-      // (once from _classify_change + once from the marker UPSERT trigger).
-      // After the fix: _classify_change is suppressed for the three date fields;
-      // only the marker audit fires (one per sync that changes the date).
-      // v2 changed date: expect exactly 1 date_moved for that transition.
-      // v3 changed date: expect exactly 1 more. v4 changed: 1 more. Total: 3.
+  // --- Group 3: date_moved change-feed emission (RESTORED by task CA) ---
+  //
+  // These assertions exercise the trial_change_events Activity-feed emission of
+  // `date_moved` on a CT.gov registry-date drift. In the marker era there were
+  // two emitters: _classify_change (in ingest_ctgov_snapshot) and the marker
+  // UPSERT audit trigger; a de-dup SUPPRESSED _classify_change for the three
+  // CT.gov date fields so the marker audit became the single emitter (spec A3).
+  // That marker audit trigger lived on the now-dropped public.markers table and
+  // was retired in Phase B / task C1, leaving NO producer for date_moved. Task
+  // CA (migration 20260628300000) un-suppressed _classify_change for the three
+  // date fields, so it is once again the single date_moved emitter and
+  // ingest_ctgov_snapshot inserts the row into trial_change_events (source=
+  // 'ctgov'). The Trial-A setup drifts startDateStruct.date across v2/v3/v4
+  // (2026 -> 2026-11 -> 2026-11-03 -> 2027-01-15), so exactly 3 date_moved rows
+  // are expected (v1 is the first snapshot, no prior to diff against).
+  describe('group 3: date_moved change-feed emission (restored by task CA)', () => {
+    it('emits exactly 3 ctgov date_moved events for the v2/v3/v4 start-date drift', async () => {
       const events = await queryEvents(trialAId, 'date_moved');
       expect(events).toHaveLength(3);
     });
+
+    it('every date_moved event is source === ctgov (not analyst) and which_date === start', async () => {
+      const events = await queryEvents(trialAId, 'date_moved');
+      for (const ev of events) {
+        expect(ev.source).toBe('ctgov');
+        expect(ev.payload['which_date']).toBe('start');
+      }
+    });
   });
 
-  // --- Group 4: ct.gov marker lock ---
-
-  describe('group 4: ct.gov marker lock rejects analyst edit; ct.gov sync still updates', () => {
-    it('direct update of ctgov-owned marker raises (BEFORE UPDATE trigger)', () => {
-      expect(lockThrew).toBe(true);
+  // --- Group 4: ct.gov re-sync retains ownership and updates in place ---
+  //
+  // RE-SCOPED for the event model. The old coverage asserted a DB-level
+  // BEFORE UPDATE trigger rejected a direct analyst edit of the ct.gov-owned
+  // marker. That trigger lived on the dropped markers table and is GONE: there
+  // is no write-lock on public.events, and the clint.ctgov_seeding GUC is inert.
+  // Ownership/locking is now a frontend-only concern keyed on metadata.source.
+  // We therefore DROP the "DB rejects the analyst edit" assertion and instead
+  // document that the raw update now succeeds, while KEEPING the core C3 proof:
+  // a subsequent ct.gov sync still updates its owned event in place (no second
+  // event, value overwritten).
+  describe('group 4: ct.gov re-sync retains ownership and updates its event in place', () => {
+    it('direct DB update of the ctgov-owned event no longer raises (write-lock removed)', () => {
+      expect(analystEditThrew).toBe(false);
     });
 
-    it('marker event_date is unchanged after rejected analyst update', () => {
-      // The lock rejected the update; value must remain at v3 = '2026-11-03'
-      expect(markerValueAfterLockAttempt).toBe('2026-11-03');
-    });
-
-    it('subsequent ingest_ctgov_snapshot still updates the locked marker', () => {
-      // ct.gov retains ownership: the GUC bypasses the trigger during ingest.
+    it('subsequent ingest_ctgov_snapshot still updates the ctgov-owned event in place', () => {
+      // ct.gov retains ownership via metadata.source='ctgov': the steady-state
+      // UPSERT branch overwrites the event_date regardless of any prior edit.
       expect(markerValueAfterV4).toBe('2027-01-15');
+    });
+
+    it('still exactly one Trial Start event after the re-sync (no duplicate)', async () => {
+      const markers = await queryMarkers(trialAId, TRIAL_START_MARKER_TYPE_ID);
+      expect(markers).toHaveLength(1);
     });
   });
 });
@@ -561,14 +583,14 @@ describe('group 2: exactly one Trial Start, PCD, and Trial End after N syncs', (
       },
     });
 
-    // 3 syncs with all three date types — verifies UPSERT does not create duplicates
+    // 3 syncs with all three date types -- verifies UPSERT does not create duplicates
     await ingest(svc, trialBId, spaceId, nctB, 1, '2026-01-01', fullPayload('2026-03', '2027-06', '2027-12'));
     await ingest(svc, trialBId, spaceId, nctB, 2, '2026-02-01', fullPayload('2026-04', '2027-07', '2028-01'));
     await ingest(svc, trialBId, spaceId, nctB, 3, '2026-03-01', fullPayload('2026-05', '2027-08', '2028-02'));
   }, 120_000);
 
   afterAll(async () => {
-    if (agencyId) await cleanupAgencyWithGucBypass(agencyId);
+    if (agencyId) await cleanupAgency(agencyId);
   });
 
   it('exactly one Trial Start marker after 3 syncs (drift fix)', async () => {
@@ -644,54 +666,45 @@ describe('group 5: import -> ct.gov adoption', () => {
     // trial_C: NCT-linked; one analyst-owned (un-owned) Trial Start -> adopted on sync.
     trialCId = await insertTrial(svc, spaceId, assetId, 'Adopt Trial C', createdBy, nctC);
 
-    // Insert an analyst-owned Trial Start (mirrors _create_trial_date_markers output:
-    // metadata.source = 'analyst', no 'ctgov' source). Un-owned = eligible for adoption.
-    const { data: markerC, error: mCErr } = await svc
-      .from('markers')
+    // Insert an analyst-owned Trial Start EVENT anchored to trial_C (mirrors
+    // _create_trial_date_markers output: metadata.source = 'analyst', no 'ctgov'
+    // source, anchor_type='trial'). Un-owned = eligible for adoption on sync.
+    const { error: mCErr } = await svc
+      .from('events')
       .insert({
         space_id: spaceId,
-        marker_type_id: TRIAL_START_MARKER_TYPE_ID,
+        event_type_id: TRIAL_START_MARKER_TYPE_ID,
         title: 'Trial Start',
         projection: 'company',
         event_date: '2025-03-01',
         date_precision: 'exact',
+        anchor_type: 'trial',
+        anchor_id: trialCId,
         metadata: { source: 'analyst' },
         created_by: createdBy,
-      })
-      .select('id')
-      .single();
-    if (mCErr) throw new Error(`insert analyst marker C: ${mCErr.message}`);
-
-    const { error: maErr } = await svc
-      .from('marker_assignments')
-      .insert({ marker_id: (markerC as { id: string }).id, trial_id: trialCId });
-    if (maErr) throw new Error(`insert marker_assignment C: ${maErr.message}`);
+      });
+    if (mCErr) throw new Error(`insert analyst event C: ${mCErr.message}`);
 
     // trial_D: no NCT, just an analyst Trial Start (never synced, must be untouched)
     trialDId = await insertTrial(svc, spaceId, assetId, 'Manual Trial D', createdBy);
 
-    const { data: markerD, error: mDErr } = await svc
-      .from('markers')
+    const { error: mDErr } = await svc
+      .from('events')
       .insert({
         space_id: spaceId,
-        marker_type_id: TRIAL_START_MARKER_TYPE_ID,
+        event_type_id: TRIAL_START_MARKER_TYPE_ID,
         title: 'Trial Start',
         projection: 'company',
         event_date: '2025-06-01',
         date_precision: 'exact',
+        anchor_type: 'trial',
+        anchor_id: trialDId,
         metadata: { source: 'analyst' },
         created_by: createdBy,
-      })
-      .select('id')
-      .single();
-    if (mDErr) throw new Error(`insert analyst marker D: ${mDErr.message}`);
+      });
+    if (mDErr) throw new Error(`insert analyst event D: ${mDErr.message}`);
 
-    const { error: maErrD } = await svc
-      .from('marker_assignments')
-      .insert({ marker_id: (markerD as { id: string }).id, trial_id: trialDId });
-    if (maErrD) throw new Error(`insert marker_assignment D: ${maErrD.message}`);
-
-    // Sync trial_C: one un-owned marker should be adopted (not duplicated)
+    // Sync trial_C: one un-owned event should be adopted (not duplicated)
     await ingest(svc, trialCId, spaceId, nctC, 1, '2026-01-01', {
       protocolSection: {
         statusModule: { startDateStruct: { date: '2026-05-20', type: 'ACTUAL' } },
@@ -700,7 +713,7 @@ describe('group 5: import -> ct.gov adoption', () => {
   }, 120_000);
 
   afterAll(async () => {
-    if (agencyId) await cleanupAgencyWithGucBypass(agencyId);
+    if (agencyId) await cleanupAgency(agencyId);
   });
 
   it('trial_C after sync: exactly one Trial Start (adopted, not duplicated)', async () => {
@@ -843,7 +856,7 @@ describe('group 6: deriveTrialPhaseSpan matches old column behavior (via get_das
   }, 120_000);
 
   afterAll(async () => {
-    if (agencyId) await cleanupAgencyWithGucBypass(agencyId);
+    if (agencyId) await cleanupAgency(agencyId);
   });
 
   // --- The markers surface through get_dashboard_data (spec B5 core proof) ---
@@ -882,6 +895,22 @@ describe('group 6: deriveTrialPhaseSpan matches old column behavior (via get_das
     expect(span.endPrecision).toBe('exact');
   });
 
+  it('QA-002: create_trial backfills the human-readable phase from phase_type', async () => {
+    // create_trial was called with p_phase_type 'P3' and no separate phase string.
+    // The trials.phase text column must be backfilled to 'Phase 3' (parity with
+    // the ct.gov sync path), not left NULL as it was before the QA-002 fix; the
+    // trial-detail Phase field reads this column and rendered "(not set)" before.
+    const { data, error } = await svc
+      .from('trials')
+      .select('phase, phase_type')
+      .eq('id', trialEId)
+      .single();
+    expect(error).toBeNull();
+    const row = data as { phase: string | null; phase_type: string | null };
+    expect(row.phase_type).toBe('P3');
+    expect(row.phase).toBe('Phase 3');
+  });
+
   it('trial_F appears in get_dashboard_data output', () => {
     expect(dashTrialF).not.toBeNull();
   });
@@ -905,10 +934,9 @@ describe('group 6: deriveTrialPhaseSpan matches old column behavior (via get_das
 
   it('trial_E (direct DB): deriveTrialPhaseSpan start/end match (Trial End wins over PCD)', async () => {
     const rows = await pgQuery<{ marker_type_id: string; event_date: string; date_precision: string }>(
-      `select m.marker_type_id, m.event_date::text, m.date_precision
-         from public.marker_assignments ma
-         join public.markers m on m.id = ma.marker_id
-        where ma.trial_id = $1`,
+      `select e.event_type_id as marker_type_id, e.event_date::text, e.date_precision
+         from public.events e
+        where e.anchor_type = 'trial' and e.anchor_id = $1`,
       [trialEId]
     );
     const span = deriveTrialPhaseSpan(
@@ -931,10 +959,9 @@ describe('group 6: deriveTrialPhaseSpan matches old column behavior (via get_das
 
   it('trial_F (direct DB): deriveTrialPhaseSpan end === PCD date', async () => {
     const rows = await pgQuery<{ marker_type_id: string; event_date: string; date_precision: string }>(
-      `select m.marker_type_id, m.event_date::text, m.date_precision
-         from public.marker_assignments ma
-         join public.markers m on m.id = ma.marker_id
-        where ma.trial_id = $1`,
+      `select e.event_type_id as marker_type_id, e.event_date::text, e.date_precision
+         from public.events e
+        where e.anchor_type = 'trial' and e.anchor_id = $1`,
       [trialFId]
     );
     const span = deriveTrialPhaseSpan(

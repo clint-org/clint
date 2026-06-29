@@ -58,7 +58,7 @@ export class ChangeEventRowComponent {
     if (!t || !s) return null;
     const e = this.event();
     if (e.marker_id) {
-      return ['/t', t, 's', s, 'catalysts'];
+      return ['/t', t, 's', s, 'future-events'];
     }
     if (e.trial_id) {
       return ['/t', t, 's', s, 'profiles', 'trials', e.trial_id];
@@ -68,7 +68,7 @@ export class ChangeEventRowComponent {
 
   readonly queryParams = computed<Record<string, string> | null>(() => {
     const e = this.event();
-    return e.marker_id && this.routerLink() ? { markerId: e.marker_id } : null;
+    return e.marker_id && this.routerLink() ? { eventId: e.marker_id } : null;
   });
 }
 

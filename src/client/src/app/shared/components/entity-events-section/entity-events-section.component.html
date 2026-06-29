@@ -1,0 +1,128 @@
+<app-section-card
+  title="Events"
+  [description]="description()"
+  [count]="events().length"
+  countNoun="event"
+>
+  <div actions>
+    @if (spaceRole.canEdit()) {
+      <p-button
+        label="Add event"
+        icon="fa-solid fa-calendar-plus"
+        [text]="true"
+        size="small"
+        (onClick)="openCreate()"
+      />
+    }
+  </div>
+
+  @if (spaceId(); as sid) {
+    <app-event-form-dialog
+      [(visible)]="eventDialogOpen"
+      [spaceId]="sid"
+      [mode]="eventDialogMode()"
+      [eventId]="editingEventId()"
+      [presetAnchorType]="anchorType()"
+      [presetAnchorId]="anchorId()"
+      [ctgovLocked]="editingEventCtgovLocked()"
+      (saved)="onEventSaved()"
+    />
+  }
+
+  <p-table
+    styleClass="data-table"
+    [value]="events()"
+    [tableStyle]="{ 'min-width': '56rem' }"
+    sortField="event_date"
+    [sortOrder]="-1"
+    [filterDelay]="0"
+    aria-label="Entity events"
+  >
+    <ng-template #header>
+      <tr>
+        <th class="w-8" scope="col"><span class="sr-only">Event glyph</span></th>
+        <th pSortableColumn="marker_types.marker_categories.name">
+          Category <p-sortIcon field="marker_types.marker_categories.name" />
+          <p-column-filter type="text" field="marker_types.marker_categories.name" display="menu" />
+        </th>
+        <th pSortableColumn="marker_types.name">
+          Type <p-sortIcon field="marker_types.name" />
+          <p-column-filter type="text" field="marker_types.name" display="menu" />
+        </th>
+        <th pSortableColumn="title">
+          Title <p-sortIcon field="title" />
+          <p-column-filter type="text" field="title" display="menu" />
+        </th>
+        <th scope="col">Timeline</th>
+        <th pSortableColumn="event_date">
+          Event date <p-sortIcon field="event_date" />
+          <p-column-filter type="text" field="event_date" display="menu" />
+        </th>
+        <th pSortableColumn="projection">
+          Projection <p-sortIcon field="projection" />
+          <p-column-filter type="text" field="projection" display="menu" />
+        </th>
+        <th class="col-actions"></th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-marker>
+      <tr>
+        <td class="w-8">
+          @if (marker.marker_types?.shape) {
+            <app-marker-icon
+              class="inline-flex"
+              [shape]="marker.marker_types.shape"
+              [color]="marker.marker_types.color ?? '#64748b'"
+              [size]="14"
+              [fillStyle]="markerFillStyle(marker)"
+              [innerMark]="marker.marker_types.inner_mark ?? 'none'"
+              [isNle]="marker.no_longer_expected ?? false"
+              [projectionBadge]="markerBadge(marker)"
+              [outlineDash]="markerOutlineDash(marker)"
+            />
+          }
+        </td>
+        <td class="col-secondary">
+          {{ marker.marker_types?.marker_categories?.name || '--' }}
+        </td>
+        <td>{{ marker.marker_types?.name || 'Unknown' }}</td>
+        <td class="col-secondary max-w-xs">
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              class="truncate text-left text-brand-700 hover:underline focus:outline-none focus:ring-1 focus:ring-brand-500"
+              (click)="viewMarkerDetail(marker)"
+            >
+              {{ marker.title }}
+            </button>
+            <app-ctgov-source-tag [metadata]="marker.metadata" />
+          </div>
+        </td>
+        <td>
+          <app-status-tag [label]="timelineLabel(marker)" [tone]="timelineTone(marker)" />
+        </td>
+        <td class="col-identifier">{{ marker.event_date | date: 'mediumDate' }}</td>
+        <td>
+          @if (marker.projection && marker.projection !== 'actual') {
+            <app-status-tag [label]="marker.projection" tone="amber" />
+          } @else {
+            <span class="font-mono text-xs text-slate-400">actual</span>
+          }
+        </td>
+        <td class="col-actions">
+          @if (spaceRole.canEdit()) {
+            <app-row-actions
+              [items]="markerMenu(marker)"
+              [ariaLabel]="'Actions for event ' + marker.title"
+            />
+          }
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="8">No events yet. Add one to get started.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</app-section-card>

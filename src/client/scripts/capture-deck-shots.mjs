@@ -35,6 +35,7 @@ import { chromium } from '@playwright/test';
 import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { stampCacheBusters } from './stamp-deck-cache-busters.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(here, '../public/internal/img');
@@ -128,13 +129,20 @@ let page = ctx.pages()[0] ?? (await ctx.newPage());
 log('opening login...');
 await page.goto(`${HOST}/login`, { waitUntil: 'domcontentloaded' }).catch(() => {});
 if (page.url().includes('/login')) {
-  await page
-    .getByRole('button', { name: /sign in with google/i })
-    .waitFor({ state: 'visible', timeout: 20000 })
-    .catch(() => {});
+  const googleBtn = page.getByRole('button', { name: /sign in with google/i });
+  await googleBtn.waitFor({ state: 'visible', timeout: 30000 }).catch(() => {});
   await settle(page, 1200);
-  if (page.url().includes('/login') && want('whitelabel-stout-login')) {
-    await shot(page, 'whitelabel-stout-login.png');
+  // Only capture once the real branded login has rendered (the Google button is
+  // visible). A cold navigation can land on a Cloudflare "verify you are human"
+  // challenge whose URL is still /login; shooting then overwrites the good shot
+  // with the challenge page. Guard on the button so we skip rather than corrupt.
+  const loginReady = await googleBtn.isVisible().catch(() => false);
+  if (want('whitelabel-stout-login')) {
+    if (loginReady && page.url().includes('/login')) {
+      await shot(page, 'whitelabel-stout-login.png');
+    } else {
+      log('  (login not ready -- likely a Cloudflare challenge; kept existing whitelabel-stout-login.png)');
+    }
   }
 }
 
@@ -174,6 +182,9 @@ const go = async (path, name, ms = 1800) => {
   }
 };
 await go('', 'engagement-landing.png');
+// Intelligence Feed ("Latest from Stout") -- the unified, recency-ordered feed
+// of every published read in the space. The headline intelligence surface.
+await go('/intelligence', 'intelligence-feed.png', 2400);
 
 // Timeline -- scroll so ~2023 is the leftmost year (the dense, varied marker
 // field from the reference cover shot) and hover a marker so its tooltip card
@@ -219,20 +230,44 @@ if (want('timeline')) {
     // Re-assert in case the grid's initial-scroll effect reset it.
     await page.evaluate(scrollOnce, 560).catch(() => {});
     await page.waitForTimeout(700);
-    // Hover a content-rich data marker (description + readout) so the tooltip
-    // card shows the competitive read, not a bare CT.gov milestone. The marker's
-    // aria-label is its title; target the REDEFINE-1 topline readout (CagriSema,
-    // 2024-12, in frame), falling back to a mid marker if it isn't found.
-    let target = page
-      .locator('app-marker div[role="button"][aria-label^="REDEFINE-1 topline"]')
-      .first();
-    if (!(await target.count())) {
-      const markers = page.locator('app-marker div[role="button"]');
-      const n = await markers.count();
-      target = n ? markers.nth(Math.min(n - 1, Math.floor(n * 0.45))) : null;
+    // Hover a content-rich, NON-CT.gov marker (a dated readout/event with a
+    // competitive description) so the tooltip card shows a real read, not a bare
+    // CT.gov milestone. Try a few known headline readouts in the dense 2024 band,
+    // then fall back to any non-CT.gov marker.
+    const PREFERRED = [
+      'Novo CagriSema misses bar, stock -20%',
+      'REDEFINE-1 full readout',
+      'SEQUOIA-HCM topline at AHA 2024',
+      'FINEARTS-HF positive at ESC 2024',
+      'DAPA-HF topline announced',
+    ];
+    let target = null;
+    for (const label of PREFERRED) {
+      const loc = page.locator(`app-marker div[role="button"][aria-label="${label}"]`).first();
+      if (await loc.count()) {
+        target = loc;
+        break;
+      }
+    }
+    if (!target) {
+      const handle = await page.evaluateHandle(() => {
+        const ctgov = /^(Trial Start|Trial End|Primary Completion Date|Estimated|Study Completion)/i;
+        const ms = [...document.querySelectorAll('app-marker div[role="button"]')];
+        return ms.find((m) => {
+          const l = m.getAttribute('aria-label') || '';
+          return l && !ctgov.test(l);
+        });
+      });
+      target = handle.asElement();
     }
     if (target) {
-      await target.scrollIntoViewIfNeeded().catch(() => {});
+      // Center the marker BOTH ways: neighbors fill the frame (denser field) and
+      // the tooltip, which opens around the marker, stays fully in view instead of
+      // clipping at the bottom edge.
+      await target
+        .evaluate((el) => el.scrollIntoView({ block: 'center', inline: 'center' }))
+        .catch(() => {});
+      await page.waitForTimeout(500);
       await target.hover({ force: true }).catch(() => {});
       await page.waitForSelector('app-marker-tooltip', { timeout: 4000 }).catch(() => {});
       await page.waitForTimeout(700);
@@ -266,7 +301,6 @@ if (want('heatmap')) {
     log('FAILED heatmap.png -', e.message);
   }
 }
-await go('/events?source=detected', 'activity.png');
 
 // 4) Bullseye -- select an asset that owns published primary intelligence
 // (CagriSema) so the asset panel shows its Intelligence section while the chart
@@ -275,6 +309,10 @@ if (want('bullseye')) {
   try {
     await page.goto(`${BASE}/bullseye`, { waitUntil: 'domcontentloaded' });
     await settle(page, 2600);
+    // The radial chart hydrates after the route settles; wait for the dots to
+    // exist before selecting one, or an early screenshot catches an empty plot.
+    await page.waitForSelector('circle.bullseye-dot', { timeout: 12000 }).catch(() => {});
+    await page.waitForTimeout(800);
     const piDot = page.locator('circle.bullseye-dot[aria-label^="CagriSema"]').first();
     if (await piDot.count()) {
       await piDot.click({ force: true });
@@ -292,50 +330,35 @@ if (want('bullseye')) {
   }
 }
 
-// 5) Catalysts -- select a real catalyst row (opens side panel).
-if (want('catalysts')) {
+// 5) Future events -- the upcoming-event calendar (formerly "Future catalysts";
+//    the legacy /catalysts route redirects here). Select a row to open the
+//    detail panel (upcoming + recent events for that asset/trial).
+if (want('future-events')) {
   try {
-    await page.goto(`${BASE}/catalysts`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/future-events`, { waitUntil: 'domcontentloaded' });
     await settle(page, 2000);
     await page.locator('tr.cursor-pointer').first().click().catch(() => {});
     await page.waitForTimeout(900);
     await page.mouse.move(900, 8);
     await page.waitForTimeout(600);
-    await shot(page, 'catalysts.png');
+    await shot(page, 'future-events.png');
   } catch (e) {
-    log('FAILED catalysts.png -', e.message);
+    log('FAILED future-events.png -', e.message);
   }
 }
 
-// 6) Events -- select an event that belongs to a thread so the detail pane
-//    renders the "Thread" section (the seeded "Pfizer oral GLP-1 retreat" thread
-//    chains the danuglipron discontinuation -> R&D pivot events).
-if (want('events')) {
+// 6) Activity -- the read-only log of detected changes (ClinicalTrials.gov
+//    registry updates + analyst edits, newest first). The legacy /events route
+//    redirects here. Select the first row to open the change-detail panel.
+if (want('activity')) {
   try {
-    // Filter to source_type=event so the manual events (incl. the seeded
-    // thread) sit on the first page instead of being buried under 2026 markers.
-    await page.goto(`${BASE}/events?source=event`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/activity`, { waitUntil: 'domcontentloaded' });
     await settle(page, 2400);
-    // A threaded row carries a "Part of a thread" badge; click its row.
-    const threadRow = page
-      .locator('tbody tr', { has: page.locator('[aria-label="Part of a thread"]') })
-      .first();
-    if (await threadRow.count()) {
-      await threadRow.click().catch(() => {});
-    } else {
-      log('  (no threaded event row found -- falling back to first row)');
-      await page.locator('tbody tr').first().click().catch(() => {});
-    }
-    // Wait for the detail pane's Thread section to render.
-    await page
-      .getByText(/^Thread\b/i)
-      .first()
-      .waitFor({ timeout: 5000 })
-      .catch(() => log('  (Thread section not detected in detail pane)'));
+    await page.locator('tbody tr').first().click().catch(() => {});
     await page.waitForTimeout(1000);
-    await shot(page, 'events.png');
+    await shot(page, 'activity.png');
   } catch (e) {
-    log('FAILED events.png -', e.message);
+    log('FAILED activity.png -', e.message);
   }
 }
 
@@ -405,19 +428,21 @@ if (want('command-palette')) {
 //    (Handled below alongside the other trial-detail shots, since it needs the
 //    NCT->trial resolver.)
 
-// 10) Trial detail: two pinned trials, resolved by NCT so reseeds (which
-//     regenerate UUIDs) keep working.
-//       intelligence   -> ATTRibute-CM (NCT03860935): published intelligence +
-//                         CT.gov-synced -> rich #primary-intelligence note.
+// 10) Trial detail: pinned trials, resolved by NCT so reseeds (which regenerate
+//     UUIDs) keep working.
+//       intelligence   -> SUMMIT (NCT04847557): the richest read surface in the
+//                         demo -- TWO published reads (one LEAD/pinned) + several
+//                         linked materials; run with SYNC=1 so the CT.gov panel
+//                         is populated too.
 //       trial-detail    -> REDEFINE-2 (NCT05394519): seeded trial-scoped events,
-//                         referenced-in a published read, activity, markers ->
-//                         every section of #markers and below is populated.
-const ATTRIBUTE_CM_NCT = 'NCT03860935';
+//                         referenced-in a published read, activity, events ->
+//                         every section of #events and below is populated.
+const SUMMIT_NCT = 'NCT04847557'; // SUMMIT -- 2 published reads (one lead) + materials
 const REDEFINE_2_NCT = 'NCT05394519';
 const MATERIALS_NCT = 'NCT04847557'; // SUMMIT -- a trial with several linked materials
 
 async function resolveTrialIdByNct(nct) {
-  await page.goto(`${BASE}/manage/trials`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.goto(`${BASE}/profiles/trials`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await settle(page, 2200);
   const search = page.getByPlaceholder('Search trials...');
   if (await search.count()) {
@@ -437,8 +462,8 @@ async function resolveTrialIdByNct(nct) {
     return false;
   }, nct);
   if (!clicked) return null;
-  await page.waitForURL(/\/manage\/trials\/[0-9a-f-]{36}/, { timeout: 8000 }).catch(() => {});
-  return (page.url().match(/\/manage\/trials\/([0-9a-f-]{36})/) || [])[1] || null;
+  await page.waitForURL(/\/profiles\/trials\/[0-9a-f-]{36}/, { timeout: 8000 }).catch(() => {});
+  return (page.url().match(/\/profiles\/trials\/([0-9a-f-]{36})/) || [])[1] || null;
 }
 
 // CT.gov sync for a trial via the trial-detail "Sync" button. The seed does not
@@ -446,7 +471,7 @@ async function resolveTrialIdByNct(nct) {
 // "Not yet synced" until this runs. Gated on SYNC=1.
 async function syncTrialCtgov(trialId) {
   if (!trialId) return;
-  await page.goto(`${BASE}/manage/trials/${trialId}`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/profiles/trials/${trialId}`, { waitUntil: 'domcontentloaded' });
   await settle(page, 2000);
   const syncBtn = page.getByRole('button', { name: /^sync$/i });
   if (await syncBtn.count()) {
@@ -459,7 +484,7 @@ async function syncTrialCtgov(trialId) {
 let intelTrialId = process.env['INTEL_TRIAL_ID'] || null;
 let detailTrialId = process.env['DETAIL_TRIAL_ID'] || null;
 if (want('intelligence') && !intelTrialId) {
-  intelTrialId = await resolveTrialIdByNct(ATTRIBUTE_CM_NCT).catch(() => null);
+  intelTrialId = await resolveTrialIdByNct(SUMMIT_NCT).catch(() => null);
 }
 if (want('trial-detail') && !detailTrialId) {
   detailTrialId = await resolveTrialIdByNct(REDEFINE_2_NCT).catch(() => null);
@@ -479,7 +504,7 @@ async function trialSection(name, anchor, trialId) {
   if (!want(name.replace('.png', ''))) return;
   if (!trialId) return log('skip', name, '(no trial)');
   try {
-    await page.goto(`${BASE}/manage/trials/${trialId}`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/profiles/trials/${trialId}`, { waitUntil: 'domcontentloaded' });
     await settle(page, 2000);
     await page
       .locator(anchor)
@@ -503,7 +528,7 @@ if (want('materials')) {
     log('skip materials.png (no trial)');
   } else {
     try {
-      await page.goto(`${BASE}/manage/trials/${materialsTrialId}`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`${BASE}/profiles/trials/${materialsTrialId}`, { waitUntil: 'domcontentloaded' });
       await settle(page, 2200);
       const drop = page.locator('app-material-upload-zone').first();
       if (await drop.count()) {
@@ -522,6 +547,10 @@ if (want('materials')) {
     }
   }
 }
+
+// Stamp content-hash cache-busters so refreshed PNGs (stable filenames) are
+// fetched fresh by browsers/CDN instead of served stale from cache.
+log('stamped cache-busters for', stampCacheBusters(resolve(OUT, '..')), 'image refs');
 
 log('Done. Wrote shots to', OUT);
 await ctx.close().catch(() => {});

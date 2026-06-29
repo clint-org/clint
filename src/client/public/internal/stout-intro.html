@@ -862,7 +862,7 @@
         right: calc(33.333% - 35px);
         height: 2px;
         z-index: 0;
-        background: linear-gradient(to right, var(--brand-600), var(--slate-200));
+        background: linear-gradient(to right, var(--brand-700), var(--brand-300));
         -webkit-mask-image: repeating-linear-gradient(to right, #000 0 6px, transparent 6px 13px);
         mask-image: repeating-linear-gradient(to right, #000 0 6px, transparent 6px 13px);
       }
@@ -950,6 +950,67 @@
       .rm-stage p {
         font-size: 13.5px;
         color: var(--slate-600);
+      }
+      /* Second roadmap track: the longer-horizon "compounding data" story runs on
+     its own dashed line below the near-term track, so it reads as a parallel
+     timeline that continues past the three near-term steps. */
+      .roadmap.horizon {
+        margin-top: 26px;
+        padding-top: 18px;
+      }
+      .roadmap.horizon .roadmap-grid {
+        grid-template-columns: 1fr;
+      }
+      .roadmap.horizon .rm-stage {
+        max-width: 920px;
+      }
+      .roadmap.horizon .rm-stage h3 {
+        font-size: 16px;
+      }
+      .roadmap.horizon .rm-stage p {
+        font-size: 14px;
+      }
+      /* Looping track: the near-term line runs through the three nodes, turns the
+     corner on the right, and comes back left into the horizon node, so the whole
+     thing reads as one continuous path that loops around rather than two separate
+     rows. Tuned for the desktop slide; the dashed line is hidden on mobile, where
+     the roadmap stacks. */
+      .roadmap-loop {
+        position: relative;
+      }
+      .roadmap-loop .loop-top {
+        right: 32px;
+      }
+      .roadmap-loop .loop-top::after {
+        display: none;
+      }
+      /* The corner is an SVG so its dashes match the line rhythm (6/7) and the
+     turn is a smooth rounded U rather than a boxy CSS-border bracket. */
+      .roadmap-loop .loop-turn {
+        position: absolute;
+        right: 8px;
+        top: 28px;
+        width: 24px;
+        height: 236px;
+        z-index: 0;
+        overflow: visible;
+      }
+      .roadmap-loop .loop-bottom {
+        left: 35px;
+        right: 32px;
+      }
+      .roadmap-loop .loop-bottom::after {
+        left: -2px;
+        right: auto;
+        border-top: 0;
+        border-right: 0;
+        border-bottom: 2px solid var(--slate-300);
+        border-left: 2px solid var(--slate-300);
+      }
+      @media (max-width: 768px) {
+        .roadmap-loop .loop-turn {
+          display: none;
+        }
       }
       /* Slide 5 (what changes): a before/after shift table. Each row is one
      dimension of the engagement. The "Without Clint" column recedes in muted
@@ -1558,8 +1619,8 @@
           </h1>
           <div class="cover-hero">
             <img
-              src="img/timeline.png"
-              alt="The timeline: every company's obesity and cardiometabolic programs laid out by year, phase bars behind dated markers for data, regulatory, approval, and launch. Filter, group, and zoom to read any slice of the field."
+              src="img/timeline.png?v=309fc9f8b2"
+              alt="The timeline: every company's programs grouped company to asset to trial, phase bars behind dated events for data, regulatory, approval, and launch. Filter, group, and zoom to read any slice of the field."
             />
           </div>
         </div>
@@ -1609,8 +1670,8 @@
           <p class="lede">
             Each Stout client engagement runs as its own space in Clint, with its data firewalled to
             that engagement and visible only to that engagement's users. It doesn't replace the data
-            sources Stout already works from. It's the layer where Stout's analysis sits on top of
-            them: where the CI work lives, where deliverables get filed, and where the client sees
+            sources Stout already works from. It's the layer where Stout's intelligence sits on top
+            of them: where the CI work lives, where deliverables get filed, and where the client sees
             it all in real time.
           </p>
           <div class="body">
@@ -1623,16 +1684,16 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/engagement-landing.png"
-                    alt="Space home: the next catalyst featured at the top, a quick snapshot of what is moving, the latest intelligence from Stout, what changed this week, and recent files"
+                    src="img/engagement-landing.png?v=818f895fc4"
+                    alt="Space home: the next event featured at the top, a stat line of what is moving, the latest intelligence from Stout, the next ninety days of events, recent materials, and what changed this week."
                   />
                 </button>
                 <h3>Every space opens to a live view</h3>
                 <p>
-                  The landing page is the first thing clients see: the next catalyst front and
-                  center, a quick snapshot of what's moving, the latest analysis from Stout, and
-                  what changed this week. The headline numbers take you straight into the data
-                  behind them.
+                  The landing page is the first thing clients see: the next event front and
+                  center, a stat line of what's moving, the latest intelligence from Stout, the next
+                  ninety days of events, and what changed this week. The headline numbers take you
+                  straight into the data behind them.
                 </p>
               </div>
               <div class="card">
@@ -1643,15 +1704,15 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/source-import.png"
-                    alt="Source import: hand Clint a list of NCT IDs, a URL, or a block of text, and its AI reads it and proposes the companies, assets, and trials to add, which you review before committing."
+                    src="img/source-import.png?v=f384d1267c"
+                    alt="Source import: hand Clint a list of NCT IDs, a URL, or a block of text, and its AI reads it and proposes the companies, assets, trials, and events to add, each one reviewed before you commit it."
                   />
                 </button>
                 <h3>Build the competitive picture from a single source</h3>
                 <p>
                   Paste a list of trial IDs, a press release, or any block of text, and Clint's AI
                   turns it into a structured landscape: the companies, their assets, the trials, and
-                  the catalysts coming up. What used to be hours of manual setup is ready to review
+                  the events coming up. What used to be hours of manual setup is ready to review
                   in minutes, and every entry traces back to where it came from.
                 </p>
               </div>
@@ -1663,7 +1724,7 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/intelligence.png"
+                    src="img/intelligence.png?v=a02d23c5d8"
                     alt="Primary intelligence on a trial: a published read with its author and the entities it links to, plus a full version history of how it changed. Analysts write it inline and publish under the agency's name."
                   />
                 </button>
@@ -1679,20 +1740,20 @@
                 <button
                   type="button"
                   class="card-thumb"
-                  aria-label="Expand: Activity feed screenshot"
+                  aria-label="Expand: Activity log screenshot"
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/activity.png"
-                    alt="The activity feed: every change to the field as a dated, sourced entry, with the old and new values, the company and asset or trial it touched, and where it came from."
+                    src="img/activity.png?v=bc0fe34aee"
+                    alt="The Activity log: a read-only feed of detected changes across the field, ClinicalTrials.gov registry updates and analyst edits, each one typed, dated, and sourced, newest first."
                   />
                 </button>
                 <h3>Always current, without the busywork</h3>
                 <p>
                   A daily automatic sync pulls the latest trials from ClinicalTrials.gov. On top of
-                  that, every catalyst, regulatory action, approval, label change, and deal is kept
-                  as a typed, dated, sourced record, with the edits Stout's analysts make sitting
-                  right alongside. It all flows through to the landing page, the activity feed, and
+                  that, every regulatory action, approval, label change, readout, and deal is kept
+                  as a typed, dated, sourced event, with the edits Stout's analysts make sitting
+                  right alongside. It all flows through to the landing page, the activity log, and
                   every trial, so the picture keeps itself current and no one rewrites it by hand.
                 </p>
               </div>
@@ -1704,13 +1765,13 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/materials.png"
+                    src="img/materials.png?v=859c48d964"
                     alt="Files on a trial: deliverables filed against the entities they cover, each with its type, date, and size, a filter to narrow by type, and a drop zone to add more. The same panel rides on every company, asset, and trial."
                   />
                 </button>
                 <h3>Deliverables filed where the client looks</h3>
                 <p>
-                  Deliverable files attach to the trials, companies, assets, and catalysts they're
+                  Deliverable files attach to the trials, companies, assets, and events they're
                   about, so a file turns up right where the client is already looking, and again in
                   one place that gathers everything. Nothing gets buried in an inbox or a shared
                   drive.
@@ -1724,7 +1785,7 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/whitelabel-stout-login.png"
+                    src="img/whitelabel-stout-login.png?v=9eb5b52f92"
                     alt="A client login in the client's own brand: their logo and colors in front, with a quiet 'by Stout' credit beneath the sign-in."
                   />
                 </button>
@@ -1787,14 +1848,14 @@
                 <h3>No blank-page assembly before a pitch</h3>
                 <p>
                   Paste the client's sources (a few trial IDs, a press release, a list) and Clint's
-                  AI assembles the competitors, their assets, the trials, and recent catalysts in
+                  AI assembles the competitors, their assets, the trials, and recent events in
                   minutes. The pitch starts from a working competitive picture, not a blank page.
                 </p>
               </div>
               <div class="card">
-                <h3>Show the kind of analysis Stout delivers</h3>
+                <h3>Show the kind of intelligence Stout delivers</h3>
                 <p>
-                  Add Stout's own analysis, framing, and the catalysts that matter, so the client
+                  Add Stout's own intelligence, framing, and the events that matter, so the client
                   sees what Stout would put in front of them as their vendor, not a generic
                   dashboard.
                 </p>
@@ -1858,17 +1919,34 @@
           <h2 class="slide-title">Clint's data is built for AI.</h2>
           <p class="lede">
             Clint's data is already structured and cited, which is what AI needs to give reliable
-            answers. AI-powered import is already live inside the platform today; two further ways
-            to use the data are on the roadmap.
+            answers. One-paste AI import is live today; more ways to put that data to work are on the
+            roadmap, and the dataset itself compounds into something bigger over time.
           </p>
           <div class="body">
-            <div class="roadmap">
-              <div class="roadmap-line" aria-hidden="true"></div>
-              <div class="roadmap-grid">
+            <div class="roadmap-loop">
+              <svg
+                class="loop-turn"
+                width="24"
+                height="236"
+                viewBox="0 0 24 236"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M0 1 H12 Q23 1 23 13 V223 Q23 235 12 235 H0"
+                  stroke="#5eead4"
+                  stroke-width="2"
+                  stroke-dasharray="6 7"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <div class="roadmap">
+                <div class="roadmap-line loop-top" aria-hidden="true"></div>
+                <div class="roadmap-grid">
                 <div class="rm-stage">
                   <div class="rm-marker"><span class="rm-node live"></span></div>
                   <span class="pill brand">Live today</span>
-                  <h3>Clint already supports AI import</h3>
+                  <h3>One-paste AI import</h3>
                   <p>
                     Paste a few trial IDs, a link, or a block of text, and Clint's AI builds the
                     full competitive landscape, doing the heavy lifting for the analyst.
@@ -1894,6 +1972,26 @@
                   </p>
                 </div>
               </div>
+            </div>
+              <div class="roadmap horizon">
+                <div class="roadmap-line loop-bottom" aria-hidden="true"></div>
+                <div class="roadmap-grid">
+                <div class="rm-stage">
+                  <div class="rm-marker"><span class="rm-node"></span></div>
+                  <span class="pill">Further out</span>
+                  <h3>A dataset that compounds into new products</h3>
+                  <p>
+                    Every engagement leaves more behind: the registry data Clint pulls in, the events
+                    and markers analysts log, the full history of every published read, and the
+                    documents behind them, structured and unstructured alike. The longer Clint runs,
+                    the richer and more connected that store becomes, which is exactly what's needed
+                    to build new products and deeper analysis on top of it, with the data warehousing
+                    and cross-modal analysis that read across trials, events, intelligence, and
+                    documents at once.
+                  </p>
+                </div>
+              </div>
+            </div>
             </div>
           </div>
         </div>
@@ -1979,7 +2077,7 @@
                 <div class="shift-after">
                   <strong>Each deliverable builds on the one before.</strong> The watchlist,
                   annotations, and filed deliverables from Q1 carry into Q2; a year in, the account
-                  holds dozens of annotated catalysts and four quarters of work with its full edit
+                  holds dozens of annotated events and four quarters of work with its full edit
                   history, none of it rebuilt. The longer the engagement runs, the harder it is to
                   walk away from.
                 </div>
@@ -2047,8 +2145,8 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/engagement-landing.png"
-                    alt="Space home: the next catalyst featured at the top, a quick snapshot of what is moving, the latest intelligence from Stout, what changed this week, and recent files"
+                    src="img/engagement-landing.png?v=818f895fc4"
+                    alt="Space home: the next event featured at the top, a stat line of what is moving, the latest intelligence from Stout, the next ninety days of events, recent materials, and what changed this week."
                   />
                 </button>
                 <figcaption class="caption">
@@ -2063,13 +2161,13 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/timeline.png"
-                    alt="The timeline: every company's obesity and cardiometabolic programs laid out by year, phase bars behind dated markers for data, regulatory, approval, and launch. Filter, group, and zoom to read any slice of the field."
+                    src="img/timeline.png?v=309fc9f8b2"
+                    alt="The timeline: every company's programs grouped company to asset to trial, phase bars behind dated events for data, regulatory, approval, and launch. Filter, group, and zoom to read any slice of the field."
                   />
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Timeline</div>
-                  <h4>Multi-company pipeline with phases and markers</h4>
+                  <h4>Multi-company pipeline grouped by company, asset, and trial</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -2079,8 +2177,8 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/bullseye.png"
-                    alt="Bullseye: competitors arranged radially by phase and grouped into spokes by whatever cut you choose (company, indication, mechanism of action, route, or asset), with halo rings for intelligence and recent activity, a one-line competitive summary bar, and a detail panel for the selected asset showing its trials, MOA, and recent markers"
+                    src="img/bullseye.png?v=904e53acb5"
+                    alt="Bullseye: competitors arranged radially by phase and grouped into spokes by whatever cut you choose (company, indication, mechanism of action, route, or asset), with halo rings for intelligence and recent activity, a one-line competitive summary bar, and a detail panel for the selected asset showing its trials, MOA, and recent events"
                   />
                 </button>
                 <figcaption class="caption">
@@ -2095,7 +2193,7 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/heatmap.png"
+                    src="img/heatmap.png?v=ffa4c55bb4"
                     alt="The heatmap: where the field clusters, mechanisms as rows and phases as columns, each cell shaded by how many assets fall in it. Regroup by any dimension to see the density a different way."
                   />
                 </button>
@@ -2111,12 +2209,12 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/catalysts.png"
-                    alt="Future catalysts: every upcoming readout, regulatory date, and milestone, grouped by the window it falls in, with a detail panel on any one you pick."
+                    src="img/future-events.png?v=aed15cf605"
+                    alt="Future events: every upcoming readout, regulatory date, and milestone, grouped by the window it falls in, with a detail panel on any one you pick showing its upcoming and recent events."
                   />
                 </button>
                 <figcaption class="caption">
-                  <div class="caption-label">Future catalysts</div>
+                  <div class="caption-label">Future events</div>
                   <h4>Upcoming readouts, regulatory dates, milestones</h4>
                 </figcaption>
               </figure>
@@ -2127,13 +2225,29 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/activity.png"
-                    alt="The activity feed: every change to the field as a dated, sourced entry, with the old and new values, the company and asset or trial it touched, and where it came from."
+                    src="img/intelligence-feed.png?v=1dcd881b35"
+                    alt="The Intelligence Feed: Stout's published intelligence and the events behind it, interleaved newest first, each tagged by the trial, company, or asset it covers and filterable by type."
+                  />
+                </button>
+                <figcaption class="caption">
+                  <div class="caption-label">Intelligence feed</div>
+                  <h4>Stout's intelligence and events, newest first</h4>
+                </figcaption>
+              </figure>
+              <figure class="shot">
+                <button
+                  type="button"
+                  class="img-wrap"
+                  onclick="openLightbox(this.querySelector('img'))"
+                >
+                  <img
+                    src="img/activity.png?v=bc0fe34aee"
+                    alt="The Activity log: a read-only feed of detected changes across the field, ClinicalTrials.gov registry updates and analyst edits, each one typed, dated, and sourced, newest first, with a panel showing the before and after of any change."
                   />
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Activity</div>
-                  <h4>Every change, in one place</h4>
+                  <h4>Every detected change, sourced and dated</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -2143,23 +2257,7 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/source-import.png"
-                    alt="Source import: hand Clint a list of NCT IDs, a URL, or a block of text, and its AI reads it and proposes the companies, assets, and trials to add, which you review before committing."
-                  />
-                </button>
-                <figcaption class="caption">
-                  <div class="caption-label">Source import</div>
-                  <h4>Paste a source, AI builds the landscape</h4>
-                </figcaption>
-              </figure>
-              <figure class="shot">
-                <button
-                  type="button"
-                  class="img-wrap"
-                  onclick="openLightbox(this.querySelector('img'))"
-                >
-                  <img
-                    src="img/intelligence.png"
+                    src="img/intelligence.png?v=a02d23c5d8"
                     alt="Primary intelligence on a trial: a published read with its author and the entities it links to, plus a full version history of how it changed. Analysts write it inline and publish under the agency's name."
                   />
                 </button>
@@ -2175,7 +2273,23 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/materials.png"
+                    src="img/source-import.png?v=f384d1267c"
+                    alt="Source import: hand Clint a list of NCT IDs, a URL, or a block of text, and its AI reads it and proposes the companies, assets, trials, and events to add, each one reviewed before you commit it."
+                  />
+                </button>
+                <figcaption class="caption">
+                  <div class="caption-label">Source import</div>
+                  <h4>Paste a source, AI builds the landscape</h4>
+                </figcaption>
+              </figure>
+              <figure class="shot">
+                <button
+                  type="button"
+                  class="img-wrap"
+                  onclick="openLightbox(this.querySelector('img'))"
+                >
+                  <img
+                    src="img/materials.png?v=859c48d964"
                     alt="Files on a trial: deliverables filed against the entities they cover, each with its type, date, and size, a filter to narrow by type, and a drop zone to add more. The same panel rides on every company, asset, and trial."
                   />
                 </button>
@@ -2191,31 +2305,15 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/command-palette.png"
-                    alt="The command palette: Cmd+K from anywhere to jump to any company, asset, trial, marker, event, or catalyst, or run a command, with pins and recents a keystroke away."
-                  />
-                </button>
-                <figcaption class="caption">
-                  <div class="caption-label">Command palette</div>
-                  <h4>Cmd+K to jump to any company, trial, or catalyst in a keystroke</h4>
-                </figcaption>
-              </figure>
-              <figure class="shot">
-                <button
-                  type="button"
-                  class="img-wrap"
-                  onclick="openLightbox(this.querySelector('img'))"
-                >
-                  <img
-                    src="img/trial-detail.png"
-                    alt="A trial in full: its markers across clinical, data, regulatory, approval, and loss-of-exclusivity events (projected vs. actual), with the intelligence, activity, scoped events, and files attached to it, all kept in sync with ClinicalTrials.gov."
+                    src="img/trial-detail.png?v=21ba064175"
+                    alt="A trial in full: its events across clinical, data, regulatory, approval, and loss-of-exclusivity (projected vs. actual), with the intelligence, activity, and files attached to it, and its ClinicalTrials.gov registry data alongside."
                   />
                 </button>
                 <figcaption class="caption">
                   <div class="caption-label">Trial detail</div>
                   <h4>
-                    Intelligence, markers, and materials, on a trial kept in sync with
-                    ClinicalTrials.gov
+                    Intelligence, events, and materials on a trial, with its ClinicalTrials.gov
+                    data
                   </h4>
                 </figcaption>
               </figure>
@@ -2226,13 +2324,13 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/events.png"
-                    alt="The events feed: external developments across companies, assets, and trials, categorized and dated, with any event opening a panel that threads the related ones together."
+                    src="img/command-palette.png?v=9255c46fb9"
+                    alt="The command palette: Cmd+K from anywhere to jump to any company, asset, trial, or event, or run a command, with pins and recents a keystroke away."
                   />
                 </button>
                 <figcaption class="caption">
-                  <div class="caption-label">Event feed</div>
-                  <h4>Threaded events across the competitive set</h4>
+                  <div class="caption-label">Command palette</div>
+                  <h4>Cmd+K to jump to any company, trial, or event in a keystroke</h4>
                 </figcaption>
               </figure>
               <figure class="shot">
@@ -2242,7 +2340,7 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/whitelabel-stout-login.png"
+                    src="img/whitelabel-stout-login.png?v=9eb5b52f92"
                     alt="Pfizer's login on the Stout white label: Pfizer's brand in front, with 'Competitive intelligence by Stout' credited beneath the sign-in."
                   />
                 </button>

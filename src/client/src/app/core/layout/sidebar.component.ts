@@ -625,10 +625,10 @@ export class SidebarComponent {
     if (route.startsWith('profiles/')) return 'profiles';
     if (route.startsWith('settings/')) return 'settings';
     if (route.startsWith('help/')) return 'reference';
-    if (route === 'events' || route === 'intelligence' || route === 'materials') {
+    if (route === 'activity' || route === 'intelligence' || route === 'materials') {
       return 'intelligence';
     }
-    if (route === 'catalysts') return 'landscape';
+    if (route === 'future-events') return 'landscape';
     return 'landscape';
   });
 

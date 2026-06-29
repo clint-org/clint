@@ -11,16 +11,16 @@ A power-user finder/navigator/command runner. Mounted once in `AppShellComponent
 
 **Empty state** (no query): Pinned (top 10), Recents (top 8), Commands (filtered by `when()` predicates). Recents are bumped on entity navigation by both a Router-event listener (matches `/profiles/(trials|products|companies)/:id`) and an explicit `recents.touch()` call after the palette activates an entity row.
 
-**Search:** debounced 80ms, minimum 2 chars. Backed by `search_palette` RPC which unions across companies, products, trials, markers (catalyst kind), and events using `pg_trgm` similarity + prefix-match boost + trial-identifier exact-match boost. When no prefix token is used, matching navigation commands are merged into the result list (typing `bullseye` finds the "Go to Bullseye" command without needing the `>` prefix).
+**Search:** debounced 80ms, minimum 2 chars. Backed by `search_palette` RPC which unions across companies, products, trials, markers (event kind), and events using `pg_trgm` similarity + prefix-match boost + trial-identifier exact-match boost. When no prefix token is used, matching navigation commands are merged into the result list (typing `bullseye` finds the "Go to Bullseye" command without needing the `>` prefix).
 
-**Prefix tokens:** `>` commands, `@` companies, `#` trials, `!` catalysts. Backspacing the lone token returns to all-kinds.
+**Prefix tokens:** `>` commands, `@` companies, `#` trials, `!` events. Backspacing the lone token returns to all-kinds.
 
 **Activation targets:**
 - trial -> `/profiles/trials/:id` (detail page)
 - company -> `/profiles/companies?selected=<id>` (list filtered to that company)
 - product -> `/profiles/products?selected=<id>` (list filtered to that product)
-- catalyst -> `/catalysts?markerId=<id>` (detail panel opens on load)
-- event -> `/events?eventId=<id>` (detail panel opens on load)
+- event (Future Events) -> `/future-events?eventId=<id>` (detail panel opens on load)
+- event (feed) -> `/events?eventId=<id>` (detail panel opens on load)
 - command -> client-side `run()` handler (router navigate, sign-out, etc.)
 
 **Pinned/Recents storage:** `palette_pinned(user_id, space_id, kind, entity_id, position)` and `palette_recents(user_id, space_id, kind, entity_id, last_opened_at)`. Both RLS-scoped to `user_id = auth.uid()`. Recents trimmed to last 25 inside `palette_touch_recent`.
@@ -54,7 +54,7 @@ A power-user finder/navigator/command runner. Mounted once in `AppShellComponent
   role: viewer
   status: active
 - id: palette-search
-  summary: Trigram-similarity search across companies, products, trials, catalysts, and events with 80ms debounce and 2-char minimum.
+  summary: Trigram-similarity search across companies, products, trials, and events with 80ms debounce and 2-char minimum.
   routes: []
   rpcs:
     - search_palette
@@ -62,14 +62,13 @@ A power-user finder/navigator/command runner. Mounted once in `AppShellComponent
     - companies
     - assets
     - trials
-    - markers
     - events
   related: []
   user_facing: true
   role: viewer
   status: active
 - id: palette-prefix-tokens
-  summary: Prefix tokens scope search results, greater-than for commands, at for companies, hash for trials, bang for catalysts.
+  summary: Prefix tokens scope search results, greater-than for commands, at for companies, hash for trials, bang for events.
   routes: []
   rpcs:
     - search_palette
@@ -85,8 +84,7 @@ A power-user finder/navigator/command runner. Mounted once in `AppShellComponent
     - /t/:tenantId/s/:spaceId/profiles/trials/:id
     - /t/:tenantId/s/:spaceId/profiles/companies/:id
     - /t/:tenantId/s/:spaceId/profiles/assets/:id
-    - /t/:tenantId/s/:spaceId/catalysts
-    - /t/:tenantId/s/:spaceId/events
+    - /t/:tenantId/s/:spaceId/future-events
   rpcs: []
   tables: []
   related:
