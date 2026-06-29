@@ -109,6 +109,10 @@ begin
       raise exception 'get_event_detail smoke failed: missing audit keys: %', v_detail->'catalyst';
     end if;
   end if;
+exception when insufficient_privilege then
+  -- Local-only sanity check; if an access guard denies the migration role (42501) on a
+  -- populated remote DB, skip rather than abort the deploy.
+  null;
 end $$;
 
 notify pgrst, 'reload schema';

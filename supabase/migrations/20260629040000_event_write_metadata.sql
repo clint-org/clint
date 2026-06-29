@@ -209,6 +209,11 @@ begin
       delete from public.events where id = v_id;
     end if;
   end if;
+exception when insufficient_privilege then
+  -- The migration role cannot satisfy create_event's has_space_access guard against a
+  -- populated remote DB (no auth.uid()), so it raises 42501. This smoke is a local-only
+  -- sanity check (it skips on an empty DB anyway); safe to no-op when access is denied.
+  null;
 end $$;
 
 notify pgrst, 'reload schema';
