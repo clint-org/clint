@@ -56,5 +56,9 @@ describe('extractUpcoming', () => {
 
     const trialRow = out.find((r) => r.marker_id === 'trial-evt');
     expect(trialRow?.trial_acronym).toBe('TRIAL-1');
+
+    // Projection tier is carried through so the side-rail glyph can render the
+    // same projection badge as the timeline.
+    expect(companyRow?.projection).toBe('projected');
   });
 });

@@ -568,6 +568,7 @@ export function flattenToCatalysts(companies: Company[], today: string): Catalys
       marker_type_shape: mt?.shape ?? 'circle',
       marker_type_inner_mark: mt?.inner_mark ?? 'none',
       is_projected: marker.is_projected,
+      projection: marker.projection,
       no_longer_expected: marker.no_longer_expected ?? false,
       company_name: company.name,
       company_id: company.id,

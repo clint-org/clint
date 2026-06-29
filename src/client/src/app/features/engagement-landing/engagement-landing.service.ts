@@ -47,6 +47,8 @@ export interface UpcomingCatalyst {
   title: string;
   event_date: string;
   is_projected: boolean;
+  /** Projection tier; drives the 'c'/'f' badge matching the timeline. */
+  projection: string;
   no_longer_expected: boolean;
   category_name: string;
   marker_type_color: string;

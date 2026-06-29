@@ -22,6 +22,7 @@ import { SupabaseService } from '../../core/services/supabase.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { BrandContextService } from '../../core/services/brand-context.service';
+import { projectionBadge, projectionOutlineDash } from '../../core/models/marker-visual';
 import { Space } from '../../core/models/space.model';
 import { Tenant } from '../../core/models/tenant.model';
 import {
@@ -322,6 +323,8 @@ export class EngagementLandingComponent implements OnInit {
         fillStyle: c.is_projected ? ('outline' as const) : c.marker_type_fill_style,
         innerMark: c.marker_type_inner_mark,
         isNle: c.no_longer_expected,
+        projectionBadge: projectionBadge(c.projection),
+        outlineDash: projectionOutlineDash(c.projection),
       };
     });
   });
@@ -542,6 +545,8 @@ interface CatalystDay {
   fillStyle: import('../../core/models/marker.model').FillStyle;
   innerMark: import('../../core/models/marker.model').InnerMark;
   isNle: boolean;
+  projectionBadge: import('../../core/models/marker-visual').ProjectionBadge;
+  outlineDash: boolean;
 }
 
 interface MonthGroup {
