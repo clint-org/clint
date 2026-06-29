@@ -204,27 +204,16 @@ const DRAFTS_LIMIT = 200;
             @for (i of skeletonRows; track i) {
               <li class="flex border-b border-slate-100 last:border-b-0" aria-hidden="true">
                 <span class="w-[3px] shrink-0 bg-slate-200"></span>
-                <div class="min-w-0 flex-1 px-[22px] py-[17px]">
-                  <div class="mb-2 flex items-center gap-2.5">
-                    <app-skeleton w="56px" h="20px" />
+                <div class="min-w-0 flex-1 px-4 py-2">
+                  <div class="flex items-center gap-2">
+                    <app-skeleton w="48px" h="11px" />
+                    <app-skeleton [block]="true" w="55%" h="13px" />
                     <span class="ml-auto inline-flex">
-                      <app-skeleton w="68px" h="10px" />
+                      <app-skeleton w="64px" h="10px" />
                     </span>
                   </div>
-                  <div>
-                    <app-skeleton [block]="true" w="80%" h="15px" />
-                  </div>
-                  <div class="mt-1.5">
-                    <app-skeleton [block]="true" w="100%" h="11px" />
-                  </div>
-                  <div class="mt-1">
-                    <app-skeleton [block]="true" w="62%" h="11px" />
-                  </div>
-                  <div class="mt-2.5 flex items-center gap-2">
-                    <app-skeleton w="84px" h="10px" />
-                    <span class="ml-auto inline-flex">
-                      <app-skeleton w="40px" h="10px" />
-                    </span>
+                  <div class="mt-1 pl-[20px]">
+                    <app-skeleton [block]="true" w="40%" h="10px" />
                   </div>
                 </div>
               </li>
@@ -307,7 +296,9 @@ export class IntelligenceBrowseComponent implements OnInit {
   protected readonly spaceId = signal<string | null>(null);
 
   protected readonly status = signal<StatusFilter>('published');
-  protected readonly kind = signal<KindFilter>('all');
+  // Default to Intelligence (briefs): the curated read lands first; All / Events are
+  // one click away. The feed RPC already excludes auto-derived CT.gov markers.
+  protected readonly kind = signal<KindFilter>('intel');
   protected readonly query = signal<string>('');
   protected readonly categories = signal<string[]>([]);
   protected readonly categoryOptions = signal<MarkerCategory[]>([]);

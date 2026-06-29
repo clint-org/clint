@@ -76,6 +76,23 @@ event both appear. Gating is a timeline concept (`effectiveVisibility`), not a f
 This is the defining difference from the timeline and is asserted directly in the
 integration tests.
 
+## Curated stream: exclude auto-derived CT.gov markers
+
+The one exception to "every event" is provenance, not significance. CT.gov sync emits
+structural clinical date markers (Trial Start / Primary Completion / Trial End,
+`metadata.source = 'ctgov'`) that drive the phase bars and number in the hundreds per
+space. They are not analyst-curated intelligence and would flood the feed. The event leg
+excludes them by provenance (`coalesce(metadata->>'source','') <> 'ctgov'`), keeping
+analyst-authored events (`source = 'analyst'` or null). The CT.gov markers still live on
+the **Timeline** (phase derivation) and the **Activity** log (detected changes).
+
+## Default Kind = Intelligence
+
+The page lands on the **Intelligence** kind (briefs only) so the curated analytical read is
+first; **All** (interleaved briefs + events) and **Events** are one click away on the Kind
+toggle. This keeps the default surface the high-signal one while the merged stream stays
+available on demand.
+
 ## Architecture
 
 ```mermaid
