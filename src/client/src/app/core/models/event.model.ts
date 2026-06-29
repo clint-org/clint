@@ -1,14 +1,3 @@
-export interface EventCategory {
-  id: string;
-  space_id: string | null;
-  name: string;
-  display_order: number;
-  is_system: boolean;
-  created_by: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface EventThread {
   id: string;
   space_id: string;

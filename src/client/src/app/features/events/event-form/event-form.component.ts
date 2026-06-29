@@ -23,6 +23,7 @@ import { MessageModule } from 'primeng/message';
 import { FormFieldComponent } from '../../../shared/components/form-field.component';
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 import { EventService } from '../../../core/services/event.service';
+import { CatalystService } from '../../../core/services/catalyst.service';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { MarkerCategoryService } from '../../../core/services/marker-category.service';
 import { CompanyService } from '../../../core/services/company.service';
@@ -34,10 +35,14 @@ import type { MarkerType } from '../../../core/models/marker.model';
 import {
   buildCreateEventArgs,
   buildUpdateEventArgs,
+  extentFromEndFields,
   isEventFormValid,
   PERIOD_SUBS,
+  periodFromDate,
   PROJECTION_OPTIONS,
   resolvePeriodMidpoint,
+  significanceChoiceFromValue,
+  visibilityChoiceFromValue,
   type AnchorType,
   type DatePrecision,
   type EventFormState,
@@ -73,6 +78,14 @@ function toIso(d: Date | null): string {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+/** Parse a stored `YYYY-MM-DD` into a local Date for the p-datepicker model. */
+function fromIso(iso: string | null): Date | null {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
 }
 
 @Component({
@@ -489,6 +502,7 @@ export class EventFormComponent implements OnInit {
   readonly cancelled = output<void>();
 
   private eventService = inject(EventService);
+  private catalystService = inject(CatalystService);
   private typeService = inject(MarkerTypeService);
   private categoryService = inject(MarkerCategoryService);
   private companyService = inject(CompanyService);
@@ -651,6 +665,53 @@ export class EventFormComponent implements OnInit {
         return { id: opt.id, label: opt.label, sublabel: opt.identifier };
       }),
     );
+
+    if (this.mode() === 'edit' && this.eventId()) {
+      await this.hydrateForEdit(this.eventId()!);
+    }
+  }
+
+  /**
+   * Load an existing event into the form for editing. Reads the unified
+   * get_event_detail wrapper (via CatalystService) and reverses each write
+   * mapping back into the form signals. Entities are already loaded above so the
+   * anchor select renders the resolved name.
+   */
+  private async hydrateForEdit(eventId: string): Promise<void> {
+    try {
+      const { catalyst: c } = await this.catalystService.getCatalystDetail(eventId);
+      this.eventTypeId.set(c.event_type_id);
+      this.anchorType.set(c.anchor_type);
+      this.anchorId.set(c.anchor_id);
+      this.title.set(c.title);
+      this.description.set(c.description ?? '');
+
+      this.datePrecision.set(c.date_precision);
+      if (c.date_precision === 'exact') {
+        this.eventDate.set(fromIso(c.event_date));
+      } else {
+        const { year, sub } = periodFromDate(c.date_precision, c.event_date);
+        this.periodYear.set(year);
+        this.periodSub.set(sub);
+      }
+
+      const extent = extentFromEndFields(c.end_date, c.is_ongoing);
+      this.extent.set(extent);
+      if (extent === 'until') this.endDate.set(fromIso(c.end_date));
+
+      this.projection.set(c.projection as Projection);
+      this.significance.set(significanceChoiceFromValue(c.significance));
+      this.visibility.set(visibilityChoiceFromValue(c.visibility));
+      this.noLongerExpected.set(c.no_longer_expected);
+
+      const meta = c.metadata ?? {};
+      this.tags.set(Array.isArray(meta['tags']) ? (meta['tags'] as string[]) : []);
+      this.regulatoryPathway.set(typeof meta['pathway'] === 'string' ? (meta['pathway'] as string) : null);
+
+      this.sources.set((c.sources ?? []).map((s) => ({ url: s.url, label: s.label ?? '' })));
+    } catch (err) {
+      this.error.set(extractConstraintMessage(err, EVENT_COLUMN_LABELS) ?? 'Could not load the event to edit.');
+    }
   }
 
   protected categoryName(id: string): string {

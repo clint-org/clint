@@ -7,6 +7,10 @@ import {
   isEventFormValid,
   significanceValue,
   visibilityValue,
+  significanceChoiceFromValue,
+  visibilityChoiceFromValue,
+  extentFromEndFields,
+  periodFromDate,
   type EventFormState,
 } from './event-payload';
 
@@ -148,5 +152,48 @@ describe('choice mappers', () => {
   it('map Default to null', () => {
     expect(significanceValue('Default')).toBeNull();
     expect(visibilityValue('Default')).toBeNull();
+  });
+});
+
+describe('reverse mappers (edit-hydration)', () => {
+  it('significanceChoiceFromValue: high/low/null -> High/Low/Default and round-trips', () => {
+    expect(significanceChoiceFromValue('high')).toBe('High');
+    expect(significanceChoiceFromValue('low')).toBe('Low');
+    expect(significanceChoiceFromValue(null)).toBe('Default');
+    for (const c of ['Default', 'High', 'Low'] as const) {
+      expect(significanceChoiceFromValue(significanceValue(c))).toBe(c);
+    }
+  });
+
+  it('visibilityChoiceFromValue: pinned/hidden/null -> Pinned/Hidden/Default and round-trips', () => {
+    expect(visibilityChoiceFromValue('pinned')).toBe('Pinned');
+    expect(visibilityChoiceFromValue('hidden')).toBe('Hidden');
+    expect(visibilityChoiceFromValue(null)).toBe('Default');
+    for (const c of ['Default', 'Pinned', 'Hidden'] as const) {
+      expect(visibilityChoiceFromValue(visibilityValue(c))).toBe(c);
+    }
+  });
+
+  it('extentFromEndFields: ongoing -> onwards; end set -> until; else point', () => {
+    expect(extentFromEndFields(null, true)).toBe('onwards');
+    expect(extentFromEndFields('2027-01-01', true)).toBe('onwards'); // ongoing wins
+    expect(extentFromEndFields('2027-01-01', false)).toBe('until');
+    expect(extentFromEndFields(null, false)).toBe('point');
+  });
+
+  it('periodFromDate: reverses resolvePeriodMidpoint for every fuzzy precision', () => {
+    const cases: { precision: 'month' | 'quarter' | 'half' | 'year'; year: number; sub: number }[] = [
+      { precision: 'year', year: 2026, sub: 0 },
+      { precision: 'half', year: 2026, sub: 0 },
+      { precision: 'half', year: 2026, sub: 1 },
+      { precision: 'quarter', year: 2027, sub: 0 },
+      { precision: 'quarter', year: 2027, sub: 3 },
+      { precision: 'month', year: 2025, sub: 0 },
+      { precision: 'month', year: 2025, sub: 11 },
+    ];
+    for (const c of cases) {
+      const iso = resolvePeriodMidpoint(c.precision, c.year, c.sub, '');
+      expect(periodFromDate(c.precision, iso)).toEqual({ year: c.year, sub: c.sub });
+    }
   });
 });

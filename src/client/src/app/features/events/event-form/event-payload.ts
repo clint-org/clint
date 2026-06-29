@@ -65,6 +65,38 @@ export function visibilityValue(choice: VisibilityChoice): 'pinned' | 'hidden' |
   return null;
 }
 
+/** Inverse of significanceValue: the raw event qualifier -> the form choice. */
+export function significanceChoiceFromValue(v: 'high' | 'low' | null): SignificanceChoice {
+  if (v === 'high') return 'High';
+  if (v === 'low') return 'Low';
+  return 'Default';
+}
+
+/** Inverse of visibilityValue: the raw event qualifier -> the form choice. */
+export function visibilityChoiceFromValue(v: 'pinned' | 'hidden' | null): VisibilityChoice {
+  if (v === 'pinned') return 'Pinned';
+  if (v === 'hidden') return 'Hidden';
+  return 'Default';
+}
+
+/** Reconstruct the extent control from the stored end fields (ongoing wins over a set end). */
+export function extentFromEndFields(endDate: string | null, isOngoing: boolean): Extent {
+  if (isOngoing) return 'onwards';
+  if (endDate) return 'until';
+  return 'point';
+}
+
+/** Inverse of resolvePeriodMidpoint: recover {year, sub} from a stored fuzzy midpoint ISO date. */
+export function periodFromDate(precision: DatePrecision, isoDate: string): { year: number; sub: number } {
+  const [y, m] = isoDate.split('-').map(Number);
+  const year = Number.isFinite(y) ? y : 0;
+  const month = Number.isFinite(m) ? m : 1; // 1-based
+  if (precision === 'half') return { year, sub: month <= 6 ? 0 : 1 };
+  if (precision === 'quarter') return { year, sub: Math.floor((month - 1) / 3) };
+  if (precision === 'month') return { year, sub: month - 1 };
+  return { year, sub: 0 }; // year / exact: no sub-division
+}
+
 function endFields(s: EventFormState): { end: string | null; precision: DatePrecision; ongoing: boolean } {
   if (s.extent === 'until') return { end: s.endDate, precision: s.endDatePrecision, ongoing: false };
   if (s.extent === 'onwards') return { end: null, precision: 'exact', ongoing: true };
