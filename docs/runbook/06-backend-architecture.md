@@ -683,6 +683,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_humanize_status`
 - `_map_phase_array`
 - `_path_in_hinted_modules`
+- `_phase_label_from_type`
 - `_safe_iso_date`
 - `_set_created_by`
 - `_set_updated_audit`
