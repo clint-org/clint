@@ -55,8 +55,13 @@ export interface CreateEventArgs {
   p_sources: { url: string; label: string | null }[] | null;
 }
 
-// Args for update_event (mutable fields only; no type/anchor change).
+// Args for update_event. Re-anchor on edit (user decision 2026-06-29): the extended
+// update_event accepts type + anchor too, so a mistyped anchor/type is fixable without
+// recreating the event. (Backend RPC extension owned by the cutover session.)
 export interface UpdateEventArgs {
+  p_event_type_id: string;
+  p_anchor_type: AnchorType;
+  p_anchor_id: string | null;
   p_title: string;
   p_event_date: string;
   p_projection: Projection;
@@ -125,6 +130,9 @@ export function buildCreateEventArgs(s: EventFormState): CreateEventArgs {
 export function buildUpdateEventArgs(s: EventFormState): UpdateEventArgs {
   const e = endFields(s);
   return {
+    p_event_type_id: s.eventTypeId!,
+    p_anchor_type: s.anchorType,
+    p_anchor_id: s.anchorType === 'space' ? null : s.anchorId,
     p_title: s.title.trim(),
     p_event_date: s.eventDate,
     p_projection: s.projection,

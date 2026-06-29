@@ -79,11 +79,26 @@ describe('buildCreateEventArgs', () => {
 });
 
 describe('buildUpdateEventArgs', () => {
-  it('carries mutable fields + no_longer_expected, and omits type/anchor', () => {
-    const a = buildUpdateEventArgs({ ...base(), noLongerExpected: true, significance: 'Low' });
-    expect(a).toMatchObject({ p_title: 'Topline readout', p_no_longer_expected: true, p_significance: 'low' });
-    expect(a).not.toHaveProperty('p_event_type_id');
-    expect(a).not.toHaveProperty('p_anchor_type');
+  it('carries mutable fields + no_longer_expected + type/anchor (re-anchor on edit)', () => {
+    const a = buildUpdateEventArgs({
+      ...base(),
+      noLongerExpected: true,
+      significance: 'Low',
+      anchorType: 'company',
+      anchorId: 'co-1',
+      eventTypeId: 'et-approval',
+    });
+    expect(a).toMatchObject({
+      p_title: 'Topline readout',
+      p_no_longer_expected: true,
+      p_significance: 'low',
+      p_event_type_id: 'et-approval',
+      p_anchor_type: 'company',
+      p_anchor_id: 'co-1',
+    });
+  });
+  it('space anchor on edit nulls anchor_id', () => {
+    expect(buildUpdateEventArgs({ ...base(), anchorType: 'space', anchorId: 'x' }).p_anchor_id).toBeNull();
   });
 });
 
