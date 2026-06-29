@@ -21,7 +21,9 @@
 --      duplicated the trial-anchored projected toplines). Semantic duplicates between
 --      _seed_demo_markers and _seed_demo_events (Wegovy CV approval, Attruby launch,
 --      Wegovy/Zepbound/Attruby "reaches market" approvals, the tirzepatide HFpEF filing)
---      are collapsed to a single canonical event each. No two events share a title.
+--      are collapsed to a single canonical event each. No two CURATED events share a
+--      title (the structural per-trial 'Trial Start'/'Trial End' phase-bar markers
+--      from _create_trial_date_markers keep their generic shared titles by design).
 --   3. Evergreen dates. Every event date is authored against a fixed reference constant
 --      r = date '2026-06-29' (the dataset's intended "now"). The orchestrator gains a
 --      single final pass that shifts the whole space by (current_date - r) so projected
@@ -907,9 +909,14 @@ begin
       raise exception 'remodel smoke: % clinical events not on a trial', v_misplaced_clin;
     end if;
 
-    -- Dedup: no two events share a title.
+    -- Dedup: no two curated events share a title. 'Trial Start'/'Trial End' are the
+    -- structural per-trial phase-bar markers from _create_trial_date_markers (one per
+    -- trial, generic title by design, shared with the ct.gov sync path), so the phase
+    -- bar can derive its span; they are excluded from the curated-fact dedup check.
     select count(*) into v_dupe_titles from (
-      select title from public.events where space_id = v_space group by title having count(*) > 1
+      select title from public.events
+       where space_id = v_space and title not in ('Trial Start','Trial End')
+       group by title having count(*) > 1
     ) q;
     if v_dupe_titles > 0 then
       raise exception 'remodel smoke: % duplicate event titles', v_dupe_titles;

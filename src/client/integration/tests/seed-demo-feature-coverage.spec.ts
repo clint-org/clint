@@ -175,9 +175,19 @@ describe('seed_demo_data remodel invariants (fresh owner space)', () => {
     expect(misplaced, JSON.stringify(misplaced.slice(0, 5))).toHaveLength(0);
   });
 
-  it('no two events share the same title', async () => {
+  it('no two events share the same title (excluding structural phase-bar markers)', async () => {
+    // 'Trial Start' / 'Trial End' are the structural per-trial phase-bar markers
+    // emitted by _create_trial_date_markers (one per trial, generic title BY DESIGN,
+    // and shared with the ct.gov sync path). The phase bar derives its span from them,
+    // so every demo trial necessarily carries a generically titled start/end marker.
+    // The dedup invariant targets the curated analyst facts (cross-trial fan-out
+    // filings, semantic duplicates), not these structural markers, so exclude them.
+    const STRUCTURAL_TITLES = new Set(['Trial Start', 'Trial End']);
     const seen = new Map<string, number>();
-    for (const e of await rows()) seen.set(e.title, (seen.get(e.title) ?? 0) + 1);
+    for (const e of await rows()) {
+      if (STRUCTURAL_TITLES.has(e.title)) continue;
+      seen.set(e.title, (seen.get(e.title) ?? 0) + 1);
+    }
     const dupes = [...seen.entries()].filter(([, n]) => n > 1).map(([t]) => t);
     expect(dupes, JSON.stringify(dupes)).toHaveLength(0);
   });
