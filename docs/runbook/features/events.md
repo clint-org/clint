@@ -39,12 +39,11 @@ on the `events` row. It is unchanged by the sources model.
 
 ```yaml
 - id: event-authoring
-  summary: Create and edit events (the merged marker/event entity) with date model, provenance, significance, anchor, and pin/hide. update_event_links associates an event with additional trial/asset/company anchors.
+  summary: Create and edit events (the merged marker/event entity) with date model, provenance, significance, anchor, and pin/hide.
   routes: []
   rpcs:
     - create_event
     - update_event
-    - update_event_links
   tables:
     - events
     - event_types
@@ -72,12 +71,10 @@ on the `events` row. It is unchanged by the sources model.
   role: viewer
   status: active
 - id: event-detail
-  summary: Detail panel for a single event; renders date, type, significance, provenance, source citations, and linked materials. get_catalyst_detail and get_event_detail are the two read paths (legacy and canonical names); get_event_thread returns the ordered change history. event_registry_url derives the CT.gov registry link from the event anchor.
+  summary: Detail panel for a single event; renders date, type, significance, provenance, source citations, and linked materials. get_catalyst_detail is the read path; event_registry_url derives the CT.gov registry link from the event anchor.
   routes:
     - /t/:tenantId/s/:spaceId/events
   rpcs:
-    - get_event_detail
-    - get_event_thread
     - get_catalyst_detail
     - event_registry_url
   tables:

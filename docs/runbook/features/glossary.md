@@ -18,7 +18,7 @@ The unified dated-fact entity introduced by the event-model cutover. An event
 represents a single meaningful fact about a drug program at a point in time: a data
 readout, regulatory milestone, clinical trial date, or analyst observation.
 
-**Date model.** `event_date` (required), `date_end` (optional, for range events),
+**Date model.** `event_date` (required), `end_date` (optional, for range events),
 `date_precision` (exact / month / year), and `is_projected` (boolean). Analyst events
 may have a fuzzy date (month or year precision); CT.gov-seeded events carry the
 precision string from the CT.gov source.
@@ -27,8 +27,7 @@ precision string from the CT.gov source.
 AI-imported (`source_import`) and CT.gov-seeded (`ctgov`) events. `source_doc_id` FK
 points to the originating `source_documents` row for AI-imported events.
 
-**Significance.** `significance` (high / medium / low / none) drives rendering weight
-and is optional (null = unset).
+**Significance.** `significance` (high / low) drives rendering weight; null inherits the event type's default_significance.
 
 **Anchor.** Every event has exactly one anchor, held by the polymorphic `anchor_type`
 column (one of `space`, `company`, `asset`, or `trial`) and the `anchor_id` UUID. There
