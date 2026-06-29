@@ -75,6 +75,7 @@ declare
   et_distribution uuid := 'a0000000-0000-0000-0000-000000000040';
   et_strategic    uuid := 'a0000000-0000-0000-0000-000000000070';
   et_leadership   uuid := 'a0000000-0000-0000-0000-000000000050';
+  et_financial    uuid := 'a0000000-0000-0000-0000-000000000060';
   v_existing int;
 begin
   select count(*) into v_existing from public.companies where space_id = v_space;
@@ -147,6 +148,21 @@ begin
     v_space, et_leadership, 'New Chief Commercial Officer named', date '2024-02-01', 'company', v_company,
     'actual',                  -- projection
     'month'                    -- date_precision
+  );
+  -- Financial (rose hexagon, dot mark): pinned so the dot glyph surfaces on the
+  -- company band, completing the corporate glyph set (none/dot/dash) for reference
+  -- alongside the leadership (none) and strategic (dash) events above.
+  perform public.create_event(
+    v_space, et_financial, 'Lilly Q4 incretin revenue tops consensus', date '2024-02-06', 'company', v_company,
+    'actual',                  -- projection
+    'month',                   -- date_precision
+    null,                      -- end_date
+    'exact',                   -- end_date_precision
+    false,                     -- is_ongoing
+    null,                      -- description
+    null,                      -- source_url
+    null,                      -- significance (falls to type default 'low')
+    'pinned'                   -- visibility: promoted onto the timeline
   );
 
   reset role;
