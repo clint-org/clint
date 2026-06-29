@@ -129,7 +129,7 @@ If a step after `register_material` (steps 4-7) throws, the upload flow's catch 
   role: owner
   status: active
 - id: materials-entity-section
-  summary: Entity-level list on trial, company, and product detail pages with chip filter, recency-ordered rows, and upload zone. Marker materials surface via the shared marker detail panel (timeline/catalysts drawer and event-detail panel) instead of a dedicated page.
+  summary: Entity-level list on trial, company, and product detail pages with chip filter, recency-ordered rows, and upload zone. Event materials surface via the shared event detail panel (timeline/future-events drawer and event-detail panel) instead of a dedicated page.
   routes:
     - /t/:tenantId/s/:spaceId/profiles/trials/:id
     - /t/:tenantId/s/:spaceId/profiles/companies/:id

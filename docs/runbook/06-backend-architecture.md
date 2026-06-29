@@ -310,7 +310,7 @@ The intelligence helper runs as `security definer` because the `primary_intellig
 
 Dropped briefly on 2026-05-01 (migration 81) when its sole caller, an auto-seed-on-empty-companies heuristic in `landscape-state.service.ts`, was removed. Resurrected the same day in migration 82 with a permission gate that the original version lacked: caller must hold a `space_members` row with `role='owner'` for the target space, OR be a platform admin. Tenant ownership alone is not sufficient (consistent with migration 75's firewall: tenant owners get no implicit space data access).
 
-Invoked only via the explicit URL `/t/:tenantId/s/:spaceId/seed-demo`, which routes to `SeedDemoComponent` and calls `dashboardService.seedDemoData(spaceId)`. There is no auto-trigger; the URL is the entire surface. The component shows a centered spinner while the RPC runs, then redirects to the catalysts page on success or shows the error message with a back link on failure (the most common error being `Insufficient permissions` for non-owners).
+Invoked only via the explicit URL `/t/:tenantId/s/:spaceId/seed-demo`, which routes to `SeedDemoComponent` and calls `dashboardService.seedDemoData(spaceId)`. There is no auto-trigger; the URL is the entire surface. The component shows a centered spinner while the RPC runs, then redirects to the Future Events page on success or shows the error message with a back link on failure (the most common error being `Insufficient permissions` for non-owners).
 
 ### has_space_access
 
@@ -371,7 +371,7 @@ An entity (engagement, company, asset, or trial) can own many intelligence brief
 
 `primary_intelligence` rows are **versions** of an anchor, referenced via `anchor_id`. Entity binding (`entity_type`, `entity_id`) is NOT on version rows. Each version carries `state in ('draft','published','archived','withdrawn')`, a per-anchor `version_number` stamped on entry into `published` by a BEFORE trigger, and four lifecycle columns: `publish_note` + `published_by` (stamped at publish time), `archived_at` (stamped on the prior published row when a newer version publishes over it), and `withdraw_note` (stamped at withdraw). A unique partial index on `state = 'published'` enforces one published row per anchor; multiple drafts can co-exist.
 
-`primary_intelligence_links` is the child table for cross-entity relations (`relationship_type`, optional gloss). Marker rows are valid link targets but are not anchor owners; the marker description carries the catalyst-level write-up.
+`primary_intelligence_links` is the child table for cross-entity relations (`relationship_type`, optional gloss). Marker rows are valid link targets but are not anchor owners; the marker description carries the event-level write-up.
 
 ### RPCs
 

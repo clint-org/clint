@@ -11,12 +11,12 @@ When a user opens an engagement (a space), the default page is the **Engagement 
 
 - **Pulse panel** (full-bleed band in `EngagementLandingComponent` with three rows; only the hero is contained, everything below the pulse uses hairline-header sections on the page background to break the previous frame-on-frame flatness):
   - **Row 1 — slim identity strip.** Slate-50 status band with the engagement name (mono, uppercase, tracked), an `Active since YYYY-Q#` subline, and inline inventory totals (`N trials · N companies · N assets`). Counts come from `get_space_landing_stats(p_space_id)`. Full-bleed background; content constrained to the 1480 grid. No today's date — the hero carries the only date anchor the page needs.
-  - **Row 2 — hero catalyst (primary focal point).** Brand-50 panel bleeding edge to edge, with content constrained to the 1480 grid. Three regions in a `1fr_auto_320px` layout: a left date column (`WEEKDAY / 56px DAY / MONTH` in mono) showing the lead's event date, a center content column (window badge in brand-600 + relative `whenPhrase` eyebrow, 26px headline, company name in mono, inline `View catalyst →` link), and a right companion mini-list with the next two upcoming catalysts in the same window under an `Also <window>` header. Companion rows route to the catalysts page with the marker pre-selected. Auto-hides on quiet days (no upcoming catalysts within 90 days).
-  - **Row 3 — signal strip.** Single horizontal status line of four motion metrics (`P3 readouts next 90d`, `Catalysts next 90d`, `New reads last 7d`, `Trial moves last 30d`). The "New reads" label deliberately names Stout-authored published primary intelligence (the `primary_intelligence` table), distinct from the events feed's "Detected" rows which come from `trial_change_events`. Each item is `<value> <label> <window-label>` in mono with tabular-nums; `warn` items (counts > 0 that demand attention) keep an amber tint. Each item routes to the corresponding filtered browse view. Loss-of-exclusivity is intentionally excluded from this row: it is a slow-moving structural calendar item rather than a motion signal, and its 365-day window is out of family with the 7-90 day windows used by the rest of the row.
+  - **Row 2 — hero event (primary focal point).** Brand-50 panel bleeding edge to edge, with content constrained to the 1480 grid. Three regions in a `1fr_auto_320px` layout: a left date column (`WEEKDAY / 56px DAY / MONTH` in mono) showing the lead's event date, a center content column (window badge in brand-600 + relative `whenPhrase` eyebrow, 26px headline, company name in mono, inline `View event →` link), and a right companion mini-list with the next two upcoming events in the same window under an `Also <window>` header. Companion rows route to the Future Events page with the event pre-selected. Auto-hides on quiet days (no upcoming events within 90 days).
+  - **Row 3 — signal strip.** Single horizontal status line of four motion metrics (`P3 readouts next 90d`, `Events next 90d`, `New reads last 7d`, `Trial moves last 30d`). The "New reads" label deliberately names Stout-authored published primary intelligence (the `primary_intelligence` table), distinct from the events feed's "Detected" rows which come from `trial_change_events`. Each item is `<value> <label> <window-label>` in mono with tabular-nums; `warn` items (counts > 0 that demand attention) keep an amber tint. Each item routes to the corresponding filtered browse view. Loss-of-exclusivity is intentionally excluded from this row: it is a slow-moving structural calendar item rather than a motion signal, and its 365-day window is out of family with the 7-90 day windows used by the rest of the row.
 - **Two-row body (below the pulse):** every section caps its visible rows so the home page reads as scannable summary rather than a wall of feeds. The story is "what's coming" (row 1) above "what's been" (row 2). Each section header carries a small uppercase tracked `View all →` / `All materials →` text link that routes to the full surface; the home page deliberately uses the same affordance wording across all sections so users do not have to learn a different word per zone.
   - **Row 1 — Forward look** (3-column grid, 2/3 + 1/3):
     - **Latest from Stout** (2/3 width): up to four most-recently-published primary intelligence rows. First row renders as a featured post (19px headline, 2-line excerpt); the rest render as one-line scan rows (`KIND` label in entity-type colour, truncated headline, right-aligned short date), with no per-row description. Header includes a count tag (`X intelligence posts · Y this week`) and entity-type filter chips that filter client-side. Footer surfaces a `View all intelligence` link to `/t/:tenantId/s/:spaceId/intelligence`. Falls back to a dashed empty state when there are no rows.
-    - **Next 90 days** (1/3 width): listing the first five upcoming markers grouped by month (sticky month headers, date chip + title + marker glyph per row).
+    - **Next 90 days** (1/3 width): listing the first five upcoming events grouped by month (sticky month headers, date chip + title + marker glyph per row).
   - **Row 2 — Archive** (2-column grid, equal halves):
     - **Recent materials** (left): `<app-recent-materials-widget>` against `list_recent_materials_for_space`, capped at three rows. Hidden automatically when there are no materials and no error.
     - **What changed** (right): `<app-what-changed-widget>` showing the top three high-signal change events from the past 7 days.
@@ -24,9 +24,9 @@ When a user opens an engagement (a space), the default page is the **Engagement 
 
 **Onboarding tooltip.** First post-deploy load shows a one-time tooltip pinned to the Timeline tab in the topbar: "Your timeline is now under the Timeline tab." Dismissed by clicking the inline button or by clicking the Timeline tab itself. Persists in localStorage at `clint.engagement-landing.onboarding-tooltip-seen`.
 
-**Routing change details.** Inside the space-scoped router, the engagement landing matches the empty path with `pathMatch: 'full'`, and the LandscapeShellComponent stays mounted for `timeline`, `bullseye`, `positioning`, and `catalysts` as siblings. Existing bookmarks to the timeline keep working via the new `/timeline` route. The topbar nav for the Landscape section is now `Home / Timeline / Bullseye / Positioning / Catalysts`.
+**Routing change details.** Inside the space-scoped router, the engagement landing matches the empty path with `pathMatch: 'full'`, and the LandscapeShellComponent stays mounted for `timeline`, `bullseye`, `positioning`, and `future-events` as siblings. Existing bookmarks to the timeline keep working via the new `/timeline` route. The topbar nav for the Landscape section is now `Home / Timeline / Bullseye / Positioning / Future Events`.
 
-**Stats RPC.** `get_space_landing_stats(p_space_id uuid)` returns a single jsonb object with `active_trials` (excludes recruitment_status in `completed`/`withdrawn`/`terminated`), `companies` (distinct company_id on products in the space), `programs` (count of products), `catalysts_90d` (markers within today + 90 days), and `intelligence_total` (count of published rows in `primary_intelligence`). Gated on `has_space_access`; security definer; language sql stable.
+**Stats RPC.** `get_space_landing_stats(p_space_id uuid)` returns a single jsonb object with `active_trials` (excludes recruitment_status in `completed`/`withdrawn`/`terminated`), `companies` (distinct company_id on products in the space), `programs` (count of products), `catalysts_90d` (events within today + 90 days), and `intelligence_total` (count of published rows in `primary_intelligence`). Gated on `has_space_access`; security definer; language sql stable.
 
 **Drafts RPC.** `list_draft_intelligence_for_space(p_space_id uuid, p_limit int default 3)` returns up to `p_limit` draft `primary_intelligence` rows, recency-ordered. Visibility is gated by the `primary_intelligence_view_drafts` RLS policy (agency members of the space only); non-agency callers receive an empty array.
 
@@ -49,7 +49,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   role: viewer
   status: active
 - id: engagement-landing-hero-catalyst
-  summary: Brand-tinted hero panel with the next upcoming catalyst (event-date column, window/whenPhrase eyebrow, headline, company, View link) plus a right-side companion list of the next two catalysts in the same window. Hides on quiet days.
+  summary: Brand-tinted hero panel with the next upcoming event (event-date column, window/whenPhrase eyebrow, headline, company, View link) plus a right-side companion list of the next two events in the same window. Hides on quiet days.
   routes:
     - /t/:tenantId/s/:spaceId
   rpcs:
@@ -63,7 +63,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   role: viewer
   status: active
 - id: engagement-landing-signal-strip
-  summary: Single-row status line of four engagement motion signals (P3 readouts, catalysts, new reads, trial moves), each with metric value, label, and window-label, routing to the corresponding browse view. "New reads" counts published primary intelligence in the last 7d (distinct from auto-detected change events). Warn items (counts > 0 that demand attention) carry an amber tint.
+  summary: Single-row status line of four engagement motion signals (P3 readouts, events, new reads, trial moves), each with metric value, label, and window-label, routing to the corresponding browse view. "New reads" counts published primary intelligence in the last 7d (distinct from auto-detected change events). Warn items (counts > 0 that demand attention) carry an amber tint.
   routes:
     - /t/:tenantId/s/:spaceId
   rpcs:
@@ -93,7 +93,7 @@ When a user opens an engagement (a space), the default page is the **Engagement 
   role: viewer
   status: active
 - id: engagement-landing-next-90-days
-  summary: Side-rail section listing the first five upcoming markers in the next 90 days, grouped by month with sticky headers; rows open the marker on the catalysts page. Header `View all →` link opens the full catalyst surface.
+  summary: Side-rail section listing the first five upcoming events in the next 90 days, grouped by month with sticky headers; rows open the event on the Future Events page. Header `View all →` link opens the full Future Events surface.
   routes:
     - /t/:tenantId/s/:spaceId
   rpcs:

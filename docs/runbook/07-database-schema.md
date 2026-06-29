@@ -145,7 +145,7 @@ erDiagram
   PRIMARY_INTELLIGENCE ||--o{ PRIMARY_INTELLIGENCE_LINKS : "primary_intelligence_id"
 ```
 
-Marker rows are valid link targets in `primary_intelligence_links` but are not anchor owners; the marker description carries the catalyst-level write-up.
+Marker rows are valid link targets in `primary_intelligence_links` but are not anchor owners; the marker description carries the event-level write-up.
 
 ### primary_intelligence version columns
 
