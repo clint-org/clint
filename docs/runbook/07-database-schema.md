@@ -1071,4 +1071,11 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260628320000_drop_events_source_url.sql`
 - `20260628330000_cleanup_trigger_deletes_anchored_events.sql`
 - `20260628340000_admin_cleanup_drops_markers.sql`
+- `20260629000000_restore_event_cleanup_trigger.sql`
+- `20260629010000_projection_estimate_to_forecasted.sql`
+- `20260629020000_drop_dead_event_feed_fns.sql`
+- `20260629030000_update_event_reanchor.sql`
+- `20260629040000_event_write_metadata.sql`
+- `20260629040100_get_event_detail.sql`
+- `20260629050000_get_event_detail_audit_fields.sql`
 <!-- /AUTO-GEN:DRIFT -->

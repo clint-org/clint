@@ -110,14 +110,11 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `get_bullseye_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action, trials |
 | `get_bullseye_by_roa` | - | asset_indications, asset_routes_of_administration, assets, companies, routes_of_administration, trials |
 | `get_bullseye_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, event_type_categories, event_types, events, indications, mechanisms_of_action, routes_of_administration, trial_assets, trial_conditions, trials |
-| `get_catalyst_detail` | - | assets, companies, event_sources, event_type_categories, event_types, events, trials |
 | `get_company_detail_with_intelligence` | - | companies |
 | `get_dashboard_data` | - | asset_indications, asset_mechanisms_of_action, asset_routes_of_administration, assets, companies, condition_indication_map, events, indications, mechanisms_of_action, primary_intelligence, primary_intelligence_anchors, routes_of_administration, trial_assets, trial_conditions, trials |
-| `get_event_detail` | - | assets, companies, event_sources, events, trials |
-| `get_event_thread` | - | events |
+| `get_event_detail` | - | assets, companies, event_sources, event_type_categories, event_types, events, trials |
 | `get_events_page_data` | - | assets, change_event_annotations, companies, event_sources, event_type_categories, event_types, events, trial_assets, trial_change_events, trials |
 | `get_intelligence_notes_for_asset` | - | assets, primary_intelligence, primary_intelligence_anchors, trials |
-| `get_key_catalysts` | - | assets, companies, event_sources, event_type_categories, event_types, events, trials |
 | `get_landscape_index` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_company` | - | asset_indications, assets, companies, indications |
 | `get_landscape_index_by_moa` | - | asset_indications, asset_mechanisms_of_action, assets, companies, mechanisms_of_action |
@@ -206,8 +203,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `update_agency_branding` | agencies | - |
 | `update_asset_mechanisms` | asset_mechanisms_of_action | assets |
 | `update_asset_routes` | asset_routes_of_administration | assets |
-| `update_event` | events, trial_change_events | - |
-| `update_event_links` | - | events |
+| `update_event` | events, trial_change_events | assets, companies, trials |
 | `update_event_sources` | event_sources | events |
 | `update_material` | material_links, materials | - |
 | `update_space_field_visibility` | spaces | - |
@@ -723,13 +719,10 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `get_bullseye_by_moa`
 - `get_bullseye_by_roa`
 - `get_bullseye_data`
-- `get_catalyst_detail`
 - `get_company_detail_with_intelligence`
 - `get_event_detail`
-- `get_event_thread`
 - `get_events_page_data`
 - `get_intelligence_notes_for_asset`
-- `get_key_catalysts`
 - `get_landscape_index`
 - `get_landscape_index_by_company`
 - `get_landscape_index_by_moa`
@@ -791,7 +784,6 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `tenant_owner_update_ai_config`
 - `update_asset_mechanisms`
 - `update_asset_routes`
-- `update_event_links`
 - `update_event_sources`
 - `update_material`
 - `update_space_show_preclinical`

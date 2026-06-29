@@ -280,14 +280,11 @@ The route tree below is auto-generated from `src/client/src/app/app.routes.ts`. 
     /profiles/companies/:id   CompanyDetailComponent
     /profiles/assets/:id   AssetDetailComponent
     /profiles/engagement   EngagementDetailComponent
-    /settings/marker-types   editGuard | MarkerTypeListComponent
-    /settings/marker-categories   editGuard | MarkerCategoryListComponent
     /settings/taxonomies   editGuard | TaxonomiesPageComponent
     /settings/general   spaceOwnerGuard | SpaceGeneralComponent
     /settings/members   spaceOwnerGuard | SpaceMembersComponent
     /settings/fields   spaceOwnerGuard | SpaceFieldVisibilitySettingsComponent
     /settings/audit-log   auditSpaceGuard | SpaceAuditLogComponent
-    /events   EventsPageComponent
     /seed-demo   SeedDemoComponent
 (empty)   marketingLandingGuard | MarketingLandingComponent | exact
 /**   NotFoundComponent
@@ -728,7 +725,6 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 **Services:**
 - `AuditEventService`
 - `ChangeEventService`
-- `EventCategoryService`
 - `EventThreadService`
 - `EventService`
 - `LandscapeService`
@@ -752,6 +748,7 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 - `AuditEvent`
 - `ChangeEvent`
 - `CtgovField`
+- `EventWrite`
 - `MechanismOfAction`
 - `Palette`
 - `PrimaryIntelligence`
