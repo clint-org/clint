@@ -25,7 +25,7 @@ import { SourceImportService, type SourceImportProposal } from './source-import.
 import { MessageService } from 'primeng/api';
 import { RpcCache } from '../../core/services/rpc-cache.service';
 import { ChangeEventService } from '../../core/services/change-event.service';
-import { MarkerTypeService } from '../../core/services/marker-type.service';
+import { EventTypeService } from '../../core/services/event-type.service';
 import { ActivatedRoute, Router } from '@angular/router';
 
 // Minimal valid proposal -- all arrays empty so buildCommitPayload() runs without
@@ -46,7 +46,6 @@ const MINIMAL_PROPOSAL: SourceImportProposal = {
     companies: [],
     assets: [],
     trials: [],
-    markers: [],
     events: [],
   },
   dropped: [],
@@ -87,9 +86,9 @@ function makeComponent() {
   const changeEventStub = {
     triggerSingleTrialSync: vi.fn().mockResolvedValue(undefined),
   } as unknown as ChangeEventService;
-  const markerTypeStub = {
+  const eventTypeStub = {
     list: vi.fn().mockResolvedValue([]),
-  } as unknown as MarkerTypeService;
+  } as unknown as EventTypeService;
   const routeStub = {
     snapshot: {
       paramMap: { has: () => false, get: () => null },
@@ -107,7 +106,7 @@ function makeComponent() {
       { provide: MessageService, useValue: messagesStub },
       { provide: RpcCache, useValue: rpcCacheStub },
       { provide: ChangeEventService, useValue: changeEventStub },
-      { provide: MarkerTypeService, useValue: markerTypeStub },
+      { provide: EventTypeService, useValue: eventTypeStub },
       { provide: ActivatedRoute, useValue: routeStub },
       { provide: Router, useValue: routerStub },
     ],

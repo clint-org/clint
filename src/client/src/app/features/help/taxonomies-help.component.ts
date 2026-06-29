@@ -67,6 +67,22 @@ import { toVocabRows, type VocabRow } from './taxonomies-help.utils';
 
         <section class="mb-8">
           <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            Event types and event categories
+          </h2>
+          <p class="text-sm text-slate-600">
+            Settings > Taxonomies also manages the controlled vocabulary behind events.
+            <span class="font-medium text-slate-800">Event categories</span> group related event
+            types (data readouts, trial milestones, regulatory, and so on);
+            <span class="font-medium text-slate-800">event types</span> are the individual kinds of
+            event, each with its own glyph (shape, color, inner mark) and a default significance.
+            Every space starts with the shared system types and categories;
+            {{ analystSubject() }} can add space-custom ones from the Event Categories and Event
+            Types tabs. For how a glyph reads on the timeline, see the Event glyphs guide.
+          </p>
+        </section>
+
+        <section class="mb-8">
+          <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
             Common questions
           </h2>
           <div class="space-y-5">
@@ -126,6 +142,10 @@ export class TaxonomiesHelpComponent implements OnInit {
       {
         q: 'Can I edit a taxonomy?',
         a: 'Editors and owners manage taxonomies from Settings > Taxonomies. If you do not see that option, your role does not include editing them.',
+      },
+      {
+        q: 'Where do event types and event categories live?',
+        a: 'On this same Settings > Taxonomies screen, under the Event Categories and Event Types tabs. Event categories group event types; event types carry the glyph and default significance used on the timeline. System types and categories are read-only; space-custom ones can be added there.',
       },
     ];
   });

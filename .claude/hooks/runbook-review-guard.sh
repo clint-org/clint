@@ -28,7 +28,19 @@ const changed = process.env.CHANGED || "";
 // Triggers when ANY of the patterns match ANY changed file.
 const helpRules = [
   {
-    patterns: [/marker_types?/i, /\bmarker\.model/i, /marker_categories/i],
+    // markers-help is the event-glyph reference: it renders the event types and
+    // their glyphs. Flag it on the legacy marker_* schema (kept during the
+    // transition), the unified event_types schema, and the merged event
+    // authoring form (which owns the glyph + significance defaults shown here).
+    patterns: [
+      /marker_types?/i,
+      /\bmarker\.model/i,
+      /marker_categories/i,
+      /event_types?/i,
+      /event_type_categories/i,
+      /event-form\.component/,
+      /marker-form\.component/,
+    ],
     helpPage: "src/client/src/app/features/help/markers-help.component.ts",
   },
   {
@@ -54,6 +66,10 @@ const helpRules = [
       /indication\.service/,
       /mechanism-of-action\.service/,
       /route-of-administration\.service/,
+      // The Taxonomies screen also administers event types + categories, which
+      // taxonomies-help now documents; flag it on those schema changes too.
+      /event_types?/i,
+      /event_type_categories/i,
     ],
     helpPage: "src/client/src/app/features/help/taxonomies-help.component.ts",
   },

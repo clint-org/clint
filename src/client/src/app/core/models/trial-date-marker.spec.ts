@@ -204,7 +204,8 @@ describe('planTrialDateMarker', () => {
 });
 
 /**
- * ctgovLocked computed pattern (used in MarkerFormComponent).
+ * ctgovLocked computed pattern (used in trial-detail to lock ct.gov-owned
+ * events in the merged Event dialog).
  * Verified in isolation because the component requires Angular TestBed
  * (Playwright unit config) to mount; this covers the predicate logic
  * that the computed delegates to.

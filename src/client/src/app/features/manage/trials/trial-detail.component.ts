@@ -43,7 +43,6 @@ import { deriveTrialPhaseSpan } from '../../../core/models/trial-phase-span';
 import { selectTrialStartMarker, selectTrialEndMarker, isCtgovOwnedMarker } from '../../../core/models/trial-date-marker';
 import { markerStartCaption } from '../../../core/models/marker-date-precision';
 
-import { MarkerFormComponent } from './marker-form.component';
 import { EventFormDialogComponent } from '../../events/event-form/event-form-dialog.component';
 import { SectionCardComponent } from '../../../shared/components/section-card.component';
 import { PiMarkComponent } from '../../../shared/components/pi-mark/pi-mark.component';
@@ -85,7 +84,6 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
     TooltipModule,
     SkeletonComponent,
     SourceProvenanceLineComponent,
-    MarkerFormComponent,
     EventFormDialogComponent,
     SectionCardComponent,
     PiMarkComponent,
@@ -232,9 +230,27 @@ export class TrialDetailComponent {
   readonly error = signal<string | null>(null);
   protected readonly legendVisible = signal(false);
 
-  readonly addingMarker = signal(false);
-  readonly editingMarker = signal<Marker | null>(null);
   readonly eventDialogOpen = signal(false);
+  // Event id being edited in the merged Event dialog; null = create mode. The
+  // dialog hosts both "Add event" (create) and the marker/event EDIT action,
+  // so a single open flag plus this target drives create vs edit.
+  readonly editingEventId = signal<string | null>(null);
+  protected readonly eventDialogMode = computed<'create' | 'edit'>(() =>
+    this.editingEventId() ? 'edit' : 'create'
+  );
+  // ct.gov-owned events open read-only in the merged form (the DB trigger would
+  // reject the write); never lock create or analyst-owned events.
+  protected readonly editingEventCtgovLocked = computed(() => {
+    const id = this.editingEventId();
+    if (!id) return false;
+    const marker = this.trial()?.markers?.find((m) => m.id === id);
+    return marker ? isCtgovOwnedMarker(marker) : false;
+  });
+  // Reset the edit target whenever the dialog closes so the next "Add event"
+  // opens in create mode instead of re-hydrating the last edited event.
+  private readonly eventDialogResetEffect = effect(() => {
+    if (!this.eventDialogOpen()) this.editingEventId.set(null);
+  });
 
   // Primary intelligence
   readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
@@ -357,12 +373,12 @@ export class TrialDetailComponent {
     void this.loadFieldVisibility();
   });
 
-  // When ?marker=<id> is present, open that marker in the inline editor and
-  // scroll to the markers section. Markers have no detail page; the read-only
-  // drawer's "Edit" action and catalyst-panel "Edit marker" both route here
-  // via the URL. Reactive (not a one-shot in loadTrial) so it fires on a
-  // same-page navigation where trialId is unchanged. The lastApplied guard
-  // stops it re-opening after a save reloads the trial with the param still set.
+  // When ?marker=<id> is present, open that event in the merged Event dialog in
+  // edit mode. Markers have no detail page; the read-only drawer's "Edit" action
+  // and catalyst-panel "Edit marker" both route here via the URL. Reactive (not
+  // a one-shot in loadTrial) so it fires on a same-page navigation where trialId
+  // is unchanged. The lastApplied guard stops it re-opening after a save reloads
+  // the trial with the param still set.
   private lastAppliedMarkerParam: string | null = null;
   private readonly markerEditParamEffect = effect(() => {
     const markerId = this.queryParamMapSig().get('marker');
@@ -378,15 +394,8 @@ export class TrialDetailComponent {
     this.lastAppliedMarkerParam = markerId;
     // Close the read-only drawer as we transition into editing.
     this.landscape.clearSelection();
-    this.editingMarker.set(target);
-    this.addingMarker.set(false);
-    // Double-rAF defers the scroll until Angular has committed both the loaded
-    // trial and the expanded editor, so #markers exists at its final height.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        document.getElementById('markers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    });
+    this.editingEventId.set(markerId);
+    this.eventDialogOpen.set(true);
   });
 
   // When ?markerId=<id> is present, open that marker in the read-only detail
@@ -488,8 +497,8 @@ export class TrialDetailComponent {
       canEdit: this.spaceRole.canEdit(),
       editLabel: 'Edit',
       onEdit: () => {
-        this.editingMarker.set(marker);
-        this.addingMarker.set(false);
+        this.editingEventId.set(marker.id);
+        this.eventDialogOpen.set(true);
       },
       onDelete: () => void this.deleteMarker(marker.id),
     });
@@ -594,20 +603,11 @@ export class TrialDetailComponent {
   }
 
   async onMarkerSaved(): Promise<void> {
-    this.addingMarker.set(false);
-    this.editingMarker.set(null);
+    this.editingEventId.set(null);
+    this.eventDialogOpen.set(false);
     this.clearMarkerParam();
     await this.loadTrial();
-    this.messageService.add({ severity: 'success', summary: 'Marker saved.', life: 3000 });
-  }
-
-  // Close the inline marker editor (cancel path) and drop any ?marker= param so
-  // re-editing the same marker from the read-only drawer navigates cleanly
-  // rather than hitting Angular's same-URL no-op.
-  protected onMarkerEditClosed(): void {
-    this.addingMarker.set(false);
-    this.editingMarker.set(null);
-    this.clearMarkerParam();
+    this.messageService.add({ severity: 'success', summary: 'Event saved.', life: 3000 });
   }
 
   private clearMarkerParam(): void {

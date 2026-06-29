@@ -80,7 +80,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `bulk_update_last_polled` | trials | - |
 | `check_subdomain_available` | - | agencies, assets, retired_hostnames, tenants |
 | `claim_pending_r2_deletes` | r2_pending_deletes | - |
-| `commit_source_import` | ai_calls, indications, mechanisms_of_action, routes_of_administration, source_documents | assets, companies, event_type_categories, event_types, events, spaces, trials |
+| `commit_source_import` | ai_calls, indications, mechanisms_of_action, routes_of_administration, source_documents | assets, companies, event_types, events, spaces, trials |
 | `create_asset` | assets | - |
 | `create_company` | companies | - |
 | `create_event` | event_sources, events | assets, companies, trials |

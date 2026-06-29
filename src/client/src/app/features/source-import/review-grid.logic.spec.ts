@@ -14,11 +14,10 @@ import {
   resolveTrialPrimaryAssetIndex,
   orphanTrialIndexes,
   countFilterMatches,
-  markerLeafDisplay,
   eventLeafDisplay,
-  pickMarkerType,
+  pickEventType,
   defaultSelections,
-  type MarkerTypeLite,
+  type EventTypeLite,
 } from './review-grid.logic';
 
 describe('entityState', () => {
@@ -373,24 +372,8 @@ describe('countFilterMatches', () => {
   });
 });
 
-describe('markerLeafDisplay', () => {
-  it('reads marker_type as the category chip and event_date as the date', () => {
-    expect(markerLeafDisplay({ marker_type: 'Topline Data', event_date: '2024-05-01' })).toEqual({
-      category: 'Topline Data',
-      date: '2024-05-01',
-    });
-  });
-  it('returns null for missing or blank fields', () => {
-    expect(markerLeafDisplay({})).toEqual({ category: null, date: null });
-    expect(markerLeafDisplay({ marker_type: '  ', event_date: '' })).toEqual({
-      category: null,
-      date: null,
-    });
-  });
-});
-
-describe('pickMarkerType (mirrors commit_source_import resolution)', () => {
-  const mt = (over: Partial<MarkerTypeLite>): MarkerTypeLite => ({
+describe('pickEventType (mirrors commit_source_import resolution)', () => {
+  const mt = (over: Partial<EventTypeLite>): EventTypeLite => ({
     name: 'X',
     shape: 'circle',
     color: '#000',
@@ -402,22 +385,22 @@ describe('pickMarkerType (mirrors commit_source_import resolution)', () => {
   });
 
   it('returns null when no types are loaded', () => {
-    expect(pickMarkerType('Topline Data', [])).toBeNull();
+    expect(pickEventType('Topline Data', [])).toBeNull();
   });
   it('matches an exact name', () => {
     const types = [mt({ name: 'Topline Data', color: '#0a0' }), mt({ name: 'Safety', color: '#a00' })];
-    expect(pickMarkerType('Topline Data', types)?.color).toBe('#0a0');
+    expect(pickEventType('Topline Data', types)?.color).toBe('#0a0');
   });
   it('falls back to a case-insensitive match', () => {
     const types = [mt({ name: 'Topline Data', color: '#0a0' })];
-    expect(pickMarkerType('topline data', types)?.color).toBe('#0a0');
+    expect(pickEventType('topline data', types)?.color).toBe('#0a0');
   });
   it('prefers a space-scoped type over a system type of the same name', () => {
     const types = [
       mt({ name: 'Readout', is_system: true, color: '#sys' }),
       mt({ name: 'Readout', is_system: false, color: '#space' }),
     ];
-    expect(pickMarkerType('Readout', types)?.color).toBe('#space');
+    expect(pickEventType('Readout', types)?.color).toBe('#space');
   });
   it('falls back to the lowest-ordered system default when the name does not match', () => {
     const types = [
@@ -425,49 +408,47 @@ describe('pickMarkerType (mirrors commit_source_import resolution)', () => {
       mt({ name: 'A', is_system: true, display_order: 1, color: '#a' }),
       mt({ name: 'Space', is_system: false, display_order: 0, color: '#space' }),
     ];
-    expect(pickMarkerType('Nonexistent', types)?.color).toBe('#a');
+    expect(pickEventType('Nonexistent', types)?.color).toBe('#a');
   });
   it('uses the default chain when the name is null/blank', () => {
     const types = [mt({ name: 'A', is_system: true, display_order: 0, color: '#a' })];
-    expect(pickMarkerType(null, types)?.color).toBe('#a');
+    expect(pickEventType(null, types)?.color).toBe('#a');
   });
 });
 
 describe('eventLeafDisplay', () => {
-  it('reads category as the chip and event_date as the date', () => {
-    expect(eventLeafDisplay({ category: 'Regulatory', event_date: '2025-01-15' })).toEqual({
+  it('reads event_type as the category chip and event_date as the date', () => {
+    expect(eventLeafDisplay({ event_type: 'Regulatory', event_date: '2025-01-15' })).toEqual({
       category: 'Regulatory',
       date: '2025-01-15',
     });
   });
   it('returns null for missing or blank fields', () => {
-    expect(eventLeafDisplay({ category: null, event_date: undefined })).toEqual({
+    expect(eventLeafDisplay({ event_type: null, event_date: undefined })).toEqual({
       category: null,
       date: null,
+    });
+  });
+  it('eventLeafDisplay reads the event_type name and date', () => {
+    expect(eventLeafDisplay({ event_type: 'Topline Data', event_date: '2026-07-01' })).toEqual({
+      category: 'Topline Data',
+      date: '2026-07-01',
     });
   });
 });
 
 describe('defaultSelections (initial checked state for the review grid)', () => {
-  it('selects a new marker (state new -> selected)', () => {
+  it('selects a new event (state new -> selected)', () => {
     const proposals = {
-      markers: [{ marker_type: 'Topline Data', match: { kind: 'new' } }],
+      events: [{ event_type: 'Topline Data', match: { kind: 'new' } }],
     };
     const sel = defaultSelections(proposals);
-    expect(sel['markers_0']).toBe(true);
-  });
-
-  it('deselects a matched marker (state existing -> not selected by default)', () => {
-    const proposals = {
-      markers: [{ marker_type: 'Topline Data', match: { kind: 'existing', id: 'x' } }],
-    };
-    const sel = defaultSelections(proposals);
-    expect(sel['markers_0']).toBe(false);
+    expect(sel['events_0']).toBe(true);
   });
 
   it('deselects a matched event (state existing -> not selected by default)', () => {
     const proposals = {
-      events: [{ category: 'Regulatory', match: { kind: 'existing', id: 'e1' } }],
+      events: [{ event_type: 'Regulatory', match: { kind: 'existing', id: 'e1' } }],
     };
     const sel = defaultSelections(proposals);
     expect(sel['events_0']).toBe(false);
@@ -497,25 +478,25 @@ describe('defaultSelections (initial checked state for the review grid)', () => 
     expect(sel['trials_0']).toBe(true);
   });
 
-  it('produces per-index keys for multiple entities in one type', () => {
+  it('produces per-index keys for multiple events', () => {
     const proposals = {
-      markers: [
-        { marker_type: 'Topline Data', match: { kind: 'existing', id: 'x' } },
-        { marker_type: 'IND Filing', match: { kind: 'new' } },
+      events: [
+        { event_type: 'Topline Data', match: { kind: 'existing', id: 'x' } },
+        { event_type: 'IND Filing', match: { kind: 'new' } },
       ],
     };
     const sel = defaultSelections(proposals);
-    expect(sel['markers_0']).toBe(false);
-    expect(sel['markers_1']).toBe(true);
+    expect(sel['events_0']).toBe(false);
+    expect(sel['events_1']).toBe(true);
   });
 
   it('ignores non-array fields in the proposals bag', () => {
     const proposals = {
       source_summary: 'Test' as unknown as Record<string, unknown>[],
-      markers: [{ match: { kind: 'new' } }],
+      events: [{ match: { kind: 'new' } }],
     };
     expect(() => defaultSelections(proposals)).not.toThrow();
     const sel = defaultSelections(proposals);
-    expect(sel['markers_0']).toBe(true);
+    expect(sel['events_0']).toBe(true);
   });
 });

@@ -7,35 +7,33 @@ describe('commitSummary', () => {
       companies: ['c1'],
       assets: ['a1'],
       trials: ['t1'],
-      markers: ['m1', 'm2'],
       events: ['e1'],
     };
     expect(commitSummary(created, 'Press Release')).toBe(
-      'Committed 6 new items from Press Release. View in timeline.'
+      'Committed 4 new items from Press Release. View in timeline.'
     );
   });
 
   it('uses the singular noun for a single new row', () => {
-    expect(commitSummary({ events: ['e1'] }, 'Filing')).toBe('Committed 1 new item from Filing.');
+    expect(commitSummary({ assets: ['a1'] }, 'Filing')).toBe('Committed 1 new item from Filing.');
   });
 
-  it('omits "View in timeline" when no markers were created (events only)', () => {
-    // Events do not render on the trial timeline, so the link would mislead.
+  it('appends "View in timeline" when events were created', () => {
     expect(commitSummary({ events: ['e1', 'e2'] }, 'Deal')).toBe(
-      'Committed 2 new items from Deal.'
+      'Committed 2 new items from Deal. View in timeline.'
     );
   });
 
-  it('appends "View in timeline" when markers were created', () => {
-    expect(commitSummary({ markers: ['m1'] }, 'Readout')).toBe(
-      'Committed 1 new item from Readout. View in timeline.'
+  it('points to the timeline when events landed', () => {
+    expect(commitSummary({ events: ['e1'] }, 'Doc')).toBe(
+      'Committed 1 new item from Doc. View in timeline.'
     );
   });
 
   it('reports nothing-new honestly when every proposal matched an existing record', () => {
-    expect(commitSummary({ companies: [], assets: [], trials: [], markers: [], events: [] }, 'Reworded PR')).toBe(
-      'No new items from Reworded PR. Everything matched existing records.'
-    );
+    expect(
+      commitSummary({ companies: [], assets: [], trials: [], events: [] }, 'Reworded PR')
+    ).toBe('No new items from Reworded PR. Everything matched existing records.');
   });
 
   it('treats a missing/null created payload as nothing new', () => {

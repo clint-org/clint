@@ -21,7 +21,7 @@ function findParam(route: ActivatedRouteSnapshot | null, name: string): string |
  * cascading from tenant owners or agency owners -- the space owner role is the
  * authoritative gate (server-side RLS remains the final word).
  *
- * Reference settings (Marker Types, Taxonomies) stay ungated: any space member
+ * Reference settings (Taxonomies) stay ungated: any space member
  * may view them. On denial we surface a short toast (matching the spaceGuard
  * P1.3a pattern -- never bounce silently) and redirect to the space root.
  */

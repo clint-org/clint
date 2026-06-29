@@ -51,7 +51,7 @@ import { foldCreatedSpace } from './space-list.create';
           <p class="text-base font-medium text-slate-700">No spaces yet</p>
           <p class="mx-auto mt-2 max-w-md text-sm text-slate-500">
             Each space is a firewalled engagement scoped to a domain: an indication, an asset class,
-            a client team. Pipelines, catalysts, and portfolio reads all live inside, with their own
+            a client team. Pipelines, events, and portfolio reads all live inside, with their own
             members and data.
           </p>
           <div class="mt-6 inline-block">
@@ -130,7 +130,7 @@ import { foldCreatedSpace } from './space-list.create';
       <form (ngSubmit)="createSpace()" class="space-y-4">
         <p class="text-xs text-slate-500">
           A space is a firewalled engagement scoped to a domain: an indication, an asset class, a
-          client team. Pipelines, catalysts, and portfolio reads all live inside, with their own
+          client team. Pipelines, events, and portfolio reads all live inside, with their own
           members and data.
         </p>
         <div>
