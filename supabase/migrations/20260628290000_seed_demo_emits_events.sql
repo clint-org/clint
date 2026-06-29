@@ -674,8 +674,14 @@ declare
 begin
   select id into v_tenant from public.tenants limit 1;
   select id into v_uid from auth.users limit 1;
-  if v_tenant is null or v_uid is null then
-    raise notice 'C5 smoke: no tenant/user present (pre-seed), skipping (prod-safe)';
+  -- Skip on any non-seeded database (local db reset runs migrations before
+  -- seed.sql; dev/prod db push has no demo space): the local demo space
+  -- 00000000-0000-0000-0000-0000000d0100 is the seeded-marker other smokes use.
+  -- The full producer chain is verified by the role-access integration suite;
+  -- running a scratch seed during db push is fragile against real data.
+  if v_tenant is null or v_uid is null
+     or not exists (select 1 from public.spaces where id = '00000000-0000-0000-0000-0000000d0100') then
+    raise notice 'C5 smoke: skipped on non-seeded db; producer behavior is covered by the integration suite';
     return;
   end if;
 

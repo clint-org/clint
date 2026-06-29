@@ -247,6 +247,15 @@ declare
   v_topline_event_id    uuid;
   v_cnt_topline_sources int;
 begin
+  -- Skip on any non-seeded database (local db reset runs migrations before
+  -- seed.sql; dev/prod db push has no demo space): the QA fixture + its sources
+  -- are verified by the events-model-qa-fixture integration test. Creating a
+  -- scratch tenant/user/space during db push is fragile against real data.
+  if not exists (select 1 from public.spaces where id = '00000000-0000-0000-0000-0000000d0100') then
+    raise notice 'S4 smoke: skipped on non-seeded db; QA fixture is covered by the integration suite';
+    return;
+  end if;
+
   -- scratch auth user
   insert into auth.users (id, email)
   values (
