@@ -951,6 +951,28 @@
         font-size: 13.5px;
         color: var(--slate-600);
       }
+      /* Second roadmap track: the longer-horizon "compounding data" story runs on
+     its own dashed line below the near-term track, so it reads as a parallel
+     timeline that continues past the three near-term steps. */
+      .roadmap.horizon {
+        margin-top: 24px;
+        padding-top: 18px;
+      }
+      .roadmap.horizon .roadmap-line {
+        right: 8px;
+      }
+      .roadmap.horizon .roadmap-grid {
+        grid-template-columns: 1fr;
+      }
+      .roadmap.horizon .rm-stage {
+        max-width: 920px;
+      }
+      .roadmap.horizon .rm-stage h3 {
+        font-size: 16px;
+      }
+      .roadmap.horizon .rm-stage p {
+        font-size: 14px;
+      }
       /* Slide 5 (what changes): a before/after shift table. Each row is one
      dimension of the engagement. The "Without Clint" column recedes in muted
      slate; the "With Clint" column is the hero, carried by a brand left rule
@@ -1558,7 +1580,7 @@
           </h1>
           <div class="cover-hero">
             <img
-              src="img/timeline.png?v=d95c8367f4"
+              src="img/timeline.png?v=309fc9f8b2"
               alt="The timeline: every company's programs grouped company to asset to trial, phase bars behind dated events for data, regulatory, approval, and launch. Filter, group, and zoom to read any slice of the field."
             />
           </div>
@@ -1858,8 +1880,8 @@
           <h2 class="slide-title">Clint's data is built for AI.</h2>
           <p class="lede">
             Clint's data is already structured and cited, which is what AI needs to give reliable
-            answers. AI-powered import is already live inside the platform today; two further ways
-            to use the data are on the roadmap.
+            answers. One-paste AI import is live today; more ways to put that data to work are on the
+            roadmap, and the dataset itself compounds into something bigger over time.
           </p>
           <div class="body">
             <div class="roadmap">
@@ -1868,7 +1890,7 @@
                 <div class="rm-stage">
                   <div class="rm-marker"><span class="rm-node live"></span></div>
                   <span class="pill brand">Live today</span>
-                  <h3>Clint already supports AI import</h3>
+                  <h3>One-paste AI import</h3>
                   <p>
                     Paste a few trial IDs, a link, or a block of text, and Clint's AI builds the
                     full competitive landscape, doing the heavy lifting for the analyst.
@@ -1891,6 +1913,25 @@
                     Ask your AI agents about the competitive picture and get an answer drawn from
                     Clint, with the sources attached. Analysts who already work this way get Clint's
                     data without leaving the tools they use.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="roadmap horizon">
+              <div class="roadmap-line" aria-hidden="true"></div>
+              <div class="roadmap-grid">
+                <div class="rm-stage">
+                  <div class="rm-marker"><span class="rm-node"></span></div>
+                  <span class="pill">Further out</span>
+                  <h3>A dataset that compounds into new products</h3>
+                  <p>
+                    Every engagement leaves more behind: the registry data Clint pulls in, the events
+                    and markers analysts log, the full history of every published read, and the
+                    documents behind them, structured and unstructured alike. The longer Clint runs,
+                    the richer and more connected that store becomes, which is exactly what's needed
+                    to build new products and deeper analysis on top of it, with the data warehousing
+                    and cross-modal analysis that read across trials, events, intelligence, and
+                    documents at once.
                   </p>
                 </div>
               </div>
@@ -2063,7 +2104,7 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/timeline.png?v=d95c8367f4"
+                    src="img/timeline.png?v=309fc9f8b2"
                     alt="The timeline: every company's programs grouped company to asset to trial, phase bars behind dated events for data, regulatory, approval, and launch. Filter, group, and zoom to read any slice of the field."
                   />
                 </button>
