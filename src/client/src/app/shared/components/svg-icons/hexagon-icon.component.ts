@@ -32,6 +32,37 @@ import { GLYPH_RATIOS, GLYPH_STROKES } from '../../../core/models/marker-visual'
         stroke-linejoin="round"
       />
     }
+    @if (innerMark() === 'dash') {
+      <svg:line
+        [attr.x1]="size() * R.circleDashX1"
+        [attr.y1]="size() / 2"
+        [attr.x2]="size() * R.circleDashX2"
+        [attr.y2]="size() / 2"
+        [attr.stroke]="markColor()"
+        [attr.stroke-width]="S.innerMark"
+        stroke-linecap="round"
+      />
+    }
+    @if (innerMark() === 'x') {
+      <svg:line
+        [attr.x1]="size() * R.squareXMin"
+        [attr.y1]="size() * R.squareXMin"
+        [attr.x2]="size() * R.squareXMax"
+        [attr.y2]="size() * R.squareXMax"
+        [attr.stroke]="markColor()"
+        [attr.stroke-width]="S.innerMark"
+        stroke-linecap="round"
+      />
+      <svg:line
+        [attr.x1]="size() * R.squareXMax"
+        [attr.y1]="size() * R.squareXMin"
+        [attr.x2]="size() * R.squareXMin"
+        [attr.y2]="size() * R.squareXMax"
+        [attr.stroke]="markColor()"
+        [attr.stroke-width]="S.innerMark"
+        stroke-linecap="round"
+      />
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

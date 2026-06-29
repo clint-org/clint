@@ -40,8 +40,18 @@ Each clinical phase has a distinct, meaningful color:
 - Trial milestones (circles, dashed lines): slate. PCD, Trial Start, Trial End.
 - Regulatory events (diamonds): orange. Filing, Submission, Acceptance.
 - Approval (flag): blue.
-- Launch (triangle): violet.
+- Launch and commercial availability (triangle, hexagon): violet. Launch, Distribution.
 - Loss of exclusivity (squares): amber. LOE Date, Generic Entry Date.
+- Corporate (hexagons): rose. Leadership Change, Financial, Strategic, differentiated by inner mark (none / dot / dash).
+
+**Allocation rule.** A glyph encodes three things: **color** is the editorial family
+(the rows above), **shape** is that family's signature glyph (circle = data/clinical,
+diamond = regulatory, flag = approval, triangle = launch, square = LOE,
+dashed line = trial start/end, hexagon = commercial/corporate), and the **inner mark**
+(none / dot / dash / check / x) is the specific type within a family. The palette is
+exhausted after the clinical lifecycle, so the business axis is one rose Corporate family
+differentiated by inner mark rather than a color per category. **Teal is reserved for the
+brand and phase bars and is never an event color.**
 
 ## Visual Hierarchy
 1. **Markers** are the primary visual element -- they represent the events executives scan for. They must pop.

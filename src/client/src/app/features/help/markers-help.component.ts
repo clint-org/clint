@@ -49,6 +49,14 @@ const MARKER_DEFINITIONS: Record<string, string> = {
   'LOE Date':
     'Loss of exclusivity: the date market protection ends, through patent expiry or loss of exclusivity.',
   'Generic Entry Date': 'The date a generic or biosimilar competitor enters the market.',
+  Distribution:
+    'A commercial availability or distribution milestone: a supply, channel, or market-access step once the drug is on the market.',
+  'Leadership Change':
+    'A change in a company\'s executive leadership, such as a new CEO or head of R&D.',
+  Financial:
+    'A material financial event, such as an earnings report, a capital raise, or a guidance change.',
+  Strategic:
+    'A strategic corporate move, such as M&A, an in- or out-licensing deal, a partnership, or a restructuring.',
 };
 
 @Component({
@@ -217,6 +225,14 @@ const MARKER_DEFINITIONS: Record<string, string> = {
                 }
               </div>
               <p class="mt-2 text-xs text-slate-500">
+                The allocation rule: <span class="font-medium text-slate-700">color</span> is the
+                editorial family, <span class="font-medium text-slate-700">shape</span> is that
+                family's signature glyph, and the
+                <span class="font-medium text-slate-700">inner mark</span> is the specific type
+                within it. So a rose hexagon is a corporate event, and its inner mark says which one.
+                Teal is reserved for the brand and phase bars and is never an event color.
+              </p>
+              <p class="mt-2 text-xs text-slate-500">
                 These color roles apply to the system categories. Custom categories added for this
                 space use analyst-chosen colors and carry no fixed color convention.
               </p>
@@ -368,12 +384,17 @@ export class MarkersHelpComponent implements OnInit {
     {
       label: 'Violet',
       color: '#7c3aed',
-      description: 'Commercial launch.',
+      description: 'Commercial launch and availability. Launch, distribution.',
     },
     {
       label: 'Amber',
       color: '#d97706',
       description: 'Loss of exclusivity. LOE and generic entry dates.',
+    },
+    {
+      label: 'Rose',
+      color: '#be123c',
+      description: 'Corporate. Leadership, financial, and strategic company events.',
     },
   ];
 
@@ -398,7 +419,7 @@ export class MarkersHelpComponent implements OnInit {
       },
       {
         q: 'How do I tell two glyphs of the same shape apart?',
-        a: 'The inner mark tells you which variant. Circles: dot = topline, dash = interim, plain = full data. Diamonds: dot = filing, plain = submission, check = acceptance. Squares: x = LOE, plain = generic entry.',
+        a: 'The inner mark tells you which variant. Circles: dot = topline, dash = interim, plain = full data. Diamonds: dot = filing, plain = submission, check = acceptance. Squares: x = LOE, plain = generic entry. Rose hexagons (corporate): plain = leadership change, dot = financial, dash = strategic. A violet hexagon is commercial distribution.',
       },
       {
         q: 'Can I add a custom event type?',
