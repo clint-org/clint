@@ -400,17 +400,17 @@ describe('feedItemToChangeEvent', () => {
     });
     const summary = flattenSummarySegments(summarySegmentsFor(feedItemToChangeEvent(item)).segments);
     // The raw row title was the generic "Marker Added"; the composed summary
-    // surfaces the actual marker that was added.
+    // surfaces the actual event that was added (user-facing copy says "Event").
     expect(item.title).toBe('Marker Added');
-    expect(summary).toContain('Marker added: FDA Accepts VK2735 NDA for Review');
+    expect(summary).toContain('Event added: FDA Accepts VK2735 NDA for Review');
     expect(summary).toContain('Acceptance');
   });
 
-  it('falls back to a bare "Marker added" when the payload carries no marker title', () => {
+  it('falls back to a bare "Event added" when the payload carries no marker title', () => {
     const summary = flattenSummarySegments(
       summarySegmentsFor(feedItemToChangeEvent(detectedFeedItem({}))).segments,
     );
-    expect(summary).toBe('Marker added');
+    expect(summary).toBe('Event added');
   });
 });
 

@@ -290,10 +290,10 @@
 
           <div id="markers">
             <app-section-card
-              title="Markers"
-              description="Milestones and catalysts on the timeline."
+              title="Events"
+              description="Dated facts and milestones on the timeline."
               [count]="(t.markers ?? []).length"
-              countNoun="marker"
+              countNoun="event"
             >
               <div actions>
                 @if (spaceRole.canEdit()) {
@@ -326,11 +326,11 @@
                 sortField="event_date"
                 [sortOrder]="-1"
                 [filterDelay]="0"
-                aria-label="Trial markers"
+                aria-label="Trial events"
               >
                 <ng-template #header>
                   <tr>
-                    <th class="w-8" scope="col"><span class="sr-only">Marker glyph</span></th>
+                    <th class="w-8" scope="col"><span class="sr-only">Event glyph</span></th>
                     <th pSortableColumn="marker_types.marker_categories.name">
                       Category <p-sortIcon field="marker_types.marker_categories.name" />
                       <p-column-filter
@@ -401,7 +401,7 @@
                       @if (spaceRole.canEdit()) {
                         <app-row-actions
                           [items]="markerMenu(marker)"
-                          [ariaLabel]="'Actions for marker ' + marker.title"
+                          [ariaLabel]="'Actions for event ' + marker.title"
                         />
                       }
                     </td>
@@ -409,7 +409,7 @@
                 </ng-template>
                 <ng-template #emptymessage>
                   <tr>
-                    <td colspan="7">No markers yet. Add one to get started.</td>
+                    <td colspan="7">No events yet. Add one to get started.</td>
                   </tr>
                 </ng-template>
               </p-table>

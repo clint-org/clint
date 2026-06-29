@@ -252,10 +252,46 @@
         }
       </app-detail-panel-section>
 
-      @if (asset.recent_markers.length > 0) {
+      @if (upcomingEvents().length > 0) {
+        <app-detail-panel-section label="Upcoming events">
+          <app-detail-panel-entity-list>
+            @for (marker of upcomingEvents(); track marker.id) {
+              <app-detail-panel-entity-row (rowClick)="onMarkerRowClick(marker.id)">
+                <app-marker-icon
+                  [shape]="marker.shape"
+                  [color]="marker.color"
+                  [size]="14"
+                  [fillStyle]="marker.projection === 'actual' ? 'filled' : 'outline'"
+                  aria-hidden="true"
+                />
+                <span class="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{{
+                  marker.event_date | date: 'mediumDate'
+                }}</span>
+                <span class="min-w-0 flex-1 truncate text-[12px] text-slate-700">{{
+                  marker.marker_type_name
+                }}</span>
+                @if (marker.category_name) {
+                  <span
+                    class="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+                    >{{ marker.category_name }}</span
+                  >
+                }
+                @if (marker.projection && marker.projection !== 'actual') {
+                  <span
+                    class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium leading-none text-amber-700"
+                    >{{ marker.projection }}</span
+                  >
+                }
+              </app-detail-panel-entity-row>
+            }
+          </app-detail-panel-entity-list>
+        </app-detail-panel-section>
+      }
+
+      @if (recentEvents().length > 0) {
         <app-detail-panel-section label="Recent events">
           <app-detail-panel-entity-list>
-            @for (marker of asset.recent_markers; track marker.id) {
+            @for (marker of recentEvents(); track marker.id) {
               <app-detail-panel-entity-row (rowClick)="onMarkerRowClick(marker.id)">
                 <app-marker-icon
                   [shape]="marker.shape"

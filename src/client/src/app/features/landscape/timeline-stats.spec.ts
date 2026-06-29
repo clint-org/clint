@@ -88,6 +88,37 @@ describe('computeTimelineStats', () => {
     expect(result.catalystCount90d).toBe(1);
   });
 
+  it('counts events at company and asset anchor levels, not just trial markers', () => {
+    // Regression: the 90d counter previously walked only trial.markers, so an
+    // asset-anchored (or company-anchored) future event was dropped here while the
+    // backend landing-stats catalysts_90d counted it. All three anchor levels count.
+    const mk = (id: string, event_date: string) => ({
+      id, space_id: 'sp', marker_type_id: '', title: '',
+      projection: 'projected' as const, event_date, end_date: null,
+      is_projected: true, no_longer_expected: false, marker_assignments: [],
+    });
+    const co = {
+      id: 'novo', space_id: 'sp', created_by: 'u', name: 'Novo', logo_url: null,
+      display_order: 0, created_at: '', updated_at: '', updated_by: null,
+      events: [mk('co-evt', '2026-02-01')],
+      assets: [{
+        id: 'a-cagri', space_id: 'sp', created_by: 'u', company_id: 'novo',
+        name: 'CagriSema', generic_name: null, logo_url: null, display_order: 0,
+        created_at: '', updated_at: '', updated_by: null,
+        events: [mk('asset-evt', '2026-03-01')],
+        trials: [{
+          id: 't1', space_id: 'sp', created_by: 'u', asset_id: 'a-cagri',
+          name: 'T', identifier: null, status: null, notes: null,
+          display_order: 0, created_at: '', updated_at: '', updated_by: null,
+          phase_type: 'P3', markers: [mk('trial-evt', '2026-03-15')],
+          recent_changes_count: 0, most_recent_change_type: null,
+        }],
+      }],
+    } as unknown as Company;
+    const result = computeTimelineStats([co], '2026-01-01');
+    expect(result.catalystCount90d).toBe(3);
+  });
+
   it('counts catalysts within 90-day window', () => {
     const co = makeCompany('A', [
       {

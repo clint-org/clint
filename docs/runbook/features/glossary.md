@@ -6,9 +6,11 @@ spec: docs/superpowers/specs/2026-06-28-unified-events-timeline-design.md
 # Glossary
 
 Authoritative definitions for terms used across the runbook, specs, and codebase.
-User-facing label renames (the "markers" -> "events" IA rename in the UI, routes, and
-in-app help) land in Stage 3
-(`docs/superpowers/specs/2026-06-28-event-model-stage-3-ia-rename.md`).
+The user-facing label renames (the "markers" -> "events" IA rename in the UI, routes,
+and in-app help) shipped in Stage 3
+(`docs/superpowers/specs/2026-06-28-event-model-stage-3-ia-rename.md`): the product now
+speaks "Event", "Future Events", and "Activity"; "catalyst" and user-facing "marker" are
+retired.
 
 ---
 
@@ -19,13 +21,17 @@ represents a single meaningful fact about a drug program at a point in time: a d
 readout, regulatory milestone, clinical trial date, or analyst observation.
 
 **Date model.** `event_date` (required), `end_date` (optional, for range events),
-`date_precision` (exact / month / year), and `is_projected` (boolean). Analyst events
-may have a fuzzy date (month or year precision); CT.gov-seeded events carry the
+`date_precision` (exact / month / quarter / half / year), and `projection`
+(`actual` / `forecasted` / `company` / `primary`). The `is_projected` boolean is a
+generated column, true whenever `projection` is not `actual`. Analyst events may have a
+fuzzy date (month, quarter, half, or year precision); CT.gov-seeded events carry the
 precision string from the CT.gov source.
 
-**Provenance.** `source_type` distinguishes analyst-authored (`analyst`) from
-AI-imported (`source_import`) and CT.gov-seeded (`ctgov`) events. `source_doc_id` FK
-points to the originating `source_documents` row for AI-imported events.
+**Provenance.** There is no `events.source_type` column. Provenance is carried in
+`metadata->>'source'` (`analyst` for analyst-authored, `ctgov` for CT.gov-seeded events)
+and by `source_doc_id`, the FK to the originating `source_documents` row for AI-imported
+events. (`source_type` is only a feed-filter *parameter* on `get_events_page_data`, with
+values `event` / `marker` / `detected`.)
 
 **Significance.** `significance` (high / low) drives rendering weight; null inherits the event type's default_significance.
 
@@ -33,13 +39,14 @@ points to the originating `source_documents` row for AI-imported events.
 column (one of `space`, `company`, `asset`, or `trial`) and the `anchor_id` UUID. There
 are no secondary anchors.
 
-**Pin / hide.** `is_pinned` and `is_hidden` are viewer-level display controls stored
-on the event row. Pinned events are promoted in timeline rendering; hidden events are
-excluded from default views.
+**Pin / hide.** `visibility` is a single nullable column on the event row
+(`pinned` / `hidden`; null = inherit the default). Pinned events are promoted in timeline
+rendering; hidden events are excluded from default views.
 
 **Sources model.** Three orthogonal things:
 - Attached citations live in the `event_sources` side table (zero or more per event;
-  `url NOT NULL`, `label NULL`, `sort_order`). No `events.source_url` column exists.
+  `url NOT NULL`, `label NULL`, `sort_order`). The legacy `events.source_url` column is
+  retained but is no longer the source of truth for citations.
 - The CT.gov registry link is derived at read time from the anchor trial's identifier
   via `event_registry_url` (SQL) / `ctgovRegistryUrl` (TypeScript); it is never stored.
 - AI-ingest provenance is `source_doc_id` on the events row, orthogonal to citations.
@@ -51,8 +58,8 @@ excluded from default views.
 `event_changes`.
 
 **Key RPCs:** `create_event`, `update_event`, `update_event_sources`,
-`get_event_detail`, `get_events_page_data`, `get_key_catalysts`,
-`event_registry_url`.
+`get_event_detail`, `get_events_page_data`, `get_activity_feed`, `event_registry_url`.
+(`get_key_catalysts` was dropped by the Stage 3 RPC rename.)
 
 ---
 
@@ -65,8 +72,11 @@ not a separate database table. The `markers`, `marker_assignments`, `marker_type
 cutover and replaced by `events`, `event_types`, `event_type_categories`, and
 `event_changes`.
 
-The user-facing label ("Marker" vs. "Event" in the UI, navigation, and in-app help)
-is being unified in Stage 3.
+The user-facing label was unified in Stage 3: the UI, navigation, and in-app help now
+speak "Event". "Marker" survives only as the internal name for the glyph primitive and
+its rendering components (`MarkerIconComponent`, `marker-visual.ts`, `GLYPH_RATIOS`); it
+is no longer shown to users. The glyph fields it draws (shape, color, inner mark) now
+live on `event_types`.
 
 ---
 
@@ -90,10 +100,12 @@ by the ingest pipeline; analyst event edits emit a `trial_change_events` row via
 `_log_event_change` trigger is a separate per-event change log that writes
 `event_changes` (append-only audit trail for every INSERT/UPDATE/DELETE on `events`);
 it does not write `trial_change_events`. Activity rows are classified by type
-(`phase_transitioned`, `status_changed`, etc.) and surfaced on the unified Events page
-with `source_type='detected'`. Activity is the automated, system-generated side of the
-event stream; Events are the analyst-authored side. The standalone `/activity` route
-redirects to `/events?source=detected`.
+(`phase_transitioned`, `status_changed`, etc.) and surfaced on the read-only Activity
+page at `/activity`, backed by `get_activity_feed` over `trial_change_events`. Activity is
+the automated, system-generated side of the event stream; Events are the analyst-authored
+side. (Before Stage 3 the two shared one page and `/activity` redirected to
+`/events?source=detected`; Stage 3 split them, retired that redirect, and `/events` now
+redirects to `/activity`.)
 
 ## Capabilities
 

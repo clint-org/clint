@@ -79,7 +79,7 @@ Stout's primary analytical work product, attached to entities in an engagement. 
   role: agency
   status: active
 - id: primary-intelligence-entity-bundle
-  summary: Per-entity single-round-trip bundles (briefs[], referenced_in) for trial, company, product, and space detail pages. Marker-level PI is not surfaced; the marker description carries the catalyst-level write-up and trial/asset PI carries the competitive read.
+  summary: Per-entity single-round-trip bundles (briefs[], referenced_in) for trial, company, product, and space detail pages. Marker-level PI is not surfaced; the marker description carries the event-level write-up and trial/asset PI carries the competitive read.
   routes:
     - /t/:tenantId/s/:spaceId/profiles/trials/:id
     - /t/:tenantId/s/:spaceId/profiles/companies/:id

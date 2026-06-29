@@ -15,6 +15,7 @@ import { CircleIconComponent } from '../../shared/components/svg-icons/circle-ic
 import { DiamondIconComponent } from '../../shared/components/svg-icons/diamond-icon.component';
 import { FlagIconComponent } from '../../shared/components/svg-icons/flag-icon.component';
 import { SquareIconComponent } from '../../shared/components/svg-icons/square-icon.component';
+import { HexagonIconComponent } from '../../shared/components/svg-icons/hexagon-icon.component';
 import { TriangleIconComponent } from '../../shared/components/svg-icons/triangle-icon.component';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
@@ -25,8 +26,8 @@ interface MarkerGroup {
   types: MarkerType[];
 }
 
-// Plain-language definitions for the shared system marker types, keyed by name.
-// Custom marker types added for a space have no entry and render without a
+// Plain-language definitions for the shared system event types, keyed by name.
+// Custom event types added for a space have no entry and render without a
 // definition line. These are the pre-installed types seeded for every space.
 const MARKER_DEFINITIONS: Record<string, string> = {
   'Topline Data':
@@ -60,6 +61,7 @@ const MARKER_DEFINITIONS: Record<string, string> = {
     FlagIconComponent,
     TriangleIconComponent,
     SquareIconComponent,
+    HexagonIconComponent,
     LoaderComponent,
   ],
   template: `
@@ -158,6 +160,15 @@ const MARKER_DEFINITIONS: Record<string, string> = {
                                       [innerMark]="mt.inner_mark"
                                     />
                                   }
+                                  @case ('hexagon') {
+                                    <g
+                                      app-hexagon-icon
+                                      [size]="14"
+                                      [color]="mt.color"
+                                      fillStyle="filled"
+                                      [innerMark]="mt.inner_mark"
+                                    />
+                                  }
                                 }
                               </svg>
                             }
@@ -241,10 +252,10 @@ const MARKER_DEFINITIONS: Record<string, string> = {
               </div>
             </div>
             <p class="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-600">
-              Fill is not typed by hand. ct.gov markers follow ct.gov's flag: a reported date is
-              actual (filled), an anticipated date is projected (outline). Analyst markers derive it
+              Fill is not typed by hand. ct.gov events follow ct.gov's flag: a reported date is
+              actual (filled), an anticipated date is projected (outline). Analyst events derive it
               from the date itself, so a date today or in the past is actual and a future date is
-              projected. The marker editor's Projection source control can override this, but editing
+              projected. The event form's projection control can override this, but editing
               the trial's Trial Start or Trial End date afterwards re-derives it from the new date
               (see the projection question below).
             </p>
@@ -253,30 +264,30 @@ const MARKER_DEFINITIONS: Record<string, string> = {
 
         <section class="mb-8">
           <h2 class="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Where system markers come from
+            Where system events come from
           </h2>
           <div class="space-y-3 border border-slate-200 bg-white px-5 py-4 text-sm text-slate-600">
             <p>
-              System markers are the shared types every space starts with, grouped into the system
-              categories shown above. Most are placed by {{ analystActor() }} from a cited source.
-              Three are populated automatically.
+              System event types are the shared types every space starts with, grouped into the
+              system categories shown above. Most events are placed by {{ analystActor() }} from a
+              cited source. Three are populated automatically.
             </p>
             <p>
               <span class="font-semibold text-slate-900">ct.gov-sourced.</span> For any trial with a
               registered NCT, the product mirrors ct.gov on every sync and writes three Clinical
-              Trial markers:
+              Trial events:
               <span class="font-medium text-slate-800">Trial Start</span>,
               <span class="font-medium text-slate-800">Primary Completion Date (PCD)</span>, and
               <span class="font-medium text-slate-800">Trial End</span>. A date ct.gov reports as
               actual is drawn filled; a date it reports as anticipated is drawn outline (projected).
-              These markers stay live: when ct.gov moves a date, the marker moves with it on the next
+              These events stay live: when ct.gov moves a date, the event moves with it on the next
               sync, so they cannot be edited by hand while the NCT is set.
             </p>
             <p>
               <span class="font-semibold text-slate-900">They define the phase bar.</span> A trial's
-              phase bar runs from its earliest Trial Start marker to its latest Trial End marker (the
-              PCD marker stands in when there is no Trial End). The bar has no dates of its own, so
-              these markers are the bar.
+              phase bar runs from its earliest Trial Start event to its latest Trial End event (the
+              PCD event stands in when there is no Trial End). The bar has no dates of its own, so
+              these events are the bar.
             </p>
           </div>
         </section>
@@ -370,23 +381,23 @@ export class MarkersHelpComponent implements OnInit {
     const actor = this.analystActor();
     return [
       {
-        q: 'Why are some markers outline instead of filled?',
-        a: `Filled markers already happened. Outline markers are projected by ${actor}. Same shape and color, only the fill changes.`,
+        q: 'Why are some glyphs outline instead of filled?',
+        a: `Events that already happened are filled. Projected events are outline, ${actor}'s call on a date still to come. Same shape and color, only the fill changes.`,
       },
       {
-        q: 'Why did a marker switch between filled and outline after I changed a date?',
-        a: 'Fill marks whether an event is actual or projected. For analyst markers it is derived from the date: today or past is actual (filled), future is projected (outline). The trial edit dialog re-derives it every time you change a Trial Start or Trial End date, so a projection you set by hand in the marker editor is overwritten on the next date edit there (your custom title is kept). To hold a projection, set both the date and projection in the marker editor and avoid re-editing that date from the trial dialog. ct.gov-owned dates are exempt: they always follow ct.gov.',
+        q: 'Why did a glyph switch between filled and outline after I changed a date?',
+        a: 'Fill marks whether an event is actual or projected. For analyst events it is derived from the date: today or past is actual (filled), future is projected (outline). The trial edit dialog re-derives it every time you change a Trial Start or Trial End date, so a projection you set by hand in the event form is overwritten on the next date edit there (your custom title is kept). To hold a projection, set both the date and projection in the event form and avoid re-editing that date from the trial dialog. ct.gov-owned dates are exempt: they always follow ct.gov.',
       },
       {
-        q: 'What does a marker with a strike-through line mean?',
-        a: `NLE: no longer expected. The event was projected, but ${actor} no longer expects it to happen (asset shelved, indication dropped, sponsor change). The marker stays so the earlier call is still visible.`,
+        q: 'What does a glyph with a strike-through line mean?',
+        a: `NLE: no longer expected. The event was projected, but ${actor} no longer expects it to happen (asset shelved, indication dropped, sponsor change). The event stays so the earlier call is still visible.`,
       },
       {
         q: 'Why can\'t I edit the Trial Start or Trial End on a trial with an NCT?',
-        a: 'Those markers (and the PCD) are owned by ct.gov whenever a trial has a registered NCT, so they refresh on every sync and direct edits to them are blocked. Removing the NCT releases them to manual ownership. Trials without an NCT are owned by the analyst from the start.',
+        a: 'Those events (and the PCD) are owned by ct.gov whenever a trial has a registered NCT, so they refresh on every sync and direct edits to them are blocked. Removing the NCT releases them to manual ownership. Trials without an NCT are owned by the analyst from the start.',
       },
       {
-        q: 'How do I tell two markers of the same shape apart?',
+        q: 'How do I tell two glyphs of the same shape apart?',
         a: 'The inner mark tells you which variant. Circles: dot = topline, dash = interim, plain = full data. Diamonds: dot = filing, plain = submission, check = acceptance. Squares: x = LOE, plain = generic entry.',
       },
       {

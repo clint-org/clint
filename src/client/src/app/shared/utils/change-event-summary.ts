@@ -166,11 +166,11 @@ export function summaryFor(e: ChangeEvent): string {
         : 'Restored to CT.gov';
     }
     case 'marker_added': {
-      const base = `Marker added${e.marker_title ? `: ${e.marker_title}` : ''}`;
+      const base = `Event added${e.marker_title ? `: ${e.marker_title}` : ''}`;
       return appendMarkerContext(base, e, p);
     }
     case 'marker_removed': {
-      const base = `Marker removed${e.marker_title ? `: ${e.marker_title}` : ''}`;
+      const base = `Event removed${e.marker_title ? `: ${e.marker_title}` : ''}`;
       return appendMarkerContext(base, e, p, 'was');
     }
     case 'marker_updated': {
@@ -179,7 +179,7 @@ export function summaryFor(e: ChangeEvent): string {
         .map((f) => MARKER_FIELD_LABELS[f] ?? f.replace(/_/g, ' '))
         .map((label) => label.charAt(0).toLowerCase() + label.slice(1))
         .join(', ');
-      return fields ? `Marker edited: ${fields}` : 'Marker edited';
+      return fields ? `Event edited: ${fields}` : 'Event edited';
     }
     case 'marker_reclassified': {
       const from = e.from_marker_type_name;
@@ -479,20 +479,20 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
     case 'marker_added': {
       const segments: SummarySegment[] = e.marker_title
         ? [
-            { kind: 'plain', text: 'Marker added: ' },
+            { kind: 'plain', text: 'Event added: ' },
             { kind: 'new', text: e.marker_title },
           ]
-        : [{ kind: 'plain', text: 'Marker added' }];
+        : [{ kind: 'plain', text: 'Event added' }];
       segments.push(...markerContextSegments(e, p));
       return { color, segments };
     }
     case 'marker_removed': {
       const segments: SummarySegment[] = e.marker_title
         ? [
-            { kind: 'plain', text: 'Marker removed: ' },
+            { kind: 'plain', text: 'Event removed: ' },
             { kind: 'old', text: e.marker_title },
           ]
-        : [{ kind: 'plain', text: 'Marker removed' }];
+        : [{ kind: 'plain', text: 'Event removed' }];
       segments.push(...markerContextSegments(e, p, 'was'));
       return { color, segments };
     }
@@ -500,7 +500,7 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
       const changesSegs = renderFieldChanges(p);
       let segments: SummarySegment[];
       if (changesSegs.length > 0) {
-        segments = [{ kind: 'plain', text: 'Marker edited' }, ...changesSegs];
+        segments = [{ kind: 'plain', text: 'Event edited' }, ...changesSegs];
       } else {
         const raw = (p['changed_fields'] as string[] | undefined) ?? [];
         const fields = raw
@@ -509,10 +509,10 @@ export function summarySegmentsFor(e: ChangeEvent): RichSummary {
           .join(', ');
         segments = fields
           ? [
-              { kind: 'plain', text: 'Marker edited: ' },
+              { kind: 'plain', text: 'Event edited: ' },
               { kind: 'plain', text: fields },
             ]
-          : [{ kind: 'plain', text: 'Marker edited' }];
+          : [{ kind: 'plain', text: 'Event edited' }];
       }
       segments.push(...markerContextSegments(e, p));
       return { color, segments };

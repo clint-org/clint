@@ -24,10 +24,6 @@ import { PrimaryIntelligenceService } from '../../core/services/primary-intellig
 import { BrandContextService } from '../../core/services/brand-context.service';
 import { Space } from '../../core/models/space.model';
 import { Tenant } from '../../core/models/tenant.model';
-import { Company } from '../../core/models/company.model';
-import { Marker } from '../../core/models/marker.model';
-import { Trial } from '../../core/models/trial.model';
-import { Asset } from '../../core/models/asset.model';
 import {
   ENTITY_TYPE_LABEL,
   IntelligenceEntityType,
@@ -41,6 +37,7 @@ import {
   SpaceLandingStats,
   UpcomingCatalyst,
 } from './engagement-landing.service';
+import { extractUpcoming, todayIso } from './extract-upcoming';
 import { BriefResult, computeBrief } from './brief-window';
 import { EngagementRouteIds, shouldReloadEngagement } from './engagement-landing.nav';
 import { RecentMaterialsWidgetComponent } from './recent-materials-widget/recent-materials-widget.component';
@@ -604,58 +601,6 @@ function daysFromTodayUtc(eventDateIso: string): number {
   const now = new Date();
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   return Math.floor((event - today) / 86_400_000);
-}
-
-function todayIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate()
-  ).padStart(2, '0')}`;
-}
-
-function addDaysIso(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate()
-  ).padStart(2, '0')}`;
-}
-
-function extractUpcoming(companies: Company[], windowDays: number): UpcomingCatalyst[] {
-  const today = todayIso();
-  const horizon = addDaysIso(windowDays);
-  const out: UpcomingCatalyst[] = [];
-
-  for (const company of companies) {
-    for (const asset of company.assets ?? ([] as Asset[])) {
-      for (const trial of asset.trials ?? ([] as Trial[])) {
-        for (const marker of trial.markers ?? ([] as Marker[])) {
-          if (!marker.event_date) continue;
-          if (marker.event_date < today || marker.event_date > horizon) continue;
-          const mt = marker.marker_types;
-          out.push({
-            marker_id: marker.id,
-            title: marker.title ?? mt?.name ?? 'Event',
-            event_date: marker.event_date,
-            is_projected: marker.is_projected,
-            no_longer_expected: marker.no_longer_expected,
-            category_name: mt?.marker_categories?.name ?? '',
-            marker_type_color: mt?.color ?? '',
-            marker_type_shape: mt?.shape ?? 'circle',
-            marker_type_fill_style: mt?.fill_style ?? 'filled',
-            marker_type_inner_mark: mt?.inner_mark ?? 'none',
-            company_name: company.name,
-            asset_name: asset.name,
-            trial_name: trial.name ?? null,
-            trial_acronym: trial.acronym ?? null,
-          });
-        }
-      }
-    }
-  }
-
-  out.sort((a, b) => a.event_date.localeCompare(b.event_date) || a.title.localeCompare(b.title));
-  return out;
 }
 
 function recentCount(rows: IntelligenceFeedRow[], days: number): number {

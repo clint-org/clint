@@ -266,7 +266,7 @@ if (want('heatmap')) {
     log('FAILED heatmap.png -', e.message);
   }
 }
-await go('/events?source=detected', 'activity.png');
+await go('/activity', 'activity.png');
 
 // 4) Bullseye -- select an asset that owns published primary intelligence
 // (CagriSema) so the asset panel shows its Intelligence section while the chart
@@ -292,54 +292,22 @@ if (want('bullseye')) {
   }
 }
 
-// 5) Catalysts -- select a real catalyst row (opens side panel).
-if (want('catalysts')) {
+// 5) Future Events -- select a real upcoming-event row (opens side panel).
+if (want('future-events')) {
   try {
-    await page.goto(`${BASE}/catalysts`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE}/future-events`, { waitUntil: 'domcontentloaded' });
     await settle(page, 2000);
     await page.locator('tr.cursor-pointer').first().click().catch(() => {});
     await page.waitForTimeout(900);
     await page.mouse.move(900, 8);
     await page.waitForTimeout(600);
-    await shot(page, 'catalysts.png');
+    await shot(page, 'future-events.png');
   } catch (e) {
-    log('FAILED catalysts.png -', e.message);
+    log('FAILED future-events.png -', e.message);
   }
 }
 
-// 6) Events -- select an event that belongs to a thread so the detail pane
-//    renders the "Thread" section (the seeded "Pfizer oral GLP-1 retreat" thread
-//    chains the danuglipron discontinuation -> R&D pivot events).
-if (want('events')) {
-  try {
-    // Filter to source_type=event so the manual events (incl. the seeded
-    // thread) sit on the first page instead of being buried under 2026 markers.
-    await page.goto(`${BASE}/events?source=event`, { waitUntil: 'domcontentloaded' });
-    await settle(page, 2400);
-    // A threaded row carries a "Part of a thread" badge; click its row.
-    const threadRow = page
-      .locator('tbody tr', { has: page.locator('[aria-label="Part of a thread"]') })
-      .first();
-    if (await threadRow.count()) {
-      await threadRow.click().catch(() => {});
-    } else {
-      log('  (no threaded event row found -- falling back to first row)');
-      await page.locator('tbody tr').first().click().catch(() => {});
-    }
-    // Wait for the detail pane's Thread section to render.
-    await page
-      .getByText(/^Thread\b/i)
-      .first()
-      .waitFor({ timeout: 5000 })
-      .catch(() => log('  (Thread section not detected in detail pane)'));
-    await page.waitForTimeout(1000);
-    await shot(page, 'events.png');
-  } catch (e) {
-    log('FAILED events.png -', e.message);
-  }
-}
-
-// 7) Source import -- paste a real article into "From text", run extraction,
+// 6) Source import -- paste a real article into "From text", run extraction,
 //    and capture BOTH the processing stepper and the resolved review (results)
 //    screen, then compose them side by side. The import page is gated by
 //    importGuard (owner/editor + tenant ai_enabled). Extraction logs an ai_call

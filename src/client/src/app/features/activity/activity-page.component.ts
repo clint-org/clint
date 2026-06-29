@@ -121,6 +121,14 @@ export class ActivityPageComponent implements OnInit, OnDestroy {
   protected changeTypeLabel(item: FeedItem): string {
     const t = item.change_event_type;
     if (!t) return '--';
+    // The marker_* change types are internal discriminators; "marker" is retired from
+    // user-facing copy, so they read as "Event ..." (matching the change-summary text).
+    const labels: Record<string, string> = {
+      marker_added: 'Event added',
+      marker_removed: 'Event removed',
+      marker_updated: 'Event edited',
+    };
+    if (labels[t]) return labels[t];
     const spaced = t.replace(/_/g, ' ');
     return spaced.charAt(0).toUpperCase() + spaced.slice(1);
   }
