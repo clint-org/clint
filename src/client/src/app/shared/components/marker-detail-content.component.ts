@@ -378,7 +378,7 @@ interface CtgovProvenanceBlock {
             @for (um of upcomingMarkers(); track um.marker_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(um.marker_id)">
                 <app-marker-icon
-                  class="shrink-0"
+                  class="mt-0.5 shrink-0 self-start"
                   [shape]="um.marker_type_shape"
                   [color]="um.marker_type_color"
                   [size]="12"
@@ -386,7 +386,7 @@ interface CtgovProvenanceBlock {
                   [innerMark]="um.marker_type_inner_mark"
                   [isNle]="um.no_longer_expected"
                 />
-                <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
+                <span class="w-[5.25rem] shrink-0 self-start font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   um.event_date | date: 'mediumDate'
                 }}</span>
                 <span class="flex min-w-0 flex-1 flex-col">
@@ -400,7 +400,7 @@ interface CtgovProvenanceBlock {
                   }
                 </span>
                 @if (um.is_projected) {
-                  <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
+                  <span class="mt-0.5 shrink-0 self-start font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
               </app-detail-panel-entity-row>
             }
@@ -414,7 +414,7 @@ interface CtgovProvenanceBlock {
             @for (rm of recentMarkers(); track rm.marker_id) {
               <app-detail-panel-entity-row (rowClick)="markerClick.emit(rm.marker_id)">
                 <app-marker-icon
-                  class="shrink-0"
+                  class="mt-0.5 shrink-0 self-start"
                   [shape]="rm.marker_type_shape"
                   [color]="rm.marker_type_color"
                   [size]="12"
@@ -422,7 +422,7 @@ interface CtgovProvenanceBlock {
                   [innerMark]="rm.marker_type_inner_mark"
                   [isNle]="rm.no_longer_expected"
                 />
-                <span class="shrink-0 font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
+                <span class="w-[5.25rem] shrink-0 self-start font-mono text-[11px] font-semibold tabular-nums text-slate-500">{{
                   rm.event_date | date: 'mediumDate'
                 }}</span>
                 <span class="flex min-w-0 flex-1 flex-col">
@@ -436,7 +436,7 @@ interface CtgovProvenanceBlock {
                   }
                 </span>
                 @if (rm.is_projected) {
-                  <span class="shrink-0 font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
+                  <span class="mt-0.5 shrink-0 self-start font-mono text-[9px] font-bold uppercase tracking-wider text-amber-600">Projected</span>
                 }
               </app-detail-panel-entity-row>
             }
