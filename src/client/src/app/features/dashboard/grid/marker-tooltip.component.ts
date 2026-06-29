@@ -292,8 +292,8 @@ export class MarkerTooltipComponent implements AfterViewInit {
 
   readonly projectionLabel = computed(() => {
     switch (this.projection()) {
-      case 'stout':
-        return 'Stout estimate';
+      case 'estimate':
+        return 'Estimate';
       case 'company':
         return 'Company guidance';
       case 'primary':

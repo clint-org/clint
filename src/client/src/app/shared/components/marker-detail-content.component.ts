@@ -499,7 +499,7 @@ export class MarkerDetailContentComponent {
   protected readonly statusSource = computed<string | null>(() => {
     const projection = this.detail()?.catalyst.projection;
     const estimateSource: Record<string, string> = {
-      stout: 'Stout estimate',
+      estimate: 'Estimate',
       company: 'Company guidance',
       primary: 'Primary source estimate',
     };

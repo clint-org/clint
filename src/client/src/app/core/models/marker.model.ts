@@ -41,7 +41,7 @@ export interface MarkerType {
   marker_categories?: MarkerCategory;
 }
 
-export type Projection = 'stout' | 'company' | 'primary' | 'actual';
+export type Projection = 'estimate' | 'company' | 'primary' | 'actual';
 
 export interface Marker {
   id: string;
