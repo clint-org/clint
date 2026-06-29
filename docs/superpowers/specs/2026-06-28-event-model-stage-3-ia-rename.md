@@ -10,6 +10,38 @@ consumer/producer cutover
 is the IA/terminology layer explicitly scoped OUT of the cutover (cutover plan, line 7
 and Self-Review notes).
 
+## Refinement changelog (2026-06-29)
+
+This pass folds in three decisions locked with the user and reconciles the spec
+against what the consumer/producer cutover actually shipped (verified against the
+committed migrations, not assumptions):
+
+- **D1 - Sources (authoring + rendering).** The cutover delivered the sources *data
+  contract* (`event_sources` table, `create_event(p_sources jsonb)`,
+  `update_event_sources`, the derived CT.gov registry link). Stage 3 designs the
+  multi-source *authoring repeater* and the *display*: a stacked labeled list in the
+  detail panel with the registry link as a separate affordance, and a primary-source
+  + "+N" treatment on compact surfaces. See Sections 3.2 and 3.6. Null source labels
+  fall back to the URL host.
+- **D2 - Taxonomy name-uniqueness.** The new `event_types` / `event_type_categories`
+  tables shipped with only a pkey (no `unique(space_id, name)`). Stage 3 now carries a
+  small migration restoring `unique(space_id, name)` + a partial system-row unique
+  index on both tables, delivered alongside the taxonomy admin. See Section 4. Stage 3
+  already carried the thin `get_event_detail` RPC-rename migration; D2 adds the
+  uniqueness constraints to that migration surface (Non-goals + drift gates updated).
+- **D3 - Vocabulary/route lock.** Provenance values are
+  `actual > company > primary > forecasted` (the projection tier was renamed
+  `stout -> estimate -> forecasted`; the cutover shipped `forecasted`). Significance is
+  `high` / `low`. Routes `/future-events`, `/activity`, `/intelligence` with the
+  "Intelligence" sidebar group holding Activity + Intelligence Feed. "Catalyst" retired.
+- **Reconciliation.** `primary_intelligence_links.entity_type` already writes `'event'`
+  (no `'marker'` rename rows remain). `update_event_links` / `get_event_thread` are
+  retired machinery (the `update_event_links` fn still references the dropped
+  `event_links` table). The two change-log paths differ: `update_event` writes the
+  analyst `trial_change_events` (Activity) row; the `_log_event_change` trigger writes
+  `event_changes` (per-event audit), not `trial_change_events`. Help pages point at the
+  existing `docs/runbook/features/glossary.md` rather than duplicate it.
+
 ## Context
 
 The cutover repoints every DB function and frontend service onto the unified `events` /
@@ -53,7 +85,11 @@ labels, so we rename on merit per the parent spec's locked vocabulary.
 - **Pairwise event-to-event links** are dropped (subsumed by threads).
 - The **sources data model** (`event_sources` re-introduction, derived CT.gov registry
   link, `source_url` drop) is delivered by the cutover, not Stage 3. Stage 3's merged
-  form *consumes* that contract (`create_event` sources param, `update_event_sources`).
+  form *consumes* that contract (`create_event` sources param, `update_event_sources`)
+  and owns the authoring repeater + the display rendering (Sections 3.2, 3.6).
+- This stage is **UI plus one small migration** (D2: the taxonomy name-uniqueness
+  constraints, Section 4) plus the thin `get_catalyst_detail -> get_event_detail` RPC
+  rename (Section 1.4). It does not otherwise touch the data model; the cutover owns that.
 - The **Stage 5 deck + glossary** sweep (`stout-intro.html`, the runbook glossary) is
   separate. Stage 3 updates only the help pages and runbook prose it directly touches.
 - No new timeline rendering behavior (that is the parent spec / cutover); Stage 3 only
@@ -61,11 +97,14 @@ labels, so we rename on merit per the parent spec's locked vocabulary.
 
 ## Dependency note (sources)
 
-The merged form's multi-source control depends on the cutover having landed
-`event_sources` + `create_event(p_sources ...)` + `update_event_sources`. If those are not
-yet in place when Stage 3 begins, the form ships with a single-source field behind a flag
-and the multi-source repeater is enabled when the contract exists. The CT.gov registry
-link is derived (never an editable source row).
+The merged form's multi-source control depends on the cutover's sources contract, which
+**has shipped** (verified 2026-06-29 against the committed migrations): the `event_sources`
+table (`url NOT NULL`, `label NULL`, `sort_order`, FK to `events` on cascade),
+`create_event(p_sources jsonb)`, `update_event_sources` (replace-all), and the derived
+registry link (`event_registry_url` SQL / `ctgovRegistryUrl` TS). The earlier single-source
+fallback flag is therefore moot - Stage 3 builds the multi-source repeater directly
+(Section 3.2) and the display rules (Section 3.6). The CT.gov registry link is derived
+(never an editable source row).
 
 ---
 
@@ -74,6 +113,13 @@ link is derived (never an editable source row).
 The authoritative list of surfaces to rename. Grouped by kind. File:line are from the
 `develop` baseline (the cutover does not change these user-facing strings, so they remain
 accurate at Stage 3 start; re-confirm with the guard grep at implementation).
+
+**Reconciliation note (entity_type):** the cutover already migrated
+`primary_intelligence_links.entity_type` from `'marker'` to `'event'` and repointed the
+linked-entities picker to write `'event'`. This inventory therefore carries **no**
+`'marker'` entity_type rename rows; do not re-add them. The only `'catalyst'`/`'marker'`
+*literals* left to change are user-facing copy + the palette/result entity-type display
+map (Section 1.6), not the `primary_intelligence_links` data column.
 
 ### 1.1 Routes (app.routes.ts) and redirects
 
@@ -173,6 +219,15 @@ forms the rename guard historically missed (see the guard method, Section 5):
 - Extend `.claude/hooks/runbook-review-guard.sh` `helpRules` so changes to `event_types` /
   `event_type_categories` / the merged form flag the right help page; keep the existing
   `marker_types` pattern matching during the transition.
+- **Point at the glossary, do not duplicate it.** The canonical term definitions
+  (Event / Marker / Intelligence / Activity) already live at
+  `docs/runbook/features/glossary.md` (created by the cutover). Help-page copy and the
+  Stage 5 deck link to it rather than restating definitions, so there is one source of
+  truth. (Reconciliation note: the glossary's own field-level details have drift -
+  e.g. it lists `is_projected` / `date_end` / `source_type` and significance
+  `high/medium/low/none`, whereas the shipped model uses `projection` / `end_date` and
+  significance `high/low`. Correcting the glossary belongs to the Stage 5 glossary
+  sweep, not Stage 3; flagged in Section 9.)
 
 ---
 
@@ -190,8 +245,15 @@ Stage 3 splits this by job:
   (future-date ascending), and the **timeline**. Discovery of "all events for entity X"
   is the entity's **profile page** plus the feed's type/entity **filter chips**.
 - **Detected changes** become the **Activity** page at `/activity` (read-only): CT.gov
-  diffs + event edit history, sourced from `get_activity_feed`. The
-  `activityRedirectGuard` is retired; `/activity` renders the page directly.
+  diffs + analyst event-edit history, sourced from `get_activity_feed` over the
+  **`trial_change_events`** table. The `activityRedirectGuard` is retired; `/activity`
+  renders the page directly.
+  - **Two change logs, do not conflate them.** `trial_change_events` (what Activity
+    shows) is fed by CT.gov sync diffs and by the `update_event` RPC, which writes an
+    Activity row capturing the pre-edit date/anchor on each analyst edit. The separate
+    `event_changes` table is the per-event append-only audit log written by the
+    `_log_event_change` trigger on every INSERT/UPDATE/DELETE; it is **not** surfaced on
+    Activity and is **not** `trial_change_events`. Activity must not read `event_changes`.
 
 **What the old page provided that needs a home:**
 - *Search/filter over authored events* -> the feed's filter chips + per-entity profile
@@ -238,13 +300,13 @@ One event, **one anchor** (no multi-trial fan-out; the old marker multi-trial
 | Extent | select | drives `end_date` + `is_ongoing` | `point` (no end), `until` (bounded end), `onwards` (`is_ongoing=true`) |
 | End date | date/period | `end_date` | when Extent=`until` |
 | End precision | select | `end_date_precision` | when Extent=`until` |
-| Provenance | select | `projection` | `actual/company/primary/stout` (unchanged enum) |
+| Provenance | select | `projection` | `actual/company/primary/forecasted` (the cutover renamed the projection tier `stout -> estimate -> forecasted`; label the option "Forecasted"). Display/sort order: `actual > company > primary > forecasted`. |
 | Significance | select (Default / High / Low) | `significance` (null = inherit type default) | the event override; "Default" stores null |
 | Visibility | segmented (Default / Pinned / Hidden) | `visibility` | manual timeline override (null/pinned/hidden) |
 | No longer expected | toggle | `no_longer_expected` | for superseded forward-looking events |
 | Regulatory pathway | select (conditional) | `metadata.pathway` | only for regulatory-submission types (carried from the marker form) |
 | Description | textarea | `description` | optional |
-| Sources | repeater of (URL, label) | `event_sources` rows | multi-source; via `create_event(p_sources)` / `update_event_sources` (cutover contract). The derived CT.gov registry link renders alongside, read-only, when anchored to a trial with an NCT id. |
+| Sources | repeater of `{url, label}` rows | `event_sources` rows | multi-source; via `create_event(p_sources)` / `update_event_sources` (cutover contract). **URL required, label optional** (the table is `url NOT NULL`, `label NULL`). Row order maps to `sort_order` (drag-reorder or add-order); the first row is the primary source. The derived CT.gov registry link renders alongside, read-only, when anchored to a trial with an NCT id (it is never an editable source row). Display rules in Section 3.6. |
 | Tags | autocomplete chips | `metadata.tags` | optional; folded into `metadata` (the old standalone tags column is not in the unified schema) |
 
 **Dropped from the old forms (intentional):**
@@ -276,10 +338,39 @@ Edit/delete move onto the surfaces that survive the Events-page retirement:
 
 ### 3.5 Save path
 
-- Create -> `create_event` (with `p_sources` when the cutover contract exists).
-- Edit -> `update_event` + `update_event_sources`.
+- Create -> `create_event` (with `p_sources` carrying the repeater rows).
+- Edit -> `update_event` + `update_event_sources` (replace-all on the source set).
 - Audit fields (`created_by/updated_by/timestamps`) are server-side only (DB triggers),
   never client-supplied.
+- **Change-log side effects (do not double-count).** `update_event` is what writes the
+  analyst **`trial_change_events`** row (the Activity surface), capturing the old
+  date/anchor before the edit. Separately, the `_log_event_change` trigger writes
+  **`event_changes`** (the per-event append-only audit log) on every INSERT/UPDATE/DELETE
+  and does **not** write `trial_change_events`. The form does not write either table
+  directly; both are server-side. Section 2 (Activity) reads `trial_change_events`, not
+  `event_changes`.
+
+### 3.6 Sources rendering (detail panel, feed, timeline)
+
+The cutover shipped the data: `event_sources` rows (`url NOT NULL`, `label NULL`,
+`sort_order`) plus a derived CT.gov registry link (`event_registry_url` in SQL /
+`ctgovRegistryUrl` in TypeScript, never stored). Stage 3 designs how they render.
+
+- **Detail panel (feed item detail + timeline detail panel): stacked labeled list.**
+  One row per citation in `sort_order`, each row = the source label + an external-link
+  affordance (opens in a new tab, `rel="noopener"`). When `label` is null, fall back to
+  the URL **host** (e.g. `clinicaltrials.gov`, `fda.gov`) as the row text. The derived
+  CT.gov registry link renders as a **separate, distinct affordance** under its own
+  "Registry" heading, not folded into the citations list (it is a registry pointer, not
+  a citation). When there are zero `event_sources` rows and no registry link, omit the
+  block entirely.
+- **Compact surfaces (timeline marker tooltip, feed row): primary source only.** Show
+  the first `event_sources` row by `sort_order` (host fallback for a null label), plus a
+  non-interactive "+N" count of the remaining sources. The registry link is not shown on
+  compact surfaces; it appears on detail open. Clicking through to the detail panel is
+  how a reader reaches the full list.
+- **a11y:** each external-link affordance carries an accessible name ("Open source: <label
+  or host> (opens in new tab)"); the "+N" is decorative text, not a control.
 
 ---
 
@@ -299,11 +390,13 @@ table + row-actions + form-dialog pattern; the two new tabs adopt it.
 ### 4.2 Event Categories tab
 
 Manages `event_type_categories` (system + space-custom):
-- Columns: Name, Event-type count, Default significance (if modeled at category level),
-  Origin (System / Custom).
-- Form: Name, display order, default significance.
+- Columns: Name, Event-type count, Origin (System / Custom). No default-significance
+  column - the shipped table does not model it at category level (Section 9, item 3).
+- Form: Name, display order. (Default significance lives on `event_types`, not here.)
 - CRUD against `event_type_categories` (direct supabase `.from()`, mirroring the marker
   services), preserving the `is_system` / `space_id` read-only locking for system rows.
+- Name uniqueness enforced by the D2 migration (Section 4.5); the dialog surfaces the
+  friendly duplicate-name error.
 
 ### 4.3 Event Types tab (the richer tab)
 
@@ -312,6 +405,9 @@ Manages `event_types` (system + space-custom):
 - Form: Name, Category (select), Shape, Fill, Color, Inner mark, Default significance,
   Display order; live glyph preview (the marker-type form's SVG preview, reused).
 - System types are read-only (UI guard, not only the service query).
+- Name uniqueness enforced by the D2 migration (Section 4.5): a space-custom type may
+  reuse a system type's name but not another custom type's name in the same space; the
+  dialog surfaces the friendly duplicate-name error.
 
 ### 4.4 Cross-cutting for the merge
 
@@ -326,6 +422,42 @@ Manages `event_types` (system + space-custom):
   Taxonomies route's guard. Confirm parity (editor+).
 - **Redirects**: `/settings/marker-types` and `/settings/marker-categories` redirect to
   the new tabs (Section 1.1).
+
+### 4.5 Name uniqueness (D2 migration)
+
+The cutover created `event_types` and `event_type_categories` with **only a primary
+key** - it dropped the `unique(space_id, name)` constraint and the system-row partial
+unique index that the old `marker_types` / `event_categories` carried. Until now nothing
+let a user create a space-custom type, so the gap was latent. The Stage 3 taxonomy admin
+is the first surface that does, so Stage 3 restores the constraints **in the same
+migration** that does the `get_event_detail` RPC rename (or an adjacent one in the stage).
+
+On **both** `event_types` and `event_type_categories`:
+
+```sql
+-- space-scoped uniqueness (NULLs are distinct, so this does NOT dedup system rows)
+alter table public.event_types
+  add constraint event_types_space_name_key unique (space_id, name);
+-- system rows live at space_id IS NULL; a partial unique index dedups them
+create unique index event_types_system_name_key
+  on public.event_types (name) where space_id is null;
+```
+
+(and the symmetric pair on `event_type_categories`). Model reminder: `event_types` is
+two-tier - **system** types (`space_id IS NULL`; the 12 shared seeded defaults, global to
+every space) and **space-custom** types (`space_id` set; private to one space). A
+space-custom type **may** reuse a system type's name (different `space_id`), but no two
+custom types within a space, and no two system types, may share a name. Same model for
+the 10 system categories.
+
+**Admin UI:** the Event Types / Event Categories create+edit dialogs catch the unique
+violation (Postgres error `23505`) and surface a friendly inline duplicate-name error
+("An event type named "X" already exists in this space"), not a raw DB error. Validate
+optimistically on blur where cheap, but the DB constraint is the source of truth.
+
+**Drift gates:** this migration is covered by `migrations:check-redefs` and
+`supabase db advisors` (Section 7); the two new constraints/indexes are additive and do
+not change any RLS surface.
 
 ---
 
@@ -365,10 +497,12 @@ a one-time grep.
 | S7 | Edit/delete from surviving surfaces | Editor edits/deletes an event from the feed item detail and the timeline detail panel; viewer sees read-only | unit + e2e |
 | S8 | Merged form: fuzzy + extent | Create an event with `date_precision=quarter`, Extent=`until` + end precision; persists correctly; validation blocks end < start | unit + integration |
 | S9 | Merged form: significance/visibility override | "Default" stores null (inherits type); "Pinned"/"Hidden" set `visibility`; reflected on the timeline | unit + integration |
-| S10 | Merged form: multi-source | Add two labeled sources; persisted to `event_sources`; CT.gov registry link shown read-only for a trial-anchored event | integration + e2e |
+| S10 | Merged form: multi-source | Add two labeled sources; persisted to `event_sources` in `sort_order`; CT.gov registry link shown read-only for a trial-anchored event | integration + e2e |
+| S10b | Sources rendering | Detail panel shows the stacked labeled list (a label-less source falls back to its URL host) with the CT.gov registry link as a separate affordance; the timeline tooltip / feed row show the primary source + "+N" only | unit + e2e |
 | S11 | Merged form: CT.gov lock | A CT.gov-owned event opens read-only with the explanatory message; no save | unit + e2e |
 | S12 | Taxonomy: Event Types tab | List shows system + custom with glyph preview; create a custom type with shape/color/inner-mark; system rows read-only | integration + e2e |
 | S13 | Taxonomy: Event Categories tab | CRUD a custom category; system categories read-only; delete blocked when types reference it | integration + e2e |
+| S13b | Taxonomy: name uniqueness (D2) | A custom type/category may reuse a system name but a duplicate custom name in the same space is rejected with the friendly error; the unique constraint + system-row partial index exist | integration + unit |
 | S14 | Taxonomy redirects | `/settings/marker-types` and `/settings/marker-categories` land on the right tab | unit + e2e |
 | S15 | Drift gates | `features:check`, `grants:check`, advisors, `docs:arch`, `migrations:check-redefs` all green; full unit/integration suite green | CI |
 | S16 | a11y | Merged form + new tabs: keyboard nav, focus trap, Escape-to-close, ARIA labels, aria-live on save (WCAG AA) | manual + axe |
@@ -458,15 +592,37 @@ produce an unnamed graph that is hard to render as a story. Threads subsume "see
 **Authoring:** a "Thread" select (+ "new thread") in the merged Event form, enabled when
 the follow-up ships.
 
+**Reconciliation flag (retired machinery).** The cutover **dropped** the `event_links`
+and `event_threads` tables and considers `update_event_links` / `get_event_thread`
+retired. But the `update_event_links` RPC is still defined (migration
+`20260528130100_update_event_links_rpc.sql`) and now references the dropped `event_links`
+table - it would error `42P01` if called. The threads follow-up therefore is **not**
+"re-enable existing machinery": it must (a) re-create an `event_threads` table with a
+`thread_id` on `events` per the lean model above, and (b) either fix or drop the stale
+`update_event_links` fn (pairwise links are dropped, so dropping it is the cleaner path).
+The follow-up plan owns this; flagged here so it is not assumed working.
+
 ---
 
-## Open items to confirm
+## 9. Open items to confirm
 
 1. **`get_catalyst_detail` rename vs keep:** recommended rename to `get_event_detail`
    (consistency); the alternative keeps the RPC name and renames only the service to
    minimize a migration. (Spec assumes rename.)
 2. **All-authored-events export:** dropped in v1 (Future Events keeps its export). Confirm
    no analyst workflow depends on exporting the full authored-event set.
-3. **Category-level default significance:** whether default significance is modeled on
-   `event_type_categories` as well as `event_types` (affects the Event Categories tab
-   form). Confirm against the Stage 1 schema.
+3. **Category-level default significance:** ~~whether default significance is modeled on
+   `event_type_categories`~~ **Resolved (2026-06-29):** the shipped `event_type_categories`
+   table has **no** `default_significance` column (only `id, space_id, name,
+   display_order, is_system` + audit fields). Default significance lives on `event_types`
+   only. The Event Categories tab form therefore drops the default-significance field
+   (Section 4.2 updated); revisit only if a future migration adds a category-level default.
+4. **Glossary field-level drift (Stage 5):** `docs/runbook/features/glossary.md` describes
+   the events row with pre-cutover column names (`is_projected` / `is_pinned` / `date_end`
+   / `source_type`) and significance `high/medium/low/none`; the shipped model uses
+   `projection` / `visibility` / `end_date` and significance `high/low`. Stage 3 points
+   help pages at the glossary but does not rewrite it; the correction is part of the Stage 5
+   glossary/deck sweep. Flagged so the pointer is not assumed field-accurate.
+5. **`get_key_catalysts` (glossary lists it as a key RPC):** per the cutover it is dead
+   (no caller); Section 1.4 drops it from `features:check`. The glossary's "Key RPCs" list
+   still names it - another Stage 5 glossary correction, not Stage 3.

@@ -52,9 +52,9 @@ describe('CatalystService.getCatalystDetail', () => {
 
     expect(get).toHaveBeenCalledTimes(1);
     const [rpcName, params, opts] = get.mock.calls[0];
-    expect(rpcName).toBe('get_catalyst_detail');
+    expect(rpcName).toBe('get_event_detail');
     expect(params).toEqual({ markerId: 'marker-1' });
-    expect(opts.tags).toEqual(['catalyst:marker-1:detail']);
+    expect(opts.tags).toEqual(['event:marker-1:detail']);
     expect(opts.ttl).toEqual({ fresh: 30 * 1000, stale: 5 * 60 * 1000 });
   });
 
@@ -70,7 +70,7 @@ describe('CatalystService.getCatalystDetail', () => {
 
     const result = await service.getCatalystDetail('marker-2');
 
-    expect(rpc).toHaveBeenCalledWith('get_catalyst_detail', { p_marker_id: 'marker-2' });
+    expect(rpc).toHaveBeenCalledWith('get_event_detail', { p_event_id: 'marker-2' });
     expect(result).toEqual({ id: 'marker-2' });
   });
 

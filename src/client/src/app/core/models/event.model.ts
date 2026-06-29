@@ -1,14 +1,3 @@
-export interface EventCategory {
-  id: string;
-  space_id: string | null;
-  name: string;
-  display_order: number;
-  is_system: boolean;
-  created_by: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface EventThread {
   id: string;
   space_id: string;
@@ -174,6 +163,12 @@ export interface EventDetail {
   company_id: string | null;
   asset_id: string | null;
   sources: { id: string; url: string; label: string | null }[];
+  /**
+   * Derived ClinicalTrials.gov registry link for a trial-anchored event
+   * (event_registry_url over the anchor trial's identifier). Null otherwise.
+   * Surfaced as a separate affordance from the attached citations.
+   */
+  registry_url: string | null;
   thread: {
     id: string;
     title: string;
