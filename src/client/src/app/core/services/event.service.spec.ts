@@ -491,6 +491,7 @@ describe('EventService.createEvent (unified)', () => {
       p_description: null,
       p_significance: null,
       p_visibility: null,
+      p_metadata: null,
       p_sources: [{ url: 'https://a.test', label: 'A' }],
     });
 
@@ -504,7 +505,36 @@ describe('EventService.createEvent (unified)', () => {
       p_projection: 'forecasted',
       p_sources: [{ url: 'https://a.test', label: 'A' }],
     });
+    // null metadata is omitted so create works before the create_event metadata param lands
+    expect(params).not.toHaveProperty('p_metadata');
     expect(invalidateTags).toHaveBeenCalledWith(['space:space-1:events', 'space:space-1:tags']);
+  });
+
+  it('passes p_metadata through when provided', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult('id2'));
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags: vi.fn() }
+    );
+    await service.createEvent('space-1', {
+      p_event_type_id: 'et-1',
+      p_title: 'T',
+      p_event_date: '2026-01-01',
+      p_anchor_type: 'space',
+      p_anchor_id: null,
+      p_projection: 'actual',
+      p_date_precision: 'exact',
+      p_end_date: null,
+      p_end_date_precision: 'exact',
+      p_is_ongoing: false,
+      p_description: null,
+      p_significance: null,
+      p_visibility: null,
+      p_metadata: { tags: ['a'] },
+      p_sources: null,
+    });
+    const [, params] = rpc.mock.calls[0];
+    expect(params.p_metadata).toEqual({ tags: ['a'] });
   });
 });
 
@@ -531,6 +561,7 @@ describe('EventService.updateEvent (unified)', () => {
       p_description: null,
       p_significance: 'high',
       p_visibility: null,
+      p_metadata: null,
       p_no_longer_expected: false,
     });
 

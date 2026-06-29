@@ -177,9 +177,10 @@ export class EventService {
    * Replaces the legacy create() (category_id/priority/company_id shape) once the old form is removed.
    */
   async createEvent(spaceId: string, args: CreateEventArgs): Promise<string> {
-    const { data: newId } = await this.supabase.client
-      .rpc('create_event', { p_space_id: spaceId, ...args })
-      .throwOnError();
+    const params: Record<string, unknown> = { p_space_id: spaceId, ...args };
+    // Omit p_metadata when empty so create works before the create_event metadata param lands.
+    if (params['p_metadata'] == null) delete params['p_metadata'];
+    const { data: newId } = await this.supabase.client.rpc('create_event', params).throwOnError();
     this.cache.invalidateTags([`space:${spaceId}:events`, `space:${spaceId}:tags`]);
     return newId as string;
   }
