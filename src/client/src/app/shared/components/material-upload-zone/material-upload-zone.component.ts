@@ -245,7 +245,7 @@ export class MaterialUploadZoneComponent {
   // we mirror the chips back into pickerLinks() so the picker keeps them.
   protected readonly pickerLinks = signal<
     {
-      entity_type: 'trial' | 'marker' | 'company' | 'product';
+      entity_type: 'trial' | 'event' | 'company' | 'product';
       entity_id: string;
       relationship_type: string;
       gloss: string | null;
@@ -355,12 +355,12 @@ export class MaterialUploadZoneComponent {
 
     const filenameWithoutExt = file.name.replace(/\.[^.]+$/, '');
 
-    // Pre-select the current entity in the picker, unless it is space- or
-    // event-level. The picker is shared with primary-intelligence authoring and
-    // only renders the PI link types (trial/marker/company/asset); space and
-    // event anchors are force-added as links at upload time instead (below).
+    // Pre-select the current entity in the picker, unless it is space-, event-,
+    // or marker-level. The picker is shared with primary-intelligence authoring and
+    // only renders the PI link types (trial/event/company/asset); space, event,
+    // and marker anchors are force-added as links at upload time instead (below).
     const initialPickerLinks: {
-      entity_type: 'trial' | 'marker' | 'company' | 'product';
+      entity_type: 'trial' | 'event' | 'company' | 'product';
       entity_id: string;
       relationship_type: string;
       gloss: string | null;
@@ -368,7 +368,7 @@ export class MaterialUploadZoneComponent {
     }[] = [];
     const eType = this.entityType();
     const eId = this.entityId();
-    if (eType !== 'space' && eType !== 'event') {
+    if (eType !== 'space' && eType !== 'event' && eType !== 'marker') {
       initialPickerLinks.push({
         entity_type: eType,
         entity_id: eId,
@@ -387,7 +387,7 @@ export class MaterialUploadZoneComponent {
 
   protected onPickerChange(
     next: {
-      entity_type: 'trial' | 'marker' | 'company' | 'product';
+      entity_type: 'trial' | 'event' | 'company' | 'product';
       entity_id: string;
       relationship_type: string;
       gloss: string | null;

@@ -14,7 +14,7 @@
 
 export type IntelligenceEntityType = 'trial' | 'company' | 'product' | 'space';
 
-export type IntelligenceLinkEntityType = 'trial' | 'marker' | 'company' | 'product';
+export type IntelligenceLinkEntityType = 'trial' | 'event' | 'company' | 'product';
 
 export type IntelligenceState = 'draft' | 'published' | 'archived' | 'withdrawn';
 
@@ -41,7 +41,7 @@ export interface PrimaryIntelligenceLink {
   id?: string;
   entity_type: IntelligenceLinkEntityType;
   entity_id: string;
-  /** Resolved name from the linked entity (trials.name, markers.title, etc.). Null if the row was deleted. */
+  /** Resolved name from the linked entity (trials.name, events.title, etc.). Null if the row was deleted. */
   entity_name?: string | null;
   relationship_type: string;
   gloss: string | null;
@@ -168,7 +168,7 @@ export const ENTITY_TYPE_LABEL: Record<
   string
 > = {
   trial: 'Trial',
-  marker: 'Marker',
+  event: 'Event',
   company: 'Company',
   product: 'Asset',
   space: 'Space',

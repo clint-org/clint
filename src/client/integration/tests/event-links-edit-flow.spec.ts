@@ -133,7 +133,11 @@ async function linkExists(sourceId: string, targetId: string): Promise<boolean> 
   return data !== null;
 }
 
-describe('update_event_links RPC', () => {
+// Stage-3 skip: event_links table and update_event_links RPC are dropped/retired as of
+// the event-model cutover. The event-links feature returns in Stage 3 (IA rename +
+// merged event form). Reinstate this spec at that point.
+// See docs/superpowers/specs/2026-06-28-event-model-stage-3-ia-rename.md
+describe.skip('update_event_links RPC', () => {
   it('replaces the sole outgoing link with a new target', async () => {
     const src = await createEvent('links-swap-src');
     const tgtA = await createEvent('links-swap-tgt-a');
