@@ -50,10 +50,13 @@ const ET_TOPLINE = 'a0000000-0000-0000-0000-000000000013';
 const ET_APPROVAL = 'a0000000-0000-0000-0000-000000000035';
 const CLINICAL_EVENT_TYPES = new Set([ET_TRIAL_START, ET_PCD, ET_TOPLINE, ET_APPROVAL]);
 
-// The two multi-source demo business events emitted by _seed_demo_events (C5).
-const DEMO_MULTISOURCE_TITLES = [
-  'BridgeBio Attruby commercial launch',
-  'Lilly Mounjaro/Zepbound combined annual revenue exceeds $15B',
+// The two multi-source demo business events emitted by _seed_demo_events, with the
+// row each one anchors to. The Attruby commercial launch is a Distribution (hexagon)
+// event and anchors to the Attruby asset lane; the Lilly revenue event stays
+// company-anchored.
+const DEMO_MULTISOURCE_EVENTS = [
+  { title: 'BridgeBio Attruby commercial launch', anchorType: 'asset' },
+  { title: 'Lilly Mounjaro/Zepbound combined annual revenue exceeds $15B', anchorType: 'company' },
 ];
 
 interface DashEvent {
@@ -193,7 +196,7 @@ describe('seed_demo_data producer emits the unified event model', () => {
   });
 
   it('sources: the two multi-source business events each carry exactly 2 event_sources', async () => {
-    for (const title of DEMO_MULTISOURCE_TITLES) {
+    for (const { title, anchorType } of DEMO_MULTISOURCE_EVENTS) {
       const { data: ev, error: evErr } = await admin
         .from('events')
         .select('id, anchor_type')
@@ -201,7 +204,7 @@ describe('seed_demo_data producer emits the unified event model', () => {
         .eq('title', title)
         .single();
       expect(evErr, `business event "${title}" must exist`).toBeNull();
-      expect((ev as { anchor_type: string }).anchor_type).toBe('company');
+      expect((ev as { anchor_type: string }).anchor_type).toBe(anchorType);
 
       const { data: sources, error: srcErr } = await admin
         .from('event_sources')
