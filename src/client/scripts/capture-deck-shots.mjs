@@ -428,14 +428,16 @@ if (want('command-palette')) {
 //    (Handled below alongside the other trial-detail shots, since it needs the
 //    NCT->trial resolver.)
 
-// 10) Trial detail: two pinned trials, resolved by NCT so reseeds (which
-//     regenerate UUIDs) keep working.
-//       intelligence   -> ATTRibute-CM (NCT03860935): published intelligence +
-//                         CT.gov-synced -> rich #primary-intelligence note.
+// 10) Trial detail: pinned trials, resolved by NCT so reseeds (which regenerate
+//     UUIDs) keep working.
+//       intelligence   -> SUMMIT (NCT04847557): the richest read surface in the
+//                         demo -- TWO published reads (one LEAD/pinned) + several
+//                         linked materials; run with SYNC=1 so the CT.gov panel
+//                         is populated too.
 //       trial-detail    -> REDEFINE-2 (NCT05394519): seeded trial-scoped events,
-//                         referenced-in a published read, activity, markers ->
-//                         every section of #markers and below is populated.
-const ATTRIBUTE_CM_NCT = 'NCT03860935';
+//                         referenced-in a published read, activity, events ->
+//                         every section of #events and below is populated.
+const SUMMIT_NCT = 'NCT04847557'; // SUMMIT -- 2 published reads (one lead) + materials
 const REDEFINE_2_NCT = 'NCT05394519';
 const MATERIALS_NCT = 'NCT04847557'; // SUMMIT -- a trial with several linked materials
 
@@ -482,7 +484,7 @@ async function syncTrialCtgov(trialId) {
 let intelTrialId = process.env['INTEL_TRIAL_ID'] || null;
 let detailTrialId = process.env['DETAIL_TRIAL_ID'] || null;
 if (want('intelligence') && !intelTrialId) {
-  intelTrialId = await resolveTrialIdByNct(ATTRIBUTE_CM_NCT).catch(() => null);
+  intelTrialId = await resolveTrialIdByNct(SUMMIT_NCT).catch(() => null);
 }
 if (want('trial-detail') && !detailTrialId) {
   detailTrialId = await resolveTrialIdByNct(REDEFINE_2_NCT).catch(() => null);

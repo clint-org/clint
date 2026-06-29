@@ -862,7 +862,7 @@
         right: calc(33.333% - 35px);
         height: 2px;
         z-index: 0;
-        background: linear-gradient(to right, var(--brand-600), var(--slate-200));
+        background: linear-gradient(to right, var(--brand-700), var(--brand-300));
         -webkit-mask-image: repeating-linear-gradient(to right, #000 0 6px, transparent 6px 13px);
         mask-image: repeating-linear-gradient(to right, #000 0 6px, transparent 6px 13px);
       }
@@ -955,11 +955,8 @@
      its own dashed line below the near-term track, so it reads as a parallel
      timeline that continues past the three near-term steps. */
       .roadmap.horizon {
-        margin-top: 24px;
+        margin-top: 26px;
         padding-top: 18px;
-      }
-      .roadmap.horizon .roadmap-line {
-        right: 8px;
       }
       .roadmap.horizon .roadmap-grid {
         grid-template-columns: 1fr;
@@ -972,6 +969,48 @@
       }
       .roadmap.horizon .rm-stage p {
         font-size: 14px;
+      }
+      /* Looping track: the near-term line runs through the three nodes, turns the
+     corner on the right, and comes back left into the horizon node, so the whole
+     thing reads as one continuous path that loops around rather than two separate
+     rows. Tuned for the desktop slide; the dashed line is hidden on mobile, where
+     the roadmap stacks. */
+      .roadmap-loop {
+        position: relative;
+      }
+      .roadmap-loop .loop-top {
+        right: 32px;
+      }
+      .roadmap-loop .loop-top::after {
+        display: none;
+      }
+      /* The corner is an SVG so its dashes match the line rhythm (6/7) and the
+     turn is a smooth rounded U rather than a boxy CSS-border bracket. */
+      .roadmap-loop .loop-turn {
+        position: absolute;
+        right: 8px;
+        top: 28px;
+        width: 24px;
+        height: 236px;
+        z-index: 0;
+        overflow: visible;
+      }
+      .roadmap-loop .loop-bottom {
+        left: 35px;
+        right: 32px;
+      }
+      .roadmap-loop .loop-bottom::after {
+        left: -2px;
+        right: auto;
+        border-top: 0;
+        border-right: 0;
+        border-bottom: 2px solid var(--slate-300);
+        border-left: 2px solid var(--slate-300);
+      }
+      @media (max-width: 768px) {
+        .roadmap-loop .loop-turn {
+          display: none;
+        }
       }
       /* Slide 5 (what changes): a before/after shift table. Each row is one
      dimension of the engagement. The "Without Clint" column recedes in muted
@@ -1685,7 +1724,7 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/intelligence.png?v=cb9eb40d2b"
+                    src="img/intelligence.png?v=a02d23c5d8"
                     alt="Primary intelligence on a trial: a published read with its author and the entities it links to, plus a full version history of how it changed. Analysts write it inline and publish under the agency's name."
                   />
                 </button>
@@ -1884,9 +1923,26 @@
             roadmap, and the dataset itself compounds into something bigger over time.
           </p>
           <div class="body">
-            <div class="roadmap">
-              <div class="roadmap-line" aria-hidden="true"></div>
-              <div class="roadmap-grid">
+            <div class="roadmap-loop">
+              <svg
+                class="loop-turn"
+                width="24"
+                height="236"
+                viewBox="0 0 24 236"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M0 1 H12 Q23 1 23 13 V223 Q23 235 12 235 H0"
+                  stroke="#5eead4"
+                  stroke-width="2"
+                  stroke-dasharray="6 7"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <div class="roadmap">
+                <div class="roadmap-line loop-top" aria-hidden="true"></div>
+                <div class="roadmap-grid">
                 <div class="rm-stage">
                   <div class="rm-marker"><span class="rm-node live"></span></div>
                   <span class="pill brand">Live today</span>
@@ -1917,9 +1973,9 @@
                 </div>
               </div>
             </div>
-            <div class="roadmap horizon">
-              <div class="roadmap-line" aria-hidden="true"></div>
-              <div class="roadmap-grid">
+              <div class="roadmap horizon">
+                <div class="roadmap-line loop-bottom" aria-hidden="true"></div>
+                <div class="roadmap-grid">
                 <div class="rm-stage">
                   <div class="rm-marker"><span class="rm-node"></span></div>
                   <span class="pill">Further out</span>
@@ -1935,6 +1991,7 @@
                   </p>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
@@ -2200,7 +2257,7 @@
                   onclick="openLightbox(this.querySelector('img'))"
                 >
                   <img
-                    src="img/intelligence.png?v=cb9eb40d2b"
+                    src="img/intelligence.png?v=a02d23c5d8"
                     alt="Primary intelligence on a trial: a published read with its author and the entities it links to, plus a full version history of how it changed. Analysts write it inline and publish under the agency's name."
                   />
                 </button>
