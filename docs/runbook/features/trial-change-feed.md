@@ -74,9 +74,8 @@ The summary text is structured via `summarySegmentsFor()` in `shared/utils/chang
   role: viewer
   status: active
 - id: trial-change-feed-unified-events
-  summary: Detected change events merged into the unified Events page as source_type='detected', with amber badge, rich summary rendering, signal bar, and annotation indicator. The detail panel deep-links via ?detectedId=<changeEventId> (recent-change dot click-through) and renders company/asset as links to their manage pages. The standalone /activity route redirects to /events?source=detected.
-  routes:
-    - /t/:tenantId/s/:spaceId/events
+  summary: Detected change events surfaced via get_events_page_data as source_type='detected', with amber badge, rich summary rendering, signal bar, and annotation indicator. The events-feed page UI is de-routed pending the Stage 3 Events->Activity rework; the read RPC remains live.
+  routes: []
   rpcs:
     - get_events_page_data
     - upsert_change_event_annotation

@@ -85,7 +85,6 @@ A power-user finder/navigator/command runner. Mounted once in `AppShellComponent
     - /t/:tenantId/s/:spaceId/profiles/companies/:id
     - /t/:tenantId/s/:spaceId/profiles/assets/:id
     - /t/:tenantId/s/:spaceId/catalysts
-    - /t/:tenantId/s/:spaceId/events
   rpcs: []
   tables: []
   related:

@@ -84,10 +84,8 @@ A full CRUD interface for managing all data within a space:
   role: editor
   status: active
 - id: manage-marker-types
-  summary: Define custom event types beyond the system defaults, each assigned to a category.
-  routes:
-    - /t/:tenantId/s/:spaceId/settings/marker-types
-    - /t/:tenantId/s/:spaceId/settings/marker-types
+  summary: Define custom event types beyond the system defaults, each assigned to a category. Authoring UI de-routed pending the Stage 3 taxonomy admin; the event_types table remains live.
+  routes: []
   rpcs: []
   tables:
     - event_types
