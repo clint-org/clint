@@ -27,8 +27,11 @@ cd src/client
 
 `run.sh` wraps Playwright in `infisical run --env dev --path /supabase`. The only
 secret is `SUPABASE_DEV_DB_POOLER_URL`; the dev URL + anon key are public. Runs
-**headed** (see Cloudflare below). Latest local run: **24 passed, 7 scaffolds
-skipped, 0 failed in ~1.2 min**.
+**headed** (see Cloudflare below), except the `@contract` test which is pooler-only
+(no browser). Phase 1 baseline: 24 passed, 7 scaffolds skipped. Phase 2 added the
+`@contract`, `@adversarial`, `@security`, and `@intelligence` (briefs) suites
+(verified green) plus `@crud`/`@external`/`@admin` scaffolds (`test.fixme`, pending
+verification passes -- see Phase 2 section).
 
 ## Run model (decisions, 2026-06-29)
 
@@ -121,10 +124,52 @@ authored from a verified TP but pending a verification pass or harness extension
 - **Briefs/citations**: currently covered by the integration suite; add a seeded
   brief + citation-resolve e2e when authoring is wired into the harness.
 
+## Phase 2: exhaustive-coverage additions (2026-06-29)
+
+New surfaces, built from a parallel grounded-discovery workflow (8 read-only agents
+returning draft specs + harness extensions grounded in origin/develop), then verified
+serially headed through the main loop.
+
+**Verified green**
+| Surface | Spec | Tag | Notes |
+| --- | --- | --- | --- |
+| **Client↔DB RPC signature contract** | `rpc-contract.spec.ts` | `@contract` | pooler-only; asserts `required ⊆ client ⊆ params` for ALL ~109 client `.rpc()` calls (map in `fixtures/rpc-contracts.ts`). Green on the tracked `KNOWN_DIVERGENCES`, RED on any new drift. |
+| Adversarial create_event validation (QA-008) | `adversarial-create-event.spec.ts` | `@adversarial` | RPC guard contract (accepted vs blocked SQLSTATEs) + XSS-title rendered escaped (security). |
+| Browser threat model | `security-threat-model.spec.ts` | `@security` | cross-space IDOR (two worlds), tampered/expired `sb-auth-dev` cookie fails closed, viewer deep-links to gated routes. |
+| Intelligence briefs + citations + filters | `intelligence-briefs.spec.ts` | `@intelligence` | author via `upsert_primary_intelligence`, published/drafts, citation resolves to anchored trial (matrix row 6), ENTITY/SINCE filters. |
+
+**Scaffold (`test.fixme`, authored + harness-ready, pending a verification pass)**
+| Surface | Spec | Blocked on |
+| --- | --- | --- |
+| Entity CRUD + merged event form (edit-matrix) | `entity-crud-events.spec.ts` | PrimeNG datepicker fill race; the EDIT/re-anchor half is blocked by the live `update_event` bug below. |
+| AI import (NCT + dedup + text/URL) | `ai-import.spec.ts` | live Anthropic + ct.gov verification pass (`enableAi` harness ready). |
+| AI cost / token accounting | `ai-usage.spec.ts` | live AI + super-admin host (`admin.dev.clintapp.com`, kind confirmed). |
+| Agency / super-admin / audit | `admin-portals.spec.ts` | 3-host headed Cloudflare verification pass; QA-009 actor-email soft assertions expected red. |
+
+New harness: `helpers/ai-config.ts` (`enableAi`), `helpers/admin-context.ts`
+(`agencyPageAs`/`superAdminPageAs` via real host brand resolution -- the `?wl_kind`
+override is disabled on dev because `environment.dev.ts` ships `production:true`),
+`helpers/session-tamper.ts`, `helpers/ctgov-lock.ts`, `helpers/intelligence.ts`,
+`helpers/ai-usage.ts`, and `scratch-world.ts` now exposes `world.provisioner`.
+
 ## Findings raised (not fixed here)
 
+- **Client↔DB RPC divergences (the `@contract` sweep found 3, all real PGRST202 risks
+  the UI hides as "Could not save"):**
+  1. **`update_event` omits required `p_source_url`** -- the client's `UpdateEventArgs`
+     dropped it but the deployed function requires it (no default) -> **every event edit
+     fails on dev**. `create_event` works only by luck (its `p_source_url` has a default).
+     Owned by the DB session; fix = drop `p_source_url` from `update_event` or give it a
+     default. The in-migration smoke calls it *positionally* with a dummy value, so the DB
+     smoke is green while the client's named-arg path is broken.
+  2. **`update_event_links` dropped** (`20260629020000_drop_dead_event_feed_fns`) but still
+     called by `EventService.updateLinks()` -> PGRST202 when adding an event link.
+  3. **`get_marker_history` dropped** (`20260628070739_drop_marker_event_tables`) but still
+     called by `change-event.service.ts` (legacy marker-detail-content.component).
+  These are tracked in `KNOWN_DIVERGENCES`; the contract test goes green automatically as
+  each is fixed and flags any NEW divergence. See memory `reference_client_db_rpc_contract_gap`.
+- **QA-008 confirmed accepted-by-design** at the RPC layer (pinned with REGRESSION-WATCH):
+  inverted date range, empty/6000-char title, far dates. XSS title renders escaped (safe).
 - **GoTrue auth rate limit**: a naive full suite (5 users/world) tripped the
   per-IP limiter. Mitigated by provisioning only needed roles + sign-in backoff;
   a very large suite from one IP may still approach it.
-- No product bugs were introduced or fixed by this task. New regressions the
-  suite surfaces should be logged and raised, not silently patched.
