@@ -1077,5 +1077,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260629030000_update_event_reanchor.sql`
 - `20260629040000_event_write_metadata.sql`
 - `20260629040100_get_event_detail.sql`
-- `20260629050000_get_event_detail_audit_fields.sql`
+- `20260629040200_get_event_detail_audit_fields.sql`
 <!-- /AUTO-GEN:DRIFT -->
