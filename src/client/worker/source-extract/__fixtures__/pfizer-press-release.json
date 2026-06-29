@@ -74,7 +74,7 @@
       "evidence": "Management expects interim data from ATTAIN-1 in H2 2026..."
     },
     {
-      "event_type": "Regulatory Submission",
+      "event_type": "Regulatory Filing",
       "title": "Paxlovid pediatric sNDA",
       "event_date": "2026-06-30",
       "end_date": null,
@@ -84,7 +84,7 @@
       "evidence": "Pfizer plans to submit a supplemental NDA for pediatric Paxlovid..."
     },
     {
-      "event_type": "Clinical",
+      "event_type": "Financial",
       "title": "Pfizer Q1 2026 Earnings Call",
       "event_date": "2026-04-28",
       "description": "Q1 2026 financial results and pipeline update",

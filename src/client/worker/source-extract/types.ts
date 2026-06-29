@@ -22,7 +22,7 @@ const newEntityMatch = z.object({
   name: z.string(),
 });
 
-// Marker/event matches carry no name field -- the title is already on the object.
+// Existing/new match objects carry no name field -- the title is already on the object.
 const newSimpleMatch = z.object({
   kind: z.literal('new'),
 });

@@ -288,7 +288,7 @@ export function blockingReason(b: { noAsset: number; duplicates: number }): stri
 const LEAF_ENTITY_TYPES = new Set(['events']);
 
 // Produce the initial Record<key, boolean> that backs the selections signal.
-// Keys follow the pattern `${type}_${index}`. Matched markers and events are
+// Keys follow the pattern `${type}_${index}`. Matched events are
 // set to false; everything else is set to true. Non-array fields (source_summary,
 // source_title, source_date) are silently skipped.
 export function defaultSelections(proposals: Record<string, unknown>): Record<string, boolean> {
