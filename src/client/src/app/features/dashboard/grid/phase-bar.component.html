@@ -12,9 +12,9 @@
     <svg:mask [attr.id]="maskId">
       <svg:rect
         [attr.x]="barX()"
-        [attr.y]="8"
+        [attr.y]="barTop()"
         [attr.width]="barWidth()"
-        [attr.height]="barHeight"
+        [attr.height]="barHeight()"
         [attr.fill]="'url(#' + maskId + '-grad)'"
       />
     </svg:mask>
@@ -24,7 +24,7 @@
   [attr.x]="barX()"
   [attr.y]="8"
   [attr.width]="barWidth()"
-  [attr.height]="barHeight"
+  [attr.height]="barHeight()"
   [attr.rx]="cornerRadius"
   [attr.fill]="barColor()"
   [attr.fill-opacity]="withdrawn() ? 0.05 : 0.12"
@@ -42,7 +42,7 @@
 @if (barWidth() > 0) {
   <svg:text
     [attr.x]="labelX()"
-    [attr.y]="8 + barHeight / 2"
+    [attr.y]="barTop() + barHeight() / 2"
     dy="0.35em"
     [attr.text-anchor]="labelAnchor()"
     font-size="9"
@@ -55,10 +55,12 @@
 }
 
 @if (startTreatment() === 'cap') {
-  <!-- Hollow end-cap: reuses the marker range-tail token (white fill, phase ring). -->
+  <!-- Hollow start-cap: the bar's fuzzy start. The coincident Trial Start marker
+       carries the date caption, so the bar no longer prints its own (that double
+       print was the source of the garbled "~Q4Q4 2727" captions at year zoom). -->
   <svg:circle
     [attr.cx]="barX()"
-    [attr.cy]="8 + barHeight / 2"
+    [attr.cy]="barTop() + barHeight() / 2"
     r="5.5"
     fill="white"
     [attr.stroke]="barColor()"
@@ -66,22 +68,14 @@
     pointer-events="none"
     aria-hidden="true"
   />
-  <svg:text
-    [attr.x]="barX()"
-    [attr.y]="8 + barHeight + 9"
-    text-anchor="middle"
-    font-size="8"
-    class="font-mono pointer-events-none select-none"
-    fill="#64748b"
-    aria-hidden="true"
-  >{{ startCapCaption() }}</svg:text>
 }
 
 @if (endTreatment() === 'cap' && endCapCaption()) {
-  <!-- Hollow end-cap at the right bar edge for an approximate end date. -->
+  <!-- Hollow end-cap at the right bar edge for an approximate end date. The
+       coincident completion marker owns the date caption (see note above). -->
   <svg:circle
     [attr.cx]="endX()"
-    [attr.cy]="8 + barHeight / 2"
+    [attr.cy]="barTop() + barHeight() / 2"
     r="5.5"
     fill="white"
     [attr.stroke]="barColor()"
@@ -89,13 +83,4 @@
     pointer-events="none"
     aria-hidden="true"
   />
-  <svg:text
-    [attr.x]="endX()"
-    [attr.y]="8 + barHeight + 9"
-    text-anchor="middle"
-    font-size="8"
-    class="font-mono pointer-events-none select-none"
-    fill="#64748b"
-    aria-hidden="true"
-  >{{ endCapCaption() }}</svg:text>
 }

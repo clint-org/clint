@@ -25,6 +25,9 @@ function visual(over: Partial<MarkerVisual> = {}): MarkerVisual {
     fillStyle: 'filled',
     innerMark: 'none',
     isNle: false,
+    projectionBadge: null,
+    opacity: 1,
+    outlineDash: false,
     ...over,
   };
 }

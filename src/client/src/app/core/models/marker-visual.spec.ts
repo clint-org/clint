@@ -54,6 +54,31 @@ describe('resolveMarkerVisual', () => {
     expect(resolveMarkerVisual(marker({ projection: 'primary' })).fillStyle).toBe('outline');
   });
 
+  it('badges only the deviating tiers; actual and the assumed primary carry none', () => {
+    expect(resolveMarkerVisual(marker({ projection: 'actual' })).projectionBadge).toBeNull();
+    expect(resolveMarkerVisual(marker({ projection: 'primary' })).projectionBadge).toBeNull();
+    expect(resolveMarkerVisual(marker({ projection: 'company' })).projectionBadge).toBe('c');
+    expect(resolveMarkerVisual(marker({ projection: 'forecasted' })).projectionBadge).toBe('f');
+  });
+
+  it('dims opacity only at the forecasted tier (actual/company/primary all solid)', () => {
+    const actual = resolveMarkerVisual(marker({ projection: 'actual' })).opacity;
+    const company = resolveMarkerVisual(marker({ projection: 'company' })).opacity;
+    const primary = resolveMarkerVisual(marker({ projection: 'primary' })).opacity;
+    const forecasted = resolveMarkerVisual(marker({ projection: 'forecasted' })).opacity;
+    expect(actual).toBe(1);
+    expect(company).toBeLessThanOrEqual(actual);
+    expect(primary).toBeLessThanOrEqual(company);
+    expect(forecasted).toBeLessThan(primary);
+  });
+
+  it('dashes the outline only for the forecasted tier', () => {
+    expect(resolveMarkerVisual(marker({ projection: 'forecasted' })).outlineDash).toBe(true);
+    expect(resolveMarkerVisual(marker({ projection: 'actual' })).outlineDash).toBe(false);
+    expect(resolveMarkerVisual(marker({ projection: 'company' })).outlineDash).toBe(false);
+    expect(resolveMarkerVisual(marker({ projection: 'primary' })).outlineDash).toBe(false);
+  });
+
   it('passes through shape, color, and inner mark from the marker type', () => {
     const v = resolveMarkerVisual(
       marker({ marker_types: markerType({ shape: 'diamond', color: '#ea580c', inner_mark: 'check' }) })
