@@ -728,7 +728,6 @@ Auto-generated. Lists Angular services, models, and SVG icon components whose co
 **Services:**
 - `AuditEventService`
 - `ChangeEventService`
-- `EventDetailService`
 - `EventThreadService`
 - `EventTypeService`
 - `EventService`
