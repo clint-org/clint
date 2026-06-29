@@ -7,10 +7,16 @@
 //     p_end_date_precision, p_is_ongoing, p_description, p_source_url, p_significance, p_visibility,
 //     p_no_longer_expected)   <-- note: update_event does NOT change event_type or anchor.
 
-export type AnchorType = 'space' | 'company' | 'asset' | 'trial';
-export type DatePrecision = 'exact' | 'month' | 'quarter' | 'half' | 'year';
+import type {
+  AnchorType,
+  CreateEventArgs,
+  DatePrecision,
+  Projection,
+  UpdateEventArgs,
+} from '../../../core/models/event-write.model';
+
+export type { AnchorType, CreateEventArgs, DatePrecision, Projection, UpdateEventArgs };
 export type Extent = 'point' | 'until' | 'onwards';
-export type Projection = 'actual' | 'company' | 'primary' | 'forecasted';
 export type SignificanceChoice = 'Default' | 'High' | 'Low';
 export type VisibilityChoice = 'Default' | 'Pinned' | 'Hidden';
 
@@ -35,44 +41,6 @@ export interface EventFormState {
   noLongerExpected: boolean;
   description: string;
   sources: SourceRow[];
-}
-
-// Args for create_event, minus p_space_id/p_source_doc_id/p_source_url (service supplies/null).
-export interface CreateEventArgs {
-  p_event_type_id: string;
-  p_title: string;
-  p_event_date: string;
-  p_anchor_type: AnchorType;
-  p_anchor_id: string | null;
-  p_projection: Projection;
-  p_date_precision: DatePrecision;
-  p_end_date: string | null;
-  p_end_date_precision: DatePrecision;
-  p_is_ongoing: boolean;
-  p_description: string | null;
-  p_significance: 'high' | 'low' | null;
-  p_visibility: 'pinned' | 'hidden' | null;
-  p_sources: { url: string; label: string | null }[] | null;
-}
-
-// Args for update_event. Re-anchor on edit (user decision 2026-06-29): the extended
-// update_event accepts type + anchor too, so a mistyped anchor/type is fixable without
-// recreating the event. (Backend RPC extension owned by the cutover session.)
-export interface UpdateEventArgs {
-  p_event_type_id: string;
-  p_anchor_type: AnchorType;
-  p_anchor_id: string | null;
-  p_title: string;
-  p_event_date: string;
-  p_projection: Projection;
-  p_date_precision: DatePrecision;
-  p_end_date: string | null;
-  p_end_date_precision: DatePrecision;
-  p_is_ongoing: boolean;
-  p_description: string | null;
-  p_significance: 'high' | 'low' | null;
-  p_visibility: 'pinned' | 'hidden' | null;
-  p_no_longer_expected: boolean;
 }
 
 export const PROJECTION_OPTIONS: { label: string; value: Projection }[] = [

@@ -8,6 +8,7 @@ import {
   EventsPageFilters,
   FeedItem,
 } from '../models/event.model';
+import { CreateEventArgs, UpdateEventArgs } from '../models/event-write.model';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -169,6 +170,31 @@ export class EventService {
       .single()
       .throwOnError();
     return row as AppEvent;
+  }
+
+  /**
+   * Merged Event form create path: the unified create_event RPC (atomic sources via p_sources).
+   * Replaces the legacy create() (category_id/priority/company_id shape) once the old form is removed.
+   */
+  async createEvent(spaceId: string, args: CreateEventArgs): Promise<string> {
+    const { data: newId } = await this.supabase.client
+      .rpc('create_event', { p_space_id: spaceId, ...args })
+      .throwOnError();
+    this.cache.invalidateTags([`space:${spaceId}:events`, `space:${spaceId}:tags`]);
+    return newId as string;
+  }
+
+  /**
+   * Merged Event form edit path: the unified update_event RPC. Carries type + anchor
+   * (re-anchor on edit); the backend RPC extension accepting them is owned by the cutover session.
+   */
+  async updateEvent(spaceId: string, eventId: string, args: UpdateEventArgs): Promise<void> {
+    await this.supabase.client.rpc('update_event', { p_event_id: eventId, ...args }).throwOnError();
+    this.cache.invalidateTags([
+      `event:${eventId}:detail`,
+      `space:${spaceId}:events`,
+      `space:${spaceId}:tags`,
+    ]);
   }
 
   async update(id: string, changes: Partial<AppEvent>): Promise<AppEvent> {

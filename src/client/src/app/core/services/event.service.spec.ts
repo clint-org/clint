@@ -467,3 +467,86 @@ describe('EventService.delete', () => {
     await expect(service.delete('event-1')).rejects.toThrow('event event-1 not found');
   });
 });
+
+describe('EventService.createEvent (unified)', () => {
+  it('calls create_event with p_space_id + the unified args incl. p_sources, returns the new id', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult('new-id'));
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    const id = await service.createEvent('space-1', {
+      p_event_type_id: 'et-1',
+      p_title: 'Readout',
+      p_event_date: '2026-09-15',
+      p_anchor_type: 'trial',
+      p_anchor_id: 'tr-1',
+      p_projection: 'forecasted',
+      p_date_precision: 'exact',
+      p_end_date: null,
+      p_end_date_precision: 'exact',
+      p_is_ongoing: false,
+      p_description: null,
+      p_significance: null,
+      p_visibility: null,
+      p_sources: [{ url: 'https://a.test', label: 'A' }],
+    });
+
+    expect(id).toBe('new-id');
+    const [name, params] = rpc.mock.calls[0];
+    expect(name).toBe('create_event');
+    expect(params).toMatchObject({
+      p_space_id: 'space-1',
+      p_event_type_id: 'et-1',
+      p_anchor_type: 'trial',
+      p_projection: 'forecasted',
+      p_sources: [{ url: 'https://a.test', label: 'A' }],
+    });
+    expect(invalidateTags).toHaveBeenCalledWith(['space:space-1:events', 'space:space-1:tags']);
+  });
+});
+
+describe('EventService.updateEvent (unified)', () => {
+  it('calls update_event with p_event_id + args (incl. type/anchor re-anchor) and invalidates caches', async () => {
+    const rpc = vi.fn().mockReturnValue(makeRpcResult(null));
+    const invalidateTags = vi.fn();
+    const service = makeService(
+      { from: vi.fn(), rpc, auth: { getUser: vi.fn(), getSession: vi.fn() } },
+      { get: vi.fn(), invalidateTags }
+    );
+
+    await service.updateEvent('space-1', 'event-1', {
+      p_event_type_id: 'et-2',
+      p_anchor_type: 'company',
+      p_anchor_id: 'co-1',
+      p_title: 'Edited',
+      p_event_date: '2026-10-01',
+      p_projection: 'actual',
+      p_date_precision: 'exact',
+      p_end_date: null,
+      p_end_date_precision: 'exact',
+      p_is_ongoing: false,
+      p_description: null,
+      p_significance: 'high',
+      p_visibility: null,
+      p_no_longer_expected: false,
+    });
+
+    const [name, params] = rpc.mock.calls[0];
+    expect(name).toBe('update_event');
+    expect(params).toMatchObject({
+      p_event_id: 'event-1',
+      p_event_type_id: 'et-2',
+      p_anchor_type: 'company',
+      p_anchor_id: 'co-1',
+      p_no_longer_expected: false,
+    });
+    expect(invalidateTags).toHaveBeenCalledWith([
+      'event:event-1:detail',
+      'space:space-1:events',
+      'space:space-1:tags',
+    ]);
+  });
+});
