@@ -335,12 +335,13 @@ export const routes: Routes = [
               { path: 'positioning/by-company', redirectTo: 'heatmap/by-company' },
               { path: 'positioning/by-roa', redirectTo: 'heatmap/by-roa' },
               {
-                path: 'catalysts',
+                path: 'future-events',
                 loadComponent: () =>
-                  import('./features/catalysts/catalysts-page.component').then(
-                    (m) => m.CatalystsPageComponent
+                  import('./features/future-events/future-events-page.component').then(
+                    (m) => m.FutureEventsPageComponent
                   ),
               },
+              { path: 'catalysts', redirectTo: 'future-events', pathMatch: 'full' },
             ],
           },
           {

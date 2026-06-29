@@ -1,4 +1,4 @@
-import type { FlatCatalyst } from '../../core/models/catalyst.model';
+import type { FlatCatalyst } from '../../core/models/event-detail.model';
 import { type ExportColumn } from '../../shared/export/grid-sheet.util';
 import { formatDateShort } from '../../core/services/export-common.util';
 import { formatMarkerExtent } from '../../core/models/marker-date-precision';

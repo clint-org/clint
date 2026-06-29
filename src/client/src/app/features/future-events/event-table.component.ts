@@ -4,14 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 
-import { FlatCatalyst } from '../../core/models/catalyst.model';
+import { FlatCatalyst } from '../../core/models/event-detail.model';
 import { markerPeriodLabel } from '../../core/models/marker-date-precision';
 import { ChangeBadgeComponent } from '../../shared/components/change-badge/change-badge.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { HighlightPipe } from '../../shared/pipes/highlight.pipe';
 import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
-import { catalystContextLine } from './group-catalysts';
+import { catalystContextLine } from './group-events';
 
 /** Hovered catalyst row + cursor position for the preview tooltip. */
 export interface CatalystHoverEvent {
@@ -21,7 +21,7 @@ export interface CatalystHoverEvent {
 }
 
 @Component({
-  selector: 'app-catalyst-table',
+  selector: 'app-event-table',
   standalone: true,
   imports: [
     ChangeBadgeComponent,
@@ -252,7 +252,7 @@ export interface CatalystHoverEvent {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalystTableComponent {
+export class EventTableComponent {
   protected readonly viewDetailsLabel = viewDetailsLabel;
   protected readonly catalystContextLine = catalystContextLine;
 

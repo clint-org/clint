@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 
-import { CatalystDetail } from '../../core/models/catalyst.model';
+import { CatalystDetail } from '../../core/models/event-detail.model';
 import { EventCategoryDistribution, EventDetail, FeedItem } from '../../core/models/event.model';
 import type { InnerMark, MarkerShape } from '../../core/models/marker.model';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';

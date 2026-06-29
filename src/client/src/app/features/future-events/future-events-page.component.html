@@ -29,7 +29,7 @@
     <app-export-button gridToolbarEnd [actions]="exportActions" />
   </app-grid-toolbar>
 
-  <app-catalyst-table
+  <app-event-table
     [catalysts]="flatCatalysts()"
     [loading]="state.dataLoading()"
     [selectedId]="state.selectedMarkerId()"
@@ -43,7 +43,7 @@
   />
 </app-manage-page-shell>
 
-<app-catalyst-row-tooltip
+<app-event-row-tooltip
   [catalyst]="hoveredCatalyst()"
   [x]="hoverX()"
   [y]="hoverY()"

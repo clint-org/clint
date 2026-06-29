@@ -1,13 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 
-import { CatalystDetail } from '../models/catalyst.model';
+import { CatalystDetail } from '../models/event-detail.model';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
 const HEAVY_TTL = { fresh: 30 * 1000, stale: 5 * 60 * 1000 };
 
 @Injectable({ providedIn: 'root' })
-export class CatalystService {
+export class EventDetailService {
   private supabase = inject(SupabaseService);
   private cache = inject(RpcCache);
 

@@ -9,7 +9,7 @@ import { ExportButtonComponent, type ExportAction } from './export-button.compon
  * The repo's unit runner is node-only (vitest.units.config.ts) and has no
  * Angular component-compilation plugin, so we exercise the component's logic
  * (runAction -> loading/error) directly rather than via TestBed rendering.
- * Mirrors the service-spec pattern (e.g. catalyst.service.spec.ts).
+ * Mirrors the service-spec pattern (e.g. event-detail.service.spec.ts).
  */
 function makeComponent(): ExportButtonComponent {
   const injector = Injector.create({ providers: [] });

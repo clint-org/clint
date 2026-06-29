@@ -4,7 +4,7 @@
 // the events page still want the flat shape, so we adapt here rather than add a second RPC.
 // thread / linked_events are nulled until the links/threads feature is rebuilt.
 
-import type { CatalystDetail } from '../models/catalyst.model';
+import type { CatalystDetail } from '../models/event-detail.model';
 import type { EntityLevel, EventDetail } from '../models/event.model';
 
 function entityLevelFromAnchor(anchorType: CatalystDetail['catalyst']['anchor_type']): EntityLevel {

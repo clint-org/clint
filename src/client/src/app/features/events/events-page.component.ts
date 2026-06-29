@@ -19,7 +19,7 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
-import { CatalystDetail } from '../../core/models/catalyst.model';
+import { CatalystDetail } from '../../core/models/event-detail.model';
 import {
   EventCategoryDistribution,
   EventDetail,
@@ -28,7 +28,7 @@ import {
 import { FillStyle, MarkerCategory } from '../../core/models/marker.model';
 import { MarkerIconComponent } from '../../shared/components/svg-icons/marker-icon.component';
 import { DetailPanelPillComponent } from '../../shared/components/detail-panel-pill.component';
-import { CatalystService } from '../../core/services/catalyst.service';
+import { EventDetailService } from '../../core/services/event-detail.service';
 import { EventService } from '../../core/services/event.service';
 import { MarkerCategoryService } from '../../core/services/marker-category.service';
 import { slidePanelAnimation } from '../../shared/animations/slide-panel.animation';
@@ -105,7 +105,7 @@ const DETECTED_CATEGORY_NAMES = [
 })
 export class EventsPageComponent implements OnInit, OnDestroy {
   private eventService = inject(EventService);
-  private catalystService = inject(CatalystService);
+  private catalystService = inject(EventDetailService);
   private markerCategoryService = inject(MarkerCategoryService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);

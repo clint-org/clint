@@ -9,7 +9,7 @@ import {
   FeedItem,
 } from '../models/event.model';
 import { CreateEventArgs, UpdateEventArgs } from '../models/event-write.model';
-import { CatalystDetail } from '../models/catalyst.model';
+import { CatalystDetail } from '../models/event-detail.model';
 import { eventDetailFromWrapper } from './event-detail-map';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';

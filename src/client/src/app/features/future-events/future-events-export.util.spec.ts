@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { FlatCatalyst } from '../../core/models/catalyst.model';
-import { CATALYST_EXPORT_COLUMNS, catalystStatusLabel } from './catalysts-export.util';
+import type { FlatCatalyst } from '../../core/models/event-detail.model';
+import { CATALYST_EXPORT_COLUMNS, catalystStatusLabel } from './future-events-export.util';
 import { buildExportSheet } from '../../shared/export/grid-sheet.util';
 
 function fixture(overrides: Partial<FlatCatalyst> = {}): FlatCatalyst {

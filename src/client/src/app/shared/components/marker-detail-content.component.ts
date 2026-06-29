@@ -11,7 +11,7 @@ import {
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, ActivatedRouteSnapshot, RouterLink } from '@angular/router';
 
-import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/catalyst.model';
+import { CatalystDetail, CtgovMarkerMetadata } from '../../core/models/event-detail.model';
 import { MarkerChangeRow } from '../../core/models/change-event.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
 import {

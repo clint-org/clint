@@ -2,7 +2,7 @@ import { computed, effect, inject, Injectable, signal } from '@angular/core';
 
 import { Company } from '../../core/models/company.model';
 import { Asset } from '../../core/models/asset.model';
-import { Catalyst, CatalystDetail, FlatCatalyst } from '../../core/models/catalyst.model';
+import { Catalyst, CatalystDetail, FlatCatalyst } from '../../core/models/event-detail.model';
 import { DashboardData } from '../../core/models/dashboard.model';
 import { ZoomLevel } from '../../core/models/dashboard.model';
 import {
@@ -16,11 +16,11 @@ import {
   timePeriodToRange,
 } from '../../core/models/landscape.model';
 import { PiReference } from '../../core/models/primary-intelligence.model';
-import { CatalystService } from '../../core/services/catalyst.service';
+import { EventDetailService } from '../../core/services/event-detail.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceSettingsService } from '../../core/services/space-settings.service';
-import { groupCatalystsByTimePeriod, flattenGroupedCatalysts } from '../catalysts/group-catalysts';
+import { groupCatalystsByTimePeriod, flattenGroupedCatalysts } from '../future-events/group-events';
 import { deriveTrialPhaseSpan, type TrialPhaseSpan } from '../../core/models/trial-phase-span';
 
 /** Vertical density of the timeline grid. Comfortable is the default rhythm;
@@ -66,7 +66,7 @@ const STORAGE_PREFIX = 'landscape-state:';
 @Injectable({ providedIn: 'any' })
 export class LandscapeStateService {
   private readonly dashboardService = inject(DashboardService);
-  private readonly catalyst = inject(CatalystService);
+  private readonly catalyst = inject(EventDetailService);
   private readonly intelligence = inject(PrimaryIntelligenceService);
   private readonly spaceSettings = inject(SpaceSettingsService);
   private storageKey = '';

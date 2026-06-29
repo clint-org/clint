@@ -9,31 +9,31 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Tooltip } from 'primeng/tooltip';
-import { FlatCatalyst } from '../../core/models/catalyst.model';
+import { FlatCatalyst } from '../../core/models/event-detail.model';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
 import { createGridState } from '../../shared/grids';
-import { CatalystTableComponent, type CatalystHoverEvent } from './catalyst-table.component';
-import { CatalystRowTooltipComponent } from './catalyst-row-tooltip.component';
+import { EventTableComponent, type CatalystHoverEvent } from './event-table.component';
+import { EventRowTooltipComponent } from './event-row-tooltip.component';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { LandscapeStateService } from '../landscape/landscape-state.service';
 import { ExportButtonComponent, type ExportAction } from '../../shared/export/export-button.component';
 import { GridExcelExportService } from '../../shared/export/grid-excel-export.service';
 import { ExportNamingService } from '../../shared/export/export-naming.service';
-import { CATALYST_EXPORT_COLUMNS } from './catalysts-export.util';
+import { CATALYST_EXPORT_COLUMNS } from './future-events-export.util';
 
 @Component({
-  selector: 'app-catalysts-page',
+  selector: 'app-future-events-page',
   imports: [
     ManagePageShellComponent,
     GridToolbarComponent,
-    CatalystTableComponent,
-    CatalystRowTooltipComponent,
+    EventTableComponent,
+    EventRowTooltipComponent,
     RouterLink,
     Tooltip,
     ExportButtonComponent,
   ],
-  templateUrl: './catalysts-page.component.html',
+  templateUrl: './future-events-page.component.html',
   styles: [
     `
       /*
@@ -60,7 +60,7 @@ import { CATALYST_EXPORT_COLUMNS } from './catalysts-export.util';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalystsPageComponent {
+export class FutureEventsPageComponent {
   readonly state = inject(LandscapeStateService);
   private readonly topbarState = inject(TopbarStateService);
   private readonly destroyRef = inject(DestroyRef);
