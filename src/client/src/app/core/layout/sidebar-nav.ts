@@ -76,6 +76,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: NAV_ICONS['engagement'],
         requiresEngagement: true,
       },
+      { label: 'Activity', route: 'activity', icon: NAV_ICONS['events'] },
       { label: 'Materials', route: 'materials', icon: NAV_ICONS['materials'] },
     ],
   },
