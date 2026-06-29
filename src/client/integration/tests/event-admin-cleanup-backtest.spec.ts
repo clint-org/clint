@@ -266,7 +266,7 @@ describe('permanently_delete_space leaves no event-family orphans + audit', () =
 
 describe('entity delete via _cleanup_polymorphic_refs removes anchored events', () => {
   it(
-    'trial delete removes its anchored events and event_sources; sibling events survive',
+    'asset delete removes its anchored events and their event_sources (2 rows); sibling events survive',
     async () => {
       const scratch = await createScratchSpace(p);
 
@@ -280,27 +280,49 @@ describe('entity delete via _cleanup_polymorphic_refs removes anchored events', 
       try {
         await pg.connect();
 
-        // Pick the fixture trial (seed_events_model_qa inserts exactly 1 trial).
-        const trialRes = await pg.query<{ id: string }>(
-          `select id from public.trials where space_id = $1 limit 1`,
-          [scratch.spaceId],
+        // The fixture's Distribution event (et_distribution, asset-anchored) is
+        // the only event carrying event_sources (2 rows: a press release + an
+        // earnings transcript). Find that event, then the asset it anchors to.
+        // Deleting THAT asset is what makes the event_sources cascade non-trivial.
+        const ET_DISTRIBUTION = 'a0000000-0000-0000-0000-000000000040';
+        const distRes = await pg.query<{ id: string; anchor_id: string }>(
+          `select id, anchor_id from public.events
+           where space_id = $1 and anchor_type = 'asset' and event_type_id = $2
+           limit 1`,
+          [scratch.spaceId, ET_DISTRIBUTION],
         );
-        if (trialRes.rows.length === 0) {
+        if (distRes.rows.length === 0) {
           throw new Error(
-            `expected a seeded trial in scratch space ${scratch.spaceId}, found none`,
+            `expected an asset-anchored Distribution event in the fixture, found none`,
           );
         }
-        const trialId = trialRes.rows[0].id;
+        const distEventId = distRes.rows[0].id;
+        const assetId = distRes.rows[0].anchor_id;
 
-        // Capture event ids anchored to the trial.
-        const anchoredRes = await pg.query<{ id: string }>(
-          `select id from public.events where anchor_type = 'trial' and anchor_id = $1`,
-          [trialId],
+        // PRE-delete: the Distribution event carries exactly 2 event_sources.
+        // This is the assertion that was trivially satisfied in the trial-delete
+        // variant (trial events have zero sources); make it meaningful.
+        const preEs = await pg.query<{ count: string }>(
+          `select count(*)::text as count from public.event_sources where event_id = $1`,
+          [distEventId],
         );
-        const trialEventIds = anchoredRes.rows.map((r) => r.id);
-        if (trialEventIds.length === 0) {
+        if (parseInt(preEs.rows[0].count, 10) !== 2) {
           throw new Error(
-            `expected trial-anchored events in the fixture, found none for trial ${trialId}`,
+            `pre-delete: expected the Distribution event to have 2 event_sources, ` +
+              `got ${preEs.rows[0].count}`,
+          );
+        }
+
+        // Capture every event anchored to the target asset (Approval, Distribution,
+        // projected Regulatory, hidden LOE -- 4 in the fixture).
+        const assetEventsRes = await pg.query<{ id: string }>(
+          `select id from public.events where anchor_type = 'asset' and anchor_id = $1`,
+          [assetId],
+        );
+        const assetEventIds = assetEventsRes.rows.map((r) => r.id);
+        if (assetEventIds.length === 0) {
+          throw new Error(
+            `expected asset-anchored events in the fixture, found none for asset ${assetId}`,
           );
         }
 
@@ -310,52 +332,74 @@ describe('entity delete via _cleanup_polymorphic_refs removes anchored events', 
           [scratch.spaceId],
         );
         const totalBefore = parseInt(totalRes.rows[0].count, 10);
-        if (totalBefore <= trialEventIds.length) {
+        if (totalBefore <= assetEventIds.length) {
           throw new Error(
-            `expected more events in space than those anchored to the trial alone ` +
-              `(total=${totalBefore}, trial-anchored=${trialEventIds.length})`,
+            `expected more events in space than those anchored to the target asset alone ` +
+              `(total=${totalBefore}, asset-anchored=${assetEventIds.length})`,
           );
         }
 
-        // Delete the trial. trial_assets cascades ON DELETE CASCADE so no FK blocks
-        // the raw delete. _cleanup_polymorphic_refs fires AFTER DELETE and removes
-        // events with anchor_type='trial' and anchor_id=trialId; event_sources
-        // cascade from those event deletes.
-        await pg.query(`delete from public.trials where id = $1`, [trialId]);
+        // trials.asset_id is ON DELETE NO ACTION, so any trial on this asset blocks
+        // the raw asset delete. Remove those trials first (trial delete cascades
+        // trial_assets ON DELETE CASCADE and fires _cleanup_polymorphic_refs for
+        // its own trial-anchored events). This is the "remove child rows first"
+        // path -- the proof we care about is the asset-delete event_sources cascade.
+        await pg.query(
+          `delete from public.trials where asset_id = $1`,
+          [assetId],
+        );
 
-        // Post-delete: the trial's anchored events must be gone.
+        // Delete the asset. _cleanup_polymorphic_refs fires AFTER DELETE with
+        // v_type='asset' and removes events with anchor_type='asset' and
+        // anchor_id=assetId; event_sources cascade ON DELETE from those events.
+        await pg.query(`delete from public.assets where id = $1`, [assetId]);
+
+        // Post-delete: the Distribution event itself must be gone.
+        const postDist = await pg.query<{ count: string }>(
+          `select count(*)::text as count from public.events where id = $1`,
+          [distEventId],
+        );
+        if (postDist.rows[0].count !== '0') {
+          throw new Error(
+            `entity delete: Distribution event still present after asset delete`,
+          );
+        }
+
+        // Post-delete: ALL the asset's anchored events must be gone.
         const postEvt = await pg.query<{ count: string }>(
           `select count(*)::text as count from public.events where id = any($1::uuid[])`,
-          [trialEventIds],
+          [assetEventIds],
         );
         if (postEvt.rows[0].count !== '0') {
           throw new Error(
-            `entity delete: ${postEvt.rows[0].count} trial-anchored event(s) remain after trial delete`,
+            `entity delete: ${postEvt.rows[0].count} asset-anchored event(s) remain after asset delete`,
           );
         }
 
-        // Post-delete: event_sources for those events must be gone.
+        // Post-delete: the Distribution event's 2 event_sources must be gone --
+        // the non-trivial cascade proof.
         const postEs = await pg.query<{ count: string }>(
           `select count(*)::text as count from public.event_sources
            where event_id = any($1::uuid[])`,
-          [trialEventIds],
+          [assetEventIds],
         );
         if (postEs.rows[0].count !== '0') {
           throw new Error(
-            `entity delete: ${postEs.rows[0].count} event_sources remain for deleted trial events`,
+            `entity delete: ${postEs.rows[0].count} event_sources remain for deleted asset events ` +
+              `(expected the Distribution event's 2 sources to cascade away)`,
           );
         }
 
-        // Post-delete: sibling events (asset- or company-anchored) must survive.
-        // The fixture seeds 4 asset-anchored + 2 company-anchored events (6 total).
+        // Post-delete: sibling events (company-anchored) must survive. The fixture
+        // seeds 2 company-anchored events that are unaffected by the asset delete.
         const siblingRes = await pg.query<{ count: string }>(
           `select count(*)::text as count from public.events
-           where space_id = $1 and not (anchor_type = 'trial' and anchor_id = $2)`,
-          [scratch.spaceId, trialId],
+           where space_id = $1 and not (anchor_type = 'asset' and anchor_id = $2)`,
+          [scratch.spaceId, assetId],
         );
         if (parseInt(siblingRes.rows[0].count, 10) === 0) {
           throw new Error(
-            `entity delete: expected sibling (non-trial-anchored) events to survive, found 0`,
+            `entity delete: expected sibling (non-asset-anchored) events to survive, found 0`,
           );
         }
       } finally {
