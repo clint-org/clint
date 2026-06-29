@@ -27,6 +27,8 @@ function base(): EventFormState {
     noLongerExpected: false,
     description: '',
     sources: [],
+    tags: [],
+    regulatoryPathway: null,
   };
 }
 
@@ -59,6 +61,14 @@ describe('buildCreateEventArgs', () => {
     expect(
       buildCreateEventArgs({ ...base(), extent: 'until', endDate: '2027-01-01', endDatePrecision: 'month' }),
     ).toMatchObject({ p_end_date: '2027-01-01', p_end_date_precision: 'month', p_is_ongoing: false });
+  });
+
+  it('builds p_metadata from tags + pathway, null when both empty', () => {
+    expect(buildCreateEventArgs(base()).p_metadata).toBeNull();
+    expect(
+      buildCreateEventArgs({ ...base(), tags: ['obesity', ' GLP-1 ', ''], regulatoryPathway: 'BLA' }).p_metadata,
+    ).toEqual({ tags: ['obesity', 'GLP-1'], pathway: 'BLA' });
+    expect(buildCreateEventArgs({ ...base(), tags: ['x'] }).p_metadata).toEqual({ tags: ['x'] });
   });
 
   it('builds the p_sources jsonb array (url required, blank label -> null), null when empty', () => {

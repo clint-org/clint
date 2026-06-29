@@ -16,6 +16,7 @@ import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { Checkbox } from 'primeng/checkbox';
 import { DatePicker } from 'primeng/datepicker';
+import { AutoComplete } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 
@@ -76,6 +77,7 @@ function toIso(d: Date | null): string {
     SelectButton,
     Checkbox,
     DatePicker,
+    AutoComplete,
     ButtonModule,
     MessageModule,
     FormFieldComponent,
@@ -292,6 +294,23 @@ function toIso(d: Date | null): string {
           }
         </div>
 
+        @if (showRegulatoryPathway()) {
+          <app-form-field label="Regulatory pathway" fieldId="ev-pathway" spacing="">
+            <p-select
+              inputId="ev-pathway"
+              [options]="pathwayOptions"
+              [ngModel]="regulatoryPathway()"
+              (ngModelChange)="regulatoryPathway.set($event)"
+              name="regulatoryPathway"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select pathway"
+              styleClass="w-full"
+              [disabled]="ctgovLocked()"
+            />
+          </app-form-field>
+        }
+
         <!-- Sources -->
         <app-form-field label="Sources" fieldId="ev-sources" spacing="">
           @for (row of sources(); track $index) {
@@ -359,6 +378,21 @@ function toIso(d: Date | null): string {
             rows="3"
             [disabled]="ctgovLocked()"
           ></textarea>
+        </app-form-field>
+
+        <!-- Tags -->
+        <app-form-field label="Tags" fieldId="ev-tags" spacing="">
+          <p-auto-complete
+            inputId="ev-tags"
+            [ngModel]="tags()"
+            (ngModelChange)="tags.set($event ?? [])"
+            name="tags"
+            [multiple]="true"
+            [typeahead]="false"
+            placeholder="Add tags..."
+            styleClass="w-full"
+            [disabled]="ctgovLocked()"
+          />
         </app-form-field>
 
         <!-- Advanced (overrides + qualifiers) -->
@@ -474,6 +508,10 @@ export class EventFormComponent implements OnInit {
   ];
   protected readonly significanceChoices: SignificanceChoice[] = ['Default', 'High', 'Low'];
   protected readonly visibilityChoices: VisibilityChoice[] = ['Default', 'Pinned', 'Hidden'];
+  // Carried from the marker form: shown only for the FDA Submission event type (metadata.pathway).
+  protected readonly pathwayOptions = ['BLA', 'NDA', 'sNDA', 'sBLA', '505(b)(2)', 'Biosimilar'].map(
+    (p) => ({ label: p, value: p }),
+  );
 
   private readonly types = signal<MarkerType[]>([]);
   private readonly categories = signal<{ id: string; name: string; display_order: number }[]>([]);
@@ -498,6 +536,9 @@ export class EventFormComponent implements OnInit {
   protected readonly noLongerExpected = signal(false);
   protected readonly description = signal('');
   protected readonly sources = signal<SourceRow[]>([]);
+  protected readonly tags = signal<string[]>([]);
+  // metadata.pathway; shown only for the FDA Submission event type (marker-form parity).
+  protected readonly regulatoryPathway = signal<string | null>(null);
   protected readonly showAdvanced = signal(false);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -505,6 +546,7 @@ export class EventFormComponent implements OnInit {
   protected readonly selectedType = computed(() =>
     this.types().find((t) => t.id === this.eventTypeId()) ?? null,
   );
+  protected readonly showRegulatoryPathway = computed(() => this.selectedType()?.name === 'FDA Submission');
   protected readonly typeGroups = computed<TypeGroup[]>(() =>
     this.categories()
       .map((c) => ({
@@ -571,6 +613,8 @@ export class EventFormComponent implements OnInit {
       noLongerExpected: this.noLongerExpected(),
       description: this.description(),
       sources: this.sources(),
+      tags: this.tags(),
+      regulatoryPathway: this.showRegulatoryPathway() ? this.regulatoryPathway() : null,
     };
   }
 

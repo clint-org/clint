@@ -20,7 +20,14 @@ export interface CreateEventArgs {
   p_description: string | null;
   p_significance: 'high' | 'low' | null;
   p_visibility: 'pinned' | 'hidden' | null;
+  p_metadata: EventMetadata | null;
   p_sources: { url: string; label: string | null }[] | null;
+}
+
+/** events.metadata jsonb payload. Tags (restored) + regulatory pathway (marker parity). */
+export interface EventMetadata {
+  tags?: string[];
+  pathway?: string;
 }
 
 /**
@@ -41,5 +48,6 @@ export interface UpdateEventArgs {
   p_description: string | null;
   p_significance: 'high' | 'low' | null;
   p_visibility: 'pinned' | 'hidden' | null;
+  p_metadata: EventMetadata | null;
   p_no_longer_expected: boolean;
 }

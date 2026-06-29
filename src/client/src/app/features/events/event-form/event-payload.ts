@@ -11,11 +11,12 @@ import type {
   AnchorType,
   CreateEventArgs,
   DatePrecision,
+  EventMetadata,
   Projection,
   UpdateEventArgs,
 } from '../../../core/models/event-write.model';
 
-export type { AnchorType, CreateEventArgs, DatePrecision, Projection, UpdateEventArgs };
+export type { AnchorType, CreateEventArgs, DatePrecision, EventMetadata, Projection, UpdateEventArgs };
 export type Extent = 'point' | 'until' | 'onwards';
 export type SignificanceChoice = 'Default' | 'High' | 'Low';
 export type VisibilityChoice = 'Default' | 'Pinned' | 'Hidden';
@@ -41,6 +42,8 @@ export interface EventFormState {
   noLongerExpected: boolean;
   description: string;
   sources: SourceRow[];
+  tags: string[];
+  regulatoryPathway: string | null;
 }
 
 export const PROJECTION_OPTIONS: { label: string; value: Projection }[] = [
@@ -68,6 +71,15 @@ function endFields(s: EventFormState): { end: string | null; precision: DatePrec
   return { end: null, precision: 'exact', ongoing: false };
 }
 
+/** Build the events.metadata jsonb (tags + regulatory pathway), null when both empty. */
+export function buildMetadata(s: EventFormState): EventMetadata | null {
+  const meta: EventMetadata = {};
+  const tags = s.tags.map((t) => t.trim()).filter(Boolean);
+  if (tags.length) meta.tags = tags;
+  if (s.regulatoryPathway) meta.pathway = s.regulatoryPathway;
+  return Object.keys(meta).length ? meta : null;
+}
+
 function sourcesJsonb(rows: SourceRow[]): { url: string; label: string | null }[] | null {
   const clean = rows
     .filter((r) => r.url.trim())
@@ -91,6 +103,7 @@ export function buildCreateEventArgs(s: EventFormState): CreateEventArgs {
     p_description: s.description.trim() || null,
     p_significance: significanceValue(s.significance),
     p_visibility: visibilityValue(s.visibility),
+    p_metadata: buildMetadata(s),
     p_sources: sourcesJsonb(s.sources),
   };
 }
@@ -111,6 +124,7 @@ export function buildUpdateEventArgs(s: EventFormState): UpdateEventArgs {
     p_description: s.description.trim() || null,
     p_significance: significanceValue(s.significance),
     p_visibility: visibilityValue(s.visibility),
+    p_metadata: buildMetadata(s),
     p_no_longer_expected: s.noLongerExpected,
   };
 }
