@@ -128,6 +128,40 @@ describe('events model QA fixture', () => {
       .select('id')
       .eq('space_id', p.org.spaceId);
     expect(assets).toHaveLength(2);
+
+    // --- S4: QA trial has a non-null NCT identifier ---
+    const { data: trials, error: trialsErr } = await admin
+      .from('trials')
+      .select('id, identifier')
+      .eq('space_id', p.org.spaceId);
+    expect(trialsErr).toBeNull();
+    expect(trials).toHaveLength(1);
+    expect(trials![0].identifier).toBe('NCT09000001');
+
+    // --- S4: Distribution event (asset-anchored) has exactly 2 sources ---
+    const distEvent = assetEvents.find((e) => e.event_type_id === ET_DISTRIBUTION);
+    expect(distEvent).toBeDefined();
+
+    const { data: distSources, error: distSourcesErr } = await admin
+      .from('event_sources')
+      .select('url, label, sort_order')
+      .eq('event_id', distEvent!.id)
+      .order('sort_order', { ascending: true });
+    expect(distSourcesErr).toBeNull();
+    expect(distSources).toHaveLength(2);
+    expect(distSources![0].label).toBe('Press release');
+    expect(distSources![1].label).toBe('Earnings transcript');
+
+    // --- S4: Topline (trial-anchored) has zero event_sources ---
+    const toplineEvent = trialEvents.find((e) => e.event_type_id === ET_TOPLINE);
+    expect(toplineEvent).toBeDefined();
+
+    const { data: toplineSources, error: toplineSourcesErr } = await admin
+      .from('event_sources')
+      .select('id')
+      .eq('event_id', toplineEvent!.id);
+    expect(toplineSourcesErr).toBeNull();
+    expect(toplineSources).toHaveLength(0);
   });
 
   it('seed_events_model_qa is idempotent (second call does not duplicate rows)', async () => {
