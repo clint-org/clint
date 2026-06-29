@@ -23,6 +23,17 @@ import { SpaceSettingsService } from '../../core/services/space-settings.service
 import { groupCatalystsByTimePeriod, flattenGroupedCatalysts } from '../catalysts/group-catalysts';
 import { deriveTrialPhaseSpan, type TrialPhaseSpan } from '../../core/models/trial-phase-span';
 
+/** Vertical density of the timeline grid. Comfortable is the default rhythm;
+ *  compact tightens rows and shrinks glyphs (captions are kept) to fit more
+ *  programs per screen. */
+export type GridDensity = 'comfortable' | 'compact';
+
+/** How deep the timeline grid renders the company > asset > trial hierarchy.
+ *  A single depth replaces the old independent row toggles + Compare preset:
+ *  'companies' = company bands only, 'assets' = + asset rows (the old Compare),
+ *  'trials' = full detail (default). One level is always selected. */
+export type DetailLevel = 'companies' | 'assets' | 'trials';
+
 interface PersistedLandscapeState {
   filters: LandscapeFilters;
   zoomLevel: ZoomLevel;
@@ -33,9 +44,8 @@ interface PersistedLandscapeState {
   showMoaColumn: boolean;
   showRoaColumn: boolean;
   showIndicationColumn: boolean;
-  showCompanyEvents: boolean;
-  showAssetEvents: boolean;
-  showTrials: boolean;
+  detailLevel: DetailLevel;
+  density: GridDensity;
 }
 
 const STORAGE_PREFIX = 'landscape-state:';
@@ -92,18 +102,22 @@ export class LandscapeStateService {
   // ─── Column visibility (timeline grid) ──────────────────────────────
   readonly showMoaColumn = signal(true);
   readonly showRoaColumn = signal(true);
-  // Off by default: most trials map to a single indication, so the column
-  // only earns its width when a user wants the indication cut. Toggled via
+  // On by default: the indication is part of an asset/trial's identity and the
+  // labeled inline treatment carries it without crowding the name. Toggled via
   // the COLUMNS control in the insight strip.
-  readonly showIndicationColumn = signal(false);
+  readonly showIndicationColumn = signal(true);
 
-  // ─── Row visibility (timeline grid) ──────────────────────────────────
-  // Per-level row toggles for the timeline grid: whether company-anchored
-  // events, asset-anchored events, and trial rows each render. Persisted
-  // alongside the column toggles and mirrored by the row-visibility control.
-  readonly showCompanyEvents = signal(true);
-  readonly showAssetEvents = signal(true);
-  readonly showTrials = signal(true);
+  // ─── Detail level (timeline grid) ────────────────────────────────────
+  // A single depth down the company > asset > trial hierarchy, replacing the
+  // old independent Company/Asset/Trials toggles + Compare preset (which let
+  // the user reach incoherent states). Company bands always render; 'assets'
+  // adds asset rows (the old Compare view); 'trials' adds trial detail.
+  readonly detailLevel = signal<DetailLevel>('trials');
+
+  // ─── Density (timeline grid) ─────────────────────────────────────────
+  // Comfortable default; compact tightens row height and glyph size for a
+  // denser read. Persisted alongside the other grid view settings.
+  readonly density = signal<GridDensity>('comfortable');
 
   // ─── Shared detail panel ─────────────────────────────────────────────
   readonly selectedMarkerId = signal<string | null>(null);
@@ -159,9 +173,8 @@ export class LandscapeStateService {
       showMoaColumn: this.showMoaColumn(),
       showRoaColumn: this.showRoaColumn(),
       showIndicationColumn: this.showIndicationColumn(),
-      showCompanyEvents: this.showCompanyEvents(),
-      showAssetEvents: this.showAssetEvents(),
-      showTrials: this.showTrials(),
+      detailLevel: this.detailLevel(),
+      density: this.density(),
     };
     if (!this.storageKey || this.disablePersistence) return;
     try {
@@ -214,16 +227,6 @@ export class LandscapeStateService {
   /** Reload the dataset (e.g. after data mutation). */
   async reload(): Promise<void> {
     await this.loadData();
-  }
-
-  /**
-   * Apply the "Compare" view preset: show asset-anchored events and hide
-   * trials so several assets stack side by side for comparison. Company-event
-   * visibility is left as-is so the user's banner choice is preserved.
-   */
-  applyComparePreset(): void {
-    this.showAssetEvents.set(true);
-    this.showTrials.set(false);
   }
 
   /**
@@ -337,11 +340,14 @@ export class LandscapeStateService {
       if (typeof saved.showRoaColumn === 'boolean') this.showRoaColumn.set(saved.showRoaColumn);
       if (typeof saved.showIndicationColumn === 'boolean')
         this.showIndicationColumn.set(saved.showIndicationColumn);
-      if (typeof saved.showCompanyEvents === 'boolean')
-        this.showCompanyEvents.set(saved.showCompanyEvents);
-      if (typeof saved.showAssetEvents === 'boolean')
-        this.showAssetEvents.set(saved.showAssetEvents);
-      if (typeof saved.showTrials === 'boolean') this.showTrials.set(saved.showTrials);
+      if (
+        saved.detailLevel === 'companies' ||
+        saved.detailLevel === 'assets' ||
+        saved.detailLevel === 'trials'
+      )
+        this.detailLevel.set(saved.detailLevel);
+      if (saved.density === 'comfortable' || saved.density === 'compact')
+        this.density.set(saved.density);
     } catch {
       // Corrupt data -- ignore and start fresh.
     }

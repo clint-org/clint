@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 
-import { FillStyle, Marker, MarkerType } from '../../../core/models/marker.model';
+import { Marker, MarkerType } from '../../../core/models/marker.model';
 import {
   isApproximate,
   markerPeriodLabel,
@@ -18,7 +18,6 @@ import { resolveMarkerVisual } from '../../../core/models/marker-visual';
 import { textColorOnWhite } from '../../../shared/utils/color-contrast';
 import { TimelineService } from '../../../core/services/timeline.service';
 import { MarkerIconComponent } from '../../../shared/components/svg-icons/marker-icon.component';
-import { MARKER_ICON_SIZE, MARKER_TOP_OFFSET } from '../../../shared/utils/grid-constants';
 import { MarkerTooltipComponent } from './marker-tooltip.component';
 
 @Component({
@@ -35,6 +34,9 @@ export class MarkerComponent {
   readonly startYear = input.required<number>();
   readonly endYear = input.required<number>();
   readonly totalWidth = input.required<number>();
+
+  /** Compact density shrinks the glyph and recenters it for tighter rows. */
+  readonly compact = input<boolean>(false);
 
   /**
    * Row layout decides which date captions fit (see marker-label-layout.ts);
@@ -61,10 +63,41 @@ export class MarkerComponent {
 
   readonly showTooltip = signal(false);
 
-  readonly iconSize = MARKER_ICON_SIZE;
-  readonly topOffset = MARKER_TOP_OFFSET;
-
   readonly markerType = computed<MarkerType | undefined>(() => this.marker().marker_types);
+
+  /**
+   * Glyph size by event-type importance. The events executives scan for -- data
+   * readouts, regulatory filings, approvals, launches, commercial moves, loss of
+   * exclusivity -- render large so they pop; routine clinical milestones (trial
+   * start/end, primary completion) and corporate events recede as context.
+   * (significance is binary high|low and gates feed visibility, not size, so
+   * importance is keyed off the event category instead.)
+   */
+  private static readonly CONTEXT_CATEGORIES = new Set([
+    'Clinical',
+    'Financial',
+    'Strategic',
+    'Leadership',
+  ]);
+
+  /**
+   * Glyph geometry by density. `center` is the marker centerline (matched to the
+   * phase bar center); `signal`/`context` are the two importance tiers. Compact
+   * shrinks all three so rows can tighten while the date captions stay.
+   */
+  private readonly geom = computed(() =>
+    this.compact()
+      ? { center: 13, signal: 15, context: 10 }
+      : { center: 15, signal: 21, context: 13 }
+  );
+
+  readonly iconSize = computed(() => {
+    const category = this.markerType()?.marker_categories?.name ?? '';
+    const g = this.geom();
+    return MarkerComponent.CONTEXT_CATEGORIES.has(category) ? g.context : g.signal;
+  });
+
+  readonly topOffset = computed(() => this.geom().center - this.iconSize() / 2);
 
   readonly markerX = computed(() =>
     Math.max(
@@ -116,9 +149,14 @@ export class MarkerComponent {
     () => !this.marker().is_ongoing && isApproximate(this.marker().end_date_precision)
   );
 
+  /**
+   * Projection encoding is owned by resolveMarkerVisual (the shared source of
+   * truth, so legend / catalyst table / bullseye / PPTX read identically): an
+   * actual date is filled with no badge; every projected tier is hollow with a
+   * tier letter ('c' company, 'p' primary, 'f' forecasted) and a gentle opacity
+   * dim. The NLE strike-through stays the distinct "no longer expected" cue.
+   */
   readonly visual = computed(() => resolveMarkerVisual(this.marker()));
-
-  readonly effectiveFillStyle = computed<FillStyle>(() => this.visual().fillStyle);
 
   readonly isNle = computed(() => this.visual().isNle);
 

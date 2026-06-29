@@ -20,6 +20,7 @@ import { GLYPH_RATIOS, GLYPH_STROKES } from '../../../core/models/marker-visual'
       [attr.fill]="fillStyle() === 'outline' ? 'white' : color()"
       [attr.stroke]="color()"
       [attr.stroke-width]="fillStyle() === 'outline' ? S.flagBannerOutline : S.flagBannerFilled"
+      [attr.stroke-dasharray]="outlineDash() ? dashPattern : null"
     />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,8 +29,10 @@ export class FlagIconComponent {
   readonly size = input<number>(16);
   readonly color = input<string>('#000000');
   readonly fillStyle = input<FillStyle>('filled');
+  readonly outlineDash = input<boolean>(false);
 
   protected readonly S = GLYPH_STROKES;
+  protected readonly dashPattern = GLYPH_STROKES.outlineDashPattern.join(',');
 
   readonly poleX = computed(() => this.size() * GLYPH_RATIOS.flagPoleX);
 

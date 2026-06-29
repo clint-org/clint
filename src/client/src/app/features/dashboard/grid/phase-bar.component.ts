@@ -41,6 +41,10 @@ export class PhaseBarComponent {
 
   readonly withdrawn = input(false);
 
+  /** Compact density shrinks the bar and lifts it so its center stays on the
+   *  marker centerline in the tighter row. */
+  readonly compact = input(false);
+
   readonly phaseClick = output<void>();
 
   // Present-day frontier, used as the right edge of an open-ended (no end date)
@@ -139,7 +143,10 @@ export class PhaseBarComponent {
     return markerStartCaption(end, this.endPrecision());
   });
 
-  protected barHeight = BAR_HEIGHT;
+  protected readonly barHeight = computed(() => (this.compact() ? 12 : BAR_HEIGHT));
+  /** Top y of the bar; tuned per density so barTop + barHeight/2 lands on the
+   *  marker centerline (15 comfortable, 13 compact). */
+  protected readonly barTop = computed(() => (this.compact() ? 7 : 8));
   protected cornerRadius = CORNER_RADIUS;
 
   onClick(): void {

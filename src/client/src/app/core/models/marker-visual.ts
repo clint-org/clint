@@ -1,9 +1,20 @@
-import type { FillStyle, InnerMark, Marker, MarkerShape } from './marker.model';
+import type { FillStyle, InnerMark, Marker, MarkerShape, Projection } from './marker.model';
+
+/**
+ * Single-letter source badge drawn at the top-right of a projected glyph, used
+ * only for dates whose source DEVIATES from the assumed default: `c`
+ * company-guided, `f` forecasted (our model). `null` covers both a confirmed
+ * actual date AND a `primary`-sourced projection (the CT.gov/primary-intelligence
+ * registry estimate) — primary is the assumed default for a projected date, so
+ * like `actual` it carries no letter; the hollow fill alone marks it projected.
+ * (`p` is retained in the union for flexibility but is not currently emitted.)
+ */
+export type ProjectionBadge = 'c' | 'p' | 'f' | null;
 
 /**
  * Semantic descriptor for a single marker glyph. This is the single source of
  * truth for WHAT to draw; each surface (Angular SVG icons, PPTX export) renders
- * it in its own primitives but agrees on shape/fill/inner-mark/NLE.
+ * it in its own primitives but agrees on shape/fill/inner-mark/NLE/projection.
  */
 export interface MarkerVisual {
   shape: MarkerShape;
@@ -11,27 +22,52 @@ export interface MarkerVisual {
   fillStyle: FillStyle;
   innerMark: InnerMark;
   isNle: boolean;
+  /** Projection tier badge ('c'/'p'/'f'); null for a confirmed actual date. */
+  projectionBadge: ProjectionBadge;
+  /** Gentle confidence dim — solid for actual/company, lighter down the tiers. */
+  opacity: number;
+  /** Dashed outline — true only for the forecasted tier. */
+  outlineDash: boolean;
 }
 
 /** Neutral fallback color when a marker has no resolved type. */
 const FALLBACK_COLOR = '#64748b';
 
 /**
- * Derive the visual descriptor from a marker row. Fill style is driven by
- * projection (actual = filled, everything else = outline), matching
- * marker.component.ts. Note: MarkerType.fill_style is intentionally NOT
- * forwarded here — the dashboard grid overrides it with projection semantics,
- * and this resolver is the single source of that rule. Never throws when
- * marker_types is absent.
+ * Projection -> {badge, opacity}. Hollow fill marks any projected date; a letter
+ * is added ONLY when the source deviates from the assumed default. `primary` (the
+ * CT.gov / primary-intelligence registry estimate) is that default, so it gets no
+ * letter — only `company` guidance (`c`) and our own `forecasted` model (`f`) do.
+ * Opacity is a gentle dim reserved for the least-confident forecast tier; the
+ * forecast also dashes its outline.
+ */
+const PROJECTION_VISUAL: Record<Projection, { badge: ProjectionBadge; opacity: number }> = {
+  actual: { badge: null, opacity: 1 },
+  company: { badge: 'c', opacity: 1 },
+  primary: { badge: null, opacity: 1 },
+  forecasted: { badge: 'f', opacity: 0.72 },
+};
+
+/**
+ * Derive the visual descriptor from a marker row. Fill style and the projection
+ * badge/opacity are driven by projection (actual = filled + no badge, every
+ * projected tier = hollow + tier letter), matching marker.component.ts. Note:
+ * MarkerType.fill_style is intentionally NOT forwarded here — the dashboard grid
+ * overrides it with projection semantics, and this resolver is the single source
+ * of that rule. Never throws when marker_types is absent.
  */
 export function resolveMarkerVisual(marker: Marker): MarkerVisual {
   const type = marker.marker_types;
+  const projection = PROJECTION_VISUAL[marker.projection] ?? PROJECTION_VISUAL.actual;
   return {
     shape: type?.shape ?? 'circle',
     color: type?.color ?? FALLBACK_COLOR,
     fillStyle: marker.projection === 'actual' ? 'filled' : 'outline',
     innerMark: type?.inner_mark ?? 'none',
     isNle: marker.no_longer_expected,
+    projectionBadge: projection.badge,
+    opacity: projection.opacity,
+    outlineDash: marker.projection === 'forecasted',
   };
 }
 
@@ -100,4 +136,6 @@ export const GLYPH_STROKES = {
   /** Dashed-line marker stroke width and dash pattern. */
   dashedLine: 1.5,
   dashedLinePattern: [4, 3],
+  /** Dashed outline pattern for the forecasted tier glyph outline. */
+  outlineDashPattern: [3, 2.5] as const,
 } as const;

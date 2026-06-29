@@ -874,6 +874,10 @@ export class PptxExportService {
             fillStyle: it.fill_style as FillStyle,
             innerMark: it.inner_mark as InnerMark,
             isNle: false,
+            // Legend renders the canonical type glyph — no projection context.
+            projectionBadge: null,
+            opacity: 1,
+            outlineDash: false,
           } satisfies MarkerVisual,
           px,
           py,

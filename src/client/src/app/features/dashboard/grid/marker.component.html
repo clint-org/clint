@@ -3,7 +3,7 @@
     class="absolute cursor-pointer"
     [style.z-index]="showTooltip() ? 9999 : 10"
     [style.left.px]="markerX()"
-    [style.top.px]="topOffset"
+    [style.top.px]="topOffset()"
     (mouseenter)="showTooltip.set(true)"
     (mouseleave)="showTooltip.set(false)"
     (focus)="showTooltip.set(true)"
@@ -17,25 +17,28 @@
   >
     <div
       [class.drop-shadow-sm]="!isDashedLine()"
-      [style.margin-left.px]="isDashedLine() ? -3 : -iconSize / 2"
+      [style.margin-left.px]="isDashedLine() ? -3 : -iconSize() / 2"
+      [style.opacity]="visual().opacity"
     >
       <app-marker-icon
         [shape]="mt.shape"
         [color]="mt.color"
-        [size]="iconSize"
-        [fillStyle]="effectiveFillStyle()"
+        [size]="iconSize()"
+        [fillStyle]="visual().fillStyle"
         [innerMark]="mt.inner_mark"
         [isNle]="isNle()"
+        [projectionBadge]="visual().projectionBadge"
+        [outlineDash]="visual().outlineDash"
       />
     </div>
 
-    @if (tailWidth() > iconSize) {
+    @if (tailWidth() > iconSize()) {
       <!-- Range tail: bounded ends at the end cap; ongoing fades to the right. -->
       <div
         class="pointer-events-none absolute"
-        [style.left.px]="iconSize / 2"
-        [style.top.px]="iconSize / 2 - 1.5"
-        [style.width.px]="tailWidth() - iconSize / 2"
+        [style.left.px]="iconSize() / 2"
+        [style.top.px]="iconSize() / 2 - 1.5"
+        [style.width.px]="tailWidth() - iconSize() / 2"
         [style.height.px]="3"
         [style.border-radius.px]="2"
         [style.background-color]="mt.color"
@@ -52,7 +55,7 @@
         <div
           class="pointer-events-none absolute rounded-full bg-white"
           [style.left.px]="tailWidth() - 4"
-          [style.top.px]="iconSize / 2 - 4"
+          [style.top.px]="iconSize() / 2 - 4"
           [style.width.px]="8"
           [style.height.px]="8"
           [style.border]="'1.5px solid ' + mt.color"
@@ -62,7 +65,7 @@
           <div
             class="pointer-events-none absolute whitespace-nowrap font-mono leading-none text-[8px]"
             [style.left.px]="tailWidth() - 12"
-            [style.top.px]="iconSize + 2"
+            [style.top.px]="iconSize() + 2"
             [style.color]="captionColor()"
           >
             ~{{ el }}
@@ -75,8 +78,8 @@
       <div
         class="text-center whitespace-nowrap font-mono leading-none text-[8px] mt-px"
         [style.color]="captionColor()"
-        [style.margin-left.px]="isDashedLine() ? -12 : -iconSize / 2"
-        [style.width.px]="isDashedLine() ? 30 : iconSize * 2"
+        [style.margin-left.px]="isDashedLine() ? -12 : -iconSize() / 2"
+        [style.width.px]="isDashedLine() ? 30 : iconSize() * 2"
       >
         {{ shortDate() }}
       </div>
@@ -99,7 +102,7 @@
         [metadata]="marker().metadata"
         [noLongerExpected]="isNle()"
         [shape]="markerType()?.shape ?? ''"
-        [fillStyle]="effectiveFillStyle()"
+        [fillStyle]="visual().fillStyle"
         [innerMark]="markerType()?.inner_mark ?? 'none'"
         [trialName]="trialName()"
         [trialPhase]="trialPhase()"

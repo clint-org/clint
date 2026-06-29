@@ -14,6 +14,7 @@ import { GLYPH_RATIOS, GLYPH_STROKES } from '../../../core/models/marker-visual'
       [attr.fill]="fillStyle() === 'outline' ? 'white' : color()"
       [attr.stroke]="color()"
       [attr.stroke-width]="fillStyle() === 'outline' ? S.shape : 0"
+      [attr.stroke-dasharray]="outlineDash() ? dashPattern : null"
     />
     @if (innerMark() === 'x') {
       <svg:line
@@ -43,9 +44,11 @@ export class SquareIconComponent {
   readonly color = input<string>('#000000');
   readonly fillStyle = input<FillStyle>('filled');
   readonly innerMark = input<InnerMark>('none');
+  readonly outlineDash = input<boolean>(false);
 
   protected readonly R = GLYPH_RATIOS;
   protected readonly S = GLYPH_STROKES;
+  protected readonly dashPattern = GLYPH_STROKES.outlineDashPattern.join(',');
 
   readonly padding = computed(() => this.size() * this.R.squareInset);
   readonly innerSize = computed(() => this.size() * (1 - 2 * this.R.squareInset));
