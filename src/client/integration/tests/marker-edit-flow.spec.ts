@@ -146,7 +146,13 @@ async function createMarkerWithAssignments(
   return markerId;
 }
 
-describe('update_marker_assignments RPC', () => {
+// RETIRED: marker_assignments and _cleanup_orphan_marker trigger are dropped in the
+// event-model cutover (migration set C2). Events carry a single inline anchor
+// (anchor_type/anchor_id -- no join table, no orphan-cleanup trigger), so the
+// two-transaction orphan bug this spec was locking in is structurally impossible
+// under the new model. Kept for history. Stage-5 may add an equivalent
+// create_event/update_event anchor isolation spec.
+describe.skip('update_marker_assignments RPC', () => {
   it('swaps the sole assignment without orphaning the marker', async () => {
     const trialA = await createTrial('swap-a');
     const trialB = await createTrial('swap-b');
@@ -255,7 +261,7 @@ describe('update_marker_assignments RPC', () => {
   });
 });
 
-describe('orphan-cleanup trigger (regression contract for the bug we fixed)', () => {
+describe.skip('orphan-cleanup trigger (regression contract for the bug we fixed)', () => {
   // These tests fail loudly if a future change weakens _cleanup_orphan_marker.
   // If they fail, update_marker_assignments may no longer be necessary --
   // re-read migration 20260521120300 before removing it.

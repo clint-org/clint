@@ -1,7 +1,12 @@
 /**
  * Entity name uniqueness constraints. Verifies the unique(space_id, name)
- * constraints on indications, marker_types, and event_categories, plus
- * the partial unique indexes that protect system rows (space_id IS NULL).
+ * constraints on indications, plus partial unique indexes on system rows.
+ *
+ * The marker_types and event_categories describe blocks are retired (describe.skip)
+ * below: both tables are dropped in the event-model cutover. Their replacements
+ * (event_types / event_type_categories) do not yet carry name-uniqueness
+ * constraints -- that lands with the Stage-3 taxonomy admin work
+ * (docs/superpowers/specs/2026-06-28-event-model-stage-3-ia-rename.md).
  *
  * Spec: docs/superpowers/specs/2026-05-23-entity-name-uniqueness-design.md
  */
@@ -84,9 +89,12 @@ describe('indications unique(space_id, name)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// marker_types
+// marker_types -- RETIRED
+// marker_types is dropped in the event-model cutover. The replacement table
+// (event_types) does not yet have a name-uniqueness constraint -- that lands
+// with Stage-3 taxonomy admin (docs/superpowers/specs/2026-06-28-event-model-stage-3-ia-rename.md).
 // ---------------------------------------------------------------------------
-describe('marker_types unique(space_id, name)', () => {
+describe.skip('marker_types unique(space_id, name)', () => {
   let categoryId: string;
 
   beforeAll(async () => {
@@ -180,9 +188,12 @@ describe('marker_types unique(space_id, name)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// event_categories
+// event_categories -- RETIRED
+// event_categories is dropped in the event-model cutover. The replacement table
+// (event_type_categories) does not yet have a name-uniqueness constraint -- that
+// lands with Stage-3 taxonomy admin (docs/superpowers/specs/2026-06-28-event-model-stage-3-ia-rename.md).
 // ---------------------------------------------------------------------------
-describe('event_categories unique(space_id, name)', () => {
+describe.skip('event_categories unique(space_id, name)', () => {
   it('rejects duplicate name within the same space', async () => {
     const userId = p.ids.tenant_owner;
     const name = `EC-dup-${Date.now()}`;

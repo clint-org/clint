@@ -1,12 +1,16 @@
 /**
- * Integration tests: get_space_inventory_snapshot emits marker/event instances.
+ * Integration tests: get_space_inventory_snapshot emits event instances.
  *
- * Verifies that the snapshot RPC includes `markers` (with trial linkage via
- * marker_assignments) and `events` (with an anchor derived from company/asset/trial_id)
- * in the returned jsonb, scoped to the given space.
+ * Repointed from the pre-cutover version that also tested markers/marker_assignments
+ * (both dropped in the event-model cutover). The markers describe block is retired
+ * below; this file now covers only the events half.
  *
- * These two new fields are used by the AI extraction validator (Task 4) to
- * detect duplicate markers/events across re-imports.
+ * Verifies that the snapshot RPC includes `events` (with anchor derived from
+ * anchor_type/anchor_id) in the returned jsonb, scoped to the given space,
+ * and that adding an event changes the hash.
+ *
+ * These fields are used by the AI extraction validator (Task 4) to detect
+ * duplicate events across re-imports.
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -20,13 +24,11 @@ let admin: ReturnType<typeof adminClient>;
 let companyId: string;
 let assetId: string;
 let trialId: string;
-let markerId: string;
-let markerAssignmentId: string;
 let eventId: string;
 
-// System fixture ids (from seed.sql).
-const TOPLINE_DATA_TYPE_ID = 'a0000000-0000-0000-0000-000000000013';
-const REGULATORY_CATEGORY_ID = 'e0000000-0000-0000-0000-000000000002';
+// 'Regulatory Filing' system event_type (category: Regulatory).
+// category_id d0000000-0000-0000-0000-000000000003 => event_type_categories.name = 'Regulatory'
+const REGULATORY_FILING_EVENT_TYPE_ID = 'a0000000-0000-0000-0000-000000000032';
 
 beforeAll(async () => {
   p = await buildPersonas();
@@ -59,40 +61,18 @@ beforeAll(async () => {
   if (trialErr) throw new Error(`trials insert: ${trialErr.message}`);
   trialId = trial.id;
 
-  // Insert marker using the system "Topline Data" type.
-  const { data: marker, error: markerErr } = await admin
-    .from('markers')
-    .insert({
-      space_id: p.org.spaceId,
-      marker_type_id: TOPLINE_DATA_TYPE_ID,
-      title: 'Phase 2 Topline Readout',
-      event_date: '2026-09-15',
-      created_by: p.ids.contributor,
-    })
-    .select('id')
-    .single();
-  if (markerErr) throw new Error(`markers insert: ${markerErr.message}`);
-  markerId = marker.id;
-
-  // Link the marker to the trial via marker_assignments.
-  const { data: assignment, error: assignErr } = await admin
-    .from('marker_assignments')
-    .insert({ marker_id: markerId, trial_id: trialId })
-    .select('id')
-    .single();
-  if (assignErr) throw new Error(`marker_assignments insert: ${assignErr.message}`);
-  markerAssignmentId = assignment.id;
-
-  // Insert event anchored to the trial.
+  // Insert event anchored to the trial using the new single-anchor model.
+  // anchor_type: 'trial' + anchor_id mirrors the old trial_id column (dropped).
+  // event_type_id replaces category_id; 'Regulatory Filing' maps to category 'Regulatory'.
   const { data: event, error: eventErr } = await admin
     .from('events')
     .insert({
       space_id: p.org.spaceId,
-      trial_id: trialId,
-      category_id: REGULATORY_CATEGORY_ID,
+      event_type_id: REGULATORY_FILING_EVENT_TYPE_ID,
+      anchor_type: 'trial',
+      anchor_id: trialId,
       title: 'IND Filing for SNAPSHOT-001',
       event_date: '2026-10-01',
-      priority: 'high',
       created_by: p.ids.contributor,
     })
     .select('id')
@@ -102,12 +82,6 @@ beforeAll(async () => {
 }, 120_000);
 
 afterAll(async () => {
-  if (markerAssignmentId) {
-    await admin.from('marker_assignments').delete().eq('id', markerAssignmentId);
-  }
-  if (markerId) {
-    await admin.from('markers').delete().eq('id', markerId);
-  }
   if (eventId) {
     await admin.from('events').delete().eq('id', eventId);
   }
@@ -122,24 +96,12 @@ afterAll(async () => {
   }
 });
 
-describe('get_space_inventory_snapshot includes marker and event instances', () => {
-  it('returns markers array with id, trial_id, marker_type, title, event_date', async () => {
-    const r = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
-      p_space_id: p.org.spaceId,
-    });
-    const snapshot = expectOk(r) as Record<string, unknown>;
+// markers describe block removed: markers/marker_assignments/marker_types are
+// dropped in the event-model cutover (migration set C). The snapshot RPC no
+// longer emits a 'markers' key. Stage-5 may add a dedicated snapshot-regression
+// spec for the new taxonomy tables (event_types/event_type_categories).
 
-    expect(Array.isArray(snapshot['markers'])).toBe(true);
-
-    const markers = snapshot['markers'] as Array<Record<string, unknown>>;
-    const found = markers.find((m) => m['id'] === markerId);
-    expect(found).toBeTruthy();
-    expect(found!['trial_id']).toBe(trialId);
-    expect(found!['marker_type']).toBe('Topline Data');
-    expect(found!['title']).toBe('Phase 2 Topline Readout');
-    expect(found!['event_date']).toBe('2026-09-15');
-  });
-
+describe('get_space_inventory_snapshot includes event instances', () => {
   it('returns events array with id, anchor (level + id), category, title, event_date', async () => {
     const r = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
       p_space_id: p.org.spaceId,
@@ -154,37 +116,34 @@ describe('get_space_inventory_snapshot includes marker and event instances', () 
     const anchor = found!['anchor'] as Record<string, unknown>;
     expect(anchor['level']).toBe('trial');
     expect(anchor['id']).toBe(trialId);
+    // category is resolved via event_type_id -> event_types.category_id -> event_type_categories.name
     expect(found!['category']).toBe('Regulatory');
     expect(found!['title']).toBe('IND Filing for SNAPSHOT-001');
     expect(found!['event_date']).toBe('2026-10-01');
   });
 
-  it('markers and events are included in the hash (hash changes when instances change)', async () => {
-    // Get hash before inserting an extra marker.
+  it('events are included in the hash (hash changes when a new event is added)', async () => {
+    // Capture hash before inserting an extra event.
     const r1 = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
       p_space_id: p.org.spaceId,
     });
     const hash1 = (expectOk(r1) as Record<string, unknown>)['hash'] as string;
 
-    // Insert a second marker with a trial assignment (markers without assignments
-    // are excluded from the CTE and would not change the hash).
-    const { data: m2, error: m2err } = await admin
-      .from('markers')
+    // Insert a second event into the same space; it must shift the hash.
+    const { data: e2, error: e2err } = await admin
+      .from('events')
       .insert({
         space_id: p.org.spaceId,
-        marker_type_id: TOPLINE_DATA_TYPE_ID,
-        title: 'Extra Marker For Hash Test',
+        event_type_id: REGULATORY_FILING_EVENT_TYPE_ID,
+        anchor_type: 'trial',
+        anchor_id: trialId,
+        title: 'Extra Event For Hash Test',
         event_date: '2026-11-01',
         created_by: p.ids.contributor,
       })
       .select('id')
       .single();
-    if (m2err) throw new Error(`extra marker insert: ${m2err.message}`);
-
-    const { error: aErr } = await admin
-      .from('marker_assignments')
-      .insert({ marker_id: m2.id, trial_id: trialId });
-    if (aErr) throw new Error(`extra marker assignment insert: ${aErr.message}`);
+    if (e2err) throw new Error(`extra event insert: ${e2err.message}`);
 
     try {
       const r2 = await as(p, 'contributor').rpc('get_space_inventory_snapshot', {
@@ -193,8 +152,7 @@ describe('get_space_inventory_snapshot includes marker and event instances', () 
       const hash2 = (expectOk(r2) as Record<string, unknown>)['hash'] as string;
       expect(hash2).not.toBe(hash1);
     } finally {
-      await admin.from('marker_assignments').delete().eq('marker_id', m2.id);
-      await admin.from('markers').delete().eq('id', m2.id);
+      await admin.from('events').delete().eq('id', e2.id);
     }
   });
 });
