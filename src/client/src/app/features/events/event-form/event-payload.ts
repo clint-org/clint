@@ -49,7 +49,7 @@ export interface EventFormState {
 export const PROJECTION_OPTIONS: { label: string; value: Projection }[] = [
   { label: 'Confirmed actual', value: 'actual' },
   { label: 'Company guidance', value: 'company' },
-  { label: 'Primary intelligence', value: 'primary' },
+  { label: 'Intelligence', value: 'primary' },
   { label: 'Forecasted', value: 'forecasted' },
 ];
 

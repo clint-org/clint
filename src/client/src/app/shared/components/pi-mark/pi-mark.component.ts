@@ -36,7 +36,7 @@ export const PI_MARK_VIEWBOX = '0 0 24 24';
 })
 export class PiMarkComponent {
   readonly size = input<number>(11);
-  readonly label = input<string>('Has primary intelligence');
+  readonly label = input<string>('Has intelligence');
   protected readonly path = BOOKMARK_PATH;
   protected readonly viewBox = PI_MARK_VIEWBOX;
 }

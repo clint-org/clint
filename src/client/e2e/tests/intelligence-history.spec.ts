@@ -229,7 +229,7 @@ test.describe('intelligence version history', () => {
     await expect(page.getByRole('heading', { name: 'Acme thesis v2', level: 3 })).toBeHidden({
       timeout: 5000,
     });
-    await expect(page.getByRole('button', { name: 'Add primary intelligence' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add intelligence' })).toBeVisible();
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     const historyAfter = page.getByRole('region', { name: 'History' });
@@ -337,7 +337,7 @@ test.describe('intelligence version history', () => {
     await expect(page.getByRole('heading', { name: headline, level: 3 })).toBeHidden({
       timeout: 5000,
     });
-    await expect(page.getByRole('button', { name: 'Add primary intelligence' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add intelligence' })).toBeVisible();
   });
 
   test('deleting the parent company clears all primary_intelligence history rows', async () => {

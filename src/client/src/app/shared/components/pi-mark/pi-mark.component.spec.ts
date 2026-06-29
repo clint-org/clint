@@ -41,8 +41,8 @@ describe('PiMark template contract', () => {
     expect(src).not.toMatch(/fill="#[0-9a-fA-F]{6}"/);
   });
 
-  it('defaults to an 11px mark labelled for primary intelligence', () => {
+  it('defaults to an 11px mark labelled for intelligence', () => {
     expect(src).toContain('input<number>(11)');
-    expect(src).toContain(`input<string>('Has primary intelligence')`);
+    expect(src).toContain(`input<string>('Has intelligence')`);
   });
 });

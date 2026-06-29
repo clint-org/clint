@@ -5,14 +5,17 @@
  *
  * Covers, through the real browser against deployed dev (owner role):
  *   1. Asset create (name + company) + rename via the dialog; persisted via apiAs.
- *   2. (test.fixme) Trial create with phase + start/end + CT.gov phase lock -- the in-modal
- *      p-datepicker is PrimeNG-fragile; pending a dedicated headed pass. create_trial is
- *      covered at the RPC layer by seedBasics.
+ *   2. Trial create (name + asset + phase) + rename via "Edit trial details"; assert
+ *      phase_type='P3' persisted, then force phase_type_source='ctgov' and assert the Phase
+ *      select is disabled + the 'ct.gov' provenance badge shows. (Phase start/end dates are
+ *      optional and not set -- the PrimeNG datepicker model isn't driven by a plain fill().)
  *   3. Merged Event form EDIT -- the update_event regression guard. Seed the event via apiAs,
  *      then row-action EDIT -> merged "Edit event" dialog -> rename (keep trial anchor) ->
  *      Update event; assert the title persisted (update_event resolved through the real client
  *      named-arg path -- it PGRST202'd until p_source_url was dropped) + a trial_change_events
- *      'event_edited' Activity row. Re-anchor (p-autocomplete entity picker) is a follow-up.
+ *      'event_edited' Activity row.
+ *   4. Same dialog, re-anchor Trial -> Asset via the Level + entity p-selects (QA-004); assert
+ *      anchor_type/anchor_id moved via apiAs. Also through update_event.
  *
  * GROUNDING: every EVENT selector is grounded in origin/develop (the DEPLOYED cutover form),
  * not this working tree's pre-cutover event-form.component.ts. Asset/trial form templates are
@@ -51,25 +54,6 @@ async function pickSelect(
   }
   await listbox.getByRole('option', { name: optionLabel }).first().click();
   await listbox.waitFor({ state: 'detached' }).catch(() => {});
-}
-
-/** Set a p-datepicker (dateFormat="yy-mm-dd") via fill -- no click, which would open
- *  the calendar overlay and race the next field's re-render (the end-date minDate
- *  recomputes when the start changes, detaching the input mid-click). */
-async function fillDate(page: Page, inputId: string, iso: string): Promise<void> {
-  // ensure any prior calendar overlay is gone before targeting this field
-  await page
-    .locator('.p-datepicker-panel')
-    .waitFor({ state: 'detached', timeout: 2000 })
-    .catch(() => {});
-  const input = page.locator(`#${inputId}`);
-  await input.waitFor({ state: 'visible' });
-  await input.fill(iso);
-  await page.keyboard.press('Escape');
-  await page
-    .locator('.p-datepicker-panel')
-    .waitFor({ state: 'detached', timeout: 2000 })
-    .catch(() => {});
 }
 
 const sp = (t: string, s: string, sub: string): string => `/t/${t}/s/${s}${sub}`;
@@ -136,12 +120,8 @@ test.describe('@crud @event entity write CRUD + merged event form', () => {
 
   // ----------------------------------------------------------------------------------------
   // 2. TRIAL create + edit, incl. CT.gov phase lock
-  // SCAFFOLD (test.fixme): the in-modal p-datepicker (#create-phase-*) detaches/re-renders
-  // mid-interaction (end-date minDate recomputes when start changes), and a pickSelect step
-  // dismisses the dialog. Needs a dedicated headed pass on the trial-create dialog's PrimeNG
-  // widgets. Trial create is also covered at the RPC layer by seedBasics + create_trial.
   // ----------------------------------------------------------------------------------------
-  test.fixme('owner creates a Phase 3 trial, edits it, and CT.gov-locked phase is read-only', async ({
+  test('owner creates a Phase 3 trial, edits it, and CT.gov-locked phase is read-only', async ({
     world,
     pageAs,
     gotoSettled,
@@ -161,11 +141,12 @@ test.describe('@crud @event entity write CRUD + merged event form', () => {
     await page.locator('#trial-name').fill(trialName);
     await pickSelect(page, 'trial-product', new RegExp(seed.assetName));
     await pickSelect(page, 'create-phase-type', 'Phase 3'); // optionValue 'P3'
-    await fillDate(page, 'create-phase-start', '2025-02-01');
-    await fillDate(page, 'create-phase-end', '2027-02-01');
+    // phase dates are optional and the PrimeNG datepicker model isn't driven by a plain
+    // fill(); they're not asserted here, so create with name + asset + phase only.
     await dialog.getByRole('button', { name: /^Create$/ }).click();
 
-    await expect(page.getByRole('row', { name: new RegExp(trialName) })).toBeVisible();
+    // create navigates to the new trial's detail page (h1 = trial name).
+    await expect(page.getByRole('heading', { name: trialName, level: 1 })).toBeVisible();
 
     // phase_type persisted = 'P3'
     const created = await owner
@@ -180,13 +161,14 @@ test.describe('@crud @event entity write CRUD + merged event form', () => {
 
     // --- edit (rename via trial detail "Edit details") ---
     await gotoSettled(page, sp(world.tenantId, world.spaceId, `/profiles/trials/${trialId}`));
-    await page.getByRole('button', { name: /trial actions/i }).click();
+    await page.getByLabel('Trial actions', { exact: true }).click();
     await page.getByRole('menuitem', { name: /edit details/i }).click();
     const editDialog = page.getByRole('dialog', { name: /edit trial details/i });
     await expect(editDialog).toBeVisible();
     const renamed = `${trialName} v2`;
     await page.locator('#trial-form-name').fill(renamed);
     await editDialog.getByRole('button', { name: /^Save$/ }).click();
+    await expect(editDialog).toBeHidden(); // wait for the save RPC to finish before asserting
 
     const afterEdit = await owner.from('trials').select('name').eq('id', trialId).single();
     expect(afterEdit.data?.name).toBe(renamed);
@@ -194,7 +176,7 @@ test.describe('@crud @event entity write CRUD + merged event form', () => {
     // --- CT.gov phase lock: force phase_type_source='ctgov' (no real registry sync possible) ---
     await lockTrialPhaseFromCtgov(trialId, 'P3');
     await gotoSettled(page, sp(world.tenantId, world.spaceId, `/profiles/trials/${trialId}`));
-    await page.getByRole('button', { name: /trial actions/i }).click();
+    await page.getByLabel('Trial actions', { exact: true }).click();
     await page.getByRole('menuitem', { name: /edit details/i }).click();
     const lockedDialog = page.getByRole('dialog', { name: /edit trial details/i });
     await expect(lockedDialog).toBeVisible();
@@ -210,7 +192,7 @@ test.describe('@crud @event entity write CRUD + merged event form', () => {
   //    that PGRST202'd on every event edit until the DB dropped the vestigial p_source_url
   //    (see rpc-contract @contract). Covers rename (keep anchor -> Activity row) + re-anchor.
   // ----------------------------------------------------------------------------------------
-  test('owner edits a seeded event via the merged dialog: rename + re-anchor (update_event)', async ({
+  test('owner edits a seeded event via the merged dialog: rename (update_event)', async ({
     world,
     pageAs,
     gotoSettled,
@@ -255,10 +237,45 @@ test.describe('@crud @event entity write CRUD + merged event form', () => {
       .eq('event_id', seed.eventId);
     expect(acts.error).toBeNull();
     expect((acts.data ?? []).some((a) => a.event_type === 'event_edited')).toBe(true);
+  });
 
-    // FOLLOW-UP: re-anchor Trial -> Asset (QA-004) also goes through update_event, but the
-    // edit dialog's entity picker is a p-autocomplete (not a p-select), needing a dedicated
-    // type-ahead helper. The rename above already proves update_event resolves end-to-end;
-    // re-anchor is additional coverage for a separate headed pass.
+  // ----------------------------------------------------------------------------------------
+  // 4. MERGED EVENT FORM re-anchor (QA-004) -- also through update_event. The edit dialog's
+  //    Level + entity selects are p-selects (ev-level, ev-entity); changing the anchor moves
+  //    the event off the trial onto the asset.
+  // ----------------------------------------------------------------------------------------
+  test('owner re-anchors a seeded event from trial to asset via the edit dialog (update_event)', async ({
+    world,
+    pageAs,
+    gotoSettled,
+  }) => {
+    test.slow();
+    const seed = await seedBasics(world);
+    const owner = apiAs(world, 'owner');
+    const page = await pageAs('owner');
+    await gotoSettled(page, sp(world.tenantId, world.spaceId, `/profiles/trials/${seed.trialId}`));
+
+    const actions = page.getByLabel('Actions for event Topline readout', { exact: true });
+    await expect(actions).toBeVisible({ timeout: 15_000 });
+    await actions.click();
+    await page.getByRole('menuitem', { name: /^Edit$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /edit event/i });
+    await expect(dialog).toBeVisible();
+
+    // Level select (no filter) -> Asset; then the entity select (filter on) -> the seeded asset.
+    await pickSelect(page, 'ev-level', /^Asset$/);
+    await pickSelect(page, 'ev-entity', new RegExp(seed.assetName));
+    await dialog.getByRole('button', { name: /^Update event$/ }).click();
+    await expect(dialog).toBeHidden();
+
+    // update_event re-anchored the event onto the asset.
+    const ev = await owner
+      .from('events')
+      .select('anchor_type, anchor_id')
+      .eq('id', seed.eventId)
+      .single();
+    expect(ev.error).toBeNull();
+    expect(ev.data?.anchor_type).toBe('asset');
+    expect(ev.data?.anchor_id).toBe(seed.assetId);
   });
 });

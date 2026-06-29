@@ -57,7 +57,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
       [modal]="true"
       [dismissible]="false"
       [closeOnEscape]="true"
-      header="Primary intelligence"
+      header="Intelligence"
       (onHide)="closed.emit()"
     >
       @if (loading()) {
@@ -473,7 +473,7 @@ export class IntelligenceDrawerComponent implements OnDestroy {
         severity: 'error',
         summary: isPermission ? 'Not allowed to publish intelligence' : 'Save failed',
         detail: isPermission
-          ? 'Primary intelligence is the agency deliverable. Ask an agency member of this space to publish it.'
+          ? 'Intelligence is the agency deliverable. Ask an agency member of this space to publish it.'
           : error instanceof Error
             ? error.message
             : 'Unknown error',

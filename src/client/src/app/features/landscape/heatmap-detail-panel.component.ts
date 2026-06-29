@@ -108,7 +108,7 @@ const GROUPING_LABEL: Record<HeatmapGrouping, string> = {
         }
 
         @if (allPiReferences().length > 0) {
-          <app-detail-panel-section label="Primary intelligence" [piMark]="true">
+          <app-detail-panel-section label="Intelligence" [piMark]="true">
             <app-pi-detail-section
               [references]="allPiReferences()"
               [countLabel]="piCountLabel()"
