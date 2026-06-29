@@ -29,10 +29,11 @@ function makeService(
 describe('EventTypeService', () => {
   it('lists system + space event types ordered by display_order', async () => {
     const rows = [{ id: 'a', name: 'Topline Data', display_order: 1, is_system: true }];
+    const orSpy = { called: false };
     const query: QueryStub = {
       select: () => query,
       order: () => query,
-      or: () => query,
+      or: () => { orSpy.called = true; return query; },
       throwOnError: async () => ({ data: rows }),
     };
     const svc = makeService(
@@ -44,6 +45,7 @@ describe('EventTypeService', () => {
 
     expect(out).toHaveLength(1);
     expect(out[0].name).toBe('Topline Data');
+    expect(orSpy.called).toBe(true);
   });
 
   it('omits the or() filter when no spaceId is provided', async () => {
