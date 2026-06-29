@@ -1,0 +1,424 @@
+<app-manage-page-shell>
+  <p class="mb-3 text-[11px] text-slate-500 max-w-2xl">
+    Indications, mechanisms of action, and routes of administration used to classify assets and
+    trials, plus the event categories and event types that encode markers on the timeline, across
+    this space.
+    <a [routerLink]="taxonomiesGuideLink()" class="ml-1 text-brand-700 hover:underline"
+      >Taxonomies guide</a
+    >.
+  </p>
+  <div class="mb-4">
+    <p-selectbutton
+      [options]="tabOptions"
+      [ngModel]="activeTab()"
+      (ngModelChange)="onTabChange($event)"
+      optionLabel="label"
+      optionValue="value"
+      [allowEmpty]="false"
+      size="small"
+      aria-label="Select taxonomy type"
+    />
+  </div>
+
+  <!-- Therapeutic Areas table -->
+  @if (activeTab() === 'indications') {
+    <p-table
+      styleClass="data-table"
+      [value]="areas()"
+      [loading]="loading()"
+      [tableStyle]="{ 'min-width': '40rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Name</th>
+          <th>Abbreviation</th>
+          <th class="col-actions"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-area>
+        <tr>
+          <td>{{ area.name }}</td>
+          <td class="col-identifier">{{ area.abbreviation ?? '--' }}</td>
+          <td class="col-actions">
+            <app-row-actions
+              [items]="areaRowMenu(area)"
+              [ariaLabel]="'Actions for ' + area.name"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #loadingbody>
+        <app-table-skeleton-body
+          [cells]="[
+            { w: '52%' },
+            { w: '52px', h: '11px' },
+            { w: '14px', class: 'col-actions' },
+          ]"
+        />
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="3">No indications yet. Add one to get started.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+
+  <!-- Mechanisms of Action table -->
+  @if (activeTab() === 'moa') {
+    <p-table
+      styleClass="data-table"
+      [value]="moas()"
+      [loading]="loading()"
+      [tableStyle]="{ 'min-width': '36rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th class="col-actions"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-item>
+        <tr>
+          <td>{{ item.name }}</td>
+          <td class="col-identifier">{{ item.description ?? '--' }}</td>
+          <td class="col-actions">
+            <app-row-actions
+              [items]="moaRowMenu(item)"
+              [ariaLabel]="'Actions for ' + item.name"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #loadingbody>
+        <app-table-skeleton-body
+          [cells]="[{ w: '42%' }, { w: '72%' }, { w: '14px', class: 'col-actions' }]"
+        />
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="3">No mechanisms of action yet. Add one to get started.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+
+  <!-- Routes of Administration table -->
+  @if (activeTab() === 'roa') {
+    <p-table
+      styleClass="data-table"
+      [value]="roas()"
+      [loading]="loading()"
+      [tableStyle]="{ 'min-width': '36rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Name</th>
+          <th>Abbreviation</th>
+          <th class="col-actions"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-item>
+        <tr>
+          <td>{{ item.name }}</td>
+          <td class="col-identifier">{{ item.abbreviation ?? '--' }}</td>
+          <td class="col-actions">
+            <app-row-actions
+              [items]="roaRowMenu(item)"
+              [ariaLabel]="'Actions for ' + item.name"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #loadingbody>
+        <app-table-skeleton-body
+          [cells]="[
+            { w: '48%' },
+            { w: '44px', h: '11px' },
+            { w: '14px', class: 'col-actions' },
+          ]"
+        />
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="3">No routes of administration yet. Add one to get started.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+
+  <!-- Event Categories table -->
+  @if (activeTab() === 'event-categories') {
+    <p class="mb-3 text-[11px] text-slate-500 max-w-2xl">
+      Categories group event types in the timeline legend. System categories are shared across all
+      spaces and are read-only; add your own for events that do not fit them.
+    </p>
+    <p-table
+      styleClass="data-table"
+      [value]="sortedCategories()"
+      [loading]="loading()"
+      [tableStyle]="{ 'min-width': '32rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Name</th>
+          <th>Display order</th>
+          <th>Origin</th>
+          <th class="col-actions"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-c>
+        <tr>
+          <td>{{ c.name }}</td>
+          <td class="col-secondary">{{ c.display_order }}</td>
+          <td>
+            @if (isSystemRow(c)) {
+              <app-status-tag label="System" tone="slate" />
+            } @else {
+              <app-status-tag label="Custom" tone="brand" />
+            }
+          </td>
+          <td class="col-actions">
+            @if (!isSystemRow(c)) {
+              <app-row-actions
+                [items]="eventCategoryRowMenu(c)"
+                [ariaLabel]="'Actions for ' + c.name"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #loadingbody>
+        <app-table-skeleton-body
+          [cells]="[
+            { w: '48%' },
+            { w: '36px', h: '11px' },
+            { w: '56px', h: '14px' },
+            { w: '14px', class: 'col-actions' },
+          ]"
+        />
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="4">No event categories yet. Add one to get started.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+
+  <!-- Event Types table -->
+  @if (activeTab() === 'event-types') {
+    <p class="mb-3 text-[11px] text-slate-500 max-w-2xl">
+      Event types are the shape, color, and inner mark used on the timeline to encode each event.
+      System types are shared across all spaces and are read-only; custom types are scoped to this
+      space.
+      <a [routerLink]="markersHelpLink()" class="ml-1 text-brand-700 hover:underline"
+        >Event glyphs guide</a
+      >.
+    </p>
+    <app-grid-toolbar [state]="grid" searchPlaceholder="Search event types..." />
+    <p-table
+      styleClass="data-table"
+      [value]="visibleEventTypes()"
+      [loading]="loading()"
+      [tableStyle]="{ 'min-width': '48rem' }"
+      [lazy]="true"
+      (onLazyLoad)="grid.onLazyLoad($event)"
+      [paginator]="grid.totalRecords() > grid.page().rows"
+      [rows]="grid.page().rows"
+      [first]="grid.page().first"
+      [totalRecords]="grid.totalRecords()"
+      [rowsPerPageOptions]="[10, 25, 50, 100]"
+      [filters]="grid.primengFilters()"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="name">
+            Name <p-sortIcon field="name" />
+            <p-column-filter type="text" field="name" display="menu" />
+          </th>
+          <th pSortableColumn="marker_categories.name">
+            Category <p-sortIcon field="marker_categories.name" />
+            <p-column-filter type="text" field="marker_categories.name" display="menu" />
+          </th>
+          <th pSortableColumn="shape">
+            Shape <p-sortIcon field="shape" />
+            <p-column-filter type="text" field="shape" display="menu" />
+          </th>
+          <th pSortableColumn="fill_style">
+            Fill <p-sortIcon field="fill_style" />
+            <p-column-filter type="text" field="fill_style" display="menu" />
+          </th>
+          <th>Marker</th>
+          <th pSortableColumn="is_system">
+            Origin <p-sortIcon field="is_system" />
+            <p-column-filter type="text" field="is_system" display="menu" />
+          </th>
+          <th class="col-actions"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-mt>
+        <tr>
+          <td><span [innerHTML]="mt.name | highlight: grid.debouncedGlobalSearch()"></span></td>
+          <td class="col-secondary">
+            <span
+              [innerHTML]="(mt.marker_categories?.name ?? '--') | highlight: grid.debouncedGlobalSearch()"
+            ></span>
+          </td>
+          <td class="col-secondary">
+            <span [innerHTML]="mt.shape | highlight: grid.debouncedGlobalSearch()"></span>
+          </td>
+          <td class="col-secondary">
+            <span [innerHTML]="mt.fill_style | highlight: grid.debouncedGlobalSearch()"></span>
+          </td>
+          <td>
+            <span
+              class="inline-flex h-7 w-7 items-center justify-center rounded bg-white ring-1 ring-slate-200"
+              role="img"
+              [attr.aria-label]="mt.fill_style + ' ' + mt.shape + ' marker'"
+            >
+              <app-marker-icon
+                [shape]="mt.shape"
+                [color]="mt.color"
+                [fillStyle]="mt.fill_style"
+                [innerMark]="mt.inner_mark"
+                [size]="20"
+              />
+            </span>
+          </td>
+          <td>
+            @if (isSystemRow(mt)) {
+              <app-status-tag label="System" tone="slate" />
+            } @else {
+              <app-status-tag label="Custom" tone="brand" />
+            }
+          </td>
+          <td class="col-actions">
+            @if (!isSystemRow(mt)) {
+              <app-row-actions
+                [items]="eventTypeRowMenu(mt)"
+                [ariaLabel]="'Actions for ' + mt.name"
+              />
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #loadingbody>
+        <app-table-skeleton-body
+          [cells]="[
+            { w: '48%' },
+            { w: '40%' },
+            { w: '56px' },
+            { w: '56px' },
+            { w: '18px', h: '18px' },
+            { w: '56px', h: '14px' },
+            { w: '14px', class: 'col-actions' },
+          ]"
+        />
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7">
+            @if (grid.isFiltered()) {
+              No event types match your filters.
+            } @else {
+              No event types yet. Add one to get started.
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+
+  @if (deleteError()) {
+    <p-message severity="error" [closable]="false" styleClass="mt-4">
+      {{ deleteError() }}
+    </p-message>
+  }
+</app-manage-page-shell>
+
+<!-- Therapeutic Area dialog -->
+<p-dialog
+  [header]="editingArea() ? 'Edit indication' : 'Add indication'"
+  [(visible)]="taModalOpen"
+  [modal]="true"
+  styleClass="!w-[32rem]"
+  (onHide)="closeModal()"
+>
+  @if (taModalOpen()) {
+    <app-therapeutic-area-form
+      [area]="editingArea()"
+      (saved)="onAreaSaved()"
+      (cancelled)="closeModal()"
+    />
+  }
+</p-dialog>
+
+<!-- MOA dialog -->
+<p-dialog
+  [header]="editingMoa() ? 'Edit mechanism of action' : 'Add mechanism of action'"
+  [(visible)]="moaModalOpen"
+  [modal]="true"
+  styleClass="!w-[32rem]"
+  (onHide)="closeModal()"
+>
+  @if (moaModalOpen()) {
+    <app-mechanism-of-action-form
+      [item]="editingMoa()"
+      (saved)="onMoaSaved()"
+      (cancelled)="closeModal()"
+    />
+  }
+</p-dialog>
+
+<!-- ROA dialog -->
+<p-dialog
+  [header]="editingRoa() ? 'Edit route of administration' : 'Add route of administration'"
+  [(visible)]="roaModalOpen"
+  [modal]="true"
+  styleClass="!w-[32rem]"
+  (onHide)="closeModal()"
+>
+  @if (roaModalOpen()) {
+    <app-route-of-administration-form
+      [item]="editingRoa()"
+      (saved)="onRoaSaved()"
+      (cancelled)="closeModal()"
+    />
+  }
+</p-dialog>
+
+<!-- Event Category dialog -->
+<p-dialog
+  [header]="editingCategory() ? 'Edit event category' : 'Add event category'"
+  [(visible)]="ecModalOpen"
+  [modal]="true"
+  styleClass="!w-[28rem]"
+  (onHide)="closeModal()"
+>
+  @if (ecModalOpen()) {
+    <app-event-category-form
+      [category]="editingCategory()"
+      (saved)="onCategorySaved()"
+      (cancelled)="closeModal()"
+    />
+  }
+</p-dialog>
+
+<!-- Event Type dialog -->
+<p-dialog
+  [header]="editingType() ? 'Edit event type' : 'Add event type'"
+  [(visible)]="etModalOpen"
+  [modal]="true"
+  styleClass="!w-[32rem]"
+  (onHide)="closeModal()"
+>
+  @if (etModalOpen()) {
+    <app-event-type-form
+      [eventType]="editingType()"
+      (saved)="onTypeSaved()"
+      (cancelled)="closeModal()"
+    />
+  }
+</p-dialog>

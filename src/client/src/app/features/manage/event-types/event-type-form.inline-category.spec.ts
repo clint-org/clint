@@ -4,12 +4,12 @@ import { MarkerCategory } from '../../../core/models/marker.model';
 import {
   createInlineCategory,
   shouldOfferCategoryCreate,
-} from './marker-type-form.inline-category';
+} from './event-type-form.inline-category';
 
 // The component itself is not constructed here: importing a templateUrl component
 // into the plain-node unit runner triggers JIT compilation. Following the repo
-// idiom (see engagement-landing.component.spec.ts), the inline-create behavior
-// lives in a pure helper that the component delegates to, and we test that.
+// idiom, the inline-create behavior lives in a pure helper that the component
+// delegates to, and we test that.
 
 describe('createInlineCategory', () => {
   it('creates and returns the category for a valid name', async () => {

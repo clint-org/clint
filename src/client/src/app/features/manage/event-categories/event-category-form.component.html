@@ -4,14 +4,14 @@
   }
 
   <app-form-field
-    label="Category name"
-    fieldId="mc-name"
+    label="Name"
+    fieldId="ec-name"
     [required]="true"
-    [error]="nameInvalid() ? 'Category name is required.' : null"
+    [error]="nameInvalid() ? 'Name is required.' : null"
   >
     <input
       pInputText
-      id="mc-name"
+      id="ec-name"
       class="w-full mt-1"
       [ngModel]="name()"
       (ngModelChange)="name.set($event)"
@@ -24,8 +24,21 @@
     />
   </app-form-field>
 
+  <app-form-field label="Display order" fieldId="ec-display-order">
+    <p-inputnumber
+      inputId="ec-display-order"
+      [ngModel]="displayOrder()"
+      (ngModelChange)="displayOrder.set($event)"
+      name="displayOrder"
+      [min]="0"
+      placeholder="Auto"
+      styleClass="w-full"
+      class="mt-1"
+    />
+  </app-form-field>
+
   <app-form-actions
-    [submitLabel]="'Save category'"
+    [submitLabel]="category() ? 'Update category' : 'Create category'"
     [loading]="saving()"
     (cancelled)="cancelled.emit()"
   />

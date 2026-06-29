@@ -6,7 +6,7 @@ export interface InlineCategoryCreator {
 }
 
 /**
- * Create a category inline from the marker-type form. Trims the name and skips
+ * Create a category inline from the event-type form. Trims the name and skips
  * the call for blank input, returning null so the caller leaves state untouched.
  */
 export async function createInlineCategory(

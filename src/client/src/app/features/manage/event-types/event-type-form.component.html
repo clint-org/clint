@@ -6,14 +6,14 @@
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
     <app-form-field
       label="Category"
-      fieldId="mt-category"
+      fieldId="et-category"
       [required]="true"
       [error]="categoryInvalid() ? 'Category is required.' : null"
       spacing="sm:col-span-2"
     >
       <p-select
         #categorySelect
-        inputId="mt-category"
+        inputId="et-category"
         [options]="categories()"
         [ngModel]="categoryId()"
         (ngModelChange)="categoryId.set($event)"
@@ -30,7 +30,7 @@
         (onBlur)="categoryBlurred.set(true)"
         [attr.aria-required]="true"
         [attr.aria-invalid]="categoryInvalid()"
-        [attr.aria-describedby]="categoryInvalid() ? 'mt-category-error' : null"
+        [attr.aria-describedby]="categoryInvalid() ? 'et-category-error' : null"
       >
         <ng-template pTemplate="footer">
           @if (showCreateCategory()) {
@@ -53,14 +53,14 @@
 
     <app-form-field
       label="Name"
-      fieldId="mt-name"
+      fieldId="et-name"
       [required]="true"
       [error]="nameInvalid() ? 'Name is required.' : null"
       spacing="sm:col-span-2"
     >
       <input
         pInputText
-        id="mt-name"
+        id="et-name"
         class="w-full mt-1"
         [ngModel]="name()"
         (ngModelChange)="name.set($event)"
@@ -70,13 +70,13 @@
         (blur)="nameBlurred.set(true)"
         [attr.aria-required]="true"
         [attr.aria-invalid]="nameInvalid()"
-        [attr.aria-describedby]="nameInvalid() ? 'mt-name-error' : null"
+        [attr.aria-describedby]="nameInvalid() ? 'et-name-error' : null"
       />
     </app-form-field>
 
-    <app-form-field label="Shape" fieldId="mt-shape" spacing="">
+    <app-form-field label="Shape" fieldId="et-shape" spacing="">
       <p-select
-        inputId="mt-shape"
+        inputId="et-shape"
         [options]="shapeOptions"
         [ngModel]="shape()"
         (ngModelChange)="shape.set($event)"
@@ -88,9 +88,9 @@
       />
     </app-form-field>
 
-    <app-form-field label="Fill Style" fieldId="mt-fill-style" spacing="">
+    <app-form-field label="Fill" fieldId="et-fill-style" spacing="">
       <p-select
-        inputId="mt-fill-style"
+        inputId="et-fill-style"
         [options]="fillStyleOptions"
         [ngModel]="fillStyle()"
         (ngModelChange)="fillStyle.set($event)"
@@ -102,18 +102,46 @@
       />
     </app-form-field>
 
-    <app-form-field label="Color" fieldId="mt-color" spacing="">
+    <app-form-field label="Color" fieldId="et-color" spacing="">
       <p-colorpicker
         [ngModel]="color()"
         (ngModelChange)="color.set($event)"
         name="color"
-        inputId="mt-color"
+        inputId="et-color"
       />
     </app-form-field>
 
-    <app-form-field label="Display Order" fieldId="mt-display-order" spacing="">
+    <app-form-field label="Inner mark" fieldId="et-inner-mark" spacing="">
+      <p-select
+        inputId="et-inner-mark"
+        [options]="innerMarkOptions"
+        [ngModel]="innerMark()"
+        (ngModelChange)="innerMark.set($event)"
+        name="innerMark"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        class="mt-1"
+      />
+    </app-form-field>
+
+    <app-form-field label="Default significance" fieldId="et-significance" spacing="">
+      <p-select
+        inputId="et-significance"
+        [options]="significanceOptions"
+        [ngModel]="defaultSignificance()"
+        (ngModelChange)="defaultSignificance.set($event)"
+        name="defaultSignificance"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        class="mt-1"
+      />
+    </app-form-field>
+
+    <app-form-field label="Display order" fieldId="et-display-order" spacing="">
       <p-inputnumber
-        inputId="mt-display-order"
+        inputId="et-display-order"
         [ngModel]="displayOrder()"
         (ngModelChange)="displayOrder.set($event)"
         name="displayOrder"
@@ -124,86 +152,32 @@
     </app-form-field>
   </div>
 
-  <!-- Preview (custom SVG -- kept as-is) -->
+  <!-- Live glyph preview: renders through the shared MarkerIconComponent so the
+       shape, fill, color, and inner mark match the timeline exactly. -->
   <div class="rounded-md border border-slate-200 bg-slate-50 p-4">
     <p class="mb-2 text-sm font-medium text-slate-700">Preview</p>
     <div class="flex items-center gap-3">
-      <svg
-        width="32"
-        height="32"
-        viewBox="0 0 32 32"
-        [attr.aria-label]="'Preview: ' + shape() + ' ' + fillStyle()"
+      <span
+        class="inline-flex h-9 w-9 items-center justify-center rounded bg-white ring-1 ring-slate-200"
         role="img"
+        [attr.aria-label]="'Preview: ' + fillStyle() + ' ' + shape() + ' with ' + innerMark() + ' inner mark'"
       >
-        @switch (shape()) {
-          @case ('circle') {
-            <circle
-              cx="16"
-              cy="16"
-              r="12"
-              [attr.fill]="fillStyle() === 'filled' ? color() : 'none'"
-              [attr.stroke]="color()"
-              stroke-width="2"
-            />
-          }
-          @case ('diamond') {
-            <polygon
-              points="16,2 30,16 16,30 2,16"
-              [attr.fill]="fillStyle() === 'filled' ? color() : 'none'"
-              [attr.stroke]="color()"
-              stroke-width="2"
-            />
-          }
-          @case ('flag') {
-            <line [attr.stroke]="color()" stroke-width="2" x1="8" y1="4" x2="8" y2="28" />
-            <polygon
-              points="8,4 26,10 8,16"
-              [attr.fill]="fillStyle() === 'filled' ? color() : 'none'"
-              [attr.stroke]="color()"
-              stroke-width="2"
-            />
-          }
-          @case ('triangle') {
-            <polygon
-              points="6,4 28,16 6,28"
-              [attr.fill]="fillStyle() === 'filled' ? color() : 'none'"
-              [attr.stroke]="color()"
-              stroke-width="2"
-            />
-          }
-          @case ('square') {
-            <rect
-              x="4"
-              y="4"
-              width="24"
-              height="24"
-              [attr.fill]="fillStyle() === 'filled' ? color() : 'none'"
-              [attr.stroke]="color()"
-              stroke-width="2"
-            />
-          }
-          @case ('dashed-line') {
-            <line
-              x1="16"
-              y1="4"
-              x2="16"
-              y2="28"
-              [attr.stroke]="color()"
-              stroke-width="2"
-              stroke-dasharray="4,3"
-              stroke-linecap="round"
-            />
-          }
-        }
-      </svg>
+        <app-marker-icon
+          [shape]="shape()"
+          [color]="color()"
+          [fillStyle]="fillStyle()"
+          [innerMark]="innerMark()"
+          [size]="24"
+        />
+      </span>
       <span class="text-sm text-slate-600"
-        >{{ name() || 'Untitled' }} -- {{ shape() }}, {{ fillStyle() }}</span
+        >{{ name() || 'Untitled' }}, {{ shape() }}, {{ fillStyle() }}</span
       >
     </div>
   </div>
 
   <app-form-actions
-    [submitLabel]="markerType() ? 'Update Marker Type' : 'Create Marker Type'"
+    [submitLabel]="eventType() ? 'Update event type' : 'Create event type'"
     [loading]="saving()"
     (cancelled)="cancelled.emit()"
   />
