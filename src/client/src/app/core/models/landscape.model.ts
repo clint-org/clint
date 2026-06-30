@@ -150,7 +150,19 @@ export interface BullseyeAsset {
   recent_markers: BullseyeMarker[];
   moas: { id: string; name: string }[];
   roas: { id: string; name: string; abbreviation: string | null }[];
-  indications: { id: string; name: string; abbreviation: string | null }[];
+  /**
+   * Per-indication entries. `development_status` is this asset's status FOR that
+   * indication (from asset_indications), which can differ from `highest_phase`
+   * (the asset's max across all indications). The by-indication bullseye places
+   * each spoke at this per-indication status, not the max -- see `placementRank`.
+   * Optional: older fixtures/mappers omit it; placement falls back to the max.
+   */
+  indications: {
+    id: string;
+    name: string;
+    abbreviation: string | null;
+    development_status?: RingPhase | null;
+  }[];
   intelligence_count: number;
   has_recent_activity: boolean;
   recent_changes_count: number;
@@ -373,6 +385,45 @@ export interface GroupedSpokesResult {
  * For multi-valued dimensions (indication, moa, roa), an asset may appear
  * in multiple spokes. The returned `duplicatedAssetIds` tracks those assets.
  */
+/**
+ * Dev rank to place a product at on a given spoke. By indication, a multi-
+ * indication asset must sit at THAT indication's own development_status, not at
+ * its overall max (`highest_phase_rank`) -- otherwise a drug approved for one
+ * indication but still in trials for another shows as approved on both spokes
+ * (issue #171). Company/MOA/ROA/asset groupings are not indication-specific, so
+ * they keep the max rollup. Falls back to the max when the per-indication status
+ * is absent (older payloads) or the spoke indication is not found on the asset.
+ */
+export function placementRank(
+  product: BullseyeAsset,
+  dimension: SpokeGrouping | BullseyeDimension | undefined,
+  spokeId: string,
+): number {
+  if (dimension === 'indication') {
+    const status = product.indications.find((i) => i.id === spokeId)?.development_status;
+    if (status) return RING_DEV_RANK[status];
+  }
+  return product.highest_phase_rank;
+}
+
+/**
+ * Phase (RingPhase) to label a product with on a given spoke. The string
+ * counterpart of `placementRank` -- used by the bullseye export table so a
+ * multi-indication asset's row under each indication shows that indication's
+ * stage, not the asset max. Same indication-only rule and fallback.
+ */
+export function placementPhase(
+  product: BullseyeAsset,
+  dimension: SpokeGrouping | BullseyeDimension | undefined,
+  spokeId: string,
+): RingPhase {
+  if (dimension === 'indication') {
+    const status = product.indications.find((i) => i.id === spokeId)?.development_status;
+    if (status) return status;
+  }
+  return product.highest_phase;
+}
+
 export function groupAssetsIntoSpokes(
   assets: BullseyeAsset[],
   grouping: SpokeGrouping,
@@ -405,7 +456,7 @@ export function groupAssetsIntoSpokes(
     id,
     name: group.name,
     display_order: 0,
-    highest_phase_rank: Math.max(...group.assets.map((a) => a.highest_phase_rank)),
+    highest_phase_rank: Math.max(...group.assets.map((a) => placementRank(a, grouping, id))),
     products: group.assets,
     has_intelligence:
       grouping === 'company'
