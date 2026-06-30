@@ -77,7 +77,14 @@ import { buildHeatmapSheets } from './heatmap-export.util';
       </div>
     } @else {
       @let data = heatmapData.value();
-      @if (data && data.bubbles.length > 0) {
+      <!--
+        The controls panel (grouping, count unit, legend) renders whenever data
+        is loaded, even when the current grouping/filters yield no bubbles. The
+        empty state is scoped to the chart column so the controls stay reachable
+        and the user can change the grouping or scope to recover -- mirrors the
+        bullseye fix.
+      -->
+      @if (data) {
         <div class="flex h-full overflow-auto">
           <app-heatmap-controls-panel
             [bubbles]="data.bubbles"
@@ -85,42 +92,44 @@ import { buildHeatmapSheets } from './heatmap-export.util';
             [countUnit]="state.countUnit()"
           />
           <div class="flex-1 min-w-0 overflow-hidden landscape-layout flex flex-col">
-            <div class="flex-1 min-w-0 min-h-0 overflow-auto">
-              <app-heatmap
-                [bubbles]="data.bubbles"
-                [countUnit]="state.countUnit()"
-                [selectedBubble]="selectedBubble()"
-                [sortField]="sortField()"
-                [sortDir]="sortDir()"
-                [latestEventDate]="data.latest_event_date ?? null"
-                [showPreclinical]="state.showPreclinical()"
-                (rowClick)="onBubbleClick($event)"
-                (sortChange)="onSortChange($event)"
-                (cellHover)="onCellHover($event)"
-              />
-            </div>
-            @if (showPanel()) {
-              <div class="landscape-panel-wrap" @slidePanel>
-                <app-heatmap-detail-panel
-                  [bubble]="selectedBubble()"
+            @if (data.bubbles.length > 0) {
+              <div class="flex-1 min-w-0 min-h-0 overflow-auto">
+                <app-heatmap
+                  [bubbles]="data.bubbles"
                   [countUnit]="state.countUnit()"
-                  [totalBubbles]="data.bubbles.length"
-                  [grouping]="state.heatmapGrouping()"
+                  [selectedBubble]="selectedBubble()"
+                  [sortField]="sortField()"
+                  [sortDir]="sortDir()"
+                  [latestEventDate]="data.latest_event_date ?? null"
                   [showPreclinical]="state.showPreclinical()"
-                  [tenantId]="tenantId()"
-                  [spaceId]="spaceId()"
-                  (clearSelection)="selectedBubble.set(null)"
-                  (openIntelligence)="onOpenIntelligence($event)"
+                  (rowClick)="onBubbleClick($event)"
+                  (sortChange)="onSortChange($event)"
+                  (cellHover)="onCellHover($event)"
                 />
+              </div>
+              @if (showPanel()) {
+                <div class="landscape-panel-wrap" @slidePanel>
+                  <app-heatmap-detail-panel
+                    [bubble]="selectedBubble()"
+                    [countUnit]="state.countUnit()"
+                    [totalBubbles]="data.bubbles.length"
+                    [grouping]="state.heatmapGrouping()"
+                    [showPreclinical]="state.showPreclinical()"
+                    [tenantId]="tenantId()"
+                    [spaceId]="spaceId()"
+                    (clearSelection)="selectedBubble.set(null)"
+                    (openIntelligence)="onOpenIntelligence($event)"
+                  />
+                </div>
+              }
+            } @else {
+              <div class="flex items-center justify-center h-full">
+                <p-message severity="info" [closable]="false">
+                  No data matches the current filters. Try adjusting your selections.
+                </p-message>
               </div>
             }
           </div>
-        </div>
-      } @else if (data) {
-        <div class="flex items-center justify-center h-full">
-          <p-message severity="info" [closable]="false">
-            No data matches the current filters. Try adjusting your selections.
-          </p-message>
         </div>
       }
     }
