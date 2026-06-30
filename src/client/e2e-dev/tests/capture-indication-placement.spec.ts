@@ -21,11 +21,15 @@ test('capture by-indication bullseye placement (#171)', async ({ browser }) => {
   const world: ScratchWorld = await createScratchWorld();
   try {
     const seed = await seedDivergentIndicationStatus(world);
-    const sp = `/t/${world.tenantId}/s/${world.spaceId}/bullseye?group=indication&product=${seed.assetId}`;
+    const base = `/t/${world.tenantId}/s/${world.spaceId}`;
+    const route =
+      process.env['CAPTURE_ROUTE'] === 'heatmap'
+        ? `${base}/heatmap/by-indication`
+        : `${base}/bullseye?group=indication&product=${seed.assetId}`;
     const { page, context } = await openAs(browser, world, 'owner');
     try {
       await page.setViewportSize({ width: 1512, height: 900 });
-      await settle(page, sp);
+      await settle(page, route);
       await page.waitForTimeout(1800);
       await page.screenshot({ path: path.join(OUT_DIR, SHOT), fullPage: true });
     } finally {
