@@ -307,6 +307,19 @@ export class LandscapeComponent implements OnInit {
     }
   }
 
+  onOpenAsset(assetId: string): void {
+    if (!assetId) return;
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'profiles',
+      'assets',
+      assetId,
+    ]);
+  }
+
   onOpenTrial(trialId: string): void {
     this.router.navigate([
       '/t',

@@ -25,7 +25,20 @@
           [size]="34"
         />
         <div class="min-w-0 flex-1">
-          <h2 class="text-[19px] font-bold leading-tight text-slate-900">{{ asset.name }}</h2>
+          <h2 class="text-[19px] font-bold leading-tight text-slate-900">
+            <button
+              type="button"
+              class="group inline-flex max-w-full items-baseline gap-1.5 text-left hover:text-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              [attr.aria-label]="'Open asset profile for ' + asset.name"
+              (click)="onAssetClick()"
+            >
+              <span class="min-w-0">{{ asset.name }}</span>
+              <i
+                class="fa-solid fa-arrow-right shrink-0 self-center text-[11px] text-slate-300 group-hover:text-brand-600"
+                aria-hidden="true"
+              ></i>
+            </button>
+          </h2>
           <p class="mt-0.5 text-[13px] italic text-slate-500">
             @if (asset.generic_name) {
               <span>{{ asset.generic_name }} · </span>
