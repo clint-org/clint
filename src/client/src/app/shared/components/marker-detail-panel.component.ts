@@ -10,6 +10,7 @@ import {
 } from '../../core/models/marker-visual';
 import { PiReference } from '../../core/models/primary-intelligence.model';
 import { SpaceRoleService } from '../../core/services/space-role.service';
+import { MarkerEditTarget, markerEditAnchor } from './marker-edit-route';
 import { slidePanelAnimation } from '../animations/slide-panel.animation';
 import {
   CtgovMarkerSurfaceKey,
@@ -133,8 +134,12 @@ export class MarkerDetailPanelComponent {
   readonly trialClick = output<string>();
   /** Re-emitted from the content body when a PI reference is activated. */
   readonly openIntelligence = output<{ entityType: string; entityId: string }>();
-  /** Re-emitted from the content body; see MarkerDetailContentComponent. */
-  readonly editMarkerClick = output<{ trialId: string; markerId: string }>();
+  /**
+   * Re-emitted when the header Edit affordance is activated, carrying the
+   * marker's routable anchor (trial/asset/company) so the host can open the
+   * merged Event editor on that entity's profile. See MarkerDetailContentComponent.
+   */
+  readonly editMarkerClick = output<MarkerEditTarget & { markerId: string }>();
 
   readonly headerLabel = computed(() => {
     const d = this.detail();
@@ -142,20 +147,27 @@ export class MarkerDetailPanelComponent {
     return `${d.catalyst.category_name} · ${d.catalyst.marker_type_name}`;
   });
 
+  /** Routable edit anchor for the selected marker, or null when none. */
+  private readonly editAnchor = computed<MarkerEditTarget | null>(() =>
+    markerEditAnchor(this.detail()?.catalyst)
+  );
+
   /**
    * Whether the header shows the compact "Edit" affordance: the host opted in
-   * via showEditAction, the current user can write to the active space, and
-   * the marker is anchored to a trial (the editor lives on the trial's manage
-   * page). Mirrors the gate that previously lived in the content body.
+   * via showEditAction, the current user can write to the active space, and the
+   * marker is anchored to a routable entity (trial, asset, or company). The
+   * editor opens on that entity's profile via the host. Space-anchored markers
+   * have no profile editor here, so Edit stays hidden for them.
    */
   protected readonly canEditMarker = computed(
-    () => this.showEditAction() && this.spaceRole.canEdit() && !!this.detail()?.catalyst.trial_id
+    () => this.showEditAction() && this.spaceRole.canEdit() && !!this.editAnchor()
   );
 
   protected onEditMarker(): void {
+    const anchor = this.editAnchor();
     const c = this.detail()?.catalyst;
-    if (!c?.trial_id || !this.spaceRole.canEdit()) return;
-    this.editMarkerClick.emit({ trialId: c.trial_id, markerId: c.marker_id });
+    if (!anchor || !c || !this.spaceRole.canEdit()) return;
+    this.editMarkerClick.emit({ ...anchor, markerId: c.marker_id });
   }
 
   readonly drawerClasses = computed(() => {
