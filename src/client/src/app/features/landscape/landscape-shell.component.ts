@@ -23,6 +23,7 @@ import { LandscapeService } from '../../core/services/landscape.service';
 import { LandscapeStateService } from './landscape-state.service';
 import { LandscapeFilterBarComponent } from './landscape-filter-bar.component';
 import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
+import { MarkerEditTarget, markerEditRoute } from '../../shared/components/marker-edit-route';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
@@ -188,16 +189,16 @@ export class LandscapeShellComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * "Edit marker" on the detail panel: navigate to the marker's parent trial
-   * with `?marker=<id>`. trial-detail reads that query param to open the
-   * inline marker editor and scroll to the markers section (markers have no
-   * standalone detail page). Role-gating happens in the panel; only owners
-   * and editors ever emit this.
+   * "Edit marker" on the detail panel: navigate to the marker's anchor-entity
+   * profile (trial, asset, or company) with `?marker=<id>`. That page reads the
+   * query param to open the merged Event editor and scroll to its events
+   * section (markers have no standalone detail page). Role-gating happens in
+   * the panel; only owners and editors ever emit this.
    */
-  onEditMarker(target: { trialId: string; markerId: string }): void {
-    this.router.navigate([...this.spaceBase(), 'profiles', 'trials', target.trialId], {
-      queryParams: { marker: target.markerId },
-    });
+  onEditMarker(target: MarkerEditTarget & { markerId: string }): void {
+    const route = markerEditRoute(target, target.markerId, this.tenantId(), this.spaceId());
+    if (!route) return;
+    this.router.navigate(route.commands, { queryParams: route.queryParams });
   }
 
   private extractRouteParams(): void {
