@@ -215,10 +215,11 @@ A full CRUD interface for managing all data within a space:
   role: super-admin
   status: active
 - id: asset-indication-derivation
-  summary: Trigger-driven derivation of each asset_indication's development_status from the trials linked to that asset and indication, kept in sync as trials and their conditions change. reset_asset_indication_status clears a manual override back to the auto-derived value.
+  summary: Trigger-driven derivation of each asset_indication's development_status from the trials linked to that asset and indication, lifted to APPROVED or LAUNCHED when an actual asset-anchored approval/launch event names that indication. Kept in sync as trials, their conditions, and stage-lifting events change. reset_asset_indication_status clears a manual override back to the auto-derived value.
   routes: []
   rpcs:
     - _auto_derive_asset_indication_status
+    - _auto_derive_on_event_change
     - _auto_derive_on_trial_condition_change
     - _recompute_asset_indication_status
     - _sync_asset_indications
@@ -228,6 +229,8 @@ A full CRUD interface for managing all data within a space:
     - trials
     - trial_conditions
     - condition_indication_map
+    - events
+    - event_types
   related:
     - manage-indications
   user_facing: false
