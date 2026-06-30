@@ -67,6 +67,7 @@
                     [dimension]="chartData()!.dimension"
                     [selectedAsset]="selectedAsset()"
                     [multiSpoke]="selectedAssetMultiSpoke()"
+                    (openAsset)="onOpenAsset($event)"
                     (openTrial)="onOpenTrial($event)"
                     (openCompany)="onOpenCompany($event)"
                     (openMarker)="onOpenMarker($event)"

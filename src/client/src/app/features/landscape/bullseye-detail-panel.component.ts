@@ -87,6 +87,7 @@ export class BullseyeDetailPanelComponent {
    *  dashed multi-spoke ring on the identity chart mark. */
   readonly multiSpoke = input<boolean>(false);
 
+  readonly openAsset = output<string>();
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();
   readonly openMarker = output<string>();
@@ -104,6 +105,19 @@ export class BullseyeDetailPanelComponent {
 
   /** Forwarded to the phase ladder so its scale matches the chart. */
   protected readonly showPreclinical = computed(() => this.state.showPreclinical());
+
+  /**
+   * Generic name to show in the identity subtitle, or null. Suppressed when it
+   * is absent or merely repeats the asset name (e.g. Olezarsen / Olezarsen),
+   * which would otherwise print the same word twice.
+   */
+  protected readonly subtitleGenericName = computed<string | null>(() => {
+    const asset = this.selectedAsset();
+    if (!asset?.generic_name) return null;
+    return asset.generic_name.trim().toLowerCase() === asset.name.trim().toLowerCase()
+      ? null
+      : asset.generic_name;
+  });
 
   /**
    * Trials section label. When every tracked trial shares one phase, appends
@@ -370,6 +384,11 @@ export class BullseyeDetailPanelComponent {
       entityType: ref.entity_type as IntelligenceEntityType,
       entityId: ref.entity_id,
     });
+  }
+
+  protected onAssetClick(): void {
+    const p = this.selectedAsset();
+    if (p) this.openAsset.emit(p.id);
   }
 
   protected onCompanyClick(): void {
