@@ -1315,8 +1315,14 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       for (let i = 0; i < trials.length; i++) {
         const match = trials[i]['match'] as { kind: string } | undefined;
         if (match?.kind === 'existing') continue;
+        // An NCT stated in the article and captured by extraction is
+        // authoritative; only fall back to the top fuzzy CT.gov candidate when
+        // extraction found none.
+        const extractedNct = trials[i]['nct_id'] as string | null | undefined;
         const candidates = proposal.ctgov_candidates[`trials_${i}`] ?? [];
-        if (candidates.length > 0) {
+        if (extractedNct) {
+          nctDefaults[i] = extractedNct;
+        } else if (candidates.length > 0) {
           nctDefaults[i] = candidates[0].nct_id;
         }
       }

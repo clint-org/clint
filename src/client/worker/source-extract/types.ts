@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeNctId } from './nct-id';
 
 // ---------------------------------------------------------------------------
 // Reusable fragments
@@ -49,6 +50,16 @@ const AssetSchema = z.object({
 const TrialSchema = z.object({
   match: z.discriminatedUnion('kind', [existingMatch, newEntityMatch]),
   name: z.string(),
+  // ClinicalTrials.gov registry id stated in the source (NCT########). Stored on
+  // trials.identifier at commit (commit_source_import reads v_item->>'nct_id').
+  // Normalized to canonical form; anything not reducing to NCT######## becomes
+  // null so we never persist a malformed identifier.
+  nct_id: z
+    .string()
+    .nullable()
+    .optional()
+    .default(null)
+    .transform((v) => normalizeNctId(v)),
   phase: z
     .enum(['PRECLIN', 'P1', 'P1_2', 'P2', 'P2_3', 'P3', 'P4', 'OBS'])
     .nullable()

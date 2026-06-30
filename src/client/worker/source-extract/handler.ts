@@ -8,6 +8,9 @@ import { isLlmAbort } from './call-outcome';
 import { closeAiCall } from './ai-call-close';
 import { validateExtraction } from './response-validator';
 import { enrichWithCtgov } from './ctgov-enrichment';
+import { enrichTrialsByNct } from './ctgov-record-enrich';
+import { linkTrialsByNct } from './link-trials-by-nct';
+import { createCtgovClient } from '../ctgov-sync/ctgov-client';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
 import { applyLogoEnrichment, resolveProposalNames } from './post-extract';
 import { extractionTemperature } from './temperature';
@@ -395,10 +398,24 @@ export async function handleSourceExtract(
 
   const apex = env.ALLOWED_APEXES.split(',')[0].trim();
   await applyLogoEnrichment(proposals, 'source-extract', BRANDFETCH_CLIENT_ID, `https://${apex}/`);
-  const { companyNames, assetNames, resolvedNames } = resolveProposalNames(proposals, inventory);
 
-  const [ctgovResult, fuzzyAlternates] = await Promise.all([
+  // Dedup by NCT BEFORE name resolution: a new trial whose captured NCT matches
+  // an existing inventory trial's identifier is the same study, so relink it to
+  // the existing record (prevents the CORE / CORE2 duplicate class). Linked
+  // trials then resolve their name from inventory like any existing match.
+  const nctLinks = linkTrialsByNct(proposals, inventory);
+  if (nctLinks.length > 0) {
+    console.log('[source-extract] nct-linked trials', JSON.stringify(nctLinks));
+  }
+
+  const { companyNames, assetNames, resolvedNames } = resolveProposalNames(proposals, inventory);
+  const ctgov = createCtgovClient({ baseUrl: env.CTGOV_BASE_URL });
+
+  const [ctgovResult, recordEnrich, fuzzyAlternates] = await Promise.all([
     enrichWithCtgov(proposals, companyNames, assetNames, { timeout: 8000 }),
+    // Backfill phase / dates / sample size / status from the exact CT.gov record
+    // for trials that carry an NCT (reuses the NCT-list import mapping).
+    enrichTrialsByNct(proposals, ctgov, { timeout: 8000 }),
     Promise.resolve(
       computeFuzzyAlternates(
         [
@@ -420,6 +437,7 @@ export async function handleSourceExtract(
   ]);
 
   warnings.push(...ctgovResult.warnings);
+  warnings.push(...recordEnrich.warnings);
 
   const resolvedIdentifiers: Record<string, string> = {};
   proposals.trials.forEach((t, i) => {
