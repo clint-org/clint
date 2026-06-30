@@ -64,6 +64,6 @@ Cut from v1. If a future bug genuinely cannot be reproduced without real prod da
 
 ## Open items (resolve in the plan)
 
-1. Stand up the public R2 evidence bucket + route (`evidence.clintapp.com/issues/...`).
-2. Confirm the `e2e-dev` Playwright harness can be driven ad hoc against an arbitrary dev surface with a captured screenshot (vs only its scripted specs).
-3. Decide the `/resolve-issue` pause mechanism: a single command that stops mid-turn at step 4 and resumes on your reply, vs a two-call split (`/resolve-issue` for steps 1–4, a `--ship` continuation for 5–7).
+1. Stand up the public R2 evidence bucket + route (`evidence.clintapp.com/issues/...`). Resolved: `clint-evidence` R2 bucket (`infra/tofu/prod/r2.tf`) plus a public read-only `/evidence/*` Worker route (`src/client/worker/evidence.ts`), serving keys under the `issues/` prefix.
+2. Confirm the `e2e-dev` Playwright harness can be driven ad hoc against an arbitrary dev surface with a captured screenshot (vs only its scripted specs). Resolved: `src/client/e2e-dev/tests/capture.spec.ts` captures any dev surface ad hoc, driven by `CAPTURE_PATH` / `CAPTURE_OUT` / optional `CAPTURE_SEED` env vars, on the existing HEADED harness.
+3. Decide the `/resolve-issue` pause mechanism: a single command that stops mid-turn at step 4 and resumes on your reply, vs a two-call split (`/resolve-issue` for steps 1–4, a `--ship` continuation for 5–7). Resolved: a single command that hard-stops at Step 4 (present dev before/after) and resumes on the user's reply; no two-call split.
