@@ -87,6 +87,9 @@ test('capture AI import review showing the extracted indication (#159)', async (
     const sp = (sub: string): string => `/t/${world.tenantId}/s/${world.spaceId}${sub}`;
     const { page, context } = await openAs(browser, world, 'owner');
     try {
+      // The review grid's INDICATION column sits right of MOA/ROA; widen the
+      // viewport so the extracted indication is visible (not clipped) in the shot.
+      await page.setViewportSize({ width: 1680, height: 900 });
       await settle(page, sp('/import'));
       // From-text extraction (mirrors ai-import.spec.ts importFromText).
       await page.getByRole('tab', { name: 'From text' }).click();
