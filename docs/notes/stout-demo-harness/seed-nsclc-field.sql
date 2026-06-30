@@ -101,7 +101,10 @@ begin
     select id into a_dato from public.assets where space_id=p_space and name='Datopotamab deruxtecan';
 
     -- HERO: Pfizer's near-term sigvotatug 1L combination interim (company-guided).
-    perform pg_temp.mk_event(p_space, EVT_TOP, 'Sigvotatug + pembrolizumab 1L: first interim safety + activity (IASLC Targeted Therapies)', '2026-07-15', 'trial', t_sv1l, 'company', p_asof, 'high', 'exact',
+    -- Jul 8 (not Jul 15) keeps it strictly the soonest upcoming event so it stays
+    -- the home hero, ahead of any CT.gov-synced "Primary Completion Date" markers
+    -- that can land mid-July and win an alphabetical tiebreak.
+    perform pg_temp.mk_event(p_space, EVT_TOP, 'Sigvotatug + pembrolizumab 1L: first interim safety + activity (IASLC Targeted Therapies)', '2026-07-08', 'trial', t_sv1l, 'company', p_asof, 'high', 'exact',
       'Pfizer''s first look at the 1L sigvotatug + pembrolizumab combination in PD-L1 >=50% -- the readout the franchise case now rests on.');
     perform pg_temp.mk_event(p_space, EVT_FILE, 'Sac-TMT: anticipated US BLA submission (1L NSCLC)', '2026-08-12', 'asset', a_sac, 'company', p_asof, 'high', 'month',
       'Merck''s expected global filing off the OptiTROP-Lung05 1L win.');

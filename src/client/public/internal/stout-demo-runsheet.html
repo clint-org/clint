@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <title>Clint x Stout - Demo Run-of-Show</title>
+    <style>
+      :root {
+        --teal: #0f766e;
+        --teal-700: #0e6a62;
+        --teal-50: #f0fdfa;
+        --slate-900: #0f172a;
+        --slate-700: #334155;
+        --slate-600: #475569;
+        --slate-500: #64748b;
+        --slate-400: #94a3b8;
+        --slate-300: #cbd5e1;
+        --slate-200: #e2e8f0;
+        --slate-100: #f1f5f9;
+        --slate-50: #f8fafc;
+        --amber: #b45309;
+        --green: #15803d;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--slate-100);
+        color: var(--slate-900);
+        font:
+          15px/1.55 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      a {
+        color: var(--teal-700);
+      }
+
+      header.bar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: #fff;
+        border-bottom: 1px solid var(--slate-200);
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 10px 22px;
+        flex-wrap: wrap;
+      }
+      .bar .brand {
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        font-size: 13px;
+      }
+      .bar .brand b {
+        color: var(--teal);
+      }
+      .bar .sub {
+        color: var(--slate-500);
+        font-size: 12px;
+      }
+      .timer {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .clock {
+        font-family: ui-monospace, monospace;
+        font-size: 22px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        min-width: 78px;
+        text-align: right;
+      }
+      .clock.over {
+        color: var(--amber);
+      }
+      .btn {
+        border: 1px solid var(--slate-300);
+        background: #fff;
+        color: var(--slate-700);
+        border-radius: 7px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn:hover {
+        background: var(--slate-50);
+      }
+      .btn.primary {
+        background: var(--teal);
+        border-color: var(--teal);
+        color: #fff;
+      }
+      .target {
+        font-size: 12px;
+        color: var(--slate-500);
+      }
+
+      .wrap {
+        max-width: 1060px;
+        margin: 0 auto;
+        padding: 26px 22px 80px;
+      }
+
+      .prep {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        color: #92400e;
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 26px;
+        font-size: 13.5px;
+      }
+      .prep b {
+        color: #7c2d12;
+      }
+      .prep ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+      .prep li {
+        margin: 3px 0;
+      }
+
+      .beat {
+        background: #fff;
+        border: 1px solid var(--slate-200);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 22px;
+        scroll-margin-top: 70px;
+      }
+      .beat .head {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--slate-100);
+        flex-wrap: wrap;
+      }
+      .beat .num {
+        font-family: ui-monospace, monospace;
+        font-weight: 700;
+        color: var(--teal);
+        font-size: 13px;
+      }
+      .beat .name {
+        font-weight: 700;
+        font-size: 16px;
+      }
+      .beat .stage-chip {
+        font-family: ui-monospace, monospace;
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--slate-500);
+        background: var(--slate-100);
+        border-radius: 5px;
+        padding: 3px 8px;
+      }
+      .beat .time {
+        margin-left: auto;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        color: var(--slate-500);
+      }
+      .beat .where {
+        width: 100%;
+        margin-top: 2px;
+      }
+      .beat .where a {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        color: var(--teal-700);
+        text-decoration: none;
+        word-break: break-all;
+      }
+      .beat .where a:hover {
+        text-decoration: underline;
+      }
+      .beat.peak {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 3px var(--teal-50);
+      }
+
+      .body {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 0;
+      }
+      @media (max-width: 880px) {
+        .body {
+          grid-template-columns: 1fr;
+        }
+      }
+      .shot {
+        border-right: 1px solid var(--slate-100);
+        background: var(--slate-50);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 14px;
+      }
+      @media (max-width: 880px) {
+        .shot {
+          border-right: none;
+          border-bottom: 1px solid var(--slate-100);
+        }
+      }
+      .shot img {
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--slate-200);
+        border-radius: 8px;
+        display: block;
+        cursor: zoom-in;
+      }
+      .shot .missing {
+        width: 100%;
+        min-height: 200px;
+        border: 1px dashed var(--slate-300);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--slate-400);
+        font-size: 13px;
+        text-align: center;
+        padding: 20px;
+      }
+      .script {
+        padding: 16px 18px;
+      }
+      .script h4 {
+        margin: 0 0 6px;
+        font-family: ui-monospace, monospace;
+        font-size: 10.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .script .say h4 {
+        color: var(--teal);
+      }
+      .script .do h4 {
+        color: var(--slate-500);
+      }
+      .script section {
+        margin-bottom: 14px;
+      }
+      .script section:last-child {
+        margin-bottom: 0;
+      }
+      .say p {
+        margin: 0 0 9px;
+      }
+      .do ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .do li {
+        margin: 3px 0;
+      }
+      .do .todo {
+        color: #92400e;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 6px;
+        padding: 2px 7px;
+        font-size: 12px;
+        display: inline-block;
+        margin-top: 4px;
+      }
+      .do {
+        background: var(--slate-50);
+        margin: 0 -18px -16px;
+        padding: 12px 18px 16px;
+        border-top: 1px solid var(--slate-100);
+      }
+
+      footer {
+        max-width: 1060px;
+        margin: 0 auto;
+        padding: 0 22px 60px;
+        color: var(--slate-500);
+        font-size: 13px;
+      }
+
+      .lb {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.85);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 30px;
+      }
+      .lb.open {
+        display: flex;
+      }
+      .lb img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 8px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+
+      @media print {
+        header.bar {
+          position: static;
+        }
+        .timer {
+          display: none;
+        }
+        body {
+          background: #fff;
+        }
+        .beat {
+          break-inside: avoid;
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="bar">
+      <span class="brand"><b>CLINT</b> &times; STOUT</span>
+      <span class="sub"
+        >Live demo run-of-show &middot; app first, deck at the end &middot; target &le; 30 min</span
+      >
+      <div class="timer">
+        <span class="target">target 28:00</span>
+        <span class="clock" id="clock">00:00</span>
+        <button class="btn primary" id="startBtn">Start</button>
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <!-- BEAT 1 -->
+      <article class="beat" id="b1">
+        <div class="head">
+          <span class="num">01</span><span class="name">Open - the Sam story, on the timeline</span>
+          <span class="stage-chip">App &middot; obesity timeline</span
+          ><span class="time">~4:00 &middot; cum 4:00</span>
+          <div class="where">
+            <a
+              href="https://bi.clintapp.com/t/c747dd15-a176-4edb-acb2-8c716ea1fd4b/s/4fd154ce-7c85-475f-a47f-a244d80509a8/timeline"
+              target="_blank"
+              >open obesity timeline &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot"><img data-shot="02-obesity-timeline" alt="Obesity timeline" /></div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                Hi John, how are you? Hey Sam. Thanks for taking the time, guys - I know it's a
+                30-minute slot, so I'd like to jump right in and leave room for questions at the
+                end.
+              </p>
+              <p>
+                I want to start with the story behind Clint. About a year and a half ago I was
+                walking past Sam's desk and she was working on this really neat slide - a timeline
+                that looked like what you're seeing here, but in PowerPoint. She explained that's
+                how the team renders clinical-trial and regulatory data: pull it from
+                ClinicalTrials.gov, massage what you need, and package it into this format for the
+                client.
+              </p>
+              <p>
+                I build enterprise applications around data and business-process automation, so my
+                first question was: how do you get the data - is it manual? And it is. CT.gov gets
+                pulled by hand for every NCT you're tracking, which can be 10, 20-plus, then
+                aggregated and packaged with your intelligence and analysis as notes on the chart or
+                extra slides.
+              </p>
+              <p>
+                First thought: why not automate the CT.gov pull - easy win. Second thought: why not
+                automate generating the slide itself. So I set out to see if I could even recreate
+                that timeline, and what you're looking at is the latest iteration.
+              </p>
+              <p>
+                It's driven by a structured dataset that feeds all of this - the data and the
+                business logic. You can cut and slice it how you want, hover a marker for a quick
+                look or click it for the full event, and filter to a company, an asset, or a single
+                trial. You can zoom into a time period or change the window entirely.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do (demo as you talk - pace to the clicks)</h4>
+              <ul>
+                <li>Hover a marker (quick look), then click one (full detail panel).</li>
+                <li>Filter to a company, then an asset, then a trial.</li>
+                <li>Change the time window / zoom to a period.</li>
+                <li>Point at "At a glance" and "Last CT.gov sync" as proof it's live.</li>
+                <li>
+                  <b>&#9873; Preempt accuracy (say it here):</b> "Every event is flagged confirmed
+                  vs projected - filled vs hollow - and every one traces to its source. Nothing the
+                  AI proposes goes live until an analyst reviews it." This kills the "a wrong date
+                  on your brand" worry before he raises it.
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <!-- BEAT 2 -->
+      <article class="beat" id="b2">
+        <div class="head">
+          <span class="num">02</span><span class="name">The data backbone - entities + events</span>
+          <span class="stage-chip">App &middot; profiles / grids</span
+          ><span class="time">~2:30 &middot; cum 6:30</span>
+          <div class="where">
+            <a
+              href="https://bi.clintapp.com/t/c747dd15-a176-4edb-acb2-8c716ea1fd4b/s/4fd154ce-7c85-475f-a47f-a244d80509a8/profiles/companies"
+              target="_blank"
+              >open companies grid &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot"><img data-shot="12-data-backbone" alt="Data backbone / grids" /></div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                I want to talk about the data behind this, because it's central to one of the real
+                value gains of Clint as a platform.
+              </p>
+              <p>
+                All the entities - companies, assets, trials - and the events, whether they're
+                CT.gov markers, events from company guidance, primary data from your conversations
+                with industry contacts, or your own forecasts - are all well-defined data
+                structures. Clear guardrails, but flexible enough to support lots of different
+                engagements across pharma.
+              </p>
+              <p>
+                Here's why that matters: this backbone is what lets the same data show up in
+                completely different views. And an event is editable too - you can adjust a date or
+                a detail in a few seconds.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do (move quickly - don't dwell)</h4>
+              <ul>
+                <li>
+                  Companies grid &rarr; a company page &rarr; assets grid &rarr; a trial &rarr; an
+                  event.
+                </li>
+                <li>On the event, show it's editable - tweak a date/detail, then move on.</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <!-- BEAT 3 -->
+      <article class="beat" id="b3">
+        <div class="head">
+          <span class="num">03</span
+          ><span class="name">Bullseye - same data, different vantage</span>
+          <span class="stage-chip">App &middot; bullseye</span
+          ><span class="time">~1:30 &middot; cum 8:00</span>
+          <div class="where">
+            <a
+              href="https://bi.clintapp.com/t/c747dd15-a176-4edb-acb2-8c716ea1fd4b/s/4fd154ce-7c85-475f-a47f-a244d80509a8/bullseye"
+              target="_blank"
+              >open obesity bullseye &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot"><img data-shot="13-obesity-bullseye" alt="Obesity bullseye" /></div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                Take the same data and you can see every competitor and what phase they're in -
+                across whatever aggregation you want - in this bullseye. Center is closest to
+                market, rings are phase. Same data, different vantage point.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do</h4>
+              <ul>
+                <li>
+                  Switch GROUP BY (Company / Mechanism of Action / Indication) to show the same data
+                  re-cut.
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <!-- BEAT 4 -->
+      <article class="beat" id="b4">
+        <div class="head">
+          <span class="num">04</span
+          ><span class="name">Pitching Pfizer - spin up a whitelabeled space</span>
+          <span class="stage-chip">WIN &middot; Pfizer pitch</span
+          ><span class="time">~3:00 &middot; cum 11:00</span>
+          <div class="where">
+            <a
+              href="https://pfizer.clintapp.com/t/a87a88ae-1b76-4c6b-85e0-1b53c926d0f2/s/373a85f9-2417-49f7-b28e-7de9c1b7d326"
+              target="_blank"
+              >open Pfizer pitch home &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot"><img data-shot="03-pitch-home" alt="Pitch home" /></div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                Now imagine you're pitching Pfizer as their new CI vendor for their NSCLC assets.
+                It's a brand-new space for you - you don't have the domain expertise yet - but the
+                pitch has to show breadth and depth immediately.
+              </p>
+              <p>
+                Traditionally you'd build a deck and send it to procurement and Pfizer's CI team.
+                Instead, imagine you spin up a whitelabeled tenant - a link with Pfizer and Stout
+                branding - give a few of their people access, and they open a space already
+                preloaded with the NCTs you pulled together from a day or two of research. Honestly,
+                with dataset access and AI tools that pull is probably under a day.
+              </p>
+              <p>
+                But you don't stop at the data. You add Stout's edge on top - a few intelligence
+                briefs on an asset, a trial, a competitor, based on primary they didn't even ask
+                for. Say you noticed Pfizer's headline asset had a failure this past week - your
+                read on where they go next is right here in a brief.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do</h4>
+              <ul>
+                <li>
+                  Log out, go to <span class="mono">pfizer.clintapp.com</span>, open the Pitch space
+                  (the tenant switch is the "wow").
+                </li>
+                <li>Point at the Pfizer logo + "Intelligence by Stout" in the header.</li>
+                <li>Open the sigvotatug-miss brief in "Latest from Stout". (verified &check;)</li>
+                <li>
+                  <b>&#9873; Preempt the "sausage" worry (say it here):</b> "And counterintuitively,
+                  a live view makes Stout <i>more</i> present - every week instead of every quarter,
+                  your name on every screen and every brief. Assembling the data was never the
+                  value; the read is. This raises switching cost, it doesn't lower it."
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <!-- BEAT 5 -->
+      <article class="beat" id="b5">
+        <div class="head">
+          <span class="num">05</span
+          ><span class="name">The pitch payload - heatmap, bullseye, materials</span>
+          <span class="stage-chip">WIN</span><span class="time">~3:00 &middot; cum 14:00</span>
+          <div class="where">
+            <a
+              href="https://pfizer.clintapp.com/t/a87a88ae-1b76-4c6b-85e0-1b53c926d0f2/s/373a85f9-2417-49f7-b28e-7de9c1b7d326/heatmap"
+              target="_blank"
+              >open pitch heatmap &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot"><img data-shot="14-pitch-heatmap" alt="Pitch heatmap" /></div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                From there you can show them the competitive picture a few ways. The heatmap shows
+                where competitors sit and which routes or mechanisms are crowded versus open - where
+                Pfizer might focus.
+              </p>
+              <p>
+                Or the bullseye, to show how their competitors are progressing across indications,
+                mechanism, route of administration.
+              </p>
+              <p>
+                And you attach the materials that matter to this space - notes from a primary
+                conversation you had, or even the pitch deck itself, uploaded right here.
+              </p>
+              <p>
+                The kicker: this platform isn't the pitch - it's the delivery layer, and on day one
+                it's already loaded with everything from the pitch. It only matures from there. From
+                Pfizer's seat, that's a tough one to turn down.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do</h4>
+              <ul>
+                <li>
+                  Heatmap (crowded vs open) &rarr; Bullseye (competitor progress) &rarr; Materials.
+                </li>
+                <li>
+                  Materials (staged &check;): open the "KOL call - NSCLC ADC sequencing" note, then
+                  the "Pfizer NSCLC ADC - Stout pitch" deck.
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <!-- BEAT 6 -->
+      <article class="beat" id="b6">
+        <div class="head">
+          <span class="num">06</span><span class="name">How we got here - import</span>
+          <span class="stage-chip">Pfizer &middot; empty space</span
+          ><span class="time">~4:00 &middot; cum 18:00</span>
+          <div class="where">
+            <a
+              href="https://pfizer.clintapp.com/t/a87a88ae-1b76-4c6b-85e0-1b53c926d0f2/s/5dbea303-160c-43e0-b149-8bf0266b696e/import"
+              target="_blank"
+              >open empty space import &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot"><img data-shot="16-import" alt="Import canvas" /></div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                Let me quickly show how we got here. Your analysts can load data through the forms
+                on the profiles and grids you saw - or import in bulk with NCT IDs, a URL, or pasted
+                text.
+              </p>
+              <p>
+                Say you have a few NCTs. You hit import, Clint pulls the CT.gov data and figures out
+                how to fit it into the structure that feeds the model - no forms, no manual entry.
+                You review, edit if you need to, confirm, and it's in every grid and view.
+              </p>
+              <p>
+                Now say you came across a competitor's announcement while researching the pitch.
+                Paste the link, Clint parses the events out of it, and they show up across all the
+                views too.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do</h4>
+              <ul>
+                <li>
+                  Empty space &rarr; Import. Paste NCT IDs &rarr; import &rarr; review &rarr;
+                  confirm &rarr; show timeline + grids.
+                </li>
+                <li>
+                  <b>NCTs to paste:</b> <span class="mono">NCT04656652</span> (TROPION-Lung01,
+                  dato-DXd) and <span class="mono">NCT04487080</span> (MARIPOSA, amivantamab) -
+                  real, well-populated NSCLC records.
+                </li>
+                <li>
+                  <b>URL import (competitor):</b> the AstraZeneca Datroway EGFR-NSCLC approval press
+                  release -<br /><span class="mono" style="font-size: 10px"
+                    >astrazeneca.com/media-centre/press-releases/2025/datopotamab-deruxtecan-granted-priority-review-in-the-us-...</span
+                  >
+                  (clean single regulatory event).
+                </li>
+                <li>
+                  <b>&#9873; Dry-run this once before the call</b> (in a throwaway space, then leave
+                  the demo "empty" space empty). It's the only failure-prone moment - if the AI call
+                  is slow, narrate it and fall back to the Pitch space.
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <!-- BEAT 7 PEAK -->
+      <article class="beat peak" id="b7">
+        <div class="head">
+          <span class="num">07</span><span class="name">A year in - rebid time</span>
+          <span class="stage-chip">KEEP &middot; THE PEAK</span
+          ><span class="time">~3:00 &middot; cum 21:00</span>
+          <div class="where">
+            <a
+              href="https://pfizer.clintapp.com/t/a87a88ae-1b76-4c6b-85e0-1b53c926d0f2/s/7f642772-5578-4635-899a-22860c6b7299/intelligence"
+              target="_blank"
+              >open 1-year intelligence &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot">
+            <img data-shot="07-1yr-intelligence" alt="1 year intelligence feed" />
+          </div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                Now say you won the bid. It's a year in, you've been adding data every week -
+                primary intelligence events, long-form briefs on each profile - and it's rebid time.
+                Your pitch is the same platform.
+              </p>
+              <p>
+                If you're Pfizer, it's hard to walk away from a year-plus of CT.gov data, secondary
+                and primary intelligence, and the real magic - Stout's intelligence briefs - plus
+                the materials and deliverables handed over across the year, and all the nuanced
+                edits to the timeline and events shaped to their style and preferences.
+              </p>
+              <p>
+                My strong belief is this longitudinal data is what creates stickiness in the
+                client-Stout relationship, and gives you a real edge at rebid.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do</h4>
+              <ul>
+                <li>
+                  Switch to the 1-year space &rarr; Intelligence feed. Toggle SHOW &rarr; All to
+                  interleave events + briefs.
+                </li>
+                <li>
+                  Open the lead brief; point at the version badge (a year of revisions, all kept).
+                </li>
+                <li>
+                  <b>&#9873; Redeployment, again (say it here, slowly):</b> "And the time we stopped
+                  spending on manual assembly didn't disappear - it went into this: the briefs, the
+                  primary, the judgment. Same hours, higher-value work, more engagements with the
+                  same team." This is the second hit - the MD needs to hear it twice.
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <!-- BEAT 8 -->
+      <article class="beat" id="b8">
+        <div class="head">
+          <span class="num">08</span><span class="name">Phase 2 - where this goes</span>
+          <span class="stage-chip">Deck &middot; roadmap</span
+          ><span class="time">~2:00 &middot; cum 23:00</span>
+          <div class="where">
+            <a href="https://clintapp.com/internal/stout-intro.html?present#4" target="_blank"
+              >open deck roadmap slide &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot"><img data-shot="08-deck-roadmap" alt="Deck roadmap slide" /></div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                Let me go back to the deck for a few things. What I just showed you is Phase 1 - and
+                I'm already excited about Phase 2.
+              </p>
+              <p>
+                Once you have a structured model and, over time, a real longitudinal view of an
+                engagement, it opens up what else we can do. I'd like to get to where you can pull
+                this data into the agentic tools you already use - probably over an MCP connection -
+                and generate custom PPTX or Excel models on demand. Or, since the data's already in
+                Clint, ask a question inside a space and have it reason over what's there.
+              </p>
+              <p>
+                Those are on the roadmap and very doable. But what I'm most excited about is
+                building a data warehouse around both the structured data and the unstructured,
+                multimodal stuff - decks, docs, images, conference photos, conversation transcripts.
+                If we can make sense of that noise, you get two kinds of scale: throughput -
+                well-connected, referenced, longitudinal analysis, fast - and variety - new
+                forecasting, novel datapoints and threads you can package as a new add-on product.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do</h4>
+              <ul>
+                <li>Deck slide 4 (roadmap). Switch back to the deck window here.</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <!-- BEAT 9 -->
+      <article class="beat" id="b9">
+        <div class="head">
+          <span class="num">09</span
+          ><span class="name">Security / enterprise - touch and move</span>
+          <span class="stage-chip">Deck &middot; security</span
+          ><span class="time">~1:30 &middot; cum 24:30</span>
+          <div class="where">
+            <a href="https://clintapp.com/internal/stout-intro.html?present#7" target="_blank"
+              >open deck security slide &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot"><img data-shot="09-deck-trust" alt="Deck security slide" /></div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                One quick thing, and I'm happy to go deeper later: this is an enterprise product,
+                whitelabeled for you, with security as a core design and infrastructure principle.
+              </p>
+              <p>
+                There are strict firewall rules between every tenant and every space within a
+                tenant. Someone with access to the obesity landscape in the BI tenant simply cannot
+                see Pfizer's engagements - and can't even see other BI spaces unless they've been
+                explicitly granted access. We also run rigorous data-retention and restoration
+                exercises, and it's hosted on the most reliable layers, AWS and Cloudflare. Happy to
+                spend more time on this whenever.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do</h4>
+              <ul>
+                <li>
+                  Deck security slide. Keep it short - signal depth, offer to go deeper later.
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <!-- BEAT 10 -->
+      <article class="beat" id="b10">
+        <div class="head">
+          <span class="num">10</span><span class="name">Partnership - the ask</span>
+          <span class="stage-chip">Deck &middot; partnership</span
+          ><span class="time">~1:30 &middot; cum 26:00</span>
+          <div class="where">
+            <a href="https://clintapp.com/internal/stout-intro.html?present#9" target="_blank"
+              >open deck partnership slide &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot"><img data-shot="11-deck-ask" alt="Deck partnership slide" /></div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                If you like the product, I'd love to get it in front of your team - and you, John -
+                and have you actually play with it. You don't buy anything until you've worked with
+                it for a few weeks and seen the value yourself. If you're interested, we can talk
+                next steps.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do</h4>
+              <ul>
+                <li>Deck partnership slide. Then let it breathe - this is a real ask.</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <!-- BEAT 11 -->
+      <article class="beat" id="b11">
+        <div class="head">
+          <span class="num">11</span><span class="name">Pricing - frame it, don't dwell</span>
+          <span class="stage-chip">Deck &middot; pricing</span
+          ><span class="time">~1:30 &middot; cum 27:30</span>
+          <div class="where">
+            <a href="https://clintapp.com/internal/stout-intro.html?present#8" target="_blank"
+              >open deck pricing slide &nearr;</a
+            >
+          </div>
+        </div>
+        <div class="body">
+          <div class="shot"><img data-shot="10-deck-pricing" alt="Deck pricing slide" /></div>
+          <div class="script">
+            <section class="say">
+              <h4>Say</h4>
+              <p>
+                Let me briefly touch on pricing. I built this because I saw a real gap. You had
+                tools like Evaluate and Citeline to dive into datasets and run comparisons, but
+                nothing that gave an agency like Stout a whitelabeled, live data-and-intelligence
+                platform to deliver to clients - a true turnkey layer. That's the pain Clint solves.
+              </p>
+              <p>
+                But it's not priced like Evaluate or Citeline. Those, like most SaaS, charge per
+                seat. With Clint, I think all your users should have access - every analyst and
+                every client end user. So pricing is at the engagement level: as you win projects
+                and onboard clients, you create spaces, and you pay for the number of spaces you
+                deliver. As you bring more engagements onto Clint, the per-space price drops at
+                certain bands.
+              </p>
+              <p>
+                I don't want to dwell on price. Once you're in the platform and it fits how you
+                work, we can get into pricing and Stout's procurement process.
+              </p>
+            </section>
+            <section class="do">
+              <h4>Do</h4>
+              <ul>
+                <li>Deck pricing slide. Give the frame, then stop and open it up for questions.</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <section
+        id="objections"
+        style="
+          background: #fff;
+          border: 1px solid var(--slate-200);
+          border-radius: 14px;
+          padding: 18px 20px;
+          margin-top: 8px;
+        "
+      >
+        <h2 style="margin: 0 0 4px; font-size: 16px">If they ask - the objection bank</h2>
+        <p style="margin: 0 0 16px; color: var(--slate-500); font-size: 13px">
+          Ranked by how damaging they are unanswered. The top three you should preempt (see the
+          &#9873; lines in beats 1, 4, 7). Answers in your voice - paraphrase.
+        </p>
+        <ol style="margin: 0; padding-left: 20px">
+          <li style="margin-bottom: 13px">
+            <b
+              >"If Pfizer watches CT.gov auto-populate this live, what stops them deciding the
+              assembly was never worth paying us for?"</b
+            >
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 4/7 &middot; HIGH</span
+            ><br />Assembling the picture was never what they paid for - the read is. A live view
+            makes you <i>more</i> present, every week vs every quarter, your name on every screen.
+            Switching cost goes up, not down.
+          </li>
+          <li style="margin-bottom: 13px">
+            <b
+              >"A wrong or stale date sits on a Stout-branded screen in front of my client. Who owns
+              that?"</b
+            >
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 1/2 &middot; HIGH</span
+            ><br />Every event is confirmed vs projected (filled vs hollow) with a source on each;
+            nothing the AI proposes publishes until an analyst reviews it; CT.gov re-syncs daily
+            with a visible timestamp. You control what the client sees.
+            <i>(Lead with this - don't wait to be asked.)</i>
+          </li>
+          <li style="margin-bottom: 13px">
+            <b>"Saves analyst time = we bill fewer hours."</b>
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 3/7 &middot; HIGH</span
+            ><br />Redeployment, not reduction. Same hours, moved off assembly onto judgment,
+            primary, and client time - and more engagements with the same team. The fee follows the
+            value, and the value moves up.
+          </li>
+          <li style="margin-bottom: 13px">
+            <b
+              >"If we stop paying - or you go under - what happens to a year of our briefs and
+              history?"</b
+            >
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 10/11 &middot; HIGH</span
+            ><br />Your data is yours. Export to Excel/your tools today; on exit, a full export of
+            briefs, events, and version history. Encrypted daily backups across two clouds. We'll
+            put the exit terms in writing for the pilot.
+            <i>(This gates pilot &rarr; paid - have it crisp.)</i>
+          </li>
+          <li style="margin-bottom: 13px">
+            <b
+              >"Prove the tenant firewall. Pen-tested? Where does the data live? Who at Clint can
+              see it?"</b
+            >
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 4/9 &middot; HIGH</span
+            ><br />Strict per-tenant and per-space firewalls - the same isolation that lets these
+            demo spaces sit safely next to real ones. Explicit access only, AWS + Cloudflare,
+            encrypted backups with rehearsed restores. Be honest on formal attestations (SOC 2 /
+            pen-test) - share status and roadmap, don't overclaim.
+          </li>
+          <li style="margin-bottom: 13px">
+            <b>"What if the live import fails right now, on this call?"</b>
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 6 &middot; MED-HIGH</span
+            ><br />"If the pull is slow I'll narrate it and cut to the pitch space - same result, a
+            day later." The point is a graceful fallback, not the answer. (For a first run, you can
+            skip the live import entirely.)
+          </li>
+          <li style="margin-bottom: 13px">
+            <b>"Why isn't this just a prettier Evaluate / Citeline?"</b>
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 2/4 &middot; MED</span
+            ><br />They're data subscriptions you query. Clint is a whitelabeled
+            delivery-and-annotation layer you control and brand, holding your primary intelligence
+            and the client's engagement history. Neither incumbent does live client delivery under
+            your brand.
+          </li>
+          <li style="margin-bottom: 13px">
+            <b>"Why shouldn't Stout just build this?"</b>
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 8 &middot; MED</span
+            ><br />Focus, not cost. Building it is a couple of years and a pharma-tooling product
+            team - not Stout's edge. Or start next week and keep your people on client work. (Don't
+            get defensive - you'll have run the math too.)
+          </li>
+          <li style="margin-bottom: 13px">
+            <b>"Does the client ever see per-space pricing as a line item?"</b>
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 11 &middot; MED</span
+            ><br />Never. It bundles into your engagement fee - not client-visible.
+          </li>
+          <li style="margin-bottom: 13px">
+            <b>"What's your involvement, and Sam's? Why is this intro happening?"</b>
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >any &middot; MED</span
+            ><br />Don't volunteer it. If asked: small advisory stake; the intro's happening because
+            Sam thinks it's the right tool. Then move on - anything evasive costs trust.
+          </li>
+          <li style="margin-bottom: 13px">
+            <b>"Coverage gap vs the incumbents I already pay for?"</b>
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 7 &middot; MED</span
+            ><br />Clint isn't a data vendor - it ingests CT.gov plus your own primary and secondary
+            intelligence. You may still use Evaluate/Citeline for deep dataset dives; Clint is the
+            delivery and annotation layer on top. (Be honest about the gap.)
+          </li>
+          <li style="margin-bottom: 0">
+            <b>"MCP and the warehouse - live, or roadmap?"</b>
+            <span style="color: var(--slate-400); font-size: 11px" class="mono"
+              >beat 8 &middot; MED</span
+            ><br />Phase 1 - everything I just showed - is live. MCP export, ask-in-space, and the
+            warehouse are Phase 2, plainly roadmap. The one-paste import <i>is</i> live. (Blur this
+            and he discounts the whole demo.)
+          </li>
+        </ol>
+        <p
+          style="
+            margin: 16px 0 0;
+            color: var(--slate-600);
+            font-size: 13px;
+            border-top: 1px solid var(--slate-100);
+            padding-top: 12px;
+          "
+        >
+          <b>MD verdict from the test run:</b> would green-light a <i>narrow</i> free pilot on the
+          strength of the rebid-stickiness + whitelabel-differentiation story. What moves it from
+          pilot to <i>paid</i>: a credible answer on data accuracy/provenance under their brand
+          <b>and</b> a clean data-exit guarantee, plus the redeployment framing. Nail those and the
+          biggest risk (their reputation on your feed) becomes the reason they can't leave.
+        </p>
+      </section>
+    </div>
+
+    <footer>
+      Internal - presenter notes, not for distribution. Source of truth:
+      <span class="mono">docs/notes/stout-demo-prep.md</span>. Screenshots refreshed via
+      <span class="mono">node src/client/scripts/capture-runsheet-shots.mjs</span>.
+    </footer>
+
+    <div class="lb" id="lb"><img id="lbimg" alt="" /></div>
+
+    <script>
+      document.querySelectorAll('img[data-shot]').forEach((img) => {
+        const name = img.getAttribute('data-shot');
+        img.src = './stout-runsheet-assets/' + name + '.png';
+        img.onerror = () => {
+          const ph = document.createElement('div');
+          ph.className = 'missing';
+          ph.textContent = 'screenshot pending: ' + name + '.png';
+          img.replaceWith(ph);
+        };
+      });
+      const lb = document.getElementById('lb'),
+        lbimg = document.getElementById('lbimg');
+      document.addEventListener('click', (e) => {
+        if (e.target.tagName === 'IMG' && e.target.dataset.shot) {
+          lbimg.src = e.target.src;
+          lb.classList.add('open');
+        } else if (e.target === lb || e.target === lbimg) lb.classList.remove('open');
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') lb.classList.remove('open');
+      });
+      let t0 = null,
+        raf = null;
+      const clock = document.getElementById('clock');
+      const fmt = (s) =>
+        String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+      function tick() {
+        const s = Math.floor((Date.now() - t0) / 1000);
+        clock.textContent = fmt(s);
+        clock.classList.toggle('over', s > 28 * 60);
+        raf = requestAnimationFrame(tick);
+      }
+      document.getElementById('startBtn').onclick = (e) => {
+        if (t0) {
+          cancelAnimationFrame(raf);
+          t0 = null;
+          e.target.textContent = 'Start';
+        } else {
+          t0 = Date.now();
+          e.target.textContent = 'Pause';
+          tick();
+        }
+      };
+      document.getElementById('resetBtn').onclick = () => {
+        cancelAnimationFrame(raf);
+        t0 = null;
+        clock.textContent = '00:00';
+        clock.classList.remove('over');
+        document.getElementById('startBtn').textContent = 'Start';
+      };
+    </script>
+  </body>
+</html>
