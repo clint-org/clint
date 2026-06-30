@@ -87,6 +87,7 @@ export class BullseyeDetailPanelComponent {
    *  dashed multi-spoke ring on the identity chart mark. */
   readonly multiSpoke = input<boolean>(false);
 
+  readonly openAsset = output<string>();
   readonly openTrial = output<string>();
   readonly openCompany = output<string>();
   readonly openMarker = output<string>();
@@ -370,6 +371,11 @@ export class BullseyeDetailPanelComponent {
       entityType: ref.entity_type as IntelligenceEntityType,
       entityId: ref.entity_id,
     });
+  }
+
+  protected onAssetClick(): void {
+    const p = this.selectedAsset();
+    if (p) this.openAsset.emit(p.id);
   }
 
   protected onCompanyClick(): void {
