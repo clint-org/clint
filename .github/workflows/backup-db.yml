@@ -22,6 +22,7 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Backup prod
         uses: ./.github/actions/db-backup
         with:
@@ -46,6 +47,7 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Backup dev
         uses: ./.github/actions/db-backup
         with:

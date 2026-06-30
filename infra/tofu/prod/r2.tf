@@ -32,3 +32,14 @@ resource "cloudflare_r2_bucket_lock" "materials" {
     }
   }]
 }
+
+# clint-evidence holds public bug-resolution screenshots linked from GitHub
+# issue comments. Read-only public access is via the Worker `/evidence/*` route
+# (src/client/worker/evidence.ts), NOT a public bucket ACL.
+resource "cloudflare_r2_bucket" "evidence" {
+  account_id    = var.cloudflare_account_id
+  name          = "clint-evidence"
+  jurisdiction  = "default"
+  location      = "ENAM"
+  storage_class = "Standard"
+}
