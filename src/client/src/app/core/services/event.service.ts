@@ -165,7 +165,11 @@ export class EventService {
       await this.supabase.client.from('event_links').insert(linkRows).throwOnError();
     }
 
-    this.cache.invalidateTags([`space:${spaceId}:events`, `space:${spaceId}:tags`]);
+    this.cache.invalidateTags([
+      `space:${spaceId}:events`,
+      `space:${spaceId}:tags`,
+      `space:${spaceId}:dashboard`,
+    ]);
 
     const { data: row } = await this.supabase.client
       .from('events')
@@ -186,7 +190,11 @@ export class EventService {
     // p_indication_id is intentionally kept even when null (null clears any attribution).
     if (params['p_metadata'] == null) delete params['p_metadata'];
     const { data: newId } = await this.supabase.client.rpc('create_event', params).throwOnError();
-    this.cache.invalidateTags([`space:${spaceId}:events`, `space:${spaceId}:tags`]);
+    this.cache.invalidateTags([
+      `space:${spaceId}:events`,
+      `space:${spaceId}:tags`,
+      `space:${spaceId}:dashboard`,
+    ]);
     return newId as string;
   }
 
@@ -204,6 +212,9 @@ export class EventService {
       `event:${eventId}:detail`,
       `space:${spaceId}:events`,
       `space:${spaceId}:tags`,
+      // The timeline reads get_dashboard_data (tag space:<id>:dashboard); without
+      // this the edited event stays cached and the timeline renders it stale (#175).
+      `space:${spaceId}:dashboard`,
     ]);
   }
 
@@ -221,6 +232,7 @@ export class EventService {
       `event:${id}:detail`,
       `space:${row.space_id}:events`,
       `space:${row.space_id}:tags`,
+      `space:${row.space_id}:dashboard`,
     ]);
 
     return row;
@@ -284,6 +296,7 @@ export class EventService {
       `event:${id}:detail`,
       `space:${spaceId}:events`,
       `space:${spaceId}:tags`,
+      `space:${spaceId}:dashboard`,
     ]);
   }
 }
