@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { MarkerDetailPanelComponent } from '../../shared/components/marker-detail-panel.component';
+import { MarkerEditTarget, markerEditRoute } from '../../shared/components/marker-edit-route';
 import { LandscapeStateService } from './landscape-state.service';
 
 /**
@@ -65,16 +66,14 @@ export class EntityMarkerDrawerComponent {
   }
 
   /**
-   * "Edit marker": navigate to the marker's parent trial with `?marker=<id>`,
-   * which opens the inline marker editor on the trial's manage page. Only
-   * owners/editors emit this (gated in the panel).
+   * "Edit marker": navigate to the marker's anchor-entity profile (trial,
+   * asset, or company) with `?marker=<id>`, which opens the merged Event editor
+   * on that page. Only owners/editors emit this (gated in the panel).
    */
-  protected onEditMarker(target: { trialId: string; markerId: string }): void {
-    if (!target.trialId) return;
-    this.router.navigate(
-      ['/t', this.tenantId, 's', this.spaceId, 'profiles', 'trials', target.trialId],
-      { queryParams: { marker: target.markerId } },
-    );
+  protected onEditMarker(target: MarkerEditTarget & { markerId: string }): void {
+    const route = markerEditRoute(target, target.markerId, this.tenantId, this.spaceId);
+    if (!route) return;
+    this.router.navigate(route.commands, { queryParams: route.queryParams });
   }
 
   private findRouteParam(key: string): string | null {
