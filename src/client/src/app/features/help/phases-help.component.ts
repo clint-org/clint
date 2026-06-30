@@ -142,6 +142,10 @@ export class PhasesHelpComponent {
         a: `Regulatory approval and commercial launch are different competitive events. APPROVED marks the regulatory clearance; LAUNCHED marks revenue exposure. Distinct colors let ${subject} spot assets that are approved-but-not-launched at a glance.`,
       },
       {
+        q: 'How does an asset reach APPROVED or LAUNCHED?',
+        a: 'APPROVED and LAUNCHED are not trial phases. They are lifted onto an asset\'s program by a confirmed (actual) Approval or Launch event that is anchored to the asset and tagged with the indication it applies to. A forecasted or anticipated approval does not lift the status. If the approval is recorded but no indication is mapped, the lift has nothing to attach to, so the stage stays at the highest trial phase the program has reached.',
+      },
+      {
         q: 'What does PRECLIN mean for a competitor analysis?',
         a: 'Preclinical assets are early signals. They appear muted because each one is a weak signal on its own, but they matter in aggregate. A cluster of preclinical activity in one area is itself worth watching.',
       },

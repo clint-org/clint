@@ -44,6 +44,8 @@ export interface EventFormState {
   sources: SourceRow[];
   tags: string[];
   regulatoryPathway: string | null;
+  /** Indication this event is attributed to; lifts the asset's stage for Approval/Launch. */
+  indicationId: string | null;
 }
 
 export const PROJECTION_OPTIONS: { label: string; value: Projection }[] = [
@@ -137,6 +139,7 @@ export function buildCreateEventArgs(s: EventFormState): CreateEventArgs {
     p_visibility: visibilityValue(s.visibility),
     p_metadata: buildMetadata(s),
     p_sources: sourcesJsonb(s.sources),
+    p_indication_id: s.indicationId,
   };
 }
 
@@ -158,6 +161,7 @@ export function buildUpdateEventArgs(s: EventFormState): UpdateEventArgs {
     p_visibility: visibilityValue(s.visibility),
     p_metadata: buildMetadata(s),
     p_no_longer_expected: s.noLongerExpected,
+    p_indication_id: s.indicationId,
   };
 }
 

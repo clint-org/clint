@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
   linkedSignal,
@@ -24,6 +25,8 @@ import { FormFieldComponent } from '../../../shared/components/form-field.compon
 import { FormActionsComponent } from '../../../shared/components/form-actions.component';
 import { EventService } from '../../../core/services/event.service';
 import { EventDetailService } from '../../../core/services/event-detail.service';
+import { IndicationService } from '../../../core/services/indication.service';
+import { SupabaseService } from '../../../core/services/supabase.service';
 import { MarkerTypeService } from '../../../core/services/marker-type.service';
 import { MarkerCategoryService } from '../../../core/services/marker-category.service';
 import { CompanyService } from '../../../core/services/company.service';
@@ -32,6 +35,8 @@ import { TrialService } from '../../../core/services/trial.service';
 import { toTrialOption } from '../../../core/utils/to-trial-option';
 import { extractConstraintMessage } from '../../../core/util/db-error';
 import type { MarkerType } from '../../../core/models/marker.model';
+import type { Indication } from '../../../core/models/indication.model';
+import { eventTypeLiftsStatus, shouldWarnMissingIndication } from './event-stage-lift';
 import {
   buildCreateEventArgs,
   buildUpdateEventArgs,
@@ -181,7 +186,7 @@ function fromIso(iso: string | null): Date | null {
             <app-form-field label="Level" fieldId="ev-level" spacing="">
               <p-select
                 inputId="ev-level"
-                [options]="levelOptions"
+                [options]="levelOptions()"
                 [ngModel]="anchorType()"
                 (ngModelChange)="onLevelChange($event)"
                 name="anchorType"
@@ -211,6 +216,38 @@ function fromIso(iso: string | null): Date | null {
               </app-form-field>
             }
           </div>
+        }
+
+        <!-- Indication attribution: meaningful for asset-anchored events; required
+             in practice for Approval/Launch since it is what lifts the asset stage. -->
+        @if (anchorType() === 'asset') {
+          <app-form-field
+            [label]="liftsStatus() ? 'Indication (lifts stage)' : 'Indication'"
+            fieldId="ev-indication"
+            spacing=""
+          >
+            <p-select
+              inputId="ev-indication"
+              [options]="indicationOptions()"
+              [ngModel]="indicationId()"
+              (ngModelChange)="indicationId.set($event ?? null)"
+              name="indicationId"
+              optionLabel="label"
+              optionValue="value"
+              [filter]="true"
+              [showClear]="true"
+              placeholder="Attribute to an indication (optional)"
+              styleClass="w-full"
+              appendTo="body"
+              [disabled]="ctgovLocked()"
+            />
+            @if (showIndicationHint()) {
+              <p class="mt-1 text-[11px] text-amber-700">
+                Select an indication, or this approval won't update the asset's stage (it stays at
+                its trial phase).
+              </p>
+            }
+          </app-form-field>
         }
 
         <!-- Date + precision -->
@@ -567,12 +604,14 @@ export class EventFormComponent implements OnInit {
   private companyService = inject(CompanyService);
   private assetService = inject(AssetService);
   private trialService = inject(TrialService);
+  private indicationService = inject(IndicationService);
+  private supabase = inject(SupabaseService);
 
   // Space-anchored ("Industry") events render on no timeline, only in the Events
   // feed, so the create/edit form does not offer that scope. The `space` anchor
   // type stays valid server-side; an event already anchored to it just shows a
   // blank scope select here (none exist today).
-  protected readonly levelOptions = [
+  private readonly allLevelOptions = [
     { label: 'Company', value: 'company' as AnchorType },
     { label: 'Asset', value: 'asset' as AnchorType },
     { label: 'Trial', value: 'trial' as AnchorType },
@@ -602,11 +641,13 @@ export class EventFormComponent implements OnInit {
   private readonly companies = signal<EntityOption[]>([]);
   private readonly assets = signal<EntityOption[]>([]);
   private readonly trials = signal<EntityOption[]>([]);
+  private readonly indications = signal<Indication[]>([]);
 
   protected readonly eventTypeId = signal<string | null>(null);
   protected readonly anchorType = linkedSignal(() => this.presetAnchorType());
   protected readonly anchorId = linkedSignal(() => this.presetAnchorId());
   protected readonly anchorOverride = signal(false);
+  protected readonly indicationId = signal<string | null>(null);
   protected readonly title = signal('');
   protected readonly eventDate = signal<Date | null>(null);
   protected readonly datePrecision = signal<DatePrecision>('exact');
@@ -634,6 +675,40 @@ export class EventFormComponent implements OnInit {
     this.types().find((t) => t.id === this.eventTypeId()) ?? null,
   );
   protected readonly showRegulatoryPathway = computed(() => this.selectedType()?.name === 'FDA Submission');
+
+  // True for the Approval / Launch system types, whose actual, indication-tagged
+  // events lift asset_indications.development_status to APPROVED / LAUNCHED.
+  protected readonly liftsStatus = computed(() => eventTypeLiftsStatus(this.selectedType()));
+
+  // Status-lifting events are an asset-level concept, so constrain the anchor
+  // level to Asset (no Company / Trial / Space) when such a type is chosen.
+  protected readonly levelOptions = computed(() =>
+    this.liftsStatus()
+      ? this.allLevelOptions.filter((o) => o.value === 'asset')
+      : this.allLevelOptions,
+  );
+
+  protected readonly indicationOptions = computed(() =>
+    this.indications().map((i) => ({
+      label: i.abbreviation ? `${i.name} (${i.abbreviation})` : i.name,
+      value: i.id,
+    })),
+  );
+
+  // Soft hint (never blocks save): a lifting type with no indication mapped.
+  protected readonly showIndicationHint = computed(() =>
+    shouldWarnMissingIndication({ lifts: this.liftsStatus(), indicationId: this.indicationId() }),
+  );
+
+  // Keep the anchor on 'asset' whenever a status-lifting type is selected. A
+  // type switch from e.g. a trial-anchored readout to Approval re-points the
+  // anchor and clears the now-invalid entity selection.
+  private readonly enforceAssetAnchor = effect(() => {
+    if (this.liftsStatus() && this.anchorType() !== 'asset') {
+      this.anchorType.set('asset');
+      this.anchorId.set(null);
+    }
+  });
   protected readonly typeGroups = computed<TypeGroup[]>(() =>
     this.categories()
       .map((c) => ({
@@ -657,7 +732,14 @@ export class EventFormComponent implements OnInit {
   protected readonly selectedEntity = computed(() =>
     this.entityOptions().find((e) => e.id === this.anchorId()) ?? null,
   );
-  protected readonly anchorPrefilled = computed(() => !!this.presetAnchorId() && this.mode() === 'create');
+  protected readonly anchorPrefilled = computed(
+    () =>
+      !!this.presetAnchorId() &&
+      this.mode() === 'create' &&
+      // A lifting type forces an asset anchor; if the preset was something else,
+      // fall through to the full selects rather than show a stale summary.
+      !(this.liftsStatus() && this.presetAnchorType() !== 'asset'),
+  );
   protected readonly anchorSummary = computed(() => {
     if (this.anchorType() === 'space') return 'Space';
     const e = this.selectedEntity();
@@ -710,6 +792,8 @@ export class EventFormComponent implements OnInit {
       sources: this.sources(),
       tags: this.tags(),
       regulatoryPathway: this.showRegulatoryPathway() ? this.regulatoryPathway() : null,
+      // Indication attribution is only meaningful for asset-anchored events.
+      indicationId: this.anchorType() === 'asset' ? this.indicationId() : null,
     };
   }
 
@@ -717,14 +801,16 @@ export class EventFormComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     const sid = this.spaceId();
-    const [types, cats, companies, assets, trials] = await Promise.all([
+    const [types, cats, companies, assets, trials, indications] = await Promise.all([
       this.typeService.list(sid),
       this.categoryService.list(sid),
       this.companyService.list(sid),
       this.assetService.list(sid),
       this.trialService.listBySpace(sid),
+      this.indicationService.list(sid),
     ]);
     this.types.set(types);
+    this.indications.set(indications);
     this.categories.set(
       cats
         .map((c) => ({ id: c.id, name: c.name, display_order: c.display_order }))
@@ -791,6 +877,15 @@ export class EventFormComponent implements OnInit {
       this.regulatoryPathway.set(typeof meta['pathway'] === 'string' ? (meta['pathway'] as string) : null);
 
       this.sources.set((c.sources ?? []).map((s) => ({ url: s.url, label: s.label ?? '' })));
+
+      // EventDetail does not carry indication_id; read it directly so the picker
+      // prefills and a save does not silently clear the existing attribution.
+      const { data: indRow } = await this.supabase.client
+        .from('events')
+        .select('indication_id')
+        .eq('id', eventId)
+        .maybeSingle();
+      this.indicationId.set((indRow?.['indication_id'] as string | null) ?? null);
     } catch (err) {
       this.error.set(extractConstraintMessage(err, EVENT_COLUMN_LABELS) ?? 'Could not load the event to edit.');
     }

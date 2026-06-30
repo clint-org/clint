@@ -38,6 +38,14 @@ export interface MarkerType {
   display_order: number;
   created_at: string;
   default_significance?: 'high' | 'low' | null;
+  /**
+   * For the two system regulatory types (Approval / Launch), the
+   * asset_indications.development_status an actual, indication-tagged event of
+   * this type lifts to ('APPROVED' | 'LAUNCHED'). null/absent for every other
+   * type. Drives the event form's stage-lift hint and the asset-profile
+   * "approval not reflected" diagnostic (see event-stage-lift.ts).
+   */
+  lifts_development_status?: 'APPROVED' | 'LAUNCHED' | null;
   marker_categories?: MarkerCategory;
 }
 

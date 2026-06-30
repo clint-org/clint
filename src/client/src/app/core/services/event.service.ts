@@ -183,6 +183,7 @@ export class EventService {
   async createEvent(spaceId: string, args: CreateEventArgs): Promise<string> {
     const params: Record<string, unknown> = { p_space_id: spaceId, ...args };
     // Omit p_metadata when empty so create works before the create_event metadata param lands.
+    // p_indication_id is intentionally kept even when null (null clears any attribution).
     if (params['p_metadata'] == null) delete params['p_metadata'];
     const { data: newId } = await this.supabase.client.rpc('create_event', params).throwOnError();
     this.cache.invalidateTags([`space:${spaceId}:events`, `space:${spaceId}:tags`]);
@@ -196,6 +197,7 @@ export class EventService {
   async updateEvent(spaceId: string, eventId: string, args: UpdateEventArgs): Promise<void> {
     const params: Record<string, unknown> = { p_event_id: eventId, ...args };
     // Omit p_metadata when empty so edits work before the update_event metadata param lands.
+    // p_indication_id is intentionally kept even when null (null clears the attribution).
     if (params['p_metadata'] == null) delete params['p_metadata'];
     await this.supabase.client.rpc('update_event', params).throwOnError();
     this.cache.invalidateTags([

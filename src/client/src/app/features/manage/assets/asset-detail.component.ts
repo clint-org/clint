@@ -35,8 +35,11 @@ import { EMPTY_LANDSCAPE_FILTERS } from '../../../core/models/landscape.model';
 import { AssetService } from '../../../core/services/asset.service';
 import { PrimaryIntelligenceService } from '../../../core/services/primary-intelligence.service';
 import { SpaceRoleService } from '../../../core/services/space-role.service';
+import { SupabaseService } from '../../../core/services/supabase.service';
 import { Asset } from '../../../core/models/asset.model';
+import type { DevelopmentStatus } from '../../../core/models/phase-colors';
 import type { Marker } from '../../../core/models/marker.model';
+import { assetApprovalUnreflected } from '../../events/event-form/event-stage-lift';
 import {
   IntelligenceDetailBundle,
   IntelligenceHistoryPayload,
@@ -86,6 +89,7 @@ export class AssetDetailComponent {
   private router = inject(Router);
   private assetService = inject(AssetService);
   private intelligenceService = inject(PrimaryIntelligenceService);
+  private supabase = inject(SupabaseService);
   private confirmation = inject(ConfirmationService);
   private messageService = inject(MessageService);
   protected spaceRole = inject(SpaceRoleService);
@@ -205,6 +209,50 @@ export class AssetDetailComponent {
     }
   }
 
+  // development_status across this asset's indication programs. Lightweight
+  // direct read (asset_indications is select-able by space members) so the
+  // "approval not reflected in stage" diagnostic can compare events vs status.
+  protected readonly indicationStatuses = signal<(DevelopmentStatus | null)[]>([]);
+  protected async loadIndicationStatuses(): Promise<void> {
+    const id = this.assetId();
+    if (!id) {
+      this.indicationStatuses.set([]);
+      return;
+    }
+    try {
+      const { data } = await this.supabase.client
+        .from('asset_indications')
+        .select('development_status')
+        .eq('asset_id', id);
+      const rows = (data as { development_status: DevelopmentStatus | null }[] | null) ?? [];
+      this.indicationStatuses.set(rows.map((r) => r.development_status));
+    } catch {
+      this.indicationStatuses.set([]);
+    }
+  }
+
+  // Re-read events AND indication statuses after an inline event edit, since
+  // tagging an Approval/Launch with an indication lifts development_status.
+  protected async onEventsChanged(): Promise<void> {
+    await Promise.all([this.loadEvents(), this.loadIndicationStatuses()]);
+  }
+
+  // Restrained diagnostic: an actual Approval/Launch event exists for this asset
+  // but no indication reached APPROVED/LAUNCHED, so the stage still reads the
+  // trial phase. Almost always means the approval event was not tagged with an
+  // indication, so the lift trigger had nothing to lift.
+  protected readonly approvalUnreflected = computed(() =>
+    assetApprovalUnreflected({
+      statuses: this.indicationStatuses(),
+      events: this.events().map((m) => ({
+        id: m.marker_type_id,
+        lifts_development_status: m.marker_types?.lifts_development_status ?? null,
+        projection: m.projection,
+        no_longer_expected: m.no_longer_expected,
+      })),
+    }),
+  );
+
   private readonly landscape = inject(LandscapeStateService);
 
   private readonly landscapeInitEffect = effect(() => {
@@ -231,6 +279,7 @@ export class AssetDetailComponent {
     void this.loadAsset();
     void this.loadIntelligence();
     void this.loadEvents();
+    void this.loadIndicationStatuses();
   });
 
   private findAncestorParam(key: string): string | null {

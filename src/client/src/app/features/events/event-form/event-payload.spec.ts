@@ -34,6 +34,7 @@ function base(): EventFormState {
     sources: [],
     tags: [],
     regulatoryPathway: null,
+    indicationId: null,
   };
 }
 
@@ -53,6 +54,11 @@ describe('buildCreateEventArgs', () => {
 
   it('space anchor drops anchor_id to null', () => {
     expect(buildCreateEventArgs({ ...base(), anchorType: 'space', anchorId: 'ignored' }).p_anchor_id).toBeNull();
+  });
+
+  it('passes p_indication_id through (null when unset, the id when set)', () => {
+    expect(buildCreateEventArgs(base()).p_indication_id).toBeNull();
+    expect(buildCreateEventArgs({ ...base(), indicationId: 'ind-9' }).p_indication_id).toBe('ind-9');
   });
 
   it('High/Low significance + Pinned/Hidden visibility map through', () => {
@@ -122,6 +128,11 @@ describe('buildUpdateEventArgs', () => {
   });
   it('space anchor on edit nulls anchor_id', () => {
     expect(buildUpdateEventArgs({ ...base(), anchorType: 'space', anchorId: 'x' }).p_anchor_id).toBeNull();
+  });
+
+  it('passes p_indication_id through (full-replace; null clears it)', () => {
+    expect(buildUpdateEventArgs({ ...base(), indicationId: 'ind-9' }).p_indication_id).toBe('ind-9');
+    expect(buildUpdateEventArgs({ ...base(), indicationId: null }).p_indication_id).toBeNull();
   });
 
   it('emits the chosen fuzzy end precision + midpoint-resolved end date', () => {
