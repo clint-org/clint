@@ -218,6 +218,13 @@ export function eventLeafDisplay(event: Entity): LeafDisplay {
   return { category: cleanText(event['event_type']), date: cleanText(event['event_date']) };
 }
 
+// An extracted Approval/Launch event carries the indication that lifts the asset
+// stage at commit (see commit_source_import). Surface it in the grid's indication
+// column so a reviewer can verify the AI got it right before committing.
+export function eventIndicationLabel(event: Entity): string | null {
+  return cleanText(event['indication']);
+}
+
 export interface SelectionCounts {
   companies: number;
   assets: number;
