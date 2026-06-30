@@ -549,7 +549,7 @@ export class DashboardGridComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     const scrollEl = this.elRef.nativeElement.querySelector(
-      '.overflow-x-auto'
+      '[data-grid-scroll]'
     ) as HTMLElement | null;
     if (scrollEl) {
       this.scrollContainerEl.set(scrollEl);

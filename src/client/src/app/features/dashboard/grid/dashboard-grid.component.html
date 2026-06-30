@@ -1,4 +1,4 @@
-<div class="flex flex-col border border-slate-200 rounded-lg">
+<div class="flex min-h-0 flex-1 flex-col border border-slate-200 rounded-lg">
   <!-- Small screen hint -->
   <div
     class="block md:hidden px-3 py-2 bg-slate-100 text-xs text-slate-500 text-center border-b border-slate-200"
@@ -6,8 +6,17 @@
     Scroll horizontally to view the full timeline
   </div>
 
-  <!-- Scrollable grid area -->
-  <div class="overflow-x-auto" (mouseleave)="hoveredRowKey.set(null)">
+  <!-- Scrollable grid area. overflow-auto (both axes) inside a height-bounded
+       flex child so the horizontal scrollbar sits at the bottom of the viewport,
+       not the bottom of the (tall) content -- otherwise on always-on scrollbar
+       platforms (Windows) it strands below the fold. flex-1/min-h-0 are inert in
+       the export snapshot host (a plain block w-max), so capture keeps full
+       natural height. -->
+  <div
+    data-grid-scroll
+    class="min-h-0 flex-1 overflow-auto"
+    (mouseleave)="hoveredRowKey.set(null)"
+  >
     <!-- w-max so this flex track shrink-wraps the full content width; otherwise it
          stays viewport-width and the sticky left pane unsticks once you scroll past
          (trackWidth - paneWidth). -->
@@ -16,18 +25,24 @@
       <div
         class="sticky left-0 z-20 bg-white border-r border-slate-200 flex-none shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
       >
-        <!-- Header row: a single Program label (the company / asset / trial
-             hierarchy and its inline attributes live in the Program column). -->
-        <div class="flex border-b border-slate-300 bg-slate-800 h-8 items-center">
-          <div class="w-80 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Program
+        <!-- Frozen corner: the Program label header sticks to the top as well
+             as the left (the pane itself is sticky left-0), so it stays pinned
+             while the row labels scroll. z-30 sits above both the timeline
+             year header (z-10) and the scrolling rows. -->
+        <div class="sticky top-0 z-30">
+          <!-- Header row: a single Program label (the company / asset / trial
+               hierarchy and its inline attributes live in the Program column). -->
+          <div class="flex border-b border-slate-300 bg-slate-800 h-8 items-center">
+            <div class="w-80 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              Program
+            </div>
           </div>
+          @if (hasSubColumns()) {
+            <div class="flex border-b border-slate-200 bg-slate-100">
+              <div class="w-80 px-3 py-0.5 text-xs text-slate-400">&nbsp;</div>
+            </div>
+          }
         </div>
-        @if (hasSubColumns()) {
-          <div class="flex border-b border-slate-200 bg-slate-100">
-            <div class="w-80 px-3 py-0.5 text-xs text-slate-400">&nbsp;</div>
-          </div>
-        }
 
         <!-- Row labels -->
         @for (row of gridRows(); track rowKey(row)) {
@@ -250,8 +265,11 @@
 
       <!-- Timeline area -->
       <div class="flex-none" [style.width.px]="totalWidth()">
-        <!-- Header -->
+        <!-- Header (frozen to the top of the scroll body on vertical scroll;
+             z-10 keeps it above the absolutely-positioned markers in the rows
+             below, which come later in the DOM). -->
         <app-grid-header
+          class="sticky top-0 z-10 block"
           [columns]="columns()"
           [totalWidth]="totalWidth()"
           [todayX]="todayMarkerX()"
