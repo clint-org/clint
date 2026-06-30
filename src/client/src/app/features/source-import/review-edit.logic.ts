@@ -66,7 +66,10 @@ export function proposalTrialToForm(idx: number, p: Proposal): TrialFormValue {
   const primary = t['primary_asset_ref'];
   return {
     name: displayName(p, 'trials', idx),
-    identifier: (t['identifier'] as string) ?? null,
+    // The extracted registry id lives on `nct_id` (the key commit_source_import
+    // reads); `identifier` is the legacy/inventory-resolved key. Prefer nct_id so
+    // an NCT pulled from the article surfaces in the review form.
+    identifier: (t['nct_id'] as string) ?? (t['identifier'] as string) ?? null,
     assetIds: refs.map(String),
     primaryAssetId:
       typeof primary === 'number' ? String(primary) : refs.length ? String(refs[0]) : null,

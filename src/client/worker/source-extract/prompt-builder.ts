@@ -23,6 +23,7 @@ Rules:
 - For MOA and ROA, prefer matching existing inventory mechanisms_of_action and routes_of_administration by exact name string. Use those exact names when they match.
 - For MOA and ROA on well-known approved or late-stage investigational drugs, populate the standard pharmacological class and route even if the source document does not explicitly restate them (e.g., semaglutide -> "GLP-1 receptor agonist" / "Subcutaneous", pembrolizumab -> "PD-1 inhibitor" / "Intravenous"). Leave empty only when the drug is genuinely novel and the source provides no signal.
 - Never infer regulatory dates that are not explicitly stated.
+- For trials, set nct_id to the ClinicalTrials.gov registry identifier (format: NCT followed by 8 digits, e.g. NCT01234567) when it is explicitly stated in the source for that trial; otherwise null. Never invent or guess an NCT number.
 - For every entity, quote the relevant evidence verbatim from the source.
 - Use ONLY an event_type value listed in the schema; pick the most specific match.
 - Anchor each event with anchor.level (trial for clinical/data milestones; company for corporate, financial, leadership, strategic events; asset where the event is about the asset itself) and a zero-based ref into that array (null for space-level).
@@ -52,6 +53,7 @@ Output schema (follow this exactly):
   "trials": [{
     "match": {"kind": "existing", "id": "uuid"} OR {"kind": "new", "name": "string"},
     "name": "trial name or acronym",
+    "nct_id": "NCT######## or null",
     "phase": "PRECLIN | P1 | P1_2 | P2 | P2_3 | P3 | P4 | OBS | null",
     "phase_start_date": "YYYY-MM-DD or null",
     "phase_end_date": "YYYY-MM-DD or null",
