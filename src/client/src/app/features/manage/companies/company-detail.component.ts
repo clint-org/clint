@@ -107,7 +107,6 @@ export class CompanyDetailComponent {
   // anchor_id of the brief currently open in the drawer; null = new brief
   protected readonly drawerAnchorId = signal<string | null>(null);
   protected readonly loading = signal(true);
-  protected readonly legendVisible = signal(false);
 
   // Per-anchor history map; populated lazily via onRequestHistory.
   protected readonly histories = signal<Record<string, IntelligenceHistoryPayload>>({});
@@ -145,6 +144,13 @@ export class CompanyDetailComponent {
     } catch {
       this.events.set([]);
     }
+  }
+
+  protected async onEventsChanged(): Promise<void> {
+    // Also reload the shared landscape dataset: the embedded timeline reads its
+    // markers from LandscapeStateService, not from this page's `events` signal,
+    // so without this the timeline keeps showing the pre-edit event (issue #175).
+    await Promise.all([this.loadEvents(), this.landscape.reload()]);
   }
 
   // Entity overflow menu (Edit details / View assets / Delete), rendered in the

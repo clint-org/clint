@@ -108,7 +108,6 @@ export class AssetDetailComponent {
   // anchor_id of the brief currently open in the drawer; null = new brief
   protected readonly drawerAnchorId = signal<string | null>(null);
   protected readonly loading = signal(true);
-  protected readonly legendVisible = signal(false);
 
   // Per-anchor history map; populated lazily via onRequestHistory.
   protected readonly histories = signal<Record<string, IntelligenceHistoryPayload>>({});
@@ -234,7 +233,14 @@ export class AssetDetailComponent {
   // Re-read events AND indication statuses after an inline event edit, since
   // tagging an Approval/Launch with an indication lifts development_status.
   protected async onEventsChanged(): Promise<void> {
-    await Promise.all([this.loadEvents(), this.loadIndicationStatuses()]);
+    // Also reload the shared landscape dataset: the embedded timeline reads its
+    // markers from LandscapeStateService, not from this page's `events` signal,
+    // so without this the timeline keeps showing the pre-edit event (issue #175).
+    await Promise.all([
+      this.loadEvents(),
+      this.loadIndicationStatuses(),
+      this.landscape.reload(),
+    ]);
   }
 
   // Restrained diagnostic: an actual Approval/Launch event exists for this asset

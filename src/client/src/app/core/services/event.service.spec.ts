@@ -282,7 +282,11 @@ describe('EventService.create', () => {
         p_title: 'New Event',
       })
     );
-    expect(invalidateTags).toHaveBeenCalledWith(['space:space-1:events', 'space:space-1:tags']);
+    expect(invalidateTags).toHaveBeenCalledWith([
+      'space:space-1:events',
+      'space:space-1:tags',
+      'space:space-1:dashboard',
+    ]);
   });
 });
 
@@ -302,6 +306,7 @@ describe('EventService.update', () => {
       'event:event-1:detail',
       'space:space-2:events',
       'space:space-2:tags',
+      'space:space-2:dashboard',
     ]);
   });
 });
@@ -442,6 +447,7 @@ describe('EventService.delete', () => {
       'event:event-1:detail',
       'space:space-3:events',
       'space:space-3:tags',
+      'space:space-3:dashboard',
     ]);
   });
 
@@ -507,7 +513,11 @@ describe('EventService.createEvent (unified)', () => {
     });
     // null metadata is omitted so create works before the create_event metadata param lands
     expect(params).not.toHaveProperty('p_metadata');
-    expect(invalidateTags).toHaveBeenCalledWith(['space:space-1:events', 'space:space-1:tags']);
+    expect(invalidateTags).toHaveBeenCalledWith([
+      'space:space-1:events',
+      'space:space-1:tags',
+      'space:space-1:dashboard',
+    ]);
   });
 
   it('passes p_metadata through when provided', async () => {
@@ -575,10 +585,13 @@ describe('EventService.updateEvent (unified)', () => {
       p_no_longer_expected: false,
     });
     expect(params).not.toHaveProperty('p_metadata');
+    // The timeline reads get_dashboard_data (space:<id>:dashboard); an event edit
+    // must invalidate it or the timeline renders the edit stale (#175).
     expect(invalidateTags).toHaveBeenCalledWith([
       'event:event-1:detail',
       'space:space-1:events',
       'space:space-1:tags',
+      'space:space-1:dashboard',
     ]);
   });
 });

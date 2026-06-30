@@ -1,4 +1,184 @@
 <div class="relative flex flex-col h-full">
+  <!--
+    Single consolidated header row: the TIMELINE label (embedded mode only) on
+    the left, and the timeline controls (intelligence-headline density + the
+    Display popover, which also carries the legend toggle when embedded) grouped
+    on the right. Replaces the three previously-stacked chrome rows.
+  -->
+  @if (embedded() || companies().length > 0) {
+    <div
+      class="flex items-center gap-3 bg-white border-b border-slate-200 px-4 py-2 flex-none"
+      role="region"
+      aria-label="Timeline controls"
+    >
+      @if (embedded()) {
+        <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+          Timeline
+        </h2>
+      }
+
+      @if (companies().length > 0) {
+        <div class="ml-auto flex items-center gap-3">
+          @if (!hideTrialColumn()) {
+            <button
+              type="button"
+              class="text-[10px] font-medium uppercase tracking-wider text-slate-500 hover:text-brand-700"
+              [attr.aria-pressed]="showIntelligenceHeadlines()"
+              (click)="toggleIntelligenceHeadlines()"
+            >
+              Intelligence headlines: {{ showIntelligenceHeadlines() ? 'On' : 'Off' }}
+            </button>
+          }
+
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-600 transition-colors hover:border-brand-400 hover:text-brand-700"
+            (click)="displayPanel.toggle($event)"
+            aria-label="Display settings"
+            pTooltip="Display settings"
+            tooltipPosition="top"
+          >
+            <i class="fa-solid fa-sliders text-[11px]"></i>
+            Display
+          </button>
+
+          <p-popover #displayPanel>
+            <div class="flex flex-col gap-4 p-1 min-w-[14rem]">
+              <div class="flex flex-col gap-1.5">
+                <span
+                  class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
+                  >COLUMNS</span
+                >
+                <div class="flex flex-col gap-2">
+                  <div
+                    class="flex items-center gap-2 text-[11px] text-slate-500 cursor-pointer select-none"
+                  >
+                    <p-checkbox
+                      [ngModel]="state.showMoaColumn()"
+                      (ngModelChange)="state.showMoaColumn.set($event)"
+                      [binary]="true"
+                      inputId="strip-col-moa"
+                      size="small"
+                    />
+                    <label for="strip-col-moa" class="cursor-pointer">MOA</label>
+                  </div>
+                  <div
+                    class="flex items-center gap-2 text-[11px] text-slate-500 cursor-pointer select-none"
+                  >
+                    <p-checkbox
+                      [ngModel]="state.showRoaColumn()"
+                      (ngModelChange)="state.showRoaColumn.set($event)"
+                      [binary]="true"
+                      inputId="strip-col-roa"
+                      size="small"
+                    />
+                    <label for="strip-col-roa" class="cursor-pointer">ROA</label>
+                  </div>
+                  <div
+                    class="flex items-center gap-2 text-[11px] text-slate-500 cursor-pointer select-none"
+                  >
+                    <p-checkbox
+                      [ngModel]="state.showIndicationColumn()"
+                      (ngModelChange)="state.showIndicationColumn.set($event)"
+                      [binary]="true"
+                      inputId="strip-col-indication"
+                      size="small"
+                    />
+                    <label for="strip-col-indication" class="cursor-pointer">Indication</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="h-px bg-slate-200"></div>
+
+              <div class="flex flex-col gap-1.5">
+                <span
+                  class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
+                  >DETAIL</span
+                >
+                <div class="flex items-center" role="group" aria-label="Detail level">
+                  @for (opt of detailOptions; track opt.value) {
+                    <button
+                      type="button"
+                      class="border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors"
+                      [class.rounded-l]="$first"
+                      [class.rounded-r]="$last"
+                      [class.-ml-px]="!$first"
+                      [class.border-brand-400]="state.detailLevel() === opt.value"
+                      [class.bg-brand-50]="state.detailLevel() === opt.value"
+                      [class.text-brand-700]="state.detailLevel() === opt.value"
+                      [class.z-10]="state.detailLevel() === opt.value"
+                      [class.border-slate-300]="state.detailLevel() !== opt.value"
+                      [class.text-slate-500]="state.detailLevel() !== opt.value"
+                      [attr.aria-pressed]="state.detailLevel() === opt.value"
+                      [pTooltip]="opt.hint"
+                      tooltipPosition="top"
+                      (click)="state.detailLevel.set(opt.value)"
+                    >
+                      {{ opt.label }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="h-px bg-slate-200"></div>
+
+              <div class="flex flex-col gap-1.5">
+                <span
+                  class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
+                  >DENSITY</span
+                >
+                <div class="flex items-center" role="group" aria-label="Row density">
+                  @for (opt of densityOptions; track opt.value) {
+                    <button
+                      type="button"
+                      class="border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors"
+                      [class.rounded-l]="$first"
+                      [class.rounded-r]="$last"
+                      [class.-ml-px]="!$first"
+                      [class.border-brand-400]="state.density() === opt.value"
+                      [class.bg-brand-50]="state.density() === opt.value"
+                      [class.text-brand-700]="state.density() === opt.value"
+                      [class.z-10]="state.density() === opt.value"
+                      [class.border-slate-300]="state.density() !== opt.value"
+                      [class.text-slate-500]="state.density() !== opt.value"
+                      [attr.aria-pressed]="state.density() === opt.value"
+                      (click)="state.density.set(opt.value)"
+                    >
+                      {{ opt.label }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              @if (embedded()) {
+                <div class="h-px bg-slate-200"></div>
+                <div class="flex flex-col gap-1.5">
+                  <span
+                    class="font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500"
+                    >LEGEND</span
+                  >
+                  <div
+                    class="flex items-center gap-2 text-[11px] text-slate-500 cursor-pointer select-none"
+                  >
+                    <p-checkbox
+                      [ngModel]="legendVisible()"
+                      (ngModelChange)="toggleLegend()"
+                      [binary]="true"
+                      inputId="strip-show-legend"
+                      size="small"
+                    />
+                    <label for="strip-show-legend" class="cursor-pointer">Show legend</label>
+                  </div>
+                </div>
+              }
+            </div>
+          </p-popover>
+        </div>
+      }
+    </div>
+  }
+
   <div class="flex flex-1 min-h-0 flex-col">
     @if (showLoader()) {
       <app-viz-loader class="min-h-0 flex-1" label="Loading timeline" />
@@ -12,18 +192,8 @@
         </div>
       </div>
     } @else if (companies().length > 0) {
-      <app-timeline-insight-strip [companies]="companies()" [columnsOnly]="columnsOnly()" />
-      @if (!hideTrialColumn()) {
-        <div class="flex justify-end px-3 py-1">
-          <button
-            type="button"
-            class="text-[10px] font-medium uppercase tracking-wider text-slate-500 hover:text-brand-700"
-            [attr.aria-pressed]="showIntelligenceHeadlines()"
-            (click)="toggleIntelligenceHeadlines()"
-          >
-            Intelligence headlines: {{ showIntelligenceHeadlines() ? 'On' : 'Off' }}
-          </button>
-        </div>
+      @if (!embedded()) {
+        <app-timeline-insight-strip [companies]="companies()" />
       }
       <app-dashboard-grid
         class="flex min-h-0 flex-1 flex-col"

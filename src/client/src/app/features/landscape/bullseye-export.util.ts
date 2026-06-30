@@ -1,4 +1,4 @@
-import type { BullseyeData } from '../../core/models/landscape.model';
+import { placementPhase, type BullseyeData } from '../../core/models/landscape.model';
 import { phaseShortLabel } from '../../core/models/phase-colors';
 import type { SheetSpec } from '../../shared/export/xlsx-sheet.util';
 import { buildExportSheet, type ExportColumn } from '../../shared/export/grid-sheet.util';
@@ -41,12 +41,15 @@ export function buildBullseyeRows(data: BullseyeData): BullseyeExportRow[] {
   const rows: BullseyeExportRow[] = [];
   for (const spoke of data.spokes) {
     for (const a of spoke.products) {
+      // Under indication grouping, label the row with this indication's stage,
+      // not the asset max -- mirrors the chart dot placement (issue #171).
+      const phase = placementPhase(a, data.dimension, spoke.id);
       rows.push({
         spoke: spoke.name,
         company: a.company_name,
         asset: a.name,
         generic: a.generic_name ?? '',
-        phase: a.highest_phase ? phaseShortLabel(a.highest_phase) : '',
+        phase: phase ? phaseShortLabel(phase) : '',
         moa: a.moas.map((m) => m.name).join(', '),
         roa: a.roas.map((r) => r.abbreviation ?? r.name).join(', '),
         indication: a.indications.map((i) => i.name).join(', '),

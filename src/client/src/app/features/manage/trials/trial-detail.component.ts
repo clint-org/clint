@@ -212,7 +212,6 @@ export class TrialDetailComponent {
   readonly trialId = computed(() => this.paramMapSig().get('id') ?? '');
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
-  protected readonly legendVisible = signal(false);
 
   // Primary intelligence
   readonly intelligence = signal<IntelligenceDetailBundle | null>(null);
@@ -414,6 +413,13 @@ export class TrialDetailComponent {
     }
     // The inline editor for ?marker=<id> is opened reactively by
     // markerEditParamEffect once the trial (with its markers) resolves.
+  }
+
+  protected async onEventsChanged(): Promise<void> {
+    // Also reload the shared landscape dataset: the embedded timeline reads its
+    // markers from LandscapeStateService, not from the trial's `markers` array,
+    // so without this the timeline keeps showing the pre-edit event (issue #175).
+    await Promise.all([this.loadTrial(), this.landscape.reload()]);
   }
 
   async loadIntelligence(): Promise<void> {

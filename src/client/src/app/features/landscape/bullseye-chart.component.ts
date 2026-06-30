@@ -4,6 +4,8 @@ import {
   BullseyeData,
   BullseyeAsset,
   PHASE_COLOR,
+  placementPhase,
+  placementRank,
   RING_DEV_RANK,
   RING_ORDER,
   RingPhase,
@@ -61,6 +63,10 @@ interface SpokeLabelSpec extends SpokeLabelTransform {
 
 interface DotSpec {
   product: BullseyeAsset;
+  /** The phase this dot is placed at on its spoke -- per-indication under the
+   *  indication grouping, the asset max otherwise. Drives radius, color, opacity
+   *  and the aria label so they stay consistent (issue #171). */
+  phase: RingPhase;
   x: number;
   y: number;
 }
@@ -253,13 +259,18 @@ export class BullseyeChartComponent {
     const sectorW = sectorWidth(total);
     const out: DotSpec[] = [];
 
+    const dimension = this.data()?.dimension;
+
     spokes.forEach((spoke, spokeIndex) => {
-      // Group products by dev rank so we can jitter overlapping dots
+      // Group products by dev rank so we can jitter overlapping dots. Under the
+      // indication grouping, the rank is the asset's status FOR this spoke's
+      // indication, not its overall max -- see placementRank / issue #171.
       const byRank = new Map<number, BullseyeAsset[]>();
       for (const product of spoke.products) {
-        const list = byRank.get(product.highest_phase_rank) ?? [];
+        const rank = placementRank(product, dimension, spoke.id);
+        const list = byRank.get(rank) ?? [];
         list.push(product);
-        byRank.set(product.highest_phase_rank, list);
+        byRank.set(rank, list);
       }
 
       const baseAngle = spokeAngle(spokeIndex, total);
@@ -267,9 +278,11 @@ export class BullseyeChartComponent {
       const count = this.ringCount();
       for (const [devRank, products] of byRank) {
         const angles = jitterAngles(baseAngle, sectorW, products.length);
+        // Same rank => same phase across the group; resolve it once for color.
+        const phase = placementPhase(products[0], dimension, spoke.id);
         for (let i = 0; i < products.length; i += 1) {
           const xy = polarToCartesian(angles[i], ringRadius(devRank, count));
-          out.push({ product: products[i], x: xy.x, y: xy.y });
+          out.push({ product: products[i], phase, x: xy.x, y: xy.y });
         }
       }
     });
@@ -332,7 +345,7 @@ export class BullseyeChartComponent {
   }
 
   protected dotFill(dot: DotSpec): string {
-    return PHASE_COLOR[dot.product.highest_phase] ?? '#0d9488';
+    return PHASE_COLOR[dot.phase] ?? '#0d9488';
   }
 
   protected ringLabelFill(phase: RingPhase): string {
@@ -354,7 +367,7 @@ export class BullseyeChartComponent {
     const highlightRing = this.highlightedRing();
     const hovered = this.effectiveHoveredAssetId();
     if (selected && selected !== dot.product.id) return DIMMED_OPACITY;
-    if (highlightRing && dot.product.highest_phase !== highlightRing) return DIMMED_OPACITY;
+    if (highlightRing && dot.phase !== highlightRing) return DIMMED_OPACITY;
     // Cross-spoke hover dimming: when any asset is hovered, dim all others to 15%
     if (hovered && hovered !== dot.product.id) return 0.15;
     return 1;
@@ -379,7 +392,7 @@ export class BullseyeChartComponent {
   }
 
   protected dotAriaLabel(dot: DotSpec): string {
-    return `${dot.product.name}, ${dot.product.company_name}, highest phase ${dot.product.highest_phase}`;
+    return `${dot.product.name}, ${dot.product.company_name}, phase ${dot.phase}`;
   }
 
   protected onDotClick(event: Event, assetId: string): void {
