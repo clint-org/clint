@@ -20,7 +20,8 @@ import { TenantService } from '../../core/services/tenant.service';
 import { ExportNamingService } from '../../shared/export/export-naming.service';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { XlsxExportService } from '../../core/services/xlsx-export.service';
-import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
+import { minDisplayFlag } from '../../shared/components/loader/min-display-flag';
+import { VizLoaderComponent } from '../../shared/components/loader/viz-loader.component';
 import type { ExportAction } from '../../shared/export/export-button.component';
 import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
 import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.component';
@@ -37,8 +38,8 @@ import { deriveTrialPhaseSpan } from '../../core/models/trial-phase-span';
     DashboardGridComponent,
     LegendComponent,
     MessageModule,
-    SkeletonComponent,
     TimelineInsightStripComponent,
+    VizLoaderComponent,
   ],
   templateUrl: './timeline-view.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -84,7 +85,7 @@ export class TimelineViewComponent {
   private readonly injector = inject(Injector);
 
   readonly companies = computed(() => this.state.filteredCompanies());
-  protected readonly skeletonRows = [0, 1, 2, 3, 4, 5];
+  protected readonly showLoader = minDisplayFlag(() => this.state.dataLoading());
 
   /**
    * Timeline-scoped density control (default on), persisted per user via
@@ -292,7 +293,15 @@ export class TimelineViewComponent {
 
   onAssetClick(assetId: string): void {
     if (!assetId) return;
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'profiles', 'assets', assetId]);
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'profiles',
+      'assets',
+      assetId,
+    ]);
   }
 
   retry(): void {
