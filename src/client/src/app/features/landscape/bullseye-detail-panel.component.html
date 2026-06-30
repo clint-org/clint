@@ -40,21 +40,17 @@
             </button>
           </h2>
           <p class="mt-0.5 text-[13px] italic text-slate-500">
-            @if (asset.generic_name) {
-              <span>{{ asset.generic_name }} · </span>
+            @if (subtitleGenericName(); as genericName) {
+              <span>{{ genericName }} · </span>
             }
-            @if (dimension() !== 'company') {
-              <button
-                type="button"
-                class="not-italic font-semibold text-brand-700 hover:text-brand-800 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                (click)="onCompanyClick()"
-              >
-                {{ asset.company_name }}
-                <i class="fa-solid fa-arrow-right text-[9px]" aria-hidden="true"></i>
-              </button>
-            } @else {
-              <span class="not-italic font-semibold text-slate-700">{{ asset.company_name }}</span>
-            }
+            <button
+              type="button"
+              class="not-italic font-semibold text-brand-700 hover:text-brand-800 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              (click)="onCompanyClick()"
+            >
+              {{ asset.company_name }}
+              <i class="fa-solid fa-arrow-right text-[9px]" aria-hidden="true"></i>
+            </button>
           </p>
         </div>
         <!-- Chart mark: phase-colored core ringed by the same signal rings the

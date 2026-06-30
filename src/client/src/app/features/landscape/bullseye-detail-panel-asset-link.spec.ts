@@ -52,4 +52,26 @@ describe('bullseye detail pane asset navigation', () => {
     // (cf. heatmap-detail-panel, where an openAsset->timeline link was removed).
     expect(body).not.toContain("'timeline'");
   });
+
+  it('renders the company name as a clickable link in every grouping', () => {
+    expect(panelHtml).toContain('(click)="onCompanyClick()"');
+    // Regression: the company link must not be suppressed when the bullseye is
+    // grouped by company (it used to fall back to an inert span in that mode).
+    expect(panelHtml).not.toContain("dimension() !== 'company'");
+    expect(panelHtml).not.toContain(
+      '<span class="not-italic font-semibold text-slate-700">{{ asset.company_name }}</span>',
+    );
+  });
+
+  it('suppresses the subtitle generic name when it merely repeats the asset name', () => {
+    // Driven by a computed so the template stays simple.
+    expect(panelTs).toContain('subtitleGenericName = computed');
+    expect(panelTs).toMatch(
+      /generic_name\.trim\(\)\.toLowerCase\(\) === asset\.name\.trim\(\)\.toLowerCase\(\)/,
+    );
+    expect(panelHtml).toContain('@if (subtitleGenericName(); as genericName)');
+    // Regression: the subtitle must no longer print the raw generic
+    // unconditionally (which double-printed names like Olezarsen / Olezarsen).
+    expect(panelHtml).not.toContain('@if (asset.generic_name) {');
+  });
 });
