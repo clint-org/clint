@@ -1,9 +1,9 @@
 <div class="relative flex flex-col h-full">
-  <div class="flex-1 overflow-auto pb-0">
+  <div class="flex flex-1 min-h-0 flex-col">
     @if (showLoader()) {
-      <app-viz-loader label="Loading timeline" />
+      <app-viz-loader class="min-h-0 flex-1" label="Loading timeline" />
     } @else if (state.dataError()) {
-      <div class="flex items-center justify-center py-20">
+      <div class="flex flex-1 items-center justify-center py-20">
         <div class="flex flex-col items-center gap-3 text-center max-w-md">
           <p-message severity="error" [closable]="false">
             Failed to load dashboard data: {{ state.dataError() }}
@@ -26,6 +26,7 @@
         </div>
       }
       <app-dashboard-grid
+        class="flex min-h-0 flex-1 flex-col"
         [companies]="companies()"
         [zoomLevel]="state.zoomLevel()"
         [startYear]="resolvedStartYear()"
@@ -44,7 +45,7 @@
         (assetClick)="onAssetClick($event)"
       />
     } @else {
-      <div class="flex items-center justify-center py-20">
+      <div class="flex flex-1 items-center justify-center py-20">
         <div class="flex flex-col items-center gap-3 text-center">
           <p-message severity="info" [closable]="false">
             No clinical trial data to display. Add companies, assets, and trials to see them on the

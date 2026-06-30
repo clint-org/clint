@@ -14,8 +14,10 @@ import { LegendComponent } from '../legend/legend.component';
  * parks it off-viewport, captures, and destroys it.
  *
  * w-max matters: the host's width must come from the grid's full content
- * track, otherwise the grid's overflow-x-auto container clips to the viewport
- * and the capture loses everything past the fold.
+ * track, otherwise the grid's overflow-auto scroll container clips to the
+ * viewport and the capture loses everything past the fold. The grid's
+ * flex-1/min-h-0 sizing is inert here (this host is a plain block, not a flex
+ * column), so the scroll body grows to its natural height with no scrollbars.
  */
 @Component({
   selector: 'app-export-snapshot-host',
