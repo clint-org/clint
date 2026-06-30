@@ -203,28 +203,13 @@
 
       <!-- Timeline (full width above the two-column record + rail). -->
       <section id="timeline" class="mb-4 bg-white border border-slate-200">
-        <header class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
-          <h2 class="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-            Timeline
-          </h2>
-          <button
-            type="button"
-            class="font-mono text-[10px] uppercase tracking-[0.1em] text-brand-700 hover:underline"
-            (click)="legendVisible.set(!legendVisible())"
-          >
-            {{ legendVisible() ? 'Hide legend' : 'Show legend' }}
-          </button>
-        </header>
-        <div>
-          <app-timeline-view
-            [hideCompanyColumn]="true"
-            [hideAssetColumn]="true"
-            [hideTrialColumn]="true"
-            [hideLegend]="true"
-            [legendVisible]="legendVisible()"
-            [columnsOnly]="true"
-          />
-        </div>
+        <app-timeline-view
+          [embedded]="true"
+          [hideCompanyColumn]="true"
+          [hideAssetColumn]="true"
+          [hideTrialColumn]="true"
+          [hideLegend]="true"
+        />
       </section>
 
       <div class="flex flex-col items-start gap-4 lg:flex-row">

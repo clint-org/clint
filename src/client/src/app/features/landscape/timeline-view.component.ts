@@ -10,8 +10,12 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
 import { MessageModule } from 'primeng/message';
+import { Popover } from 'primeng/popover';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { Marker } from '../../core/models/marker.model';
 import { Trial } from '../../core/models/trial.model';
@@ -27,7 +31,7 @@ import { createTopbarExportSync } from '../../shared/export/topbar-export-sync';
 import { DashboardGridComponent } from '../dashboard/grid/dashboard-grid.component';
 import { PngExportService } from '../dashboard/export/png-export.service';
 import { LegendComponent } from '../dashboard/legend/legend.component';
-import { LandscapeStateService } from './landscape-state.service';
+import { DetailLevel, GridDensity, LandscapeStateService } from './landscape-state.service';
 import { TimelineInsightStripComponent } from './timeline-insight-strip.component';
 import { deriveTrialPhaseSpan } from '../../core/models/trial-phase-span';
 
@@ -35,10 +39,14 @@ import { deriveTrialPhaseSpan } from '../../core/models/trial-phase-span';
   selector: 'app-timeline-view',
   imports: [
     ButtonModule,
+    Checkbox,
     DashboardGridComponent,
+    FormsModule,
     LegendComponent,
     MessageModule,
+    Popover,
     TimelineInsightStripComponent,
+    TooltipModule,
     VizLoaderComponent,
   ],
   templateUrl: './timeline-view.component.html',
@@ -63,8 +71,16 @@ export class TimelineViewComponent {
   readonly hideRoaColumn = input<boolean>(false);
   readonly hideIndicationColumn = input<boolean>(false);
   readonly hideLegend = input<boolean>(false);
-  readonly legendVisible = input<boolean>(false);
-  readonly columnsOnly = input<boolean>(false);
+  /**
+   * Embedded mode: the timeline sits inside an entity detail page (Trial / Asset
+   * / Company) rather than the routed landscape. Renders the compact TIMELINE
+   * label + a collapsible legend toggle, and suppresses the standalone
+   * at-a-glance / stats strip (the surrounding page already names the entity).
+   */
+  readonly embedded = input<boolean>(false);
+
+  /** Collapsible legend state for embedded mode (folded into the Display popover). */
+  protected readonly legendVisible = signal(false);
 
   private readonly autoStartYear = signal(2016);
   private readonly autoEndYear = signal(2026);
@@ -86,6 +102,18 @@ export class TimelineViewComponent {
 
   readonly companies = computed(() => this.state.filteredCompanies());
   protected readonly showLoader = minDisplayFlag(() => this.state.dataLoading());
+
+  /** Display popover options (column / detail / density), shared with the grid. */
+  protected readonly densityOptions: { label: string; value: GridDensity }[] = [
+    { label: 'Comfortable', value: 'comfortable' },
+    { label: 'Compact', value: 'compact' },
+  ];
+
+  protected readonly detailOptions: { label: string; value: DetailLevel; hint: string }[] = [
+    { label: 'Companies', value: 'companies', hint: 'Company bands only' },
+    { label: 'Assets', value: 'assets', hint: 'Companies and their assets, no trials' },
+    { label: 'Trials', value: 'trials', hint: 'Full detail down to trials' },
+  ];
 
   /**
    * Timeline-scoped density control (default on), persisted per user via
@@ -243,6 +271,10 @@ export class TimelineViewComponent {
 
   onMarkerClick(marker: Marker): void {
     this.state.selectMarker(marker.id);
+  }
+
+  toggleLegend(): void {
+    this.legendVisible.update((v) => !v);
   }
 
   toggleIntelligenceHeadlines(): void {

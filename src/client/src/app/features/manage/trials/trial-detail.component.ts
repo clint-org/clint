@@ -212,7 +212,6 @@ export class TrialDetailComponent {
   readonly trialId = computed(() => this.paramMapSig().get('id') ?? '');
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
-  protected readonly legendVisible = signal(false);
 
   // Primary intelligence
   readonly intelligence = signal<IntelligenceDetailBundle | null>(null);

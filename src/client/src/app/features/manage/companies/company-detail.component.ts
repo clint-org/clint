@@ -107,7 +107,6 @@ export class CompanyDetailComponent {
   // anchor_id of the brief currently open in the drawer; null = new brief
   protected readonly drawerAnchorId = signal<string | null>(null);
   protected readonly loading = signal(true);
-  protected readonly legendVisible = signal(false);
 
   // Per-anchor history map; populated lazily via onRequestHistory.
   protected readonly histories = signal<Record<string, IntelligenceHistoryPayload>>({});
