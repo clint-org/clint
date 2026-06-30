@@ -428,9 +428,12 @@ describe('precision over time, date slip event, and ct.gov marker lock', () => {
       expect(markerV1.event_date).toBe(precisionMidpointISO('year', 2026, 1)); // '2026-07-01'
     });
 
-    it('v1 year-precision: date_precision is year, projection is company', () => {
+    it('v1 year-precision: date_precision is year, projection is primary (CT.gov registry estimate)', () => {
       expect(markerV1.date_precision).toBe('year');
-      expect(markerV1.projection).toBe('company');
+      // ANTICIPATED is the CT.gov registry's own estimate -> `primary` tier, which
+      // renders hollow with NO provenance letter on a trial. It is NOT `company`
+      // (analyst/company-guided, which badges `c`). See marker-visual.ts.
+      expect(markerV1.projection).toBe('primary');
     });
 
     it('v1 marker has metadata.source === ctgov', () => {
@@ -445,9 +448,9 @@ describe('precision over time, date slip event, and ct.gov marker lock', () => {
       expect(markerV2.event_date).toBe(precisionMidpointISO('month', 2026, 11)); // '2026-11-15'
     });
 
-    it('v2 month-precision: date_precision is month, projection still company', () => {
+    it('v2 month-precision: date_precision is month, projection still primary', () => {
       expect(markerV2.date_precision).toBe('month');
-      expect(markerV2.projection).toBe('company');
+      expect(markerV2.projection).toBe('primary');
     });
 
     it('v3 exact ACTUAL: SAME marker ID (still UPSERT)', () => {
