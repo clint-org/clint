@@ -95,6 +95,7 @@ function baseArgs(over: Partial<UpdateEventArgs>): UpdateEventArgs {
     p_visibility: null,
     p_metadata: null,
     p_no_longer_expected: false,
+    p_indication_id: null,
     ...over,
   };
 }
