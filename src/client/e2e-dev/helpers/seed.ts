@@ -87,3 +87,39 @@ export async function seedBasics(world: ScratchWorld): Promise<SeedIds> {
 
   return { companyId, assetId, trialId, eventId, companyName, assetName, trialName };
 }
+
+/**
+ * Seed the "unreflected approval" state for the bullseye/asset-profile stage-lift
+ * diagnostic (issue #159): a P3-trial asset (status rank 3) that ALSO carries an
+ * actual, asset-anchored Approval event with NO indication mapped. Because the
+ * approval has no indication_id, `_recompute_asset_indication_status` cannot lift
+ * the asset past P3, so `get_bullseye_*` flags `has_unreflected_approval = true`
+ * and both the asset profile and the bullseye side panel render the amber
+ * "approval not reflected in stage" diagnostic. Reuses seedBasics for the asset.
+ */
+export async function seedUnreflectedApproval(world: ScratchWorld): Promise<SeedIds> {
+  const api = apiAs(world, 'owner');
+  const ids = await seedBasics(world);
+
+  const approvalTy = await api
+    .from('event_types')
+    .select('id')
+    .eq('name', 'Approval')
+    .is('space_id', null)
+    .single();
+  if (approvalTy.error) throw new Error(`seed Approval type lookup: ${approvalTy.error.message}`);
+
+  const approval = await api.rpc('create_event', {
+    p_space_id: world.spaceId,
+    p_event_type_id: idOf(approvalTy.data),
+    p_title: 'FDA approval (indication unmapped)',
+    p_event_date: '2025-12-01',
+    p_anchor_type: 'asset',
+    p_anchor_id: ids.assetId,
+    p_projection: 'actual',
+    p_indication_id: null,
+  });
+  if (approval.error) throw new Error(`seed approval create_event: ${approval.error.message}`);
+
+  return ids;
+}

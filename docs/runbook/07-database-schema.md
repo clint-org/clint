@@ -1100,4 +1100,5 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260630120000_approval_launch_stage_lift.sql`
 - `20260630120100_event_rpcs_indication_id.sql`
 - `20260630120200_commit_source_import_event_indication.sql`
+- `20260630120400_bullseye_unreflected_approval_flag.sql`
 <!-- /AUTO-GEN:DRIFT -->
