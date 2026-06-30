@@ -265,11 +265,13 @@
 
       <!-- Timeline area -->
       <div class="flex-none" [style.width.px]="totalWidth()">
-        <!-- Header (frozen to the top of the scroll body on vertical scroll;
-             z-10 keeps it above the absolutely-positioned markers in the rows
-             below, which come later in the DOM). -->
+        <!-- Header (frozen to the top of the scroll body on vertical scroll).
+             z-[15] sits ABOVE the markers (z-10 in marker.component, and they
+             come later in the DOM so they'd otherwise paint over the header)
+             and BELOW the frozen left pane (z-20), which must still occlude the
+             header's left edge on horizontal scroll. -->
         <app-grid-header
-          class="sticky top-0 z-10 block"
+          class="sticky top-0 z-[15] block"
           [columns]="columns()"
           [totalWidth]="totalWidth()"
           [todayX]="todayMarkerX()"
