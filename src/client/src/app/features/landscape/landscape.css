@@ -108,6 +108,19 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  /* Re-center in step with the detail panel's 200ms slide. The padding below
+   * shrinks the container-query box, so the square frame inside recenters into
+   * the space left of the panel rather than under it. A single transition on
+   * padding (not the SVG re-layout) keeps the motion smooth and jitter-free on
+   * rapid open/close between asset clicks. */
+  transition: padding-right 200ms ease-out;
+}
+
+/* When the asset detail panel is open it overlays the right 340px of the
+ * layout. Reserve that width so the bullseye centers in the remaining space
+ * instead of sitting half-hidden under the panel with dead space on the left. */
+.landscape-chart-wrap.panel-open {
+  padding-right: 340px;
 }
 
 .bullseye-chart-frame {
