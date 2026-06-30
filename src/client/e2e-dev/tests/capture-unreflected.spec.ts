@@ -9,11 +9,26 @@
  * Run HEADED (Cloudflare): CAPTURE_OUT_DIR=/abs/dir ./e2e-dev/run.sh e2e-dev/tests/capture-unreflected.spec.ts
  * Everything writes into a throwaway scratch space and is torn down afterwards.
  */
-import { test, createScratchWorld, openAs, settle, type ScratchWorld } from '../fixtures';
+import {
+  test,
+  createScratchWorld,
+  openAs,
+  settle,
+  dismissEnvBadge,
+  type ScratchWorld,
+} from '../fixtures';
 import { seedUnreflectedApproval, type SeedIds } from '../helpers/seed';
+import { enableAi } from '../helpers/ai-config';
 import * as path from 'node:path';
 
 const OUT_DIR = process.env['CAPTURE_OUT_DIR'];
+
+// A source that states an FDA approval for a specific indication, so the extractor
+// produces an asset-anchored Approval event with indication=Obesity. The review
+// grid must then SHOW that indication on the event row (the #159 review-grid fix).
+const APPROVAL_SOURCE = `Acme Pharma announced today, December 1, 2025, that the U.S. Food and Drug
+Administration approved AcmeMab (acmemab) for the treatment of obesity in adults with a body mass
+index of 30 or greater. AcmeMab is a GLP-1 receptor agonist administered subcutaneously once weekly.`;
 
 test('capture unreflected-approval evidence (#159)', async ({ browser }) => {
   if (!OUT_DIR) throw new Error('CAPTURE_OUT_DIR is required');
@@ -54,6 +69,41 @@ test('capture unreflected-approval evidence (#159)', async ({ browser }) => {
         // eslint-disable-next-line no-console
         console.error('event-form capture skipped:', (e as Error).message);
       }
+    } finally {
+      await context.close();
+    }
+  } finally {
+    await world.cleanup();
+  }
+});
+
+test('capture AI import review showing the extracted indication (#159)', async ({ browser }) => {
+  if (!OUT_DIR) throw new Error('CAPTURE_OUT_DIR is required');
+  const out = (name: string): string => path.join(OUT_DIR, name);
+
+  const world: ScratchWorld = await createScratchWorld();
+  try {
+    await enableAi(world);
+    const sp = (sub: string): string => `/t/${world.tenantId}/s/${world.spaceId}${sub}`;
+    const { page, context } = await openAs(browser, world, 'owner');
+    try {
+      await settle(page, sp('/import'));
+      // From-text extraction (mirrors ai-import.spec.ts importFromText).
+      await page.getByRole('tab', { name: 'From text' }).click();
+      const textarea = page.getByLabel('Source text');
+      await textarea.waitFor({ state: 'visible' });
+      await textarea.fill(APPROVAL_SOURCE);
+      await page
+        .getByRole('tabpanel')
+        .getByRole('button', { name: 'Extract', exact: true })
+        .click();
+      // Live Anthropic extraction lands on the review page (can take 20-90s).
+      await page.waitForURL(/\/import\/[0-9a-fA-F-]+\/review/, { timeout: 180_000 });
+      await page.getByRole('heading', { name: 'Review import proposals' }).waitFor();
+      await dismissEnvBadge(page);
+      // The Approval event row should now render its indication in the grid.
+      await page.waitForTimeout(1500);
+      await page.screenshot({ path: out('ai-review.png'), fullPage: true });
     } finally {
       await context.close();
     }
