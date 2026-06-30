@@ -146,6 +146,13 @@ export class CompanyDetailComponent {
     }
   }
 
+  protected async onEventsChanged(): Promise<void> {
+    // Also reload the shared landscape dataset: the embedded timeline reads its
+    // markers from LandscapeStateService, not from this page's `events` signal,
+    // so without this the timeline keeps showing the pre-edit event (issue #175).
+    await Promise.all([this.loadEvents(), this.landscape.reload()]);
+  }
+
   // Entity overflow menu (Edit details / View assets / Delete), rendered in the
   // content section-header instead of the topbar. Empty for viewers.
   protected readonly entityMenu = computed<MenuItem[]>(() => {

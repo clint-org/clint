@@ -189,6 +189,11 @@ export class LandscapeComponent implements OnInit {
     return this.allAssets().find((p) => p.id === id) ?? null;
   });
 
+  /** Whether the detail panel is open. Drives the chart wrapper's reserved
+   *  right padding so the bullseye recenters left of the 340px panel overlay
+   *  instead of sitting half-hidden under it. */
+  readonly panelOpen = computed<boolean>(() => this.selectedAsset() !== null);
+
   /** Whether the selected asset appears on more than one spoke. Mirrors the
    *  chart's dashed multi-spoke ring on the detail pane identity mark. */
   readonly selectedAssetMultiSpoke = computed<boolean>(() => {

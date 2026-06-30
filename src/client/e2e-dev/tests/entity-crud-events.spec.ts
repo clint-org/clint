@@ -278,4 +278,53 @@ test.describe('@crud @event entity write CRUD + merged event form', () => {
     expect(ev.data?.anchor_type).toBe('asset');
     expect(ev.data?.anchor_id).toBe(seed.assetId);
   });
+
+  // ----------------------------------------------------------------------------------------
+  // 5. EVENT EDIT reflects on the embedded TIMELINE (issue #175). The trial-detail page shows
+  //    both the event TABLE (entity-events-section, fed by the trial's `markers`) and the
+  //    embedded TIMELINE (app-timeline-view, fed by the shared LandscapeStateService). Before
+  //    the fix, the (changed) handler refreshed only the table; the timeline kept rendering the
+  //    pre-edit event because LandscapeStateService.rawData was never reloaded. The marker glyph
+  //    carries the event title as its accessible name (marker.component ariaLabel = title), so a
+  //    rename must surface on the timeline WITHOUT a page reload.
+  // ----------------------------------------------------------------------------------------
+  test('owner edits a trial event and the embedded timeline reflects it without a reload', async ({
+    world,
+    pageAs,
+    gotoSettled,
+  }) => {
+    test.slow();
+    const seed = await seedBasics(world); // 'Topline readout' high-significance event on the trial
+    const page = await pageAs('owner');
+    await gotoSettled(page, sp(world.tenantId, world.spaceId, `/profiles/trials/${seed.trialId}`));
+
+    const timeline = page.locator('app-timeline-view');
+    // Baseline: the timeline marker for the seeded event renders with its title as aria-label.
+    await expect(
+      timeline.getByRole('button', { name: 'Topline readout', exact: true })
+    ).toBeVisible({ timeout: 15_000 });
+
+    const renamed = `Topline readout ${world.id} v2`;
+
+    // Edit via the merged "Edit event" dialog (keeps the trial anchor), as in test 3.
+    const actions = page.getByLabel('Actions for event Topline readout', { exact: true });
+    await expect(actions).toBeVisible({ timeout: 15_000 });
+    await actions.click();
+    await page.getByRole('menuitem', { name: /^Edit$/ }).click();
+    const editDialog = page.getByRole('dialog', { name: /edit event/i });
+    await expect(editDialog).toBeVisible();
+    await editDialog.locator('#ev-title').fill(renamed);
+    await editDialog.getByRole('button', { name: /^Update event$/ }).click();
+    await expect(editDialog).toBeHidden();
+
+    // The embedded timeline must now show the renamed marker (LandscapeStateService reloaded
+    // by the (changed) -> onEventsChanged() handler) and the old title must be gone -- all
+    // WITHOUT a navigation/reload. This is the #175 regression guard.
+    await expect(timeline.getByRole('button', { name: renamed, exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      timeline.getByRole('button', { name: 'Topline readout', exact: true })
+    ).toHaveCount(0);
+  });
 });
