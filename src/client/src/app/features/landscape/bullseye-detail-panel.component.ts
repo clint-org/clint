@@ -107,6 +107,19 @@ export class BullseyeDetailPanelComponent {
   protected readonly showPreclinical = computed(() => this.state.showPreclinical());
 
   /**
+   * Generic name to show in the identity subtitle, or null. Suppressed when it
+   * is absent or merely repeats the asset name (e.g. Olezarsen / Olezarsen),
+   * which would otherwise print the same word twice.
+   */
+  protected readonly subtitleGenericName = computed<string | null>(() => {
+    const asset = this.selectedAsset();
+    if (!asset?.generic_name) return null;
+    return asset.generic_name.trim().toLowerCase() === asset.name.trim().toLowerCase()
+      ? null
+      : asset.generic_name;
+  });
+
+  /**
    * Trials section label. When every tracked trial shares one phase, appends
    * an "ALL PH N" hint so the analyst reads the common phase without scanning
    * each row (matches the mockup's trailing header hint).
