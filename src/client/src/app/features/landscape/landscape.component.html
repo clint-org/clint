@@ -19,31 +19,38 @@
       </div>
     } @else {
       @if (chartData(); as cd) {
-        @if (cd.spokes.length === 0) {
-          <div class="flex items-center justify-center h-full">
-            <div class="flex flex-col items-center gap-3 text-center max-w-md">
-              <p-message severity="info" [closable]="false">
-                No assets match the current filters. Adjust scope or add assets and trials to see
-                them here.
-              </p-message>
-              <p-button
-                label="View assets"
-                severity="secondary"
-                size="small"
-                [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'assets']"
-              />
-            </div>
-          </div>
-        } @else {
-          <div class="flex h-full overflow-auto">
-            <app-bullseye-controls-panel
-              [spokes]="cd.spokes"
-              [grouping]="state.spokeGrouping()"
-              [assetCount]="allAssets().length"
-              [spokeCount]="cd.spokes.length"
-              [hasDuplicates]="duplicatedAssetIds().size > 0"
-            />
-            <div class="flex-1 min-w-[600px] overflow-hidden landscape-layout">
+        <!--
+          The controls panel (GROUP BY, stats, legend) renders whenever data is
+          loaded, even when the current grouping/filters yield no spokes. Nesting
+          the empty state inside the chart column keeps the left rail reachable so
+          the user can change the grouping or scope to recover -- otherwise an
+          empty result removes the only controls that could undo it.
+        -->
+        <div class="flex h-full overflow-auto">
+          <app-bullseye-controls-panel
+            [spokes]="cd.spokes"
+            [grouping]="state.spokeGrouping()"
+            [assetCount]="allAssets().length"
+            [spokeCount]="cd.spokes.length"
+            [hasDuplicates]="duplicatedAssetIds().size > 0"
+          />
+          <div class="flex-1 min-w-[600px] overflow-hidden landscape-layout">
+            @if (cd.spokes.length === 0) {
+              <div class="flex items-center justify-center h-full">
+                <div class="flex flex-col items-center gap-3 text-center max-w-md">
+                  <p-message severity="info" [closable]="false">
+                    No assets match the current filters. Adjust scope or add assets and trials to
+                    see them here.
+                  </p-message>
+                  <p-button
+                    label="View assets"
+                    severity="secondary"
+                    size="small"
+                    [routerLink]="['/t', tenantId(), 's', spaceId(), 'profiles', 'assets']"
+                  />
+                </div>
+              </div>
+            } @else {
               <div class="landscape-chart-wrap">
                 <div class="bullseye-chart-frame">
                   <app-bullseye-chart
@@ -75,9 +82,9 @@
                   />
                 </div>
               }
-            </div>
+            }
           </div>
-        }
+        </div>
       }
     }
   </div>
