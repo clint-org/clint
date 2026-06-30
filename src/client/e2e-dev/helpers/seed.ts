@@ -123,3 +123,76 @@ export async function seedUnreflectedApproval(world: ScratchWorld): Promise<Seed
 
   return ids;
 }
+
+/**
+ * Seed a single asset that spans two indications at DIFFERENT development stages
+ * (issue #171): "Obesity" stays at P3 (from seedBasics' P3 trial) while a second
+ * indication is lifted to APPROVED by an actual asset-anchored approval mapped to
+ * it. In the by-indication bullseye the asset must then plot at P3 on one spoke
+ * and APPROVED on the other -- before the fix it plotted at APPROVED (its max) on
+ * both. Returns the seed ids plus the two indication ids/names.
+ */
+export interface DivergentSeedIds extends SeedIds {
+  p3IndicationName: string;
+  approvedIndicationId: string;
+  approvedIndicationName: string;
+}
+
+export async function seedDivergentIndicationStatus(
+  world: ScratchWorld,
+): Promise<DivergentSeedIds> {
+  const api = apiAs(world, 'owner');
+  const ids = await seedBasics(world); // asset + P3 trial on "Obesity"
+  const approvedIndicationName = `Severe HTG ${world.id}`;
+
+  // A low-phase trial creates the second indication record (P1); the approval
+  // below then lifts THAT indication to APPROVED, leaving "Obesity" at P3.
+  const trialB = await api.rpc('create_trial', {
+    p_space_id: world.spaceId,
+    p_asset_id: ids.assetId,
+    p_name: `ACME-IND-B ${world.id}`,
+    p_identifier: 'NCT09999998',
+    p_status: 'Recruiting',
+    p_phase_type: 'P1',
+    p_phase_start_date: '2024-01-01',
+    p_phase_end_date: '2026-12-31',
+    p_indication_name: approvedIndicationName,
+  });
+  if (trialB.error) throw new Error(`seed trial B: ${trialB.error.message}`);
+
+  const indB = await api
+    .from('indications')
+    .select('id')
+    .eq('space_id', world.spaceId)
+    .eq('name', approvedIndicationName)
+    .single();
+  if (indB.error) throw new Error(`seed indication B lookup: ${indB.error.message}`);
+  const approvedIndicationId = idOf(indB.data);
+
+  const approvalTy = await api
+    .from('event_types')
+    .select('id')
+    .eq('name', 'Approval')
+    .is('space_id', null)
+    .single();
+  if (approvalTy.error) throw new Error(`seed Approval type lookup: ${approvalTy.error.message}`);
+
+  const approval = await api.rpc('create_event', {
+    p_space_id: world.spaceId,
+    p_event_type_id: idOf(approvalTy.data),
+    p_title: `FDA approval (${approvedIndicationName})`,
+    p_event_date: '2025-12-01',
+    p_anchor_type: 'asset',
+    p_anchor_id: ids.assetId,
+    p_projection: 'actual',
+    p_indication_id: approvedIndicationId,
+  });
+  if (approval.error) throw new Error(`seed approval create_event: ${approval.error.message}`);
+
+  return {
+    ...ids,
+    p3IndicationName: 'Obesity',
+    approvedIndicationId,
+    approvedIndicationName,
+  };
+}

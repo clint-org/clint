@@ -4,10 +4,14 @@ import {
   EMPTY_LANDSCAPE_FILTERS,
   clampTimePeriod,
   formatTimePeriod,
+  groupAssetsIntoSpokes,
   hasActiveLandscapeFilters,
+  placementPhase,
+  placementRank,
   spanOverlapsRange,
   spokeGroupingNoun,
   timePeriodToRange,
+  type BullseyeAsset,
   type LandscapeFilters,
   type TimePeriodFilter,
 } from './landscape.model';
@@ -212,5 +216,92 @@ describe('spokeGroupingNoun', () => {
 
   it('uses plural for zero', () => {
     expect(spokeGroupingNoun('company', 0)).toBe('companies');
+  });
+});
+
+// A multi-indication asset whose approval lifted ONE indication (issue #171):
+// Severe Hypertriglyceridemia is APPROVED (rank 5) while Familial Chylomicronemia
+// Syndrome is still P3 (rank 3). highest_phase is the asset max (APPROVED).
+function olezarsenLike(): BullseyeAsset {
+  return {
+    id: 'asset-olz',
+    name: 'Olezarsen',
+    generic_name: 'olezarsen',
+    logo_url: null,
+    company_id: 'co-ionis',
+    company_name: 'Ionis',
+    company_logo_url: null,
+    highest_phase: 'APPROVED',
+    highest_phase_rank: 5,
+    trials: [],
+    recent_markers: [],
+    moas: [{ id: 'moa-aso', name: 'ASO' }],
+    roas: [{ id: 'roa-sc', name: 'Subcutaneous', abbreviation: 'SC' }],
+    indications: [
+      { id: 'ind-fcs', name: 'Familial Chylomicronemia Syndrome', abbreviation: 'FCS', development_status: 'P3' },
+      { id: 'ind-shtg', name: 'Severe Hypertriglyceridemia', abbreviation: 'SHTG', development_status: 'APPROVED' },
+    ],
+    intelligence_count: 0,
+    has_recent_activity: false,
+    recent_changes_count: 0,
+    most_recent_change_type: null,
+    most_recent_change_event_id: null,
+  };
+}
+
+describe('placementRank (issue #171: per-indication bullseye placement)', () => {
+  const asset = olezarsenLike();
+
+  it('uses the spoke indication status, not the asset max, under indication grouping', () => {
+    expect(placementRank(asset, 'indication', 'ind-fcs')).toBe(3); // P3, not APPROVED
+    expect(placementRank(asset, 'indication', 'ind-shtg')).toBe(5); // APPROVED
+  });
+
+  it('uses the asset max for non-indication groupings', () => {
+    expect(placementRank(asset, 'company', 'co-ionis')).toBe(5);
+    expect(placementRank(asset, 'moa', 'moa-aso')).toBe(5);
+    expect(placementRank(asset, 'asset', 'asset-olz')).toBe(5);
+  });
+
+  it('falls back to the asset max when per-indication status is absent', () => {
+    const noStatus: BullseyeAsset = {
+      ...asset,
+      indications: [{ id: 'ind-fcs', name: 'FCS', abbreviation: null }],
+    };
+    expect(placementRank(noStatus, 'indication', 'ind-fcs')).toBe(5);
+  });
+
+  it('falls back to the asset max when the spoke indication is not on the asset', () => {
+    expect(placementRank(asset, 'indication', 'ind-unknown')).toBe(5);
+  });
+});
+
+describe('placementPhase (label counterpart used by the export)', () => {
+  const asset = olezarsenLike();
+
+  it('returns the spoke indication phase under indication grouping', () => {
+    expect(placementPhase(asset, 'indication', 'ind-fcs')).toBe('P3');
+    expect(placementPhase(asset, 'indication', 'ind-shtg')).toBe('APPROVED');
+  });
+
+  it('returns the asset max phase for non-indication groupings and fallbacks', () => {
+    expect(placementPhase(asset, 'company', 'co-ionis')).toBe('APPROVED');
+    expect(placementPhase(asset, 'indication', 'ind-unknown')).toBe('APPROVED');
+  });
+});
+
+describe('groupAssetsIntoSpokes (issue #171)', () => {
+  it('ranks each indication spoke by that indication status, not the asset max', () => {
+    const { spokes } = groupAssetsIntoSpokes([olezarsenLike()], 'indication');
+    const fcs = spokes.find((s) => s.id === 'ind-fcs');
+    const shtg = spokes.find((s) => s.id === 'ind-shtg');
+    expect(fcs?.highest_phase_rank).toBe(3);
+    expect(shtg?.highest_phase_rank).toBe(5);
+  });
+
+  it('keeps the asset max for a non-indication grouping (company)', () => {
+    const { spokes } = groupAssetsIntoSpokes([olezarsenLike()], 'company');
+    expect(spokes).toHaveLength(1);
+    expect(spokes[0].highest_phase_rank).toBe(5);
   });
 });

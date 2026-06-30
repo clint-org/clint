@@ -4,6 +4,7 @@ import {
   BullseyeData,
   BullseyeAsset,
   PHASE_COLOR,
+  placementRank,
   RING_DEV_RANK,
   RING_ORDER,
   RingPhase,
@@ -253,13 +254,18 @@ export class BullseyeChartComponent {
     const sectorW = sectorWidth(total);
     const out: DotSpec[] = [];
 
+    const dimension = this.data()?.dimension;
+
     spokes.forEach((spoke, spokeIndex) => {
-      // Group products by dev rank so we can jitter overlapping dots
+      // Group products by dev rank so we can jitter overlapping dots. Under the
+      // indication grouping, the rank is the asset's status FOR this spoke's
+      // indication, not its overall max -- see placementRank / issue #171.
       const byRank = new Map<number, BullseyeAsset[]>();
       for (const product of spoke.products) {
-        const list = byRank.get(product.highest_phase_rank) ?? [];
+        const rank = placementRank(product, dimension, spoke.id);
+        const list = byRank.get(rank) ?? [];
         list.push(product);
-        byRank.set(product.highest_phase_rank, list);
+        byRank.set(rank, list);
       }
 
       const baseAngle = spokeAngle(spokeIndex, total);
