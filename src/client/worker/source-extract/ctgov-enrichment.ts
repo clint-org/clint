@@ -76,7 +76,10 @@ function rankStudies(studies: CtgovStudy[], trialName: string): CtgovCandidate[]
 }
 
 function needsCtgovLookup(trial: ExtractionResult['trials'][number]): boolean {
-  return trial.match.kind === 'new';
+  // A trial that already carries an NCT is enriched from its exact registry
+  // record (see ctgov-record-enrich), so the fuzzy name-search candidates would
+  // be redundant noise in the picker. Only fuzzy-search trials with no NCT.
+  return trial.match.kind === 'new' && !trial.nct_id;
 }
 
 export async function enrichWithCtgov(

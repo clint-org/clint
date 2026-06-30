@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapCtgovPhase, CTGOV_TO_APP_PHASE } from './nct-phase-map';
+import { mapCtgovPhase, mapCtgovStatus, CTGOV_TO_APP_PHASE } from './nct-phase-map';
 
 describe('mapCtgovPhase', () => {
   it('maps PHASE1 to P1', () => {
@@ -60,6 +60,37 @@ describe('mapCtgovPhase', () => {
 
   it('falls back to first element for unrecognized combo phases', () => {
     expect(mapCtgovPhase(['PHASE1', 'PHASE3'])).toBe('P1');
+  });
+});
+
+describe('mapCtgovStatus', () => {
+  it('maps NOT_YET_RECRUITING to Planned', () => {
+    expect(mapCtgovStatus('NOT_YET_RECRUITING')).toBe('Planned');
+  });
+
+  it('maps recruiting/active variants to Active', () => {
+    expect(mapCtgovStatus('RECRUITING')).toBe('Active');
+    expect(mapCtgovStatus('ENROLLING_BY_INVITATION')).toBe('Active');
+    expect(mapCtgovStatus('ACTIVE_NOT_RECRUITING')).toBe('Active');
+  });
+
+  it('maps terminal states', () => {
+    expect(mapCtgovStatus('COMPLETED')).toBe('Completed');
+    expect(mapCtgovStatus('TERMINATED')).toBe('Terminated');
+    expect(mapCtgovStatus('WITHDRAWN')).toBe('Withdrawn');
+  });
+
+  it('is case-insensitive', () => {
+    expect(mapCtgovStatus('completed')).toBe('Completed');
+  });
+
+  it('returns null for ambiguous or unknown statuses (keep extracted value)', () => {
+    expect(mapCtgovStatus('SUSPENDED')).toBeNull();
+    expect(mapCtgovStatus('UNKNOWN')).toBeNull();
+    expect(mapCtgovStatus('AVAILABLE')).toBeNull();
+    expect(mapCtgovStatus('')).toBeNull();
+    expect(mapCtgovStatus(null)).toBeNull();
+    expect(mapCtgovStatus(undefined)).toBeNull();
   });
 });
 

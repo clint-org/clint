@@ -79,6 +79,19 @@ describe('proposalTrialToForm', () => {
     t['indication'] = 'MASLD';
     expect(proposalTrialToForm(0, p).indications).toEqual(['MASLD']);
   });
+  it('prefers the extracted nct_id over the legacy identifier key', () => {
+    const p = proposal();
+    const t = p.proposals.trials[0] as Record<string, unknown>;
+    t['nct_id'] = 'NCT09998887';
+    expect(proposalTrialToForm(0, p).identifier).toBe('NCT09998887');
+  });
+  it('reads an extracted nct_id when no legacy identifier is present', () => {
+    const p = proposal();
+    const t = p.proposals.trials[0] as Record<string, unknown>;
+    delete t['identifier'];
+    t['nct_id'] = 'NCT05554443';
+    expect(proposalTrialToForm(0, p).identifier).toBe('NCT05554443');
+  });
 });
 
 describe('applyTrialForm', () => {
