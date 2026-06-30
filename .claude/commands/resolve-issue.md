@@ -31,7 +31,7 @@ Repo: `clint-org/clint`. Prereq: the issue was created by `/log-issue` (its body
 
 ## Step 7: Log the resolution
 - Upload the shots:
-  `node scripts/upload-evidence.mjs <n> <abs>/before-dev.png before-dev.png`
+  `node src/client/scripts/upload-evidence.mjs <n> <abs>/before-dev.png before-dev.png`
   (repeat for after-dev.png, after-prod.png); each prints `EVIDENCE_URL=...`.
 - Post a resolution comment: `gh issue comment <n> --repo clint-org/clint --body "..."` with the outcome, the fixing PR, and the three evidence URLs as markdown images.
 - The issue auto-closes when the `develop -> main` PR merges (Closes #N on the default branch). Confirm it closed; if the PR is still pending prod approval, leave the status comment and let it close on merge.

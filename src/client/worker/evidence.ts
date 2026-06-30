@@ -9,6 +9,7 @@ import type { Env } from './index';
  */
 export async function handleEvidenceGet(request: Request, env: Env): Promise<Response> {
   if (request.method !== 'GET') return new Response('method not allowed', { status: 405 });
+  if (!env.EVIDENCE_BUCKET) return new Response('not found', { status: 404 });
   const key = new URL(request.url).pathname.replace(/^\/evidence\//, '');
   if (!key.startsWith('issues/') || key.includes('..')) {
     return new Response('bad key', { status: 400 });

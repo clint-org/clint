@@ -47,4 +47,12 @@ describe('handleEvidenceGet', () => {
     );
     expect(res.status).toBe(400);
   });
+
+  it('404s when the EVIDENCE_BUCKET binding is absent (e.g. dev worker)', async () => {
+    const res = await handleEvidenceGet(
+      new Request('https://clintapp.com/evidence/issues/157/x.png'),
+      {} as unknown as Parameters<typeof handleEvidenceGet>[1]
+    );
+    expect(res.status).toBe(404);
+  });
 });
