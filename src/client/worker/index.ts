@@ -11,6 +11,7 @@ import { handleAiHealth } from './source-extract/ai-health';
 import { handleBrandfetchLookup } from './brandfetch';
 import { handleLogoProxy } from './logo-proxy';
 import { buildRobots } from './robots';
+import { handleEvidenceGet } from './evidence';
 
 type RateLimit = { limit: (key: { key: string }) => Promise<{ success: boolean }> };
 
@@ -32,6 +33,9 @@ export interface Env {
   // scheduled handler. Uploads / downloads still go via presigned S3 URLs
   // (see r2.ts) because the browser cannot use the binding directly.
   MATERIALS_BUCKET: R2Bucket;
+  // Public evidence bucket for bug-resolution screenshots linked from GitHub
+  // issue comments. Objects are read-only via the /evidence/* route.
+  EVIDENCE_BUCKET: R2Bucket;
   ALLOWED_APEXES: string; // comma-separated list, e.g. "clintapp.com"
   UPLOAD_LIMITER: RateLimit;
   DOWNLOAD_LIMITER: RateLimit;
@@ -97,6 +101,10 @@ export default {
         });
       }
       return handleBrandfetchLookup(request, env.BRANDFETCH_API_KEY, sub, cors);
+    }
+
+    if (url.pathname.startsWith('/evidence/')) {
+      return handleEvidenceGet(request, env);
     }
 
     if (url.pathname.startsWith('/api/')) {

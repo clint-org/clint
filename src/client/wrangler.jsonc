@@ -42,6 +42,10 @@
 		{
 			"binding": "MATERIALS_BUCKET",
 			"bucket_name": "clint-materials"
+		},
+		{
+			"binding": "EVIDENCE_BUCKET",
+			"bucket_name": "clint-evidence"
 		}
 	],
 	"ratelimits": [
