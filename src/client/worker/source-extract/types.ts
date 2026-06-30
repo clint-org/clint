@@ -89,6 +89,10 @@ const EventSchema = z.object({
   projection: z.enum(['actual', 'company', 'primary']).optional().default('company'),
   significance: z.enum(['high', 'low']).optional(),
   description: z.string().nullable().optional().default(null),
+  // The single indication an Approval/Launch event is for, by NAME (resolved to
+  // events.indication_id server-side on commit). One name per event; multiple
+  // approvals/launches = separate events. Left null for other event types.
+  indication: z.string().nullable().optional().default(null),
   // Kept in the schema + review; NOT written on commit (deferred to p_metadata).
   tags: z.array(z.string()).optional().default([]),
   anchor: z.object({
