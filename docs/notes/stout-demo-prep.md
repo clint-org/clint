@@ -108,6 +108,7 @@ Each act: **where you are · what you do · what you say · how you transition.*
 
 ### Act 2 — WIN, the pitch setup (app: Pitch space + the whitelabel)
 - **Where:** Pfizer **NSCLC ADC — Pitch** (`/` home, then `/bullseye`).
+- **The why-now (★, say it calmly — not dramatic):** "Last week Pfizer's lead lung drug missed its main endpoint, so now they're working out the pivot. That's a competitive question at heart — and a natural moment for an engagement like this to start." (Real: sigvotatug vedotin / SigVie-002 OS miss, Pfizer press release Jun 21 2026. The trigger is genuine and ~a week old.)
 - **Story:** "Your analysts are pitching Pfizer — different world from obesity. Non-small-cell lung cancer, the antibody-drug-conjugate race. They spun up a Pfizer-branded space and worked it for a day or two." Point at the **Pfizer brand + 'Intelligence by Stout'** in the header (the whitelabel).
 - **Do:** on **Home**, show "Latest from Stout" — pre-written intelligence already on the field (the SV-miss read). Then **Bullseye** — the pitch hero. Switch **GROUP BY → Mechanism of Action**: "this is which *science* is winning — TROP2 vs HER2 vs integrin-β6." Note the events that are **analyst-authored, not just CT.gov**.
 - **Land:** "The pitch *is* the product. And whatever wins it *is* the kickoff baseline — nothing rebuilt."

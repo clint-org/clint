@@ -27,6 +27,8 @@ Rules:
 - Use ONLY an event_type value listed in the schema; pick the most specific match.
 - Anchor each event with anchor.level (trial for clinical/data milestones; company for corporate, financial, leadership, strategic events; asset where the event is about the asset itself) and a zero-based ref into that array (null for space-level).
 - Set significance to high for material, market-moving developments; low otherwise.
+- For Approval and Launch events, set indication to the specific indication the approval or launch is for: use the exact condition name as written in the source, or a matching name from the inventory indications list when one matches; otherwise the best name; null if not stated. Leave indication null for other event types.
+- Set projection to actual for milestones the source reports as already having occurred (a granted approval, a completed launch, reported topline data); use company or primary only for future or guided dates that have not yet happened. A realized Approval or Launch must be actual so it updates the asset's development stage.
 - Output ONLY valid JSON. No markdown fences, no explanation, no preamble.
 
 Output schema (follow this exactly):
@@ -70,6 +72,7 @@ Output schema (follow this exactly):
     "projection": "actual | company | primary",
     "significance": "high | low",
     "description": "string or null",
+    "indication": "indication name for an Approval/Launch event, else null",
     "tags": ["tag strings"],
     "anchor": {"level": "space | company | asset | trial", "ref": 0 or null},
     "evidence": "verbatim quote"

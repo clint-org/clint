@@ -156,6 +156,15 @@ export interface BullseyeAsset {
   recent_changes_count: number;
   most_recent_change_type: string | null;
   most_recent_change_event_id: string | null;
+  /**
+   * True when the asset has an actual approval/launch event recorded but its
+   * highest development_status across indications never reached APPROVED -- i.e.
+   * the approval was not reflected in the stage (almost always because the
+   * lifting event was not tagged with an indication). Optional because many
+   * fixtures/mappers construct BullseyeAsset without it; the panel reads it as
+   * `?? false`. Emitted by get_bullseye_data / get_bullseye_assets.
+   */
+  has_unreflected_approval?: boolean;
 }
 
 export interface BullseyeSpoke {

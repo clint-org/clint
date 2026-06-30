@@ -78,6 +78,12 @@
       <div class="mt-1.5">
         <app-source-provenance-line [sourceDocId]="p.source_doc_id" [canView]="spaceRole.canEdit()" />
       </div>
+      @if (approvalUnreflected()) {
+        <p class="mt-2 flex items-start gap-1.5 text-[11px] text-amber-700">
+          <i class="fa-solid fa-triangle-exclamation mt-px" aria-hidden="true"></i>
+          <span>Approval recorded but not reflected in stage. No indication is mapped.</span>
+        </p>
+      }
     </header>
 
     <!-- Timeline (full width above the two-column record + rail). -->
@@ -169,7 +175,7 @@
             anchorType="asset"
             [anchorId]="assetId()"
             [events]="events()"
-            (changed)="loadEvents()"
+            (changed)="onEventsChanged()"
           />
         </div>
       </div>

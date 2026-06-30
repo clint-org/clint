@@ -15,6 +15,7 @@ import {
   orphanTrialIndexes,
   countFilterMatches,
   eventLeafDisplay,
+  eventIndicationLabel,
   pickEventType,
   defaultSelections,
   type EventTypeLite,
@@ -434,6 +435,20 @@ describe('eventLeafDisplay', () => {
       category: 'Topline Data',
       date: '2026-07-01',
     });
+  });
+});
+
+describe('eventIndicationLabel', () => {
+  it('surfaces an extracted indication so the reviewer can verify the stage-lift target', () => {
+    expect(eventIndicationLabel({ event_type: 'Approval', indication: 'Obesity' })).toBe('Obesity');
+  });
+  it('trims surrounding whitespace', () => {
+    expect(eventIndicationLabel({ indication: '  NSCLC  ' })).toBe('NSCLC');
+  });
+  it('returns null when no indication is set (non-lifting events, or unmapped)', () => {
+    expect(eventIndicationLabel({ event_type: 'Topline Data' })).toBeNull();
+    expect(eventIndicationLabel({ indication: '' })).toBeNull();
+    expect(eventIndicationLabel({ indication: null })).toBeNull();
   });
 });
 

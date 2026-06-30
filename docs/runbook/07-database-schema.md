@@ -54,6 +54,7 @@ erDiagram
   EVENT_TYPE_CATEGORIES ||--o{ EVENT_TYPES : "category_id"
   SPACES ||--o{ EVENT_TYPES : "space_id"
   EVENT_TYPES ||--o{ EVENTS : "event_type_id"
+  INDICATIONS ||--o{ EVENTS : "indication_id"
   SOURCE_DOCUMENTS ||--o{ EVENTS : "source_doc_id"
   SPACES ||--o{ EVENTS : "space_id"
   INDICATIONS ||--o{ INDICATIONS : "parent_id"
@@ -1096,4 +1097,8 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260629200000_bullseye_materialize_intel_activity_ctes.sql`
 - `20260629210000_event_detail_context_trial_label.sql`
 - `20260629220000_ctgov_anticipated_projection_primary.sql`
+- `20260630120000_approval_launch_stage_lift.sql`
+- `20260630120100_event_rpcs_indication_id.sql`
+- `20260630120200_commit_source_import_event_indication.sql`
+- `20260630120400_bullseye_unreflected_approval_flag.sql`
 <!-- /AUTO-GEN:DRIFT -->

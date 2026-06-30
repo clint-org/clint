@@ -259,11 +259,18 @@ describe('Phase A read-RPC backtest (acceptance matrix)', () => {
   // --- Bullseye: envelope shape + no error (A4 documented limitation) --------
   it('bullseye: get_bullseye_assets returns its envelope without error (recent_markers empty by A4 limit)', async () => {
     const r = await as(p, 'space_owner').rpc('get_bullseye_assets', { p_space_id: p.org.spaceId });
-    const env = expectOk(r) as { assets: unknown; companies_with_intelligence: unknown };
+    const env = expectOk(r) as {
+      assets: { has_unreflected_approval?: unknown }[];
+      companies_with_intelligence: unknown;
+    };
     // Shape only: the QA fixture seeds no indications/asset_indications, so the
     // bullseye asset set (and any recent_markers) is empty by design (A4).
     expect(Array.isArray(env.assets)).toBe(true);
     expect(Array.isArray(env.companies_with_intelligence)).toBe(true);
+    // #159: every emitted asset carries the boolean stage-lift diagnostic flag.
+    for (const asset of env.assets) {
+      expect(typeof asset.has_unreflected_approval).toBe('boolean');
+    }
   });
 
   // --- Member-read proof (pairs with the cross-space firewall below) ---------

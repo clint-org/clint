@@ -37,6 +37,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_audit_trigger_space_invite_issued` | - | spaces |
 | `_audit_trigger_space_members` | - | spaces |
 | `_auto_derive_asset_indication_status` | - | trial_assets |
+| `_auto_derive_on_event_change` | asset_indications | event_types |
 | `_auto_derive_on_trial_condition_change` | - | trial_assets |
 | `_cleanup_polymorphic_refs` | events, material_links, primary_intelligence_anchors, primary_intelligence_links | - |
 | `_create_trial_date_markers` | events | - |
@@ -46,7 +47,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `_log_event_change` | event_changes | - |
 | `_materialize_trial_from_snapshot` | trial_change_events, trials | - |
 | `_promote_next_intelligence_lead` | primary_intelligence_anchors | primary_intelligence |
-| `_recompute_asset_indication_status` | asset_indications | condition_indication_map, trial_assets, trial_conditions, trials |
+| `_recompute_asset_indication_status` | asset_indications | condition_indication_map, event_types, events, trial_assets, trial_conditions, trials |
 | `_seed_ctgov_marker_upsert` | events | - |
 | `_seed_ctgov_markers` | - | trials |
 | `_seed_demo_activity_variety` | events, trial_change_events | trials |
@@ -83,7 +84,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `commit_source_import` | ai_calls, indications, mechanisms_of_action, routes_of_administration, source_documents | assets, companies, event_types, events, spaces, trials |
 | `create_asset` | assets | - |
 | `create_company` | companies | - |
-| `create_event` | event_sources, events | assets, companies, trials |
+| `create_event` | event_sources, events | assets, companies, indications, trials |
 | `create_space` | space_members, spaces | tenant_members, tenants |
 | `create_trial` | asset_indications, condition_indication_map, conditions, indications, trial_conditions, trials | - |
 | `delete_agency` | agencies | agency_invites, agency_members, tenants |
@@ -204,7 +205,7 @@ Auto-generated from `pg_proc` and `information_schema.tables` against the local 
 | `update_agency_branding` | agencies | - |
 | `update_asset_mechanisms` | asset_mechanisms_of_action | assets |
 | `update_asset_routes` | asset_routes_of_administration | assets |
-| `update_event` | events, trial_change_events | assets, companies, trials |
+| `update_event` | events, trial_change_events | assets, companies, indications, trials |
 | `update_event_sources` | event_sources | events |
 | `update_material` | material_links, materials | - |
 | `update_space_field_visibility` | spaces | - |
@@ -673,6 +674,7 @@ Auto-generated. Lists public functions in `pg_proc` and edge functions in `supab
 - `_audit_trigger_tenant_members`
 - `_audit_trigger_tenant_suspension`
 - `_auto_derive_asset_indication_status`
+- `_auto_derive_on_event_change`
 - `_auto_derive_on_trial_condition_change`
 - `_cleanup_polymorphic_refs`
 - `_create_trial_date_markers`

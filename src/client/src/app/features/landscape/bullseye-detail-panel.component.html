@@ -100,6 +100,12 @@
           [showPreclinical]="showPreclinical()"
           [ticks]="true"
         />
+        @if (asset.has_unreflected_approval) {
+          <p class="mt-2 flex items-start gap-1.5 text-[11px] text-amber-700">
+            <i class="fa-solid fa-triangle-exclamation mt-px" aria-hidden="true"></i>
+            <span>Approval recorded but not reflected in stage. No indication is mapped.</span>
+          </p>
+        }
         @if (asset.indications.length > 0) {
           <div
             class="mb-2 mt-3.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400"

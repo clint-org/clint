@@ -22,6 +22,9 @@ export interface CreateEventArgs {
   p_visibility: 'pinned' | 'hidden' | null;
   p_metadata: EventMetadata | null;
   p_sources: { url: string; label: string | null }[] | null;
+  /** Indication this event is attributed to. For Approval/Launch events this is
+   *  what lifts asset_indications.development_status to APPROVED/LAUNCHED. */
+  p_indication_id: string | null;
 }
 
 /** events.metadata jsonb payload. Tags (restored) + regulatory pathway (marker parity). */
@@ -50,4 +53,6 @@ export interface UpdateEventArgs {
   p_visibility: 'pinned' | 'hidden' | null;
   p_metadata: EventMetadata | null;
   p_no_longer_expected: boolean;
+  /** Indication this event is attributed to (full-replace; null clears it). */
+  p_indication_id: string | null;
 }
