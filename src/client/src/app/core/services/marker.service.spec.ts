@@ -148,6 +148,9 @@ describe('MarkerService.create', () => {
     expect(created.marker_type_id).toBe('type-1');
     // Trial-detail cache invalidated for the single anchor.
     expect(invalidateTags.mock.calls[0][0]).toContain('trial:trial-1:detail');
+    // Markers drive bullseye/heatmap/landscape positioning; the umbrella tag
+    // invalidates those so they refresh after a marker write (#177).
+    expect(invalidateTags.mock.calls[0][0]).toContain('space:space-1:landscape-all');
   });
 
   it('writes metadata with a follow-up events update when supplied', async () => {
@@ -200,6 +203,7 @@ describe('MarkerService.update', () => {
     expect(mapped).toEqual({ event_type_id: 'type-2', event_date: '2026-08-01' });
     expect(mapped['marker_type_id']).toBeUndefined();
     expect(invalidateTags.mock.calls[0][0]).toContain('catalyst:marker-1:detail');
+    expect(invalidateTags.mock.calls[0][0]).toContain('space:space-1:landscape-all');
   });
 
   it('passes through scalar changes and invalidates the anchor trial cache', async () => {
@@ -301,6 +305,7 @@ describe('MarkerService.delete', () => {
     const tags = invalidateTags.mock.calls[0][0] as string[];
     expect(tags).toContain('catalyst:marker-1:detail');
     expect(tags).toContain('trial:trial-1:detail');
+    expect(tags).toContain('space:space-1:landscape-all');
   });
 });
 

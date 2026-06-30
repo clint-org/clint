@@ -10,6 +10,7 @@ import {
   LandscapeFilters,
   LandscapeIndexEntry,
 } from '../models/landscape.model';
+import { landscapeAllTag } from './cache-tags';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -36,7 +37,7 @@ export class LandscapeService {
       { spaceId, dimension },
       {
         ttl: HEAVY_TTL,
-        tags: [`space:${spaceId}:landscape:${dimension}`],
+        tags: [`space:${spaceId}:landscape:${dimension}`, landscapeAllTag(spaceId)],
         fetch: async () => {
           const { data } = await this.supabase.client
             .rpc(rpcName, {
@@ -66,7 +67,7 @@ export class LandscapeService {
       { spaceId, dimension, entityId },
       {
         ttl: HEAVY_TTL,
-        tags: [`space:${spaceId}:bullseye:${dimension}:${entityId}`],
+        tags: [`space:${spaceId}:bullseye:${dimension}:${entityId}`, landscapeAllTag(spaceId)],
         fetch: async () => {
           const { data } = await this.supabase.client
             .rpc(name, {
@@ -89,7 +90,7 @@ export class LandscapeService {
       { spaceId, filters },
       {
         ttl: HEAVY_TTL,
-        tags: [`space:${spaceId}:bullseye:assets`],
+        tags: [`space:${spaceId}:bullseye:assets`, landscapeAllTag(spaceId)],
         fetch: async () => {
           const { data } = await this.supabase.client
             .rpc('get_bullseye_assets', {
@@ -127,7 +128,7 @@ export class LandscapeService {
       { spaceId, grouping, countUnit, filters },
       {
         ttl: HEAVY_TTL,
-        tags: [`space:${spaceId}:heatmap`],
+        tags: [`space:${spaceId}:heatmap`, landscapeAllTag(spaceId)],
         fetch: async () => {
           const { data } = await this.supabase.client
             .rpc('get_positioning_data', {

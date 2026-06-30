@@ -10,6 +10,7 @@ import {
 } from '../models/event.model';
 import { CreateEventArgs, UpdateEventArgs } from '../models/event-write.model';
 import { CatalystDetail } from '../models/event-detail.model';
+import { landscapeAllTag } from './cache-tags';
 import { eventDetailFromWrapper } from './event-detail-map';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
@@ -169,6 +170,7 @@ export class EventService {
       `space:${spaceId}:events`,
       `space:${spaceId}:tags`,
       `space:${spaceId}:dashboard`,
+      landscapeAllTag(spaceId),
     ]);
 
     const { data: row } = await this.supabase.client
@@ -194,6 +196,7 @@ export class EventService {
       `space:${spaceId}:events`,
       `space:${spaceId}:tags`,
       `space:${spaceId}:dashboard`,
+      landscapeAllTag(spaceId),
     ]);
     return newId as string;
   }
@@ -215,6 +218,10 @@ export class EventService {
       // The timeline reads get_dashboard_data (tag space:<id>:dashboard); without
       // this the edited event stays cached and the timeline renders it stale (#175).
       `space:${spaceId}:dashboard`,
+      // The bullseye / heatmap / landscape reads share a coarse umbrella tag so an
+      // event edit refreshes them too, instead of serving pre-edit data for the
+      // cache TTL (#177).
+      landscapeAllTag(spaceId),
     ]);
   }
 
@@ -233,6 +240,7 @@ export class EventService {
       `space:${row.space_id}:events`,
       `space:${row.space_id}:tags`,
       `space:${row.space_id}:dashboard`,
+      landscapeAllTag(row.space_id),
     ]);
 
     return row;
@@ -297,6 +305,7 @@ export class EventService {
       `space:${spaceId}:events`,
       `space:${spaceId}:tags`,
       `space:${spaceId}:dashboard`,
+      landscapeAllTag(spaceId),
     ]);
   }
 }
