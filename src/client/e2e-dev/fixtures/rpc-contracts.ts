@@ -85,6 +85,7 @@ export const RPC_CONTRACTS: RpcContract[] = [
       'p_significance',
       'p_visibility',
       'p_sources',
+      'p_indication_id',
     ],
     sometimes: ['p_metadata'],
     source:
@@ -653,6 +654,7 @@ export const RPC_CONTRACTS: RpcContract[] = [
       'p_significance',
       'p_visibility',
       'p_no_longer_expected',
+      'p_indication_id',
     ],
     sometimes: ['p_metadata'],
     source: 'event.service.ts:updateEvent()',
