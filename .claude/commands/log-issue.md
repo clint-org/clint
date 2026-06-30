@@ -50,4 +50,6 @@ Print the issue number and URL back to the user.
 
 ## Step 3: Hand off to the fix
 
-State the issue number, then remind: the fixing PR's body MUST contain `Closes #<number>` so GitHub auto-links the PR and closes the issue on merge. If a fix PR/branch already exists, edit its body to add that line (or `gh issue comment <number>` with the PR link). After the fix lands, the issue closes itself -- no manual close.
+State the issue number, then remind: the fixing PR's body MUST contain `Closes #<number>` so GitHub links the PR to the issue. If a fix PR/branch already exists, edit its body to add that line.
+
+Auto-close nuance for this repo's dev-first flow: `Closes #N` only auto-closes the issue when the PR merges into the **default branch (`main`/prod)**. Fix PRs here target `develop` first, so merging to `develop` links the PR and deploys to dev but leaves the issue **open** -- which is correct, the issue should close when the fix reaches prod. While it sits on dev, `gh issue comment <number>` with the merge SHA + dev-verification status so the trail is current. The issue closes itself once `develop` reaches `main`.
