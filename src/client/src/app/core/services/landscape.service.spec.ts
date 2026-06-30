@@ -56,7 +56,7 @@ describe('LandscapeService.getLandscapeIndex', () => {
 
     const [rpcName, , opts] = get.mock.calls[0];
     expect(rpcName).toBe('get_landscape_index');
-    expect(opts.tags).toEqual(['space:space-1:landscape:indication']);
+    expect(opts.tags).toEqual(['space:space-1:landscape:indication', 'space:space-1:landscape-all']);
   });
 
   it('routes company dimension to get_landscape_index_by_company with correct tag', async () => {
@@ -64,7 +64,7 @@ describe('LandscapeService.getLandscapeIndex', () => {
 
     const [rpcName, , opts] = get.mock.calls[0];
     expect(rpcName).toBe('get_landscape_index_by_company');
-    expect(opts.tags).toEqual(['space:space-1:landscape:company']);
+    expect(opts.tags).toEqual(['space:space-1:landscape:company', 'space:space-1:landscape-all']);
   });
 });
 
@@ -80,7 +80,7 @@ describe('LandscapeService.getBullseyeData', () => {
 
     const [rpcName, , opts] = get.mock.calls[0];
     expect(rpcName).toBe('get_bullseye_by_moa');
-    expect(opts.tags).toEqual(['space:space-1:bullseye:moa:entity-42']);
+    expect(opts.tags).toEqual(['space:space-1:bullseye:moa:entity-42', 'space:space-1:landscape-all']);
   });
 });
 
@@ -107,7 +107,7 @@ describe('LandscapeService.getHeatmapData', () => {
 
     const [rpcName, params, opts] = get.mock.calls[0];
     expect(rpcName).toBe('get_positioning_data');
-    expect(opts.tags).toEqual(['space:space-1:heatmap']);
+    expect(opts.tags).toEqual(['space:space-1:heatmap', 'space:space-1:landscape-all']);
     expect(params).toMatchObject({
       spaceId: 'space-1',
       grouping: 'company',

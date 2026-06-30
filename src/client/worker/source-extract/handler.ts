@@ -4,6 +4,8 @@ import { callRpc, type SupabaseConfig } from '../supabase';
 import { jwtSubject } from '../auth';
 import { cleanHtml } from './html-cleaner';
 import { buildPrompt, estimateTokens } from './prompt-builder';
+import { isLlmAbort } from './call-outcome';
+import { closeAiCall } from './ai-call-close';
 import { validateExtraction } from './response-validator';
 import { enrichWithCtgov } from './ctgov-enrichment';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
@@ -301,7 +303,10 @@ export async function handleSourceExtract(
     }
     rawOutput = textBlock.text;
   } catch (e) {
-    const isAbort = e instanceof Error && e.name === 'AbortError';
+    // The Anthropic SDK throws APIUserAbortError (name "Error", message "Request
+    // was aborted.") on our LLM_TIMEOUT_MS abort, so an `e.name === 'AbortError'`
+    // check misses it and mislabels a timeout as parse_failed (#162).
+    const isAbort = isLlmAbort(e);
     const outcome = isAbort ? 'timeout' : 'parse_failed';
     const msg = isAbort
       ? 'Extraction timed out. Try again or use a shorter source.'
@@ -461,36 +466,6 @@ export async function handleSourceExtract(
   };
 
   return json(200, response, cors);
-}
-
-async function closeAiCall(
-  cfg: SupabaseConfig,
-  env: Env,
-  aiCallId: string,
-  outcome: string,
-  durationMs: number,
-  promptTokens: number | null,
-  completionTokens: number | null,
-  errorMessage: string | null,
-  output?: unknown,
-  warnings?: string[]
-): Promise<void> {
-  try {
-    await callRpc(cfg, null, 'ai_call_close', {
-      p_secret: env.EXTRACT_SOURCE_WORKER_SECRET,
-      p_ai_call_id: aiCallId,
-      p_outcome: outcome,
-      p_prompt_tokens: promptTokens,
-      p_completion_tokens: completionTokens,
-      p_duration_ms: durationMs,
-      p_output: output ?? null,
-      p_warnings: warnings ?? null,
-      p_error_code: errorMessage ? outcome : null,
-      p_error_message: errorMessage,
-    });
-  } catch {
-    console.error(`Failed to close ai_call ${aiCallId}`);
-  }
 }
 
 async function fetchTenantId(

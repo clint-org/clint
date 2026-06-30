@@ -286,6 +286,7 @@ describe('EventService.create', () => {
       'space:space-1:events',
       'space:space-1:tags',
       'space:space-1:dashboard',
+      'space:space-1:landscape-all',
     ]);
   });
 });
@@ -307,6 +308,7 @@ describe('EventService.update', () => {
       'space:space-2:events',
       'space:space-2:tags',
       'space:space-2:dashboard',
+      'space:space-2:landscape-all',
     ]);
   });
 });
@@ -448,6 +450,7 @@ describe('EventService.delete', () => {
       'space:space-3:events',
       'space:space-3:tags',
       'space:space-3:dashboard',
+      'space:space-3:landscape-all',
     ]);
   });
 
@@ -517,6 +520,7 @@ describe('EventService.createEvent (unified)', () => {
       'space:space-1:events',
       'space:space-1:tags',
       'space:space-1:dashboard',
+      'space:space-1:landscape-all',
     ]);
   });
 
@@ -586,12 +590,14 @@ describe('EventService.updateEvent (unified)', () => {
     });
     expect(params).not.toHaveProperty('p_metadata');
     // The timeline reads get_dashboard_data (space:<id>:dashboard); an event edit
-    // must invalidate it or the timeline renders the edit stale (#175).
+    // must invalidate it or the timeline renders the edit stale (#175). The
+    // landscape-all umbrella covers the bullseye / heatmap / landscape reads (#177).
     expect(invalidateTags).toHaveBeenCalledWith([
       'event:event-1:detail',
       'space:space-1:events',
       'space:space-1:tags',
       'space:space-1:dashboard',
+      'space:space-1:landscape-all',
     ]);
   });
 });

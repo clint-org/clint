@@ -5,6 +5,8 @@ import { jwtSubject } from '../auth';
 import { createCtgovClient } from '../ctgov-sync/ctgov-client';
 import { buildNctPrompt, type NctStudyRecord } from './nct-prompt-builder';
 import { toStudyRecord, applyNctTrialNames } from './nct-study-record';
+import { classifyLlmFailure } from './call-outcome';
+import { closeAiCall } from './ai-call-close';
 import { validateExtraction } from './response-validator';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
 import { applyLogoEnrichment, resolveProposalNames } from './post-extract';
@@ -220,7 +222,7 @@ export async function handleNctResolve(
         cfg,
         env,
         aiCallId,
-        'error',
+        'parse_failed',
         Date.now() - start,
         promptTokens,
         completionTokens,
@@ -237,16 +239,19 @@ export async function handleNctResolve(
     }
     rawOutput = textBlock.text;
   } catch (e) {
-    const reason = e instanceof Error && e.name === 'AbortError' ? 'timeout' : String(e);
+    // Abort (our LLM_TIMEOUT_MS timer) -> 'timeout', otherwise 'parse_failed'.
+    // Both are constraint-valid; the removed 'error' value was rejected by the
+    // ai_calls.outcome CHECK constraint, which stranded the row at PENDING (#162).
+    const outcome = classifyLlmFailure(e);
     await closeAiCall(
       cfg,
       env,
       aiCallId,
-      'error',
+      outcome,
       Date.now() - start,
       promptTokens,
       completionTokens,
-      reason,
+      String(e),
       { prompt: promptText, params: aiParams }
     );
     return jsonErrorWithCode(
@@ -264,7 +269,7 @@ export async function handleNctResolve(
       cfg,
       env,
       aiCallId,
-      'error',
+      'parse_failed',
       Date.now() - start,
       promptTokens,
       completionTokens,
@@ -382,36 +387,6 @@ async function fetchStudyWithAbort(
         reject(err);
       });
   });
-}
-
-async function closeAiCall(
-  cfg: SupabaseConfig,
-  env: Env,
-  aiCallId: string,
-  outcome: string,
-  durationMs: number,
-  promptTokens: number | null,
-  completionTokens: number | null,
-  errorMessage: string | null,
-  output?: unknown,
-  warnings?: string[]
-): Promise<void> {
-  try {
-    await callRpc(cfg, null, 'ai_call_close', {
-      p_secret: env.EXTRACT_SOURCE_WORKER_SECRET,
-      p_ai_call_id: aiCallId,
-      p_outcome: outcome,
-      p_prompt_tokens: promptTokens,
-      p_completion_tokens: completionTokens,
-      p_duration_ms: durationMs,
-      p_output: output ?? null,
-      p_warnings: warnings ?? null,
-      p_error_code: errorMessage ? outcome : null,
-      p_error_message: errorMessage,
-    });
-  } catch {
-    console.error(`Failed to close ai_call ${aiCallId}`);
-  }
 }
 
 async function fetchTenantId(

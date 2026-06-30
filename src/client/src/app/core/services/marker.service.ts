@@ -2,6 +2,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { Marker } from '../models/marker.model';
 import { EVENTS_SELECT, mapEventToMarker } from '../models/event-to-marker';
+import { landscapeAllTag } from './cache-tags';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -11,6 +12,10 @@ function spaceTagsFor(spaceId: string): string[] {
     `space:${spaceId}:dashboard`,
     `space:${spaceId}:landing-stats`,
     `space:${spaceId}:trials`,
+    // Markers are trial events that drive phase positioning on the bullseye /
+    // heatmap / landscape reads; invalidate their umbrella tag so those refresh
+    // after a marker write instead of serving pre-edit data for the TTL (#177).
+    landscapeAllTag(spaceId),
   ];
 }
 
