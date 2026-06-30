@@ -18,7 +18,10 @@ import {
   timePeriodToRange,
 } from '../../core/models/landscape.model';
 import { PiReference } from '../../core/models/primary-intelligence.model';
-import { briefsToReferences, dedupeReferencesById } from '../../core/models/intelligence-references';
+import {
+  briefsToReferences,
+  dedupeReferencesById,
+} from '../../core/models/intelligence-references';
 import { EventDetailService } from '../../core/services/event-detail.service';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
@@ -88,7 +91,11 @@ export class LandscapeStateService {
 
   // ─── Raw data ────────────────────────────────────────────────────────
   readonly rawData = signal<DashboardData | null>(null);
-  readonly dataLoading = signal(false);
+  // Starts true so the loader shows from first paint. init() awaits async work
+  // (getShowPreclinical) before loadData() flips this, and the empty-state gate
+  // sits behind dataLoading -- without this the timeline flashes "no data" in
+  // that gap. loadData()'s finally always clears it.
+  readonly dataLoading = signal(true);
   readonly dataError = signal<string | null>(null);
 
   // ─── Filters ─────────────────────────────────────────────────────────
@@ -313,7 +320,7 @@ export class LandscapeStateService {
       tasks.push(
         this.intelligence
           .getTrialDetail(trialId)
-          .then((b) => (b ? briefsToReferences(b.briefs, 'trial', trialId, trialName) : [])),
+          .then((b) => (b ? briefsToReferences(b.briefs, 'trial', trialId, trialName) : []))
       );
     }
     if (c.asset_id) {
@@ -322,7 +329,7 @@ export class LandscapeStateService {
       tasks.push(
         this.intelligence
           .getAssetDetail(assetId)
-          .then((b) => (b ? briefsToReferences(b.briefs, 'product', assetId, assetName) : [])),
+          .then((b) => (b ? briefsToReferences(b.briefs, 'product', assetId, assetName) : []))
       );
     }
     if (tasks.length === 0) return;
@@ -546,10 +553,7 @@ export function filterDashboardData(companies: Company[], filters: LandscapeFilt
 export function flattenToCatalysts(companies: Company[], today: string): Catalyst[] {
   const catalysts: Catalyst[] = [];
 
-  const push = (
-    marker: Marker,
-    ctx: { company: Company; asset?: Asset; trial?: Trial }
-  ): void => {
+  const push = (marker: Marker, ctx: { company: Company; asset?: Asset; trial?: Trial }): void => {
     if (marker.event_date < today) return;
     const { company, asset, trial } = ctx;
     const mt = marker.marker_types;

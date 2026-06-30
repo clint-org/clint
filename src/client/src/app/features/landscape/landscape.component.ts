@@ -15,7 +15,8 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { Tooltip } from 'primeng/tooltip';
 
-import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
+import { minDisplayFlag } from '../../shared/components/loader/min-display-flag';
+import { VizLoaderComponent } from '../../shared/components/loader/viz-loader.component';
 import {
   BullseyeAsset,
   BullseyeData,
@@ -56,7 +57,7 @@ import { BrandContextService } from '../../core/services/brand-context.service';
     RouterLink,
     ButtonModule,
     MessageModule,
-    SkeletonComponent,
+    VizLoaderComponent,
     Tooltip,
   ],
   templateUrl: './landscape.component.html',
@@ -99,6 +100,8 @@ export class LandscapeComponent implements OnInit {
     },
   });
 
+  protected readonly showLoader = minDisplayFlag(() => this.bullseyeAssets.isLoading());
+
   readonly allAssets = computed<BullseyeAsset[]>(() => this.bullseyeAssets.value()?.assets ?? []);
 
   /** Intermediate computed that holds the raw grouping result. */
@@ -111,7 +114,7 @@ export class LandscapeComponent implements OnInit {
     return groupAssetsIntoSpokes(
       assets,
       this.state.spokeGrouping(),
-      new Set(companiesWithIntelligence),
+      new Set(companiesWithIntelligence)
     );
   });
 
@@ -174,7 +177,7 @@ export class LandscapeComponent implements OnInit {
         run: async () =>
           this.sheetExcel.export(
             buildBullseyeSheets(data),
-            await this.exportNaming.stem(this.spaceId(), 'bullseye'),
+            await this.exportNaming.stem(this.spaceId(), 'bullseye')
           ),
       },
     ];
@@ -305,7 +308,15 @@ export class LandscapeComponent implements OnInit {
   }
 
   onOpenTrial(trialId: string): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'profiles', 'trials', trialId]);
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'profiles',
+      'trials',
+      trialId,
+    ]);
   }
 
   onOpenCompany(companyId: string): void {

@@ -14,7 +14,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageModule } from 'primeng/message';
 import { ButtonModule } from 'primeng/button';
 
-import { SkeletonComponent } from '../../shared/components/skeleton/skeleton.component';
+import { minDisplayFlag } from '../../shared/components/loader/min-display-flag';
+import { VizLoaderComponent } from '../../shared/components/loader/viz-loader.component';
 import { HeatmapBubble, HeatmapGrouping, RingPhase } from '../../core/models/landscape.model';
 import { IntelligenceEntityType } from '../../core/models/primary-intelligence.model';
 import { buildEntityRouterLink } from '../../shared/utils/intelligence-router-link';
@@ -47,20 +48,14 @@ import { buildHeatmapSheets } from './heatmap-export.util';
     HeatmapCellTooltipComponent,
     HeatmapControlsPanelComponent,
     HeatmapDetailPanelComponent,
-    SkeletonComponent,
+    VizLoaderComponent,
     MessageModule,
     ButtonModule,
   ],
   animations: [slidePanelAnimation],
   template: `
-    @if (heatmapData.isLoading()) {
-      <div
-        class="flex h-full items-center justify-center"
-        aria-busy="true"
-        aria-label="Loading heatmap data"
-      >
-        <app-skeleton w="200px" h="14px" />
-      </div>
+    @if (showLoader()) {
+      <app-viz-loader label="Loading heatmap" />
     } @else if (heatmapData.error()) {
       <div class="flex items-center justify-center h-full">
         <div class="flex flex-col items-center gap-3 text-center max-w-md">
@@ -260,6 +255,8 @@ export class HeatmapViewComponent implements OnInit {
       );
     },
   });
+
+  protected readonly showLoader = minDisplayFlag(() => this.heatmapData.isLoading());
 
   ngOnInit(): void {
     let snap: import('@angular/router').ActivatedRouteSnapshot | null = this.route.snapshot;
