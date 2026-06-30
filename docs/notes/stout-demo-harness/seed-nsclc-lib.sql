@@ -42,7 +42,8 @@ end $f$;
 create or replace function pg_temp.mk_intel(
   p_space uuid, p_etype text, p_eid uuid,
   p_headline text, p_summary text, p_impl text, p_when timestamptz,
-  p_prev_summary text default null, p_when_prev timestamptz default null, p_headline_prev text default null)
+  p_prev_summary text default null, p_when_prev timestamptz default null, p_headline_prev text default null,
+  p_links jsonb default null)
 returns void language plpgsql as $f$
 declare v_anchor uuid; v_pi uuid;
 begin
@@ -59,7 +60,7 @@ begin
   end if;
   v_pi := public.upsert_primary_intelligence(null, v_anchor, p_space, p_etype, p_eid,
     p_headline, p_summary, p_impl, 'published',
-    case when p_prev_summary is not null then 'Revised after latest readout' else 'Initial publication' end, null);
+    case when p_prev_summary is not null then 'Revised after latest readout' else 'Initial publication' end, p_links);
   update public.primary_intelligence set published_at = p_when, created_at = p_when, updated_at = p_when where id = v_pi;
   if p_prev_summary is not null then
     update public.primary_intelligence set archived_at = p_when where anchor_id = v_anchor and state = 'archived';
@@ -220,9 +221,16 @@ begin
   if p_depth >= 1 then
     perform pg_temp.mk_intel(p_space, 'product', a_sv,
       'Sigvotatug vedotin after the SigVie-002 miss',
-      'SigVie-002 missed its primary overall-survival endpoint in 2L+ non-squamous NSCLC against docetaxel. The cleanest path to a broad second-line label is gone. What survives is (a) a stronger trend in the ~two-thirds of patients with one prior line, and (b) the first-line sigvotatug + pembrolizumab combination in PD-L1 >=50%. Integrin beta-6 remains a differentiated, high-prevalence target.',
-      'Pfizer''s near-term decision is whether to chase a narrow 1-prior-line label or pivot weight onto the 1L combination — a lane where Dato-DXd and sac-TMT are already ahead. Recommend pressure-testing the regulatory viability of the subgroup before committing 1L resourcing.',
-      (p_asof - 3)::timestamptz);
+      E'**SigVie-002 missed its primary overall-survival endpoint** in 2L+ non-squamous NSCLC vs docetaxel, with no significant benefit in the overall population. The cleanest path to a broad second-line label is gone, and the 2L ADC monotherapy lane is already a graveyard:\n\n- **Sacituzumab govitecan** (Gilead, EVOKE-01) and **patritumab deruxtecan** (Merck, HERTHENA-Lung02) both failed to beat docetaxel on OS; patritumab''s US filing was withdrawn.\n\n**What survives for sigvotatug:**\n\n- a stronger **OS/PFS trend** in the ~two-thirds of patients with a single prior line;\n- the first-line **sigvotatug + pembrolizumab** combination in PD-L1 >=50%.\n\nIntegrin beta-6 stays a differentiated, high-prevalence target, but the first-line lane is already contested: **datopotamab deruxtecan (Datroway)** is approved in EGFR-mutant 2L with the broadest 1L program, and **sacituzumab tirumotecan** was the first ADC+IO combination to hit a first-line NSCLC primary (OptiTROP-Lung05).',
+      E'Pfizer''s near-term decision is **binary**:\n\n- chase a **narrow 1-prior-line label**, or\n- pivot weight onto the **1L pembrolizumab combination**, a lane where Dato-DXd and sac-TMT are already ahead.\n\nThe **biomarker-niche path** is the credible plan B: trastuzumab deruxtecan (HER2-mutant) and telisotuzumab vedotin (c-Met-high) both cleared the FDA by going narrow.\n\n**Recommended next steps:**\n\n1. Pressure-test the regulatory viability of the 1-prior-line subgroup before committing 1L resourcing.\n2. Model a sac-TMT global filing in 2026 compressing the first-line window.\n3. Keep the integrin-beta-6 biomarker-niche option open as a fallback.',
+      (p_asof - 3)::timestamptz,
+      p_links => jsonb_build_array(
+        jsonb_build_object('entity_type','asset','entity_id',a_dato::text,'relationship_type','Competitor','gloss','TROP2 ADC; broadest 1L program, the franchise to beat','display_order',0),
+        jsonb_build_object('entity_type','asset','entity_id',a_sac::text,'relationship_type','Competitor','gloss','First ADC + IO to hit a 1L NSCLC primary (OptiTROP-Lung05)','display_order',1),
+        jsonb_build_object('entity_type','asset','entity_id',a_enh::text,'relationship_type','Predecessor','gloss','Biomarker-niche precedent: HER2-mutant','display_order',2),
+        jsonb_build_object('entity_type','asset','entity_id',a_teliso::text,'relationship_type','Predecessor','gloss','Biomarker-niche precedent: c-Met-high','display_order',3),
+        jsonb_build_object('entity_type','asset','entity_id',a_sg::text,'relationship_type','Same class','gloss','2L ADC monotherapy OS miss (EVOKE-01)','display_order',4),
+        jsonb_build_object('entity_type','asset','entity_id',a_her3::text,'relationship_type','Same class','gloss','OS miss and withdrawn US filing (HERTHENA-Lung02)','display_order',5)));
     perform pg_temp.mk_intel(p_space, 'space', p_space,
       'NSCLC ADC field: the first-line prize is still open',
       'AstraZeneca/Daiichi own the category with two approved NSCLC ADCs (Dato-DXd, Enhertu) and the deepest 1L combination pipeline. Every 2L ADC monotherapy story is commoditizing — three ADCs have now failed to beat docetaxel on OS. The unclaimed prize is ADC + checkpoint inhibitor in first line, and sac-TMT (OptiTROP-Lung05) is the first to prove it can hit a 1L primary.',

@@ -33,6 +33,38 @@ begin
     perform pg_temp.grant_members(v_space, v_members);
     raise notice 'reseeded % (%)', rec.name, v_space;
   end loop;
+
+  -- Reset the empty Act-1 import space back to truly empty (clears anything a
+  -- rehearsal import added). Space row + id are kept so the demo URL stays valid.
+  declare v_empty uuid := '5dbea303-160c-43e0-b149-8bf0266b696e';
+  begin
+    delete from public.materials where space_id = v_empty;
+    delete from public.events where space_id = v_empty;
+    delete from public.primary_intelligence_anchors where space_id = v_empty;
+    delete from public.companies where space_id = v_empty;
+    perform pg_temp.grant_members(v_empty, v_members);
+    raise notice 'wiped empty import space (%) back to empty', v_empty;
+  end;
+
+  -- Pitch-space deliverables (beat 5 opens these). Added here so a reset fully
+  -- restores them; ids resolved by name against the freshly reseeded pitch space.
+  declare
+    v_pitch uuid; a_sv uuid; a_sac uuid; c_pfizer uuid;
+  begin
+    select id into v_pitch from public.spaces where tenant_id = v_pfizer and name = 'NSCLC ADC — Pitch';
+    select id into a_sv from public.assets where space_id = v_pitch and name = 'Sigvotatug vedotin';
+    select id into a_sac from public.assets where space_id = v_pitch and name = 'Sacituzumab tirumotecan';
+    select id into c_pfizer from public.companies where space_id = v_pitch and name = 'Pfizer';
+    perform pg_temp.mk_material(v_pitch, 'ad_hoc',
+      'KOL call -- NSCLC ADC sequencing after SigVie-002 (notes)', 'kol-call-nsclc-adc-sequencing-notes.docx',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 142336, now() - interval '2 days',
+      jsonb_build_array(jsonb_build_array('product', a_sv::text), jsonb_build_array('company', c_pfizer::text)));
+    perform pg_temp.mk_material(v_pitch, 'briefing',
+      'Pfizer NSCLC ADC -- Stout pitch', 'pfizer-nsclc-adc-stout-pitch.pptx',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation', 5841920, now() - interval '1 day',
+      jsonb_build_array(jsonb_build_array('company', c_pfizer::text), jsonb_build_array('product', a_sv::text), jsonb_build_array('product', a_sac::text)));
+    raise notice 'added pitch deliverables (2 materials) to %', v_pitch;
+  end;
 end $$;
 \echo '=== state ==='
 select s.name,
