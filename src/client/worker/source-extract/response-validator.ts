@@ -323,6 +323,13 @@ export function validateExtraction(
         groundedTrial.add(i);
       } else if (isNameSubstring(t.match.name, sourceText)) {
         groundedTrial.add(i);
+      } else if (t.nct_id && isNameSubstring(t.nct_id, sourceText)) {
+        // A source-grounded NCT registry id anchors the trial to a real study
+        // even when the model's display name is not verbatim in the source
+        // (#184). Without this, an article that states an NCT but no acronym
+        // loses the trial -- and its NCT -- whenever the model synthesizes a
+        // non-verbatim name.
+        groundedTrial.add(i);
       } else {
         dropped.push({
           type: 'trial',
