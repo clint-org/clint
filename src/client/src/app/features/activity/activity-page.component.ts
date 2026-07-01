@@ -99,10 +99,19 @@ export class ActivityPageComponent implements OnInit, OnDestroy {
   // elsewhere (the toolbar's Clear).
   protected readonly loggedRange = signal<Date[] | null>(null);
 
-  /** Apply a Logged date-range selection: own the value, then narrow the grid. */
+  /** Apply a Logged date-range selection: own the value, then narrow the grid.
+   *
+   * Only commit to the grid once BOTH ends are chosen (or the range is fully
+   * cleared). Applying on the first click re-seeds `grid.primengFilters()`,
+   * which re-renders the p-column-filter and tears down the still-open
+   * datepicker overlay -- so the user could never pick the second date. Holding
+   * the half-range in the signal keeps the picker open until the range is
+   * complete; a half-open range ({from} with no {to}) is also not a meaningful
+   * filter to apply. */
   protected onLoggedRange(range: Date[] | null, apply: (value: unknown) => void): void {
     this.loggedRange.set(range);
-    apply(range);
+    const complete = !range || range.length === 0 || (range[0] != null && range[1] != null);
+    if (complete) apply(range);
   }
 
   // Grid state -- must be initialized in field initializer (injection context).
