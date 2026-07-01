@@ -436,6 +436,21 @@ describe('eventLeafDisplay', () => {
       date: '2026-07-01',
     });
   });
+  // #189: a month-only source phrase must surface its inferred precision so the
+  // reviewer sees "~Jul '26", not a false exact day.
+  it('renders a fuzzy period caption when date_precision is not exact', () => {
+    expect(
+      eventLeafDisplay({ event_type: 'Launch', event_date: '2026-07-15', date_precision: 'month' }),
+    ).toEqual({ category: 'Launch', date: "~Jul '26" });
+    expect(
+      eventLeafDisplay({ event_type: 'Launch', event_date: '2026-11-15', date_precision: 'quarter' }),
+    ).toEqual({ category: 'Launch', date: "~Q4 '26" });
+  });
+  it("keeps the exact ISO date when date_precision is 'exact' or absent", () => {
+    expect(
+      eventLeafDisplay({ event_type: 'Launch', event_date: '2026-07-14', date_precision: 'exact' }),
+    ).toEqual({ category: 'Launch', date: '2026-07-14' });
+  });
 });
 
 describe('eventIndicationLabel', () => {

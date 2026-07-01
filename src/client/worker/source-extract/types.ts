@@ -7,6 +7,14 @@ import { normalizeNctId } from './nct-id';
 
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
+// How precise the source text actually is about a date. Mirrors the
+// events.date_precision check constraint and the client DatePrecision type.
+// The AI must never imply more precision than the source states.
+const datePrecision = z
+  .enum(['exact', 'month', 'quarter', 'half', 'year'])
+  .optional()
+  .default('exact');
+
 const existingMatch = z.object({
   kind: z.literal('existing'),
   id: z.string().uuid(),
@@ -96,7 +104,11 @@ const EventSchema = z.object({
   event_type: z.string(),
   title: z.string(),
   event_date: dateString.nullable().optional().default(null),
+  // Granularity of event_date / end_date as stated in the source. A month-only
+  // phrase ("available in July") must yield 'month', not a false exact day.
+  date_precision: datePrecision,
   end_date: dateString.nullable().optional().default(null),
+  end_date_precision: datePrecision,
   projection: z.enum(['actual', 'company', 'primary']).optional().default('company'),
   significance: z.enum(['high', 'low']).optional(),
   description: z.string().nullable().optional().default(null),

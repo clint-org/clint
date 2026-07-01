@@ -297,3 +297,48 @@ describe('validateExtraction: trial NCT grounding', () => {
     expect(out.dropped.some((d) => d.type === 'trial')).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// #189: date_precision passes through the extraction schema so a month-only
+// source phrase does not get flattened into a false exact day downstream.
+// ---------------------------------------------------------------------------
+
+describe('ExtractionResultSchema: event date_precision', () => {
+  function eventWith(extra: Record<string, unknown>): unknown {
+    return {
+      match: { kind: 'new' },
+      event_type: 'Launch',
+      title: 'US launch',
+      event_date: '2026-07-01',
+      anchor: { level: 'space', ref: null },
+      evidence: 'available in July',
+      ...extra,
+    };
+  }
+
+  it('parses a month-level date_precision emitted by the model', () => {
+    const parsed = ExtractionResultSchema.parse({
+      source_summary: 's',
+      events: [eventWith({ date_precision: 'month' })],
+    });
+    expect(parsed.events[0].date_precision).toBe('month');
+  });
+
+  it("defaults date_precision and end_date_precision to 'exact' when omitted", () => {
+    const parsed = ExtractionResultSchema.parse({
+      source_summary: 's',
+      events: [eventWith({})],
+    });
+    expect(parsed.events[0].date_precision).toBe('exact');
+    expect(parsed.events[0].end_date_precision).toBe('exact');
+  });
+
+  it('rejects an out-of-enum precision value', () => {
+    expect(() =>
+      ExtractionResultSchema.parse({
+        source_summary: 's',
+        events: [eventWith({ date_precision: 'week' })],
+      }),
+    ).toThrow();
+  });
+});
