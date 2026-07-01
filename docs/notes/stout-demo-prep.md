@@ -159,7 +159,7 @@ Each act: **where you are · what you do · what you say · how you transition.*
 - **$25,000 / space / year.** A space = one client engagement.
 - **Volume:** 1–5 = $25K · 6–12 = $21K · 13+ = $18K each.
 - **Unlimited users** — your team + the client's. No per-seat, no firm license, no minimum.
-- Total only rises when you add a space. Frames as a **90-day pilot** to start (bridges to the ask).
+- Total only rises when you add a space. Frames as a **30-day pilot** to start (bridges to the ask).
 - Anchors if pushed: less than one Evaluate seat ($20–50K); a fraction of one engagement's budget ($100–200K).
 - Pricing slide is presenter-only (`?present`); the emailed link has none.
 
