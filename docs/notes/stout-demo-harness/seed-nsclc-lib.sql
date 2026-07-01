@@ -315,5 +315,104 @@ begin
       'The first-line prize remains open but contested; sac-TMT''s 1L primary win and Datroway''s breadth set the pace. Pfizer''s path runs through its own 1L combination or a biomarker niche.',
       (p_asof - 150)::timestamptz,
       'NSCLC ADC field: the first-line prize is still open');
+
+    -- ------------------------------------------------------------------
+    -- A year of Stout coverage: 12 dated field briefs spread Jul 2025 ->
+    -- Jun 2026 so the renewal-year feed reads as a sustained engagement,
+    -- not a June cluster. Each anchors on a DISTINCT entity (trial /
+    -- company / remaining asset) so it lands as its own feed row; two
+    -- carry version history for the "the read evolved" click-through.
+    -- Dates are literal (published_at = updated_at = created_at = p_when).
+    -- ------------------------------------------------------------------
+
+    -- Jul 2025 — Gilead concedes the 2L lane
+    perform pg_temp.mk_intel(p_space, 'company', co_gilead,
+      'Gilead: stepping back from lung after EVOKE-01',
+      'Gilead has pulled back from its NSCLC ambitions for sacituzumab govitecan (Trodelvy) after EVOKE-01 failed to beat docetaxel on overall survival. The remaining lung bet is EVOKE-03 in first line; investment and messaging have shifted toward breast and bladder, where Trodelvy is already approved.',
+      'Gilead is the clearest case of a competitor conceding the second-line lung ADC lane. It removes one rival from the near-term set but confirms how unforgiving 2L monotherapy has become.',
+      '2025-07-22'::timestamptz);
+
+    -- Aug 2025 — Pfizer's own position going in
+    perform pg_temp.mk_intel(p_space, 'company', co_pfizer,
+      'Pfizer oncology: sigvotatug is the lung ADC bet',
+      'Sigvotatug vedotin is Pfizer''s lead solid-tumor ADC and its entry into the NSCLC category, built on the integrin beta-6 target from the Seagen platform. The SigVie-002 second-line readout is the near-term catalyst; the first-line pembrolizumab combination is the longer bet.',
+      'Pfizer''s standing in NSCLC ADCs rides on two sequential readouts. A weak SigVie-002 would force the strategic question early, before the 1L combination matures.',
+      '2025-08-14'::timestamptz);
+
+    -- Sep 2025 — AZ/Daiichi own the category
+    perform pg_temp.mk_intel(p_space, 'company', co_az,
+      'AstraZeneca and Daiichi own the NSCLC ADC category',
+      'AstraZeneca and Daiichi Sankyo hold the only two approved NSCLC ADCs, datopotamab deruxtecan (Datroway, EGFR-mutant 2L) and trastuzumab deruxtecan (Enhertu, HER2-mutant), and run the deepest first-line combination program (TROPION-Lung07/08, DESTINY-Lung04). The deruxtecan payload is the platform every rival is benchmarked against.',
+      'Any Pfizer entry is measured against the deruxtecan standard. Differentiation has to come from target (integrin beta-6) or setting (1L combination), not from payload.',
+      '2025-09-16'::timestamptz);
+
+    -- Oct 2025 — the 2L monotherapy thesis hardens
+    perform pg_temp.mk_intel(p_space, 'trial', t_evoke01,
+      'EVOKE-01 confirms the 2L monotherapy dead end',
+      'EVOKE-01 (sacituzumab govitecan vs docetaxel) missed overall survival, 11.1 vs 9.8 months, the third TROP2 or HER3 ADC to fail to beat chemotherapy in pretreated NSCLC after HERTHENA-Lung02 and the sigvotatug signal. The pattern is now a thesis, not a coincidence.',
+      'Second-line ADC monotherapy is effectively closed as a broad-label strategy. Sigvotatug''s value has to be argued in first line or in a biomarker niche, not against docetaxel in all-comers.',
+      '2025-10-09'::timestamptz);
+
+    -- Nov 2025 — sac-TMT wins first line (revised from an Aug watch note)
+    perform pg_temp.mk_intel(p_space, 'trial', t_otl05,
+      'OptiTROP-Lung05: the first ADC + IO to win first line',
+      'Sacituzumab tirumotecan plus a checkpoint inhibitor met its first-line PFS primary in OptiTROP-Lung05, the first time an ADC + IO combination has cleared a front-line NSCLC endpoint. It converts the 1L combination thesis from hypothetical to proven and puts Merck ahead in the most valuable setting.',
+      'The front-line prize is now demonstrably winnable, and a competitor got there first. Every Pfizer 1L timeline should be modeled against a sac-TMT global filing in 2026.',
+      '2025-11-18'::timestamptz,
+      'OptiTROP-Lung05 is the first-line ADC + IO readout to watch. A win would prove the combination thesis; a miss would push the field back toward biomarker niches.',
+      '2025-08-05'::timestamptz,
+      'OptiTROP-Lung05: the first-line combination readout to watch');
+
+    -- Dec 2025 — patritumab's US path closes
+    perform pg_temp.mk_intel(p_space, 'product', a_her3,
+      'Patritumab deruxtecan: US path closed, EGFR combinations remain',
+      'Merck and Daiichi''s patritumab deruxtecan lost its US filing after HERTHENA-Lung02 missed overall survival, withdrawing the BLA in May. The HER3 program survives only in EGFR post-TKI combination settings, where it competes with Datroway and sac-TMT rather than leading.',
+      'A second Merck-aligned ADC is out of the broad 2L race. It narrows the near-term competitive set but reinforces that overall survival, not response rate, is the bar sigvotatug must clear.',
+      '2025-12-11'::timestamptz);
+
+    -- Jan 2026 — Merck consolidates around sac-TMT
+    perform pg_temp.mk_intel(p_space, 'company', co_merck,
+      'Merck: sac-TMT is the lung ADC to build around',
+      'Merck has consolidated its NSCLC ADC strategy around sacituzumab tirumotecan (licensed from Kelun) after the OptiTROP-Lung05 first-line win and China approval, while patritumab deruxtecan recedes to combination-only use. Merck''s checkpoint franchise gives sac-TMT a built-in 1L combination partner.',
+      'Merck pairs a proven 1L ADC with the leading IO backbone, the exact combination Pfizer is chasing with sigvotatug plus pembrolizumab. Merck is the most direct threat to that plan.',
+      '2026-01-20'::timestamptz);
+
+    -- Feb 2026 — Enhertu presses into 1L
+    perform pg_temp.mk_intel(p_space, 'trial', t_dl04,
+      'DESTINY-Lung04: Enhertu presses into first line',
+      'DESTINY-Lung04 tests trastuzumab deruxtecan in first-line HER2-mutant NSCLC, the move from a niche 2L label toward front-line standard of care. A win would show how a biomarker-defined ADC compounds a narrow approval into a durable franchise.',
+      'The Enhertu arc is the template for a sigvotatug biomarker pivot: land narrow, then expand into 1L. Worth tracking as the proof case for plan B.',
+      '2026-02-12'::timestamptz);
+
+    -- Mar 2026 — the AZ front-line test (revised from a Dec preview)
+    perform pg_temp.mk_intel(p_space, 'trial', t_tl08,
+      'TROPION-Lung08: the front-line test AZ has to pass',
+      'TROPION-Lung08 (datopotamab deruxtecan plus pembrolizumab vs pembrolizumab) is the definitive first-line PD-L1 >=50% test for the deruxtecan platform. A win locks AstraZeneca and Daiichi into the front line and compresses the window for any differentiated entrant, sigvotatug included.',
+      'This is the single readout that most directly bounds sigvotatug''s 1L opportunity. Model both outcomes into the portfolio decision rather than waiting for topline.',
+      '2026-03-19'::timestamptz,
+      'TROPION-Lung08 is the first-line Dato-DXd plus pembrolizumab readout that will show whether the deruxtecan platform can own front-line PD-L1-high NSCLC.',
+      '2025-12-20'::timestamptz,
+      'TROPION-Lung08: AZ''s bid for the front line');
+
+    -- Apr 2026 — sigvotatug's whole case narrows to one readout
+    perform pg_temp.mk_intel(p_space, 'trial', t_sv1l,
+      'Sigvotatug + pembrolizumab: the franchise in one readout',
+      'With second-line monotherapy commoditized, the first-line sigvotatug plus pembrolizumab study (PD-L1 >=50%) has become the decisive catalyst for the entire integrin beta-6 program. It enters a field where sac-TMT has already won a 1L primary and Dato-DXd is close behind.',
+      'Treat this as a binary, franchise-defining event. Pfizer should prepare both go and no-go portfolio plans, with the biomarker-niche pivot as the standing fallback.',
+      '2026-04-15'::timestamptz);
+
+    -- May 2026 — the c-Met niche proof point
+    perform pg_temp.mk_intel(p_space, 'company', co_abbvie,
+      'AbbVie''s Emrelis: proof a c-Met niche can clear the FDA',
+      'AbbVie''s telisotuzumab vedotin (Emrelis) secured accelerated approval in c-Met-high non-squamous NSCLC with a companion diagnostic, a second example of the narrow, biomarker-led path working where broad monotherapy has failed. It sits alongside Enhertu as evidence the niche route is reliably approvable.',
+      'Reinforces the option value of a biomarker pivot for sigvotatug. The integrin beta-6 prevalence story would need a comparable diagnostic anchor to follow the same path.',
+      '2026-05-07'::timestamptz);
+
+    -- Jun 2026 — the last untested 1L combination
+    perform pg_temp.mk_intel(p_space, 'trial', t_evoke03,
+      'EVOKE-03: the field''s last untested 1L combination',
+      'EVOKE-03 (sacituzumab govitecan plus pembrolizumab in 1L PD-L1 >=50%) is the remaining front-line ADC + IO combination still to read out after OptiTROP-Lung05 set the pace. A second positive 1L combination would confirm the setting as a class effect rather than a single-asset win.',
+      'The outcome sets the competitive baseline sigvotatug''s own 1L combination is measured against. A strong result raises the bar; a miss reopens room for a differentiated entrant.',
+      '2026-06-10'::timestamptz);
   end if;
 end $f$;
