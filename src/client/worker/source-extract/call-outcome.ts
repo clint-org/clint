@@ -45,3 +45,23 @@ export function isLlmAbort(e: unknown): boolean {
 export function classifyLlmFailure(e: unknown): AiCallOutcome {
   return isLlmAbort(e) ? 'timeout' : 'parse_failed';
 }
+
+/**
+ * Build the `ai_calls.error_message` for a failed LLM call.
+ *
+ * For an abort we replace the raw, opaque SDK string ("Error: Request was
+ * aborted.") with a self-explanatory message that names the self-imposed
+ * timeout, its threshold, the batch size, and the remedy -- so the super-admin
+ * AI Usage row is actionable instead of just labelled `TIMEOUT` (#162). For any
+ * other failure we keep the raw error string, which already carries the detail.
+ */
+export function llmFailureMessage(
+  e: unknown,
+  ctx: { timeoutMs: number; trialCount?: number }
+): string {
+  if (!isLlmAbort(e)) return String(e);
+  const base = `LLM call aborted: exceeded the ${ctx.timeoutMs}ms timeout (LLM_TIMEOUT_MS)`;
+  return ctx.trialCount != null
+    ? `${base} while resolving ${ctx.trialCount} trials -- the batch may be too large; split into smaller imports.`
+    : `${base} -- try again or use a shorter source.`;
+}

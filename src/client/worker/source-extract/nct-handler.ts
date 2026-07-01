@@ -5,7 +5,7 @@ import { jwtSubject } from '../auth';
 import { createCtgovClient } from '../ctgov-sync/ctgov-client';
 import { buildNctPrompt, type NctStudyRecord } from './nct-prompt-builder';
 import { toStudyRecord, applyNctTrialNames } from './nct-study-record';
-import { classifyLlmFailure } from './call-outcome';
+import { classifyLlmFailure, llmFailureMessage } from './call-outcome';
 import { closeAiCall } from './ai-call-close';
 import { validateExtraction } from './response-validator';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
@@ -81,6 +81,9 @@ export async function handleNctResolve(
   const ctgov = createCtgovClient({ baseUrl: env.CTGOV_BASE_URL });
   const warnings: string[] = [];
 
+  // Diagnostics: time the CT.gov fetch phase separately from the LLM call so a
+  // TIMEOUT row can distinguish a slow fetch from a slow model (#162 follow-up).
+  const ctgovStart = Date.now();
   const fetchResults = await Promise.allSettled(
     validIds.map(async (nctId) => {
       const controller = new AbortController();
@@ -95,6 +98,7 @@ export async function handleNctResolve(
       }
     })
   );
+  const ctgovMs = Date.now() - ctgovStart;
 
   const successfulStudies: { nctId: string; study: unknown }[] = [];
   for (const result of fetchResults) {
@@ -194,6 +198,15 @@ export async function handleNctResolve(
   let rawOutput: string;
   let promptTokens = 0;
   let completionTokens = 0;
+  // Diagnostics captured on every close so the AI Usage row explains itself:
+  // how many trials the model was asked to resolve, and how long each phase
+  // took (CT.gov fetch vs the model call that our timeout may abort).
+  const llmStart = Date.now();
+  const diagnostics = () => ({
+    trial_count: studyRecords.length,
+    ctgov_ms: ctgovMs,
+    llm_ms: Date.now() - llmStart,
+  });
   try {
     const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
     const controller = new AbortController();
@@ -227,7 +240,7 @@ export async function handleNctResolve(
         promptTokens,
         completionTokens,
         'no_text_block',
-        { prompt: promptText, params: aiParams }
+        { prompt: promptText, params: aiParams, diagnostics: diagnostics() }
       );
       return jsonErrorWithCode(
         502,
@@ -243,6 +256,12 @@ export async function handleNctResolve(
     // Both are constraint-valid; the removed 'error' value was rejected by the
     // ai_calls.outcome CHECK constraint, which stranded the row at PENDING (#162).
     const outcome = classifyLlmFailure(e);
+    // Self-explanatory message on timeout (names the threshold, batch size, and
+    // remedy) instead of the raw, opaque SDK string "Request was aborted." (#162).
+    const message = llmFailureMessage(e, {
+      timeoutMs: LLM_TIMEOUT_MS,
+      trialCount: studyRecords.length,
+    });
     await closeAiCall(
       cfg,
       env,
@@ -251,8 +270,8 @@ export async function handleNctResolve(
       Date.now() - start,
       promptTokens,
       completionTokens,
-      String(e),
-      { prompt: promptText, params: aiParams }
+      message,
+      { prompt: promptText, params: aiParams, diagnostics: diagnostics() }
     );
     return jsonErrorWithCode(
       502,
@@ -274,7 +293,7 @@ export async function handleNctResolve(
       promptTokens,
       completionTokens,
       validation.reason,
-      { prompt: promptText, params: aiParams, raw: rawOutput }
+      { prompt: promptText, params: aiParams, raw: rawOutput, diagnostics: diagnostics() }
     );
     return jsonErrorWithCode(
       502,
@@ -339,7 +358,7 @@ export async function handleNctResolve(
     promptTokens,
     completionTokens,
     null,
-    { proposals, dropped, prompt: promptText, params: aiParams, raw: rawOutput },
+    { proposals, dropped, prompt: promptText, params: aiParams, raw: rawOutput, diagnostics: diagnostics() },
     warnings
   );
 

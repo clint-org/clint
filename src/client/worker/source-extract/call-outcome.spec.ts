@@ -1,6 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it } from 'vitest';
-import { AI_CALL_OUTCOMES, classifyLlmFailure, isLlmAbort } from './call-outcome';
+import {
+  AI_CALL_OUTCOMES,
+  classifyLlmFailure,
+  isLlmAbort,
+  llmFailureMessage,
+} from './call-outcome';
 
 describe('call-outcome', () => {
   describe('isLlmAbort', () => {
@@ -52,6 +57,36 @@ describe('call-outcome', () => {
         expect(AI_CALL_OUTCOMES).toContain(outcome);
         expect(outcome).not.toBe('error');
       }
+    });
+  });
+
+  describe('llmFailureMessage', () => {
+    it('turns an abort into a self-explanatory timeout message (threshold + trial count + remedy)', () => {
+      // The raw SDK string is just "Error: Request was aborted." -- opaque. A
+      // timeout message must name the self-imposed timeout, its threshold, the
+      // batch size, and the remedy so the AI Usage row is actionable (#162).
+      const msg = llmFailureMessage(new Anthropic.APIUserAbortError(), {
+        timeoutMs: 60_000,
+        trialCount: 50,
+      });
+      expect(msg).toContain('60000');
+      expect(msg).toContain('50');
+      expect(msg.toLowerCase()).toContain('timeout');
+      expect(msg.toLowerCase()).toMatch(/split|smaller|batch/);
+      // Must NOT be the unhelpful raw SDK string.
+      expect(msg).not.toBe('Error: Request was aborted.');
+    });
+
+    it('omits the trial-count clause when no trialCount is given (text/url mode)', () => {
+      const msg = llmFailureMessage(new Anthropic.APIUserAbortError(), { timeoutMs: 60_000 });
+      expect(msg).toContain('60000');
+      expect(msg.toLowerCase()).toContain('timeout');
+      expect(msg).not.toContain('trials');
+    });
+
+    it('passes through the raw error string for a non-abort failure', () => {
+      const msg = llmFailureMessage(new Error('bad json'), { timeoutMs: 60_000, trialCount: 3 });
+      expect(msg).toBe('Error: bad json');
     });
   });
 
