@@ -8,7 +8,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { DatePipe, NgOptimizedImage } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute, ActivatedRouteSnapshot, RouterLink } from '@angular/router';
 
 import {
@@ -53,6 +53,7 @@ import { DetailPanelPillComponent, PillTone } from './detail-panel-pill.componen
 import { DetailPanelSectionComponent } from './detail-panel-section.component';
 import { PiDetailSectionComponent } from './pi-detail-section/pi-detail-section.component';
 import { PiReference } from '../../core/models/primary-intelligence.model';
+import { BrandLogoComponent } from './brand-logo.component';
 import { MarkerIconComponent } from './svg-icons/marker-icon.component';
 import { MaterialsSectionComponent } from './materials-section/materials-section.component';
 import { PhaseChipComponent } from './phase-chip.component';
@@ -79,7 +80,7 @@ interface CtgovProvenanceBlock {
   standalone: true,
   imports: [
     RouterLink,
-    NgOptimizedImage,
+    BrandLogoComponent,
     CtgovFieldRendererComponent,
     CtgovSourceTagComponent,
     DatePipe,
@@ -151,38 +152,34 @@ interface CtgovProvenanceBlock {
                 appDetailPanelEntityLink
                 class="flex items-center gap-2 border-b border-slate-200 px-3 py-2.5"
               >
-                @if (d.catalyst.company_logo_url) {
-                  <img
-                    [ngSrc]="d.catalyst.company_logo_url"
-                    [alt]="d.catalyst.company_name"
-                    width="20"
-                    height="20"
-                    class="h-5 w-5 flex-none rounded object-contain"
-                  />
-                } @else {
+                <app-brand-logo
+                  [url]="d.catalyst.company_logo_url"
+                  [alt]="d.catalyst.company_name"
+                  [width]="20"
+                  [height]="20"
+                  imgClass="h-5 w-5 flex-none rounded object-contain"
+                >
                   <span class="flex h-5 w-5 flex-none items-center justify-center text-slate-400">
                     <i class="fa-solid fa-building text-[13px]" aria-hidden="true"></i>
                   </span>
-                }
+                </app-brand-logo>
                 <span class="min-w-0 truncate text-[11px] font-semibold uppercase tracking-wide">
                   {{ d.catalyst.company_name }}
                 </span>
               </a>
             } @else {
               <div class="flex items-center gap-2 border-b border-slate-200 px-3 py-2.5">
-                @if (d.catalyst.company_logo_url) {
-                  <img
-                    [ngSrc]="d.catalyst.company_logo_url"
-                    [alt]="d.catalyst.company_name"
-                    width="20"
-                    height="20"
-                    class="h-5 w-5 flex-none rounded object-contain"
-                  />
-                } @else {
+                <app-brand-logo
+                  [url]="d.catalyst.company_logo_url"
+                  [alt]="d.catalyst.company_name"
+                  [width]="20"
+                  [height]="20"
+                  imgClass="h-5 w-5 flex-none rounded object-contain"
+                >
                   <span class="flex h-5 w-5 flex-none items-center justify-center text-slate-400">
                     <i class="fa-solid fa-building text-[13px]" aria-hidden="true"></i>
                   </span>
-                }
+                </app-brand-logo>
                 <span class="min-w-0 truncate text-[11px] font-semibold uppercase tracking-wide text-slate-700">
                   {{ d.catalyst.company_name }}
                 </span>

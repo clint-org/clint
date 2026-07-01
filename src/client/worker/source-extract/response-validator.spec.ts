@@ -297,3 +297,59 @@ describe('validateExtraction: trial NCT grounding', () => {
     expect(out.dropped.some((d) => d.type === 'trial')).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// #189: date_precision passes through the extraction schema so a month-only
+// source phrase does not get flattened into a false exact day downstream.
+// ---------------------------------------------------------------------------
+
+describe('ExtractionResultSchema: event date_precision', () => {
+  function eventWith(extra: Record<string, unknown>): unknown {
+    return {
+      match: { kind: 'new' },
+      event_type: 'Launch',
+      title: 'US launch',
+      event_date: '2026-07-01',
+      anchor: { level: 'space', ref: null },
+      evidence: 'available in July',
+      ...extra,
+    };
+  }
+
+  it('parses a month-level date_precision emitted by the model', () => {
+    const parsed = ExtractionResultSchema.parse({
+      source_summary: 's',
+      events: [eventWith({ date_precision: 'month' })],
+    });
+    expect(parsed.events[0].date_precision).toBe('month');
+  });
+
+  it("defaults date_precision and end_date_precision to 'exact' when omitted", () => {
+    const parsed = ExtractionResultSchema.parse({
+      source_summary: 's',
+      events: [eventWith({})],
+    });
+    expect(parsed.events[0].date_precision).toBe('exact');
+    expect(parsed.events[0].end_date_precision).toBe('exact');
+  });
+
+  // Regression: the model routinely emits end_date_precision: null when there is
+  // no end date. A strict enum would fail the WHOLE extraction (500 /
+  // parse_failed); the field must degrade to 'exact' instead.
+  it("coerces a null precision to 'exact' rather than failing the extraction", () => {
+    const parsed = ExtractionResultSchema.parse({
+      source_summary: 's',
+      events: [eventWith({ date_precision: 'month', end_date_precision: null })],
+    });
+    expect(parsed.events[0].date_precision).toBe('month');
+    expect(parsed.events[0].end_date_precision).toBe('exact');
+  });
+
+  it("coerces an out-of-enum precision token to 'exact' instead of throwing", () => {
+    const parsed = ExtractionResultSchema.parse({
+      source_summary: 's',
+      events: [eventWith({ date_precision: 'H2' })],
+    });
+    expect(parsed.events[0].date_precision).toBe('exact');
+  });
+});

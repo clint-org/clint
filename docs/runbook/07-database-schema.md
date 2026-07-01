@@ -1104,5 +1104,6 @@ Auto-generated. Lists tables in `information_schema` not mentioned anywhere in t
 - `20260630140000_bullseye_assets_per_indication_status.sql`
 - `20260630140100_positioning_per_indication_phase.sql`
 - `20260630150000_switch_all_tenants_to_sonnet_5.sql`
-- `20260630160000_events_page_change_source_type_filters.sql`
+- `20260630160000_commit_source_import_date_precision.sql`
+- `20260630170000_events_page_change_source_type_filters.sql`
 <!-- /AUTO-GEN:DRIFT -->

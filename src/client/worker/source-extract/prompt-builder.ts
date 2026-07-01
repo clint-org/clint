@@ -23,6 +23,7 @@ Rules:
 - For MOA and ROA, prefer matching existing inventory mechanisms_of_action and routes_of_administration by exact name string. Use those exact names when they match.
 - For MOA and ROA on well-known approved or late-stage investigational drugs, populate the standard pharmacological class and route even if the source document does not explicitly restate them (e.g., semaglutide -> "GLP-1 receptor agonist" / "Subcutaneous", pembrolizumab -> "PD-1 inhibitor" / "Intravenous"). Leave empty only when the drug is genuinely novel and the source provides no signal.
 - Never infer regulatory dates that are not explicitly stated.
+- Set date_precision (and end_date_precision) to the granularity the source ACTUALLY states -- never imply a precision the text does not support. A specific calendar day ("on July 14, 2026") -> "exact". A month with no day ("available in July", "a July launch") -> "month". A quarter ("in Q4 2026", "the fourth quarter") -> "quarter". A half ("first half of 2026", "2H26") -> "half". A year only ("expected in 2026") -> "year". When precision is not "exact", set event_date to any real day inside the stated period (e.g. "July 2026" -> 2026-07-01, "Q4 2026" -> 2026-10-01, "2026" -> 2026-01-01) -- the specific day is ignored and the period is rendered from date_precision.
 - For trials, set nct_id to the ClinicalTrials.gov registry identifier (format: NCT followed by 8 digits, e.g. NCT01234567) when it is explicitly stated in the source for that trial; otherwise null. Never invent or guess an NCT number.
 - For every entity, quote the relevant evidence verbatim from the source.
 - Use ONLY an event_type value listed in the schema; pick the most specific match.
@@ -70,7 +71,9 @@ Output schema (follow this exactly):
     "event_type": "${eventTypeEnum}",
     "title": "short descriptive title",
     "event_date": "YYYY-MM-DD",
+    "date_precision": "exact | month | quarter | half | year",
     "end_date": "YYYY-MM-DD or null",
+    "end_date_precision": "exact | month | quarter | half | year",
     "projection": "actual | company | primary",
     "significance": "high | low",
     "description": "string or null",
