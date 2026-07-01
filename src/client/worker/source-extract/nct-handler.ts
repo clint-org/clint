@@ -16,7 +16,9 @@ import type { NctResolveRequest, ExtractResponse, InventorySnapshot, DroppedEnti
 const NCT_REGEX = /^NCT\d{8}$/i;
 const MAX_NCTS = 50;
 const CTGOV_FETCH_TIMEOUT_MS = 8_000;
-const LLM_TIMEOUT_MS = 60_000;
+// 90s headroom for Sonnet extractions; under Cloudflare's ~100s edge
+// timeout so the CDN can't 524 before our own abort. Mirrors handler.ts.
+const LLM_TIMEOUT_MS = 90_000;
 // Public Brandfetch Logo Link client ID. Mirrors the Angular env so both
 // frontend renders and worker enrichment present the same Referer/Origin
 // to the CDN hotlink check.
