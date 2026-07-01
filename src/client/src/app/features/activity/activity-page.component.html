@@ -12,6 +12,8 @@
     and analyst edits, newest first.
   </p>
 
+  <app-grid-toolbar [state]="grid" searchPlaceholder="Search activity..." searchAlignment="end" />
+
   <div class="flex gap-0" [class.divide-x]="selectedItem()">
     <!-- Table area -->
     <div class="min-w-0 flex-1 overflow-x-auto">
@@ -20,23 +22,96 @@
         [value]="items()"
         [loading]="loading()"
         [lazy]="true"
-        (onLazyLoad)="onLazyLoad($event)"
-        [paginator]="total() > page().rows"
-        [rows]="page().rows"
-        [first]="page().first"
+        (onLazyLoad)="grid.onLazyLoad($event)"
+        [paginator]="total() > grid.page().rows"
+        [rows]="grid.page().rows"
+        [first]="grid.page().first"
         [totalRecords]="total()"
         [rowsPerPageOptions]="[10, 25, 50]"
+        [filters]="grid.primengFilters()"
         selectionMode="single"
         [selection]="selectedItem()"
         dataKey="id"
       >
         <ng-template #header>
           <tr>
-            <th class="col-date">Logged</th>
+            <th pSortableColumn="feed_ts" class="col-date">
+              Logged <p-sortIcon field="feed_ts" />
+              <p-column-filter
+                field="feed_ts"
+                display="menu"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+              >
+                <ng-template #filter let-filter="filterCallback">
+                  <p-datepicker
+                    [ngModel]="loggedRange()"
+                    (ngModelChange)="onLoggedRange($event, filter)"
+                    selectionMode="range"
+                    [readonlyInput]="true"
+                    dateFormat="yy-mm-dd"
+                    placeholder="From – To"
+                    [showButtonBar]="true"
+                    appendTo="body"
+                    size="small"
+                  />
+                </ng-template>
+              </p-column-filter>
+            </th>
             <th class="w-full min-w-[18rem]">Change</th>
             <th class="col-secondary">Entity</th>
-            <th class="col-secondary">Source</th>
-            <th class="col-status">Type</th>
+            <th class="col-secondary">
+              Source
+              <p-column-filter
+                field="change_source"
+                display="menu"
+                matchMode="in"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+              >
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-select
+                    [options]="sourceOptions"
+                    [ngModel]="value"
+                    (ngModelChange)="filter($event)"
+                    placeholder="All"
+                    [showClear]="true"
+                    optionLabel="label"
+                    optionValue="value"
+                    size="small"
+                    appendTo="body"
+                  />
+                </ng-template>
+              </p-column-filter>
+            </th>
+            <th class="col-status">
+              Type
+              <p-column-filter
+                field="change_event_type"
+                display="menu"
+                matchMode="in"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+              >
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-select
+                    [options]="typeOptions"
+                    [ngModel]="value"
+                    (ngModelChange)="filter($event)"
+                    placeholder="All"
+                    [showClear]="true"
+                    optionLabel="label"
+                    optionValue="value"
+                    size="small"
+                    appendTo="body"
+                    [filter]="true"
+                  />
+                </ng-template>
+              </p-column-filter>
+            </th>
           </tr>
         </ng-template>
 
@@ -126,9 +201,13 @@
         <ng-template #emptymessage>
           <tr>
             <td colspan="5">
-              No detected changes yet. Activity records changes Clint detects automatically:
-              ClinicalTrials.gov registry updates (status, dates, phase, enrollment) and analyst
-              edits to tracked trials. This log is read-only.
+              @if (grid.isFiltered()) {
+                No detected changes match your filters. Clear a filter above to widen the log.
+              } @else {
+                No detected changes yet. Activity records changes Clint detects automatically:
+                ClinicalTrials.gov registry updates (status, dates, phase, enrollment) and analyst
+                edits to tracked trials. This log is read-only.
+              }
             </td>
           </tr>
         </ng-template>

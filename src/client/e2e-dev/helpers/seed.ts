@@ -6,7 +6,9 @@
  * event on the trial, enough to make the timeline, bullseye, heatmap, profiles
  * and intelligence surfaces render populated instead of empty.
  */
+import { Client as PgClient } from 'pg';
 import { apiAs, type ScratchWorld } from './scratch-world';
+import { requirePoolerUrl } from './dev-env';
 
 /** create_* RPCs variously return a bare uuid, a row {id}, or [{id}]. */
 function idOf(data: unknown): string {
@@ -195,6 +197,48 @@ export async function seedDivergentIndicationStatus(
     approvedIndicationId,
     approvedIndicationName,
   };
+}
+
+/**
+ * Seed the Activity log (#192): a company -> asset -> trial plus a spread of
+ * detected trial_change_events across every source (CT.gov / analyst / import)
+ * and several change types, so the Activity page's Source and Type column
+ * filters have something to narrow. trial_change_events has no create_* RPC and
+ * its RLS exposes SELECT only, so the rows are inserted directly via the pooler.
+ */
+export async function seedActivityDetectedChanges(world: ScratchWorld): Promise<SeedIds> {
+  const ids = await seedBasics(world);
+
+  // Known spread so filter assertions are deterministic: 3 CT.gov / 2 analyst /
+  // 1 import; 2 status_changed; and one intervention_changed whose drug name
+  // lives ONLY in the payload (exercises the payload-search fix). Payload shapes
+  // mirror the real ctgov detector so the change-summary util renders each row
+  // (phase from/to are ARRAYS -- the util joins them with '/').
+  const rows: { source: string; type: string; payload: Record<string, unknown>; day: string }[] = [
+    { source: 'ctgov', type: 'status_changed', payload: { from: 'RECRUITING', to: 'ACTIVE_NOT_RECRUITING' }, day: '2026-02-01' },
+    { source: 'ctgov', type: 'date_moved', payload: { which_date: 'primary_completion', direction: 'delay', days_diff: 120, from: '2026-08-15', to: '2026-12-13' }, day: '2026-02-05' },
+    { source: 'ctgov', type: 'intervention_changed', payload: { added: [{ name: 'Tirzepatide 15mg', type: 'Experimental' }] }, day: '2026-02-09' },
+    { source: 'analyst', type: 'status_changed', payload: { from: 'ACTIVE_NOT_RECRUITING', to: 'COMPLETED' }, day: '2026-02-12' },
+    { source: 'analyst', type: 'phase_transitioned', payload: { from: ['PHASE2'], to: ['PHASE3'] }, day: '2026-02-15' },
+    { source: 'source_import', type: 'enrollment_target_changed', payload: { from: 400, to: 650, percent_change: 63 }, day: '2026-02-18' },
+  ];
+
+  const pg = new PgClient({ connectionString: requirePoolerUrl() });
+  await pg.connect();
+  try {
+    for (const r of rows) {
+      await pg.query(
+        `insert into public.trial_change_events
+           (space_id, trial_id, source, event_type, payload, occurred_at, observed_at)
+         values ($1, $2, $3, $4, $5::jsonb, $6::timestamptz, $6::timestamptz)`,
+        [world.spaceId, ids.trialId, r.source, r.type, JSON.stringify(r.payload), `${r.day}T12:00:00Z`],
+      );
+    }
+  } finally {
+    await pg.end();
+  }
+
+  return ids;
 }
 
 export interface LogoCompany {

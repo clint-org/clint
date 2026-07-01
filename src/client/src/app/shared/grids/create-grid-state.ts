@@ -13,6 +13,7 @@ import type {
 import { encodeFilterState, decodeFilterState } from './url-codec';
 import { applyAll } from './filter-algebra';
 import { mergeForeignParams } from './foreign-params';
+import { normalizeDateFilterValue } from './date-filter';
 
 const DEFAULT_PAGE_SIZE = 25;
 const GLOBAL_SEARCH_DEBOUNCE_MS = 200;
@@ -468,9 +469,10 @@ function primengToFilterValue(
       return { kind: 'numeric', op, value: meta.value };
     }
     case 'date': {
-      if (!Array.isArray(meta.value) || meta.value.length !== 2) return null;
-      const [from, to] = meta.value as [string | null, string | null];
-      return { kind: 'date', from, to };
+      // Accepts a range p-datepicker's [Date, Date] as well as already-serialized
+      // [from, to] strings; normalizes both to the grid's YYYY-MM-DD FilterValue.
+      const norm = normalizeDateFilterValue(meta.value);
+      return norm ? { kind: 'date', from: norm.from, to: norm.to } : null;
     }
   }
 }

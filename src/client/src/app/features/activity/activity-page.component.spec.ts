@@ -2,7 +2,7 @@
  * Tests for ActivityPageComponent (read-only Activity log at /activity).
  *
  * The unit runner is a plain node environment (vitest.units.config.ts) with no
- * Angular compiler, so we verify the exported pure filter helper directly and
+ * Angular compiler, so we verify the exported pure filter helpers directly and
  * assert the component/template contract by source (readFileSync). This follows
  * the same pattern used by taxonomies-help.component.spec.ts and other component
  * specs in this codebase.
@@ -12,32 +12,46 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildDetectedFilters } from './activity-filters';
+import {
+  ACTIVITY_SOURCE_OPTIONS,
+  ACTIVITY_TYPE_OPTIONS,
+  changeTypeLabel,
+} from './activity-filters';
 
 const ts = readFileSync(join(__dirname, 'activity-page.component.ts'), 'utf8');
 const html = readFileSync(join(__dirname, 'activity-page.component.html'), 'utf8');
 
-describe('buildDetectedFilters (detected-only query shape)', () => {
-  it('pins sourceType to detected', () => {
-    expect(buildDetectedFilters().sourceType).toBe('detected');
+describe('activity filter options', () => {
+  it('enumerates the three change sources with human labels', () => {
+    expect(ACTIVITY_SOURCE_OPTIONS).toEqual([
+      { label: 'CT.gov', value: 'ctgov' },
+      { label: 'Analyst', value: 'analyst' },
+      { label: 'Import', value: 'source_import' },
+    ]);
   });
 
-  it('applies no date / category / tag / priority narrowing', () => {
-    const f = buildDetectedFilters();
-    expect(f.dateFrom).toBeNull();
-    expect(f.dateTo).toBeNull();
-    expect(f.entityLevel).toBeNull();
-    expect(f.entityId).toBeNull();
-    expect(f.categoryNames).toEqual([]);
-    expect(f.tags).toEqual([]);
-    expect(f.priority).toBeNull();
-    expect(f.search).toBeNull();
+  it('offers a type option for every change-event type, sorted by label', () => {
+    expect(ACTIVITY_TYPE_OPTIONS.length).toBe(18);
+    const labels = ACTIVITY_TYPE_OPTIONS.map((o) => o.label);
+    expect([...labels].sort((a, b) => a.localeCompare(b))).toEqual(labels);
+  });
+});
+
+describe('changeTypeLabel', () => {
+  it('renders the marker_* discriminators as user-facing "Event ..." copy', () => {
+    expect(changeTypeLabel('marker_added')).toBe('Event added');
+    expect(changeTypeLabel('marker_removed')).toBe('Event removed');
+    expect(changeTypeLabel('marker_updated')).toBe('Event edited');
+    expect(changeTypeLabel('marker_reclassified')).toBe('Event reclassified');
   });
 
-  it('sorts newest first by feed_ts', () => {
-    const f = buildDetectedFilters();
-    expect(f.sortField).toBe('feed_ts');
-    expect(f.sortDir).toBe('desc');
+  it('humanizes a snake_case type', () => {
+    expect(changeTypeLabel('date_moved')).toBe('Date moved');
+    expect(changeTypeLabel('phase_transitioned')).toBe('Phase transitioned');
+  });
+
+  it('renders a dash for a null type', () => {
+    expect(changeTypeLabel(null)).toBe('--');
   });
 });
 
@@ -50,7 +64,27 @@ describe('ActivityPageComponent contract', () => {
   it('fetches the detected feed via EventService.getEventsPageData', () => {
     expect(ts).toContain("from '../../core/services/event.service'");
     expect(ts).toContain('getEventsPageData(');
-    expect(ts).toContain('buildDetectedFilters()');
+  });
+
+  it('drives filters through the shared grid state and query mapper', () => {
+    expect(ts).toContain('createGridState');
+    expect(ts).toContain('buildServerQuery');
+    // sourceType is pinned so the feed never widens beyond detected changes.
+    expect(ts).toContain("forcedSourceType: 'detected'");
+  });
+
+  it('declares filterable columns for logged date, source, and type', () => {
+    expect(ts).toContain("field: 'feed_ts'");
+    expect(ts).toContain("field: 'change_source'");
+    expect(ts).toContain("field: 'change_event_type'");
+  });
+
+  it('renders the grid toolbar and per-column filter controls', () => {
+    expect(html).toContain('app-grid-toolbar');
+    expect(html).toContain('p-column-filter');
+    expect(html).toContain('field="change_source"');
+    expect(html).toContain('field="change_event_type"');
+    expect(html).toContain('field="feed_ts"');
   });
 
   it('resolves spaceId and tenantId from the route', () => {
@@ -65,19 +99,13 @@ describe('ActivityPageComponent contract', () => {
     expect(html).toContain('[selectedFeedItem]="item"');
   });
 
-  it('exposes NO create/log-event affordance', () => {
+  it('exposes NO create/log-event or edit/delete affordance', () => {
     expect(html).not.toContain('Log event');
-    expect(html.toLowerCase()).not.toContain('opencreatemodal');
     expect(ts).not.toContain('openCreateModal');
-    // No action button is projected anywhere on this read-only page.
-    expect(html).not.toContain('p-button');
-  });
-
-  it('wires no edit or delete affordance on the detail panel', () => {
-    expect(html).not.toContain('(edit)=');
-    expect(html).not.toContain('(delete)=');
     expect(ts).not.toContain('openEditModal');
     expect(ts).not.toContain('onDeleteEvent');
+    expect(html).not.toContain('(edit)=');
+    expect(html).not.toContain('(delete)=');
   });
 
   it('renders detected change rows (rich summary segments + change type)', () => {
@@ -86,8 +114,9 @@ describe('ActivityPageComponent contract', () => {
     expect(html).toContain('changeTypeLabel(item)');
   });
 
-  it('names what Activity is in the empty state and marks it read-only', () => {
+  it('names what Activity is in the empty state and distinguishes the filtered case', () => {
     expect(html).toContain('No detected changes yet.');
     expect(html.toLowerCase()).toContain('read-only');
+    expect(html).toContain('No detected changes match your filters.');
   });
 });

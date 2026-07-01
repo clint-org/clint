@@ -200,6 +200,12 @@ export interface EventsPageFilters {
   tags: string[];
   priority: EventPriority | null;
   sourceType: 'event' | 'marker' | 'detected' | null;
+  // Detected-leg (trial_change_events) narrowing used by the Activity page's
+  // Source / Type column filters. Null (or empty) means no narrowing; a non-null
+  // value excludes analyst events, which is why Activity always pins
+  // sourceType = 'detected' alongside them.
+  changeSources: ChangeEventSource[] | null;
+  changeEventTypes: ChangeEventType[] | null;
   search: string | null;
   sortField: string | null;
   sortDir: 'asc' | 'desc' | null;

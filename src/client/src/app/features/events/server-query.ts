@@ -1,6 +1,17 @@
 import { EventPriority, EventsPageFilters } from '../../core/models/event.model';
+import type { ChangeEventSource, ChangeEventType } from '../../core/models/change-event.model';
 import type { FilterValue } from '../../shared/grids/filter-types';
 import type { EntityScope } from './entity-scope';
+
+/** Optional overrides for surfaces that pin part of the query (e.g. Activity). */
+export interface BuildServerQueryOptions {
+  /**
+   * Force `sourceType` regardless of any source_type column filter. The Activity
+   * page pins this to 'detected' so its detected-only feed never widens to
+   * analyst events, even before the user touches a filter.
+   */
+  forcedSourceType?: EventsPageFilters['sourceType'];
+}
 
 /**
  * The server-side query the Events page issues to `get_events_page_data`:
@@ -36,11 +47,14 @@ export function buildServerQuery(
   gridPage: { first: number; rows: number },
   search: string,
   scope: EntityScope | null,
-  spaceId: string
+  spaceId: string,
+  options?: BuildServerQueryOptions
 ): ServerQuery {
   const sourceVals = selectValues(gridFilters['source_type']);
   const priorityVals = selectValues(gridFilters['priority']);
   const categoryVals = selectValues(gridFilters['category_name']);
+  const changeSourceVals = selectValues(gridFilters['change_source']);
+  const changeTypeVals = selectValues(gridFilters['change_event_type']);
   const { from, to } = dateRange(gridFilters['feed_ts']);
   const trimmed = (search ?? '').trim();
 
@@ -54,7 +68,16 @@ export function buildServerQuery(
       categoryNames: categoryVals.map((v) => String(v)),
       tags: [],
       priority: (priorityVals[0] as EventPriority | undefined) ?? null,
-      sourceType: (sourceVals[0] as EventsPageFilters['sourceType'] | undefined) ?? null,
+      sourceType:
+        options?.forcedSourceType ??
+        (sourceVals[0] as EventsPageFilters['sourceType'] | undefined) ??
+        null,
+      changeSources: changeSourceVals.length
+        ? changeSourceVals.map((v) => String(v) as ChangeEventSource)
+        : null,
+      changeEventTypes: changeTypeVals.length
+        ? changeTypeVals.map((v) => String(v) as ChangeEventType)
+        : null,
       search: trimmed === '' ? null : trimmed,
       sortField: gridSort?.field ?? null,
       sortDir: gridSort ? (gridSort.order === -1 ? 'desc' : 'asc') : null,
