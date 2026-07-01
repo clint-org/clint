@@ -46,6 +46,14 @@ export class EventService {
               p_tags: filters.tags.length > 0 ? filters.tags : null,
               p_priority: filters.priority,
               p_source_type: filters.sourceType,
+              p_change_sources:
+                filters.changeSources && filters.changeSources.length > 0
+                  ? filters.changeSources
+                  : null,
+              p_change_event_types:
+                filters.changeEventTypes && filters.changeEventTypes.length > 0
+                  ? filters.changeEventTypes
+                  : null,
               p_limit: limit,
               p_offset: offset,
               p_search: filters.search,

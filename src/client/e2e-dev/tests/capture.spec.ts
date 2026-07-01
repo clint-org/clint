@@ -16,7 +16,15 @@ test('capture dev surface', async ({ browser }) => {
     }
     const { page, context } = await openAs(browser, world, 'owner');
     try {
-      await settle(page, params.path);
+      // A CAPTURE_PATH that is not already tenant- or admin-rooted is treated as
+      // a space sub-path and resolved against the scratch world, so space-scoped
+      // surfaces (e.g. /activity) can be captured without hardcoding the dynamic
+      // tenant/space ids.
+      const rooted = /^\/(t|admin|super-admin)(\/|$)/.test(params.path);
+      const path = rooted
+        ? params.path
+        : `/t/${world.tenantId}/s/${world.spaceId}${params.path.startsWith('/') ? '' : '/'}${params.path}`;
+      await settle(page, path);
       await page.screenshot({ path: params.out, fullPage: true });
     } finally {
       await context.close();
