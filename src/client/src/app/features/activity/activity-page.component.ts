@@ -90,8 +90,20 @@ export class ActivityPageComponent implements OnInit, OnDestroy {
   protected readonly sourceOptions = ACTIVITY_SOURCE_OPTIONS;
   protected readonly typeOptions = ACTIVITY_TYPE_OPTIONS;
 
-  /** Stored [from,to] strings -> Date[] for the Logged range picker's ngModel. */
-  protected readonly toDatePickerRange = toDatePickerRange;
+  // The Logged range picker's model is OWNED by this signal, not re-derived from
+  // the grid's re-seeded filter value on every change-detection pass. Binding
+  // `[ngModel]` to a fresh array each pass made p-datepicker re-emit through the
+  // grid's filter re-seed and loop (the page froze). Holding the EXACT array the
+  // picker emitted means writeValue never sees a new reference, so it never
+  // re-emits; `loggedRangeSyncEffect` clears it when the filter is cleared
+  // elsewhere (the toolbar's Clear).
+  protected readonly loggedRange = signal<Date[] | null>(null);
+
+  /** Apply a Logged date-range selection: own the value, then narrow the grid. */
+  protected onLoggedRange(range: Date[] | null, apply: (value: unknown) => void): void {
+    this.loggedRange.set(range);
+    apply(range);
+  }
 
   // Grid state -- must be initialized in field initializer (injection context).
   // Only feed_ts / change_source / change_event_type are filterable columns;
@@ -114,6 +126,13 @@ export class ActivityPageComponent implements OnInit, OnDestroy {
     defaultSort: { field: 'feed_ts', order: -1 },
     defaultPageSize: 25,
     persistenceKey: 'activity',
+  });
+
+  // Keep the range picker's model in step when the feed_ts filter is cleared
+  // from outside the picker (the toolbar Clear resets grid.filters()).
+  private readonly loggedRangeSyncEffect = effect(() => {
+    const f = this.grid.filters()['feed_ts'];
+    if (!f && this.loggedRange() !== null) this.loggedRange.set(null);
   });
 
   // The full server query derived from grid state + space, with sourceType
@@ -151,6 +170,10 @@ export class ActivityPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.tenantId = this.getRouteParam('tenantId');
     this.spaceId.set(this.getRouteParam('spaceId'));
+    // Deep link with a Logged date filter already in the URL: reflect it in the
+    // picker so the control shows the active range.
+    const f = this.grid.filters()['feed_ts'];
+    if (f && f.kind === 'date') this.loggedRange.set(toDatePickerRange([f.from, f.to]));
   }
 
   ngOnDestroy(): void {

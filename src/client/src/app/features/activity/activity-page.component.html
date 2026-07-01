@@ -44,10 +44,10 @@
                 [showOperator]="false"
                 [showAddButton]="false"
               >
-                <ng-template #filter let-value let-filter="filterCallback">
+                <ng-template #filter let-filter="filterCallback">
                   <p-datepicker
-                    [ngModel]="toDatePickerRange(value)"
-                    (ngModelChange)="filter($event)"
+                    [ngModel]="loggedRange()"
+                    (ngModelChange)="onLoggedRange($event, filter)"
                     selectionMode="range"
                     [readonlyInput]="true"
                     dateFormat="yy-mm-dd"
