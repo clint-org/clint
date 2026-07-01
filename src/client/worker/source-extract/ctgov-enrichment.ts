@@ -34,27 +34,42 @@ interface CtgovStudy {
   };
 }
 
+// The trial acronym (query.titles) is a near-unique identifier and the strongest
+// CT.gov signal. The tight query adds the structured sponsor + phase constraints;
+// the title-only fallback drops them so a sponsor/phase mismatch can't hide a real
+// record. The model's free-text condition/intervention are deliberately omitted:
+// the v2 API ANDs every query.* param, so those verbose values zero out otherwise
+// valid matches (the reason multi-trial press releases came back with no NCTs).
 function buildSearchUrl(
   trial: ExtractionResult['trials'][number],
   companyName: string | undefined,
-  assetName: string | undefined
+  titleOnly = false
 ): string {
   const params = new URLSearchParams({
     pageSize: '10',
     format: 'json',
   });
 
-  if (companyName) params.set('query.spons', companyName);
   params.set('query.titles', trial.name);
-  const cond = trial.indications?.[0] ?? trial.indication;
-  if (cond) params.set('query.cond', cond);
-  if (assetName) params.set('query.intr', assetName);
-  if (trial.phase) {
-    const mapped = PHASE_MAP[trial.phase];
-    if (mapped) params.set('filter.advanced', `AREA[Phase]${mapped}`);
+  if (!titleOnly) {
+    if (companyName) params.set('query.spons', companyName);
+    if (trial.phase) {
+      const mapped = PHASE_MAP[trial.phase];
+      if (mapped) params.set('filter.advanced', `AREA[Phase]${mapped}`);
+    }
   }
 
   return `${CTGOV_BASE}?${params.toString()}`;
+}
+
+// A verbatim acronym occurrence in the brief title (typically parenthesised, e.g.
+// "...Advanced Solid Tumors (TROPION-PanTumor01)") is a definitive identifier.
+// Raw Jaro-Winkler over the whole long title scores such matches ~0.4, below any
+// confidence bar, so treat an exact case-insensitive substring as a perfect match.
+function scoreTitleMatch(briefTitle: string, trialName: string): number {
+  const needle = trialName.trim().toLowerCase();
+  if (needle.length >= 4 && briefTitle.toLowerCase().includes(needle)) return 1;
+  return jaroWinkler(briefTitle, trialName);
 }
 
 function rankStudies(studies: CtgovStudy[], trialName: string): CtgovCandidate[] {
@@ -65,7 +80,7 @@ function rankStudies(studies: CtgovStudy[], trialName: string): CtgovCandidate[]
       return {
         nct_id: id?.nctId ?? '',
         brief_title: briefTitle,
-        score: jaroWinkler(briefTitle, trialName),
+        score: scoreTitleMatch(briefTitle, trialName),
         status: s.protocolSection?.statusModule?.overallStatus ?? 'UNKNOWN',
         phase: (s.protocolSection?.designModule?.phases ?? []).join('/') || 'N/A',
       };
@@ -92,34 +107,44 @@ export async function enrichWithCtgov(
   const candidates: Record<string, CtgovCandidate[]> = {};
   const warnings: string[] = [];
 
+  // Fetch a CT.gov search URL; returns the studies array, or null on a non-OK
+  // response (a distinct "partial" signal vs. an empty-but-successful result).
+  const runQuery = async (url: string): Promise<CtgovStudy[] | null> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) return null;
+      const body = (await res.json()) as { studies?: CtgovStudy[] };
+      return body.studies ?? [];
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
   const tasks = proposals.trials.map(async (trial, idx) => {
     if (!needsCtgovLookup(trial)) return;
 
     const key = String(idx);
     const companyName = companyNames[trial.sponsor_ref];
-    // Use the headline asset for the CT.gov search hint: primary if set, else the
-    // first member of asset_refs (a multi-asset trial searches by its primary drug).
-    const primaryRef =
-      trial.primary_asset_ref ?? (trial.asset_refs.length > 0 ? trial.asset_refs[0] : null);
-    const assetName = primaryRef != null ? assetNames[primaryRef] : undefined;
-    const url = buildSearchUrl(trial, companyName, assetName);
 
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timer);
-
-      if (!res.ok) {
+      let studies = await runQuery(buildSearchUrl(trial, companyName, false));
+      if (studies === null) {
         warnings.push(`ctgov_partial:trial_${idx}`);
         return;
       }
+      // The tight query can zero out on a sponsor/phase mismatch; retry by title
+      // alone before giving up (the acronym is a near-unique identifier).
+      if (studies.length === 0) {
+        studies = await runQuery(buildSearchUrl(trial, companyName, true));
+        if (studies === null) {
+          warnings.push(`ctgov_partial:trial_${idx}`);
+          return;
+        }
+      }
 
-      const body = (await res.json()) as { studies?: CtgovStudy[] };
-      const studies = body.studies ?? [];
       const ranked = rankStudies(studies, trial.name);
-
       if (ranked.length > 0) {
         candidates[key] = ranked;
       }
