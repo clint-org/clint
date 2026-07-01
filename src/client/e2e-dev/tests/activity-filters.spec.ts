@@ -7,6 +7,10 @@
  *  - the Source column filter narrows to a single change source;
  *  - the Type column filter narrows to a single change type.
  *
+ * It also asserts the browser console stays clean throughout -- a row that
+ * throws in the change-summary util silently drops from the table, so a passing
+ * count is meaningless without a console guard.
+ *
  * Seeds a known spread (3 CT.gov / 2 analyst / 1 import; 2 status_changed; one
  * intervention_changed carrying "Tirzepatide 15mg" only in its payload) so every
  * assertion is deterministic. Everything is torn down with the scratch world.
@@ -26,14 +30,14 @@ function rows(page: Page) {
 
 /** Open a column filter menu by header name and pick an option by label. */
 async function pickColumnFilter(page: Page, header: string, optionLabel: string): Promise<void> {
-  const th = page.locator('th', { hasText: header });
-  await th.locator('button.p-column-filter-menu-button').click();
-  const overlay = page.locator('.p-column-filter-overlay, .p-columnfilter-overlay').last();
-  await overlay.locator('.p-select, .p-dropdown').click();
+  const colHeader = page.getByRole('columnheader', { name: new RegExp(`^${header}`) });
+  await colHeader.getByRole('button', { name: 'Show Filter Menu' }).click();
+  // The filter menu's p-select trigger, then the option.
+  await page.locator('.p-select').last().click();
   await page.getByRole('option', { name: optionLabel, exact: true }).click();
-  // Apply: overlay has an Apply button; fall back to closing via Escape.
-  const apply = overlay.getByRole('button', { name: /apply/i });
-  if (await apply.count()) await apply.first().click();
+  // Selecting applies the filter (filterCallback); dismiss the overlay so it
+  // does not intercept subsequent row assertions.
+  await page.keyboard.press('Escape');
   await page.waitForLoadState('networkidle').catch(() => {});
 }
 
@@ -44,6 +48,14 @@ test('Activity filters: search reaches payload text, Source + Type narrow the lo
 }) => {
   await seedActivityDetectedChanges(world);
   const page = await pageAs('owner');
+
+  // Capture console errors + uncaught exceptions for the whole run. A row that
+  // throws in getDetectedSummary drops silently, so this is the real guard.
+  const consoleErrors: string[] = [];
+  page.on('console', (m) => {
+    if (m.type() === 'error') consoleErrors.push(m.text());
+  });
+  page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${e.message}`));
 
   await gotoSettled(page, sp(world.tenantId, world.spaceId, '/activity'));
 
@@ -69,11 +81,16 @@ test('Activity filters: search reaches payload text, Source + Type narrow the lo
   // Source column filter -> Analyst: exactly the two analyst rows remain.
   await pickColumnFilter(page, 'Source', 'Analyst');
   await expect(rows(page)).toHaveCount(2);
-  await expect(page.getByText('Analyst', { exact: true }).first()).toBeVisible();
 
-  // Reload to clear filters, then narrow by Type -> Status changed: two rows.
-  await gotoSettled(page, sp(world.tenantId, world.spaceId, '/activity'));
+  // Clear filters (grid persists them to the URL, so a reload would restore the
+  // Source filter -- the toolbar's Clear is the reset affordance), back to six.
+  await page.getByRole('button', { name: /Clear filters/ }).click();
   await expect(rows(page)).toHaveCount(6);
+
+  // Narrow by Type -> Status changed: the two status_changed rows.
   await pickColumnFilter(page, 'Type', 'Status changed');
   await expect(rows(page)).toHaveCount(2);
+
+  // No row may have thrown during any of the above.
+  expect(consoleErrors, `unexpected console errors:\n${consoleErrors.join('\n')}`).toEqual([]);
 });
