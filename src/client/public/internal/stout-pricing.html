@@ -371,53 +371,6 @@
         background: var(--slate-200);
         margin: 30px 0;
       }
-      /* Volume brackets: a quiet rate card. Shows the per-space rate
-         stepping down, not firm-wide totals, so it reads as a discount that
-         improves rather than a bill that grows. */
-      .tiers {
-        width: 100%;
-        max-width: 420px;
-        border-collapse: collapse;
-        font-size: 14.5px;
-        margin-bottom: 14px;
-      }
-      .tiers thead th {
-        font-family: var(--font-mono);
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--slate-500);
-        text-align: left;
-        padding: 0 14px 10px 0;
-        border-bottom: 1px solid var(--slate-200);
-      }
-      .tiers thead th:last-child {
-        text-align: right;
-      }
-      .tiers tbody td {
-        padding: 11px 14px 11px 0;
-        border-top: 1px solid var(--slate-100);
-        color: var(--slate-700);
-      }
-      .tiers tbody tr:first-child td {
-        border-top: 0;
-      }
-      .tiers tbody td:last-child {
-        text-align: right;
-        font-family: var(--font-mono);
-        font-variant-numeric: tabular-nums;
-        font-weight: 600;
-        color: var(--slate-900);
-      }
-      .tiers tbody td.best {
-        color: var(--brand-700);
-      }
-      .tier-note {
-        font-size: 13px;
-        color: var(--slate-600);
-        max-width: 64ch;
-      }
       .boundary {
         font-size: 13px;
         color: var(--slate-600);
@@ -527,13 +480,13 @@
           <span class="unit">per space, per year</span>
         </div>
         <p class="subhead reveal">
-          The more spaces you run, the <strong>less each one costs</strong>.
+          One clear number per engagement, <strong>with every user included</strong>.
         </p>
 
         <p class="lede reveal">
-          Priced per space, with volume pricing, and meant to be flexible. The goal right now is to
-          get Clint in front of your team on a live engagement and shape it around how you work. It
-          starts with a 90-day pilot.
+          A flat price per space, meant to be simple and predictable, so it is easy to budget and
+          easy to pass through to the client. The goal right now is to get Clint in front of your
+          team on a live engagement and shape it around how you work. It starts with a 30-day pilot.
         </p>
 
         <div class="block reveal">
@@ -549,35 +502,10 @@
               people. No per-seat charge.
             </li>
             <li>
-              <strong>Costs less as you grow.</strong> The rate per space drops as you take on more.
+              <strong>Easy to budget.</strong> One number per engagement, set up front, with no seat
+              math and no surprises as the work grows.
             </li>
           </ul>
-        </div>
-
-        <div class="block reveal tiers-block">
-          <div class="section-label">Volume pricing</div>
-          <table class="tiers">
-            <thead>
-              <tr>
-                <th>Spaces</th>
-                <th>Rate each</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1 to 5</td>
-                <td>$25,000</td>
-              </tr>
-              <tr>
-                <td>6 to 12</td>
-                <td>$21,000</td>
-              </tr>
-              <tr>
-                <td>13 and up</td>
-                <td class="best">$18,000</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
 
         <!-- ============ WHAT THE PRICE BUYS ============ -->
