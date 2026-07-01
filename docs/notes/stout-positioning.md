@@ -70,7 +70,7 @@ This is the brief the partner uses, not the deck the MD reads. The MD-facing art
 
 **6. The ask.**
 - A 30-minute walkthrough with the founder.
-- If it lands, scope a 90-day pilot on one live engagement.
+- If it lands, scope a 30-day pilot on one live engagement.
 - Not asking for: a procurement decision, a contract, an exclusivity discussion in this meeting.
 
 **7. Soft "why now."**
@@ -137,7 +137,7 @@ How cost scales as the book grows (marginal brackets, no cap):
 
 ### Recommended sequence
 
-1. **Pilot on a live engagement.** A 90-day pilot on a real Stout client. We get Clint in front of the team, both sides see what works, and it ends with a delivered artifact the client can use. There is no discounted Year 1.
+1. **Pilot on a live engagement.** A 30-day pilot on a real Stout client. We get Clint in front of the team, both sides see what works, and it ends with a delivered artifact the client can use. There is no discounted Year 1.
 2. **Standard per-space from Year 1.** Convert into paid spaces at the standard $25K/space rate, with volume brackets stepping the rate down as the book grows. The number Stout has already seen work during the pilot is the number it pays.
 3. **Co-creator partnership at Year 2+.** The structural conversation layers on top of the per-space model: equity, exclusivity, roadmap seat. Option 04 above becomes the long-term shape.
 
@@ -266,7 +266,7 @@ Reference for the partner. Don't volunteer this; it's the answer if the MD pushe
 
 ### Option C -- Partner with Clint
 
-- Working product on Day 1. A 90-day pilot on a live engagement. Standard per-space pricing thereafter.
+- Working product on Day 1. A 30-day pilot on a live engagement. Standard per-space pricing thereafter.
 - Founder owns the asset and runs the team; pharma domain expertise comes with it.
 - Co-creator partnership at Year 2 gives Stout exclusivity in advisory and a seat shaping the roadmap, without owning the engineering burden.
 - Stout's resources stay on client work.
