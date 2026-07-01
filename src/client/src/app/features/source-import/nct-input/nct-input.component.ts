@@ -17,7 +17,7 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 import { IntelligenceBadgeComponent } from '../../../shared/components/intelligence-badge/intelligence-badge.component';
 import { LoaderComponent } from '../../../shared/components/loader/loader.component';
 import { SourceImportProposal, SourceImportService } from '../source-import.service';
-import { parseNctIds } from './nct-parse';
+import { MAX_NCTS, nctCountStatus, parseNctIds } from './nct-parse';
 
 type NctPhase = 'idle' | 'checking-dupes' | 'fetching' | 'resolving' | 'done' | 'error';
 
@@ -70,6 +70,27 @@ const ERROR_MESSAGES: Record<string, string> = {
   template: `
     @if (phase() === 'idle' || phase() === 'error') {
       <div class="flex flex-col gap-4 py-4">
+        <div
+          class="rounded-md border border-slate-200 bg-slate-50/60 px-3.5 py-3 text-[12px] leading-relaxed text-slate-600"
+        >
+          <p class="font-medium text-slate-700">Resolve trials from ClinicalTrials.gov</p>
+          <ul class="mt-1.5 list-disc space-y-1 pl-4">
+            <li>
+              Enter up to {{ maxNcts }} NCT IDs (NCT followed by 8 digits), one per line or
+              comma-separated.
+            </li>
+            <li>
+              Each trial is resolved into its companies and assets. You review and edit everything
+              before it is saved.
+            </li>
+            <li>Malformed or not-found IDs are skipped and listed back to you.</li>
+            <li>
+              Long lists resolve in parallel batches; if a batch can't be resolved, those trials are
+              skipped with a note so you can re-import them.
+            </li>
+          </ul>
+        </div>
+
         <textarea
           pTextarea
           class="w-full font-mono text-[13px] leading-relaxed"
@@ -81,11 +102,16 @@ const ERROR_MESSAGES: Record<string, string> = {
         ></textarea>
 
         @if (rawInput().trim().length > 0) {
-          <div class="flex items-center gap-3 text-[12px]">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
             @if (parsed().valid.length > 0) {
-              <span class="font-medium text-slate-700">
-                {{ parsed().valid.length }} valid NCT
+              <span [class]="'font-medium ' + countClass()">
+                {{ parsed().valid.length }} / {{ maxNcts }} NCT
                 {{ parsed().valid.length === 1 ? 'ID' : 'IDs' }}
+                @if (countStatus().severity === 'over') {
+                  ({{ countStatus().over }} over the limit)
+                } @else if (countStatus().severity === 'at-cap') {
+                  (at the limit)
+                }
               </span>
             }
             @if (parsed().malformed.length > 0) {
@@ -103,7 +129,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 
         @if (tooManyError()) {
           <p-message severity="error" [closable]="false">
-            Maximum 50 NCT IDs per import. Please split into batches.
+            Maximum {{ maxNcts }} NCT IDs per import. Please split into batches.
           </p-message>
         }
 
@@ -205,9 +231,27 @@ export class NctInputComponent implements OnDestroy {
 
   private autoNavTimer: ReturnType<typeof setTimeout> | null = null;
 
+  protected readonly maxNcts = MAX_NCTS;
+
   protected readonly parsed = computed(() => parseNctIds(this.rawInput()));
 
-  protected readonly tooManyError = computed(() => this.parsed().valid.length > 50);
+  // Running status of the valid count against the cap, so the input can warn as
+  // the user approaches the limit and blocks past it (instead of only erroring
+  // on submit).
+  protected readonly countStatus = computed(() => nctCountStatus(this.parsed().valid.length));
+
+  protected readonly countClass = computed(() => {
+    switch (this.countStatus().severity) {
+      case 'over':
+        return 'text-red-700';
+      case 'at-cap':
+        return 'text-amber-700';
+      default:
+        return 'text-slate-700';
+    }
+  });
+
+  protected readonly tooManyError = computed(() => this.countStatus().severity === 'over');
 
   protected readonly newNctCount = computed(() => {
     const dupeIds = new Set(this.duplicates().map((d) => d.nct_id));
