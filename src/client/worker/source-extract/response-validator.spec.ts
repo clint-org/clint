@@ -254,3 +254,46 @@ describe('unified EventSchema', () => {
     expect('markers' in parsed).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Trial NCT grounding (#184): a source-grounded nct_id keeps a trial whose
+// display name is not verbatim in the source.
+// ---------------------------------------------------------------------------
+
+describe('validateExtraction: trial NCT grounding', () => {
+  const newTrial = (over: Record<string, unknown> = {}): unknown => ({
+    match: { kind: 'new', name: 'Survodutide MASH P2' },
+    name: 'Survodutide MASH P2',
+    sponsor_ref: 0,
+    asset_refs: [0],
+    evidence: 'ev',
+    ...over,
+  });
+  // Source states the NCT but not the trial's display name.
+  const SRC = 'The trial, registered on ClinicalTrials.gov as NCT04771273, met its endpoint.';
+
+  it('keeps a new trial whose name is not verbatim but whose nct_id is in the source', () => {
+    const out = validateExtraction(makeRaw({ trials: [newTrial({ nct_id: 'NCT04771273' })] }), baseInventory(), SRC);
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.result.trials).toHaveLength(1);
+    expect(out.result.trials[0].nct_id).toBe('NCT04771273');
+    expect(out.dropped.some((d) => d.type === 'trial')).toBe(false);
+  });
+
+  it('still drops a new trial with neither a grounded name nor a grounded nct_id', () => {
+    const out = validateExtraction(makeRaw({ trials: [newTrial({ nct_id: null })] }), baseInventory(), SRC);
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.result.trials).toHaveLength(0);
+    expect(out.dropped.some((d) => d.type === 'trial' && d.reason === 'name not found in source text')).toBe(true);
+  });
+
+  it('does not ground on an nct_id that is absent from the source (model hallucination)', () => {
+    const out = validateExtraction(makeRaw({ trials: [newTrial({ nct_id: 'NCT09999999' })] }), baseInventory(), SRC);
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.result.trials).toHaveLength(0);
+    expect(out.dropped.some((d) => d.type === 'trial')).toBe(true);
+  });
+});
