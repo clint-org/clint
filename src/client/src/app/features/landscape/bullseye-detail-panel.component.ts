@@ -35,6 +35,7 @@ import {
 } from '../../core/models/primary-intelligence.model';
 import { DEVELOPMENT_STATUS_LABELS, phaseShortLabel } from '../../core/models/phase-colors';
 import { recentChangeLabel } from '../../shared/components/change-badge/change-badge.logic';
+import { ctgovRegistryUrl } from '../../shared/utils/ctgov-registry-url';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceFieldVisibilityService } from '../../core/services/space-field-visibility.service';
 import { TrialService } from '../../core/services/trial.service';
@@ -136,6 +137,8 @@ export class BullseyeDetailPanelComponent {
   });
 
   protected readonly recentChangeLabel = recentChangeLabel;
+  /** Canonical CT.gov study URL for an NCT identifier (null when unset). */
+  protected readonly ctgovRegistryUrl = ctgovRegistryUrl;
 
   /**
    * Split the focused asset's events into Recent (past) and Upcoming (future)

@@ -110,9 +110,17 @@
         </td>
         <td class="col-identifier">
           @if (row.trial.identifier) {
-            <span
-              [innerHTML]="row.trial.identifier | highlight: grid.debouncedGlobalSearch()"
-            ></span>
+            <a
+              [href]="ctgovRegistryUrl(row.trial.identifier)"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1 font-mono tabular-nums text-brand-700 hover:text-brand-800 hover:underline"
+            >
+              <span
+                [innerHTML]="row.trial.identifier | highlight: grid.debouncedGlobalSearch()"
+              ></span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-[9px]" aria-hidden="true"></i>
+            </a>
           } @else {
             --
           }

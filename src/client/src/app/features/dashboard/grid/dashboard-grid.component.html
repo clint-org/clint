@@ -91,9 +91,10 @@
                       ></i>
                     }
                   }
-                  <span class="truncate text-xs font-bold uppercase tracking-wider text-slate-800">{{
-                    row.companyName
-                  }}</span>
+                  <span
+                    class="truncate text-xs font-bold uppercase tracking-wider text-slate-800"
+                    >{{ row.companyName }}</span
+                  >
                   @if (row.companyHasIntelligence) {
                     <app-pi-mark [size]="10" class="shrink-0" />
                   }
@@ -153,20 +154,26 @@
                        and the full list shows rather than a single truncated chip
                        competing with the asset name. -->
                   @if (assetHasAttributesLine(row)) {
-                    <span class="flex min-w-0 items-center gap-2.5 pl-[22px] text-[10px] leading-none">
+                    <span
+                      class="flex min-w-0 items-center gap-2.5 pl-[22px] text-[10px] leading-none"
+                    >
                       @if (showMoaColumn() && !hideMoaColumn() && row.assetMoas.length > 0) {
                         <span class="flex min-w-0 items-center gap-1">
-                          <span class="shrink-0 text-[8px] font-bold uppercase tracking-wider text-slate-400"
+                          <span
+                            class="shrink-0 text-[8px] font-bold uppercase tracking-wider text-slate-400"
                             >MOA</span
                           >
-                          <span class="truncate text-slate-600" [title]="moaTooltipText(row.assetMoas)">{{
-                            moaTooltipText(row.assetMoas)
-                          }}</span>
+                          <span
+                            class="truncate text-slate-600"
+                            [title]="moaTooltipText(row.assetMoas)"
+                            >{{ moaTooltipText(row.assetMoas) }}</span
+                          >
                         </span>
                       }
                       @if (showRoaColumn() && !hideRoaColumn() && row.assetRoas.length > 0) {
                         <span class="flex shrink-0 items-center gap-1">
-                          <span class="shrink-0 text-[8px] font-bold uppercase tracking-wider text-slate-400"
+                          <span
+                            class="shrink-0 text-[8px] font-bold uppercase tracking-wider text-slate-400"
                             >ROA</span
                           >
                           <span class="text-slate-600" [title]="roaTooltipText(row.assetRoas)">{{
@@ -228,7 +235,8 @@
                       row.trialIndications.length > 0
                     ) {
                       <span class="flex min-w-0 shrink items-center gap-1">
-                        <span class="shrink-0 text-[8px] font-bold uppercase tracking-wider text-slate-400"
+                        <span
+                          class="shrink-0 text-[8px] font-bold uppercase tracking-wider text-slate-400"
                           >IND</span
                         >
                         <span
@@ -239,9 +247,15 @@
                       </span>
                     }
                     @if (row.trial.identifier) {
-                      <span class="shrink-0 font-mono text-[10px] text-slate-400">{{
-                        row.trial.identifier
-                      }}</span>
+                      <a
+                        [href]="ctgovRegistryUrl(row.trial.identifier)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="shrink-0 font-mono text-[10px] text-slate-400 hover:text-brand-700 hover:underline"
+                        (click)="$event.stopPropagation()"
+                        (keydown.enter)="$event.stopPropagation()"
+                        >{{ row.trial.identifier }}</a
+                      >
                     }
                   </span>
                   @if (
