@@ -37,7 +37,27 @@
           <tr>
             <th pSortableColumn="feed_ts" class="col-date">
               Logged <p-sortIcon field="feed_ts" />
-              <p-column-filter type="date" field="feed_ts" display="menu" />
+              <p-column-filter
+                field="feed_ts"
+                display="menu"
+                [showMatchModes]="false"
+                [showOperator]="false"
+                [showAddButton]="false"
+              >
+                <ng-template #filter let-value let-filter="filterCallback">
+                  <p-datepicker
+                    [ngModel]="toDatePickerRange(value)"
+                    (ngModelChange)="filter($event)"
+                    selectionMode="range"
+                    [readonlyInput]="true"
+                    dateFormat="yy-mm-dd"
+                    placeholder="From – To"
+                    [showButtonBar]="true"
+                    appendTo="body"
+                    size="small"
+                  />
+                </ng-template>
+              </p-column-filter>
             </th>
             <th class="w-full min-w-[18rem]">Change</th>
             <th class="col-secondary">Entity</th>

@@ -11,6 +11,7 @@ import {
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DatePicker } from 'primeng/datepicker';
 import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
@@ -23,7 +24,7 @@ import { ManagePageShellComponent } from '../../shared/components/manage-page-sh
 import { SectionHeaderComponent } from '../../shared/components/section-header/section-header.component';
 import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
-import { createGridState } from '../../shared/grids';
+import { createGridState, toDatePickerRange } from '../../shared/grids';
 import {
   feedItemToChangeEvent,
   summarySegmentsFor,
@@ -56,6 +57,7 @@ import {
   imports: [
     DatePipe,
     FormsModule,
+    DatePicker,
     MessageModule,
     SelectModule,
     TableModule,
@@ -87,6 +89,9 @@ export class ActivityPageComponent implements OnInit, OnDestroy {
   protected readonly viewDetailsLabel = viewDetailsLabel;
   protected readonly sourceOptions = ACTIVITY_SOURCE_OPTIONS;
   protected readonly typeOptions = ACTIVITY_TYPE_OPTIONS;
+
+  /** Stored [from,to] strings -> Date[] for the Logged range picker's ngModel. */
+  protected readonly toDatePickerRange = toDatePickerRange;
 
   // Grid state -- must be initialized in field initializer (injection context).
   // Only feed_ts / change_source / change_event_type are filterable columns;
