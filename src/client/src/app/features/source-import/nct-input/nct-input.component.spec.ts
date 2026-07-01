@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
-import { parseNctIds } from './nct-parse';
+import { MAX_NCTS, nctCountStatus, parseNctIds } from './nct-parse';
 
 describe('NctInputComponent progress template contract', () => {
   const src = readFileSync(join(__dirname, 'nct-input.component.ts'), 'utf8');
@@ -15,6 +15,46 @@ describe('NctInputComponent progress template contract', () => {
   it('uses the branded loader on the active step instead of a pulsing dot', () => {
     expect(src).toContain('app-loader');
     expect(src).not.toContain('animate-ping');
+  });
+
+  it('shows an upfront helper explaining the import and its constraints', () => {
+    expect(src).toContain('Resolve trials from ClinicalTrials.gov');
+    expect(src).toContain('Malformed or not-found IDs are skipped');
+  });
+
+  it('shows the valid count against the cap (N / max), not just a bare count', () => {
+    expect(src).toContain('{{ parsed().valid.length }} / {{ maxNcts }} NCT');
+    expect(src).toContain('over the limit');
+  });
+
+  it('drives the cap from MAX_NCTS rather than a hardcoded 50', () => {
+    expect(src).not.toContain('valid.length > 50');
+    expect(src).toContain('Maximum {{ maxNcts }} NCT IDs per import');
+  });
+});
+
+describe('nctCountStatus', () => {
+  it('is ok below the cap', () => {
+    const s = nctCountStatus(12);
+    expect(s.severity).toBe('ok');
+    expect(s.over).toBe(0);
+    expect(s.max).toBe(MAX_NCTS);
+  });
+
+  it('is at-cap exactly at the limit', () => {
+    const s = nctCountStatus(MAX_NCTS);
+    expect(s.severity).toBe('at-cap');
+    expect(s.over).toBe(0);
+  });
+
+  it('is over past the limit and reports how many over', () => {
+    const s = nctCountStatus(MAX_NCTS + 3);
+    expect(s.severity).toBe('over');
+    expect(s.over).toBe(3);
+  });
+
+  it('reports ok for an empty input', () => {
+    expect(nctCountStatus(0).severity).toBe('ok');
   });
 });
 

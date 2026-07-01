@@ -51,6 +51,7 @@ import type { EventType } from '../../core/models/event-type.model';
 import { HasUnsavedImport } from '../../core/guards/source-import-deactivate.guard';
 import { ReviewEditDialogComponent } from './review-edit-dialog.component';
 import { commitSummary, type CommitCreated } from './commit-summary.logic';
+import { importWarningLabel } from './review-warnings.logic';
 
 type EditableEntityType = 'companies' | 'assets' | 'trials';
 
@@ -610,16 +611,8 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
 
   protected readonly entityOrder = ENTITY_ORDER;
 
-  private static readonly WARNING_LABELS: Record<string, string> = {
-    empty_extraction:
-      'No companies, assets, or trials could be extracted from this source. The text may be too short, off-topic, or in a format the model did not recognize.',
-  };
-
   protected warningLabel(code: string): string {
-    if (code.startsWith('ctgov_partial:')) {
-      return 'Some trial enrichment from ClinicalTrials.gov failed. You can still commit, but CT.gov fields may be incomplete.';
-    }
-    return ReviewPageComponent.WARNING_LABELS[code] ?? code;
+    return importWarningLabel(code);
   }
 
   readonly tenantId = signal('');
