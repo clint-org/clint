@@ -333,12 +333,23 @@ describe('ExtractionResultSchema: event date_precision', () => {
     expect(parsed.events[0].end_date_precision).toBe('exact');
   });
 
-  it('rejects an out-of-enum precision value', () => {
-    expect(() =>
-      ExtractionResultSchema.parse({
-        source_summary: 's',
-        events: [eventWith({ date_precision: 'week' })],
-      }),
-    ).toThrow();
+  // Regression: the model routinely emits end_date_precision: null when there is
+  // no end date. A strict enum would fail the WHOLE extraction (500 /
+  // parse_failed); the field must degrade to 'exact' instead.
+  it("coerces a null precision to 'exact' rather than failing the extraction", () => {
+    const parsed = ExtractionResultSchema.parse({
+      source_summary: 's',
+      events: [eventWith({ date_precision: 'month', end_date_precision: null })],
+    });
+    expect(parsed.events[0].date_precision).toBe('month');
+    expect(parsed.events[0].end_date_precision).toBe('exact');
+  });
+
+  it("coerces an out-of-enum precision token to 'exact' instead of throwing", () => {
+    const parsed = ExtractionResultSchema.parse({
+      source_summary: 's',
+      events: [eventWith({ date_precision: 'H2' })],
+    });
+    expect(parsed.events[0].date_precision).toBe('exact');
   });
 });
