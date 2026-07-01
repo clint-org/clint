@@ -17,7 +17,10 @@ import { extractionTemperature } from './temperature';
 import type { ExtractRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
 
 const MAX_SOURCE_BYTES = 500_000;
-const LLM_TIMEOUT_MS = 60_000;
+// 90s gives the current Sonnet models headroom on large multi-entity
+// extractions (60s was tripping on sources that generate long output).
+// Kept under Cloudflare's ~100s edge timeout so the CDN can't 524 first.
+const LLM_TIMEOUT_MS = 90_000;
 const FETCH_TIMEOUT_MS = 10_000;
 // Public Brandfetch Logo Link client ID. Mirrors the Angular env so both
 // frontend renders and worker enrichment present the same Referer/Origin
