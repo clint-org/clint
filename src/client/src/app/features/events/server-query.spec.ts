@@ -20,6 +20,8 @@ describe('buildServerQuery', () => {
       tags: [],
       priority: null,
       sourceType: null,
+      changeSources: null,
+      changeEventTypes: null,
       search: null,
       sortField: 'feed_ts',
       sortDir: 'desc',
@@ -42,6 +44,32 @@ describe('buildServerQuery', () => {
     };
     const q = buildServerQuery(filters, SORT, PAGE, '', null, 's');
     expect(q.filters.categoryNames).toEqual(['Regulatory', 'Catalyst lifecycle']);
+  });
+
+  it('maps change_source and change_event_type selects to detected-leg filters', () => {
+    const filters: Record<string, FilterValue> = {
+      change_source: { kind: 'select', values: ['ctgov', 'analyst'] },
+      change_event_type: { kind: 'select', values: ['date_moved'] },
+    };
+    const q = buildServerQuery(filters, SORT, PAGE, '', null, 's');
+    expect(q.filters.changeSources).toEqual(['ctgov', 'analyst']);
+    expect(q.filters.changeEventTypes).toEqual(['date_moved']);
+  });
+
+  it('leaves change filters null when no change columns are set', () => {
+    const q = buildServerQuery({}, SORT, PAGE, '', null, 's');
+    expect(q.filters.changeSources).toBeNull();
+    expect(q.filters.changeEventTypes).toBeNull();
+  });
+
+  it('forces sourceType via options, overriding any source_type column filter', () => {
+    const filters: Record<string, FilterValue> = {
+      source_type: { kind: 'select', values: ['event'] },
+    };
+    const q = buildServerQuery(filters, SORT, PAGE, '', null, 's', {
+      forcedSourceType: 'detected',
+    });
+    expect(q.filters.sourceType).toBe('detected');
   });
 
   it('reads the feed_ts date range', () => {

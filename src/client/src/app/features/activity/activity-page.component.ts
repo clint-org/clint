@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   OnDestroy,
@@ -8,9 +9,11 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MessageModule } from 'primeng/message';
-import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { SelectModule } from 'primeng/select';
+import { TableModule } from 'primeng/table';
 import { Tooltip } from 'primeng/tooltip';
 
 import { FeedItem } from '../../core/models/event.model';
@@ -18,7 +21,9 @@ import { EventService } from '../../core/services/event.service';
 import { TopbarStateService } from '../../core/services/topbar-state.service';
 import { ManagePageShellComponent } from '../../shared/components/manage-page-shell.component';
 import { SectionHeaderComponent } from '../../shared/components/section-header/section-header.component';
+import { GridToolbarComponent } from '../../shared/components/grid-toolbar.component';
 import { TableSkeletonBodyComponent } from '../../shared/components/skeleton/table-skeleton-body.component';
+import { createGridState } from '../../shared/grids';
 import {
   feedItemToChangeEvent,
   summarySegmentsFor,
@@ -26,31 +31,38 @@ import {
 } from '../../shared/utils/change-event-summary';
 import { viewDetailsLabel } from '../../shared/utils/accessible-row-label';
 import { entityCellParts, type EntityCellParts } from '../events/entity-cell';
+import { buildServerQuery, type ServerQuery } from '../events/server-query';
 import { EventDetailPanelComponent } from '../events/event-detail-panel.component';
-import { buildDetectedFilters } from './activity-filters';
-
-interface PageState {
-  first: number;
-  rows: number;
-}
+import {
+  ACTIVITY_SOURCE_OPTIONS,
+  ACTIVITY_TYPE_OPTIONS,
+  changeTypeLabel,
+} from './activity-filters';
 
 /**
  * Read-only Activity log. Renders DETECTED changes only: CT.gov registry deltas
  * and analyst-edit deltas surfaced by `get_events_page_data` (source_type
  * 'detected'). Unlike the legacy Events feed (de-routed in the Stage 3
- * events->activity split), Activity offers no create/edit/delete affordances and
- * no filter controls -- it is a passive audit trail. The selected-row detail
- * reuses EventDetailPanelComponent's detected branch with [canEdit]="false".
+ * events->activity split), Activity offers no create/edit/delete affordances --
+ * it is a passive audit trail. It DOES carry the shared grid-filter idiom
+ * (GridToolbar global search + per-column Logged / Source / Type filters,
+ * matching the Events and Future-events tables); every filter is applied
+ * server-side via buildServerQuery, with sourceType pinned to 'detected'. The
+ * selected-row detail reuses EventDetailPanelComponent's detected branch with
+ * [canEdit]="false".
  */
 @Component({
   selector: 'app-activity-page',
   imports: [
     DatePipe,
+    FormsModule,
     MessageModule,
+    SelectModule,
     TableModule,
     Tooltip,
     ManagePageShellComponent,
     SectionHeaderComponent,
+    GridToolbarComponent,
     TableSkeletonBodyComponent,
     EventDetailPanelComponent,
   ],
@@ -71,23 +83,60 @@ export class ActivityPageComponent implements OnInit, OnDestroy {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly selectedItem = signal<FeedItem | null>(null);
-  readonly page = signal<PageState>({ first: 0, rows: 25 });
 
   protected readonly viewDetailsLabel = viewDetailsLabel;
+  protected readonly sourceOptions = ACTIVITY_SOURCE_OPTIONS;
+  protected readonly typeOptions = ACTIVITY_TYPE_OPTIONS;
+
+  // Grid state -- must be initialized in field initializer (injection context).
+  // Only feed_ts / change_source / change_event_type are filterable columns;
+  // Change and Entity are covered by the toolbar's global search.
+  readonly grid = createGridState<FeedItem>({
+    columns: [
+      { field: 'feed_ts', header: 'Logged', filter: { kind: 'date' } },
+      {
+        field: 'change_source',
+        header: 'Source',
+        filter: { kind: 'select', options: () => this.sourceOptions },
+      },
+      {
+        field: 'change_event_type',
+        header: 'Type',
+        filter: { kind: 'select', options: () => this.typeOptions },
+      },
+    ],
+    globalSearchFields: ['title', 'entity_name', 'company_name', 'change_event_type'],
+    defaultSort: { field: 'feed_ts', order: -1 },
+    defaultPageSize: 25,
+    persistenceKey: 'activity',
+  });
+
+  // The full server query derived from grid state + space, with sourceType
+  // pinned to 'detected' so the Activity feed never widens to analyst events.
+  private readonly serverQuery = computed<ServerQuery>(() =>
+    buildServerQuery(
+      this.grid.filters(),
+      this.grid.sort(),
+      this.grid.page(),
+      this.grid.debouncedGlobalSearch(),
+      null,
+      this.spaceId(),
+      { forcedSourceType: 'detected' }
+    )
+  );
 
   private lastQueryKey: string | null = null;
   private fetchSeq = 0;
 
-  // Reactive fetch: re-queries the detected feed whenever the space or page
-  // window changes, discarding stale (superseded) responses via a monotonic id.
+  // Reactive fetch: re-queries whenever the derived query changes, skipping
+  // identical queries and discarding stale responses via a monotonic id.
   private readonly feedEffect = effect(() => {
-    const spaceId = this.spaceId();
-    const page = this.page();
-    if (!spaceId) return;
-    const key = `${spaceId}:${page.first}:${page.rows}`;
+    const q = this.serverQuery();
+    if (!q.spaceId) return;
+    const key = JSON.stringify(q);
     if (key === this.lastQueryKey) return;
     this.lastQueryKey = key;
-    void this.fetchFeed(spaceId, page);
+    void this.fetchFeed(q);
   });
 
   private readonly countEffect = effect(() => {
@@ -103,10 +152,6 @@ export class ActivityPageComponent implements OnInit, OnDestroy {
     this.topbarState.clear();
   }
 
-  onLazyLoad(event: TableLazyLoadEvent): void {
-    this.page.set({ first: event.first ?? 0, rows: event.rows ?? 25 });
-  }
-
   /** Rich change summary segments for a detected row (reused from the feed). */
   protected getDetectedSummary(item: FeedItem): RichSummary {
     return summarySegmentsFor(feedItemToChangeEvent(item, this.spaceId()));
@@ -119,18 +164,7 @@ export class ActivityPageComponent implements OnInit, OnDestroy {
 
   /** Humanized change type label, e.g. "date_moved" -> "Date moved". */
   protected changeTypeLabel(item: FeedItem): string {
-    const t = item.change_event_type;
-    if (!t) return '--';
-    // The marker_* change types are internal discriminators; "marker" is retired from
-    // user-facing copy, so they read as "Event ..." (matching the change-summary text).
-    const labels: Record<string, string> = {
-      marker_added: 'Event added',
-      marker_removed: 'Event removed',
-      marker_updated: 'Event edited',
-    };
-    if (labels[t]) return labels[t];
-    const spaced = t.replace(/_/g, ' ');
-    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+    return changeTypeLabel(item.change_event_type);
   }
 
   /** Origin of a detected change: registry feed vs analyst edit. */
@@ -170,16 +204,16 @@ export class ActivityPageComponent implements OnInit, OnDestroy {
     ]);
   }
 
-  private async fetchFeed(spaceId: string, page: PageState): Promise<void> {
+  private async fetchFeed(q: ServerQuery): Promise<void> {
     const seq = ++this.fetchSeq;
     this.loading.set(true);
     this.error.set(null);
     try {
       const feed = await this.eventService.getEventsPageData(
-        spaceId,
-        buildDetectedFilters(),
-        page.rows,
-        page.first
+        q.spaceId,
+        q.filters,
+        q.limit,
+        q.offset
       );
       if (seq !== this.fetchSeq) return; // a newer query superseded this one
       this.items.set(feed.items);
