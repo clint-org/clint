@@ -1,6 +1,11 @@
 // Pure review-decision logic for the import-review grouped grid.
 // No Angular imports: unit-tested via vitest (npm run test:units).
 import type { MarkerShape, FillStyle, InnerMark } from '../../core/models/marker.model';
+import {
+  markerPeriodLabel,
+  type DatePrecision,
+  DATE_PRECISIONS,
+} from '../../core/models/marker-date-precision';
 
 export type EntityState = 'new' | 'existing';
 export type FlagTier = 'blocking' | 'attention' | 'info';
@@ -213,9 +218,25 @@ export function pickEventType(name: string | null, types: EventTypeLite[]): Even
   return systemDefaults[0] ?? types[0];
 }
 
-// An event's category chip is its event_type name; its date is event_date.
+function readPrecision(v: unknown): DatePrecision {
+  return typeof v === 'string' && (DATE_PRECISIONS as readonly string[]).includes(v)
+    ? (v as DatePrecision)
+    : 'exact';
+}
+
+// An event's category chip is its event_type name; its date is a precision-aware
+// caption. When the source only gave a fuzzy period ("available in July"), the
+// extraction stamps date_precision='month' and the caption reads "~Jul '26" so
+// the reviewer sees the inferred granularity instead of a false exact day. An
+// exact date keeps its full ISO value (markerPeriodLabel returns null there).
 export function eventLeafDisplay(event: Entity): LeafDisplay {
-  return { category: cleanText(event['event_type']), date: cleanText(event['event_date']) };
+  const iso = cleanText(event['event_date']);
+  if (!iso) return { category: cleanText(event['event_type']), date: null };
+  const period = markerPeriodLabel(iso, readPrecision(event['date_precision']));
+  return {
+    category: cleanText(event['event_type']),
+    date: period ? `~${period}` : iso,
+  };
 }
 
 // An extracted Approval/Launch event carries the indication that lifts the asset
