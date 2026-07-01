@@ -10,10 +10,12 @@ const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 // How precise the source text actually is about a date. Mirrors the
 // events.date_precision check constraint and the client DatePrecision type.
 // The AI must never imply more precision than the source states.
-const datePrecision = z
-  .enum(['exact', 'month', 'quarter', 'half', 'year'])
-  .optional()
-  .default('exact');
+//
+// `.catch('exact')` makes this defensive: the model routinely emits `null`
+// (mirroring a null end_date) or an off-enum token ("H2", "day"), and a strict
+// enum would fail the WHOLE extraction with a 500. Any missing / null / invalid
+// value degrades to 'exact' instead of dropping every event in the import.
+const datePrecision = z.enum(['exact', 'month', 'quarter', 'half', 'year']).catch('exact');
 
 const existingMatch = z.object({
   kind: z.literal('existing'),
