@@ -200,6 +200,13 @@ begin
   t_evoke03 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_sg, p_name=>'EVOKE-03 (1L PD-L1 >=50%)', p_identifier=>'NCT05609968',
                 p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2023-02-01', p_phase_end_date=>'2027-06-30', p_indication_name=>v_nsclc);
 
+  -- Ring placement: give the core assets their real NSCLC market stage so the
+  -- bullseye spreads radially (competitors ahead, Pfizer's sigvotatug the P3
+  -- laggard after the miss) instead of everything clustering at P3.
+  update public.asset_indications set development_status='LAUNCHED', development_status_source='analyst' where asset_id in (a_dato, a_enh); -- Datroway, Enhertu launched in NSCLC
+  update public.asset_indications set development_status='APPROVED', development_status_source='analyst' where asset_id in (a_teliso, a_sac); -- Emrelis (c-Met), sac-TMT (China EGFR)
+  update public.asset_indications set development_status='P3', development_status_source='analyst' where asset_id in (a_sv, a_sg, a_her3); -- sigvotatug (miss), Trodelvy (EVOKE-01 fail), patritumab (BLA withdrawn)
+
   -- editorial events (the interesting glyphs). Trial Start/End dots are auto-created by create_trial.
   perform pg_temp.mk_event(p_space, EVT_TOP, 'SigVie-002 misses primary OS endpoint', '2026-06-22', 'asset', a_sv, 'forecasted', p_asof, 'high', 'exact',
     'Pivotal phase 3 in 2L+ non-squamous NSCLC did not meet its primary overall-survival endpoint vs docetaxel. Stronger trend in the 1-prior-line subgroup; full data to a congress.');
