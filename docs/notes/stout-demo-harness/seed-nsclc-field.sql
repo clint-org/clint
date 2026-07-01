@@ -44,46 +44,46 @@ begin
 
   -- AstraZeneca Tagrisso (EGFR TKI, marketed SOC)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_az, p_name=>'Osimertinib', p_generic_name=>'osimertinib (Tagrisso)', p_moa_names=>array['EGFR TKI'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'FLAURA2', p_identifier=>'NCT04035486', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2020-03-01', p_phase_end_date=>'2025-12-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'FLAURA2', p_identifier=>'NCT04035486', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2020-03-01', p_phase_end_date=>'2025-12-31', p_indication_name=>'EGFR-mutant NSCLC');
   update public.asset_indications set development_status='LAUNCHED', development_status_source='analyst' where asset_id=a;
   perform pg_temp.mk_event(p_space, EVT_APPR, 'FDA approval — osimertinib + chemo 1L (FLAURA2)', '2024-02-16', 'asset', a, 'forecasted', p_asof, 'high', 'exact');
 
   -- Merck Keytruda (anti-PD-1, category SOC)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_merck, p_name=>'Pembrolizumab', p_generic_name=>'pembrolizumab (Keytruda)', p_moa_names=>array['Anti-PD-1'], p_roa_names=>array['Intravenous']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'KEYNOTE-189', p_identifier=>'NCT02578680', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2016-02-01', p_phase_end_date=>'2025-06-30', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'KEYNOTE-189', p_identifier=>'NCT02578680', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2016-02-01', p_phase_end_date=>'2025-06-30', p_indication_name=>'All-comers NSCLC');
   update public.asset_indications set development_status='LAUNCHED', development_status_source='analyst' where asset_id=a;
   perform pg_temp.mk_event(p_space, EVT_APPR, 'Keytruda Qlex (subcutaneous) FDA approval', '2025-09-19', 'asset', a, 'forecasted', p_asof, 'high', 'exact', '2028 LOE defense.');
 
   -- Pfizer Lorbrena (ALK TKI, marketed)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_pfizer, p_name=>'Lorlatinib', p_generic_name=>'lorlatinib (Lorbrena)', p_moa_names=>array['ALK TKI'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'CROWN', p_identifier=>'NCT03052608', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2017-05-01', p_phase_end_date=>'2025-12-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'CROWN', p_identifier=>'NCT03052608', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2017-05-01', p_phase_end_date=>'2025-12-31', p_indication_name=>'ALK+ NSCLC');
   update public.asset_indications set development_status='LAUNCHED', development_status_source='analyst' where asset_id=a;
   perform pg_temp.mk_event(p_space, EVT_TOP, 'CROWN 5-year PFS 60% vs 8% (1L ALK)', '2024-09-01', 'asset', a, 'forecasted', p_asof, 'low', 'month');
 
   -- J&J Rybrevant (EGFR-MET bispecific, marketed 1L)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_jnj, p_name=>'Amivantamab', p_generic_name=>'amivantamab (Rybrevant)', p_moa_names=>array['EGFR-MET bispecific'], p_roa_names=>array['Intravenous']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'MARIPOSA', p_identifier=>'NCT04487080', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2020-11-01', p_phase_end_date=>'2027-12-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'MARIPOSA', p_identifier=>'NCT04487080', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2020-11-01', p_phase_end_date=>'2027-12-31', p_indication_name=>'EGFR-mutant NSCLC');
   update public.asset_indications set development_status='LAUNCHED', development_status_source='analyst' where asset_id=a;
   perform pg_temp.mk_event(p_space, EVT_APPR, 'FDA approval — amivantamab + lazertinib 1L EGFRm (MARIPOSA)', '2024-08-19', 'asset', a, 'forecasted', p_asof, 'high', 'exact');
 
   -- Amgen Lumakras (KRAS G12C)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_amgen, p_name=>'Sotorasib', p_generic_name=>'sotorasib (Lumakras)', p_moa_names=>array['KRAS G12C inhibitor'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'CodeBreaK 200', p_identifier=>'NCT04303780', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2020-06-01', p_phase_end_date=>'2024-12-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'CodeBreaK 200', p_identifier=>'NCT04303780', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2020-06-01', p_phase_end_date=>'2024-12-31', p_indication_name=>'KRAS G12C NSCLC');
   update public.asset_indications set development_status='APPROVED', development_status_source='analyst' where asset_id=a;
   perform pg_temp.mk_event(p_space, EVT_TOP, 'ODAC votes against accelerated-to-full conversion', '2023-10-05', 'asset', a, 'forecasted', p_asof, 'low', 'month');
 
   -- BMS Krazati (KRAS G12C) + Opdivo (PD-1)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_bms, p_name=>'Adagrasib', p_generic_name=>'adagrasib (Krazati)', p_moa_names=>array['KRAS G12C inhibitor'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'KRYSTAL-12', p_identifier=>'NCT04685135', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2021-02-01', p_phase_end_date=>'2025-06-30', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'KRYSTAL-12', p_identifier=>'NCT04685135', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2021-02-01', p_phase_end_date=>'2025-06-30', p_indication_name=>'KRAS G12C NSCLC');
   update public.asset_indications set development_status='APPROVED', development_status_source='analyst' where asset_id=a;
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_bms, p_name=>'Nivolumab', p_generic_name=>'nivolumab (Opdivo)', p_moa_names=>array['Anti-PD-1'], p_roa_names=>array['Intravenous']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'CheckMate-816', p_identifier=>'NCT02998528', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2017-03-01', p_phase_end_date=>'2024-12-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'CheckMate-816', p_identifier=>'NCT02998528', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2017-03-01', p_phase_end_date=>'2024-12-31', p_indication_name=>'All-comers NSCLC');
   update public.asset_indications set development_status='LAUNCHED', development_status_source='analyst' where asset_id=a;
   perform pg_temp.mk_event(p_space, EVT_APPR, 'Opdivo Qvantig (subcutaneous) FDA approval', '2024-12-27', 'asset', a, 'forecasted', p_asof, 'low', 'exact');
 
   -- Summit ivonescimab (PD-1xVEGF bispecific) — the disruptor
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_summit, p_name=>'Ivonescimab', p_generic_name=>'ivonescimab (AK112)', p_moa_names=>array['PD-1/VEGF bispecific'], p_roa_names=>array['Intravenous']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'HARMONi-3 (1L vs pembro+chemo)', p_identifier=>'NCT05899608', p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2023-07-01', p_phase_end_date=>'2026-12-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'HARMONi-3 (1L vs pembro+chemo)', p_identifier=>'NCT05899608', p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2023-07-01', p_phase_end_date=>'2026-12-31', p_indication_name=>'All-comers NSCLC');
   perform pg_temp.mk_event(p_space, EVT_TOP, 'HARMONi-2: ivonescimab beats pembrolizumab (WCLC)', '2024-09-08', 'asset', a, 'forecasted', p_asof, 'high', 'exact', 'First molecule to beat Keytruda head-to-head on PFS.');
   perform pg_temp.mk_event(p_space, EVT_TOP, 'HARMONi global: PFS hit, OS missed (HR 0.79)', '2025-05-30', 'asset', a, 'forecasted', p_asof, 'high', 'exact');
   perform pg_temp.mk_event(p_space, EVT_TOP, 'HARMONi-3 1L final PFS', '2026-11-30', 'asset', a, 'forecasted', p_asof, 'high', 'quarter');
@@ -161,46 +161,46 @@ begin
 
   -- Roche: Alecensa (ALK) + Tecentriq (PD-L1)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_roche, p_name=>'Alectinib', p_generic_name=>'alectinib (Alecensa)', p_moa_names=>array['ALK TKI'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'ALINA (adjuvant)', p_identifier=>'NCT03456076', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2018-08-01', p_phase_end_date=>'2025-12-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'ALINA (adjuvant)', p_identifier=>'NCT03456076', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2018-08-01', p_phase_end_date=>'2025-12-31', p_indication_name=>'ALK+ NSCLC');
   update public.asset_indications set development_status='LAUNCHED', development_status_source='analyst' where asset_id=a;
   perform pg_temp.mk_event(p_space, EVT_APPR, 'FDA approval — alectinib adjuvant ALK (ALINA)', '2024-04-18', 'asset', a, 'forecasted', p_asof, 'low', 'exact');
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_roche, p_name=>'Atezolizumab', p_generic_name=>'atezolizumab (Tecentriq)', p_moa_names=>array['Anti-PD-L1'], p_roa_names=>array['Intravenous']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'IMpower010 (adjuvant)', p_identifier=>'NCT02486718', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2015-08-01', p_phase_end_date=>'2024-12-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'IMpower010 (adjuvant)', p_identifier=>'NCT02486718', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2015-08-01', p_phase_end_date=>'2024-12-31', p_indication_name=>'All-comers NSCLC');
   update public.asset_indications set development_status='LAUNCHED', development_status_source='analyst' where asset_id=a;
 
   -- AstraZeneca Imfinzi (PD-L1)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_az, p_name=>'Durvalumab', p_generic_name=>'durvalumab (Imfinzi)', p_moa_names=>array['Anti-PD-L1'], p_roa_names=>array['Intravenous']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'AEGEAN (perioperative)', p_identifier=>'NCT03800134', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2019-01-01', p_phase_end_date=>'2027-12-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'AEGEAN (perioperative)', p_identifier=>'NCT03800134', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2019-01-01', p_phase_end_date=>'2027-12-31', p_indication_name=>'All-comers NSCLC');
   update public.asset_indications set development_status='LAUNCHED', development_status_source='analyst' where asset_id=a;
   perform pg_temp.mk_event(p_space, EVT_APPR, 'FDA approval — durvalumab perioperative (AEGEAN)', '2024-08-15', 'asset', a, 'forecasted', p_asof, 'low', 'exact');
 
   -- Eli Lilly Retevmo (RET)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_lilly, p_name=>'Selpercatinib', p_generic_name=>'selpercatinib (Retevmo)', p_moa_names=>array['RET inhibitor'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'LIBRETTO-431', p_identifier=>'NCT04194944', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2020-02-01', p_phase_end_date=>'2025-06-30', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'LIBRETTO-431', p_identifier=>'NCT04194944', p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2020-02-01', p_phase_end_date=>'2025-06-30', p_indication_name=>'RET+ NSCLC');
   update public.asset_indications set development_status='LAUNCHED', development_status_source='analyst' where asset_id=a;
 
   -- Novartis Tabrecta (MET)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_novartis, p_name=>'Capmatinib', p_generic_name=>'capmatinib (Tabrecta)', p_moa_names=>array['MET inhibitor'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'GEOMETRY mono-1', p_identifier=>'NCT02414139', p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2015-06-01', p_phase_end_date=>'2024-06-30', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'GEOMETRY mono-1', p_identifier=>'NCT02414139', p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2015-06-01', p_phase_end_date=>'2024-06-30', p_indication_name=>'MET+ NSCLC');
   update public.asset_indications set development_status='APPROVED', development_status_source='analyst' where asset_id=a;
 
   -- Nuvalent: neladalkib (ALK post-TKI) + zidesamtinib (ROS1) — the GSK acquisition assets
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_nuvalent, p_name=>'Neladalkib', p_generic_name=>'neladalkib (NVL-655)', p_moa_names=>array['ALK TKI'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'ALKOVE-1', p_identifier=>'NCT05384626', p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2022-05-01', p_phase_end_date=>'2027-06-30', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'ALKOVE-1', p_identifier=>'NCT05384626', p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2022-05-01', p_phase_end_date=>'2027-06-30', p_indication_name=>'ALK+ NSCLC');
   perform pg_temp.mk_event(p_space, EVT_FILE, 'NDA filed — neladalkib (ALK post-TKI)', '2026-04-07', 'asset', a, 'forecasted', p_asof, 'high', 'exact');
   perform pg_temp.mk_event(p_space, EVT_APPR, 'Anticipated FDA decision — neladalkib', '2026-11-27', 'asset', a, 'forecasted', p_asof, 'high', 'month');
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_nuvalent, p_name=>'Zidesamtinib', p_generic_name=>'zidesamtinib (NVL-520)', p_moa_names=>array['ROS1 TKI'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'ARROS-1', p_identifier=>'NCT05118789', p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2021-11-01', p_phase_end_date=>'2027-09-30', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'ARROS-1', p_identifier=>'NCT05118789', p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2021-11-01', p_phase_end_date=>'2027-09-30', p_indication_name=>'ROS1+ NSCLC');
   perform pg_temp.mk_event(p_space, EVT_APPR, 'Anticipated FDA decision — zidesamtinib (ROS1 PDUFA)', '2026-09-18', 'asset', a, 'forecasted', p_asof, 'high', 'month');
 
   -- Revolution Medicines daraxonrasib (pan-RAS)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_revmed, p_name=>'Daraxonrasib', p_generic_name=>'daraxonrasib (RMC-6236)', p_moa_names=>array['pan-RAS(ON) inhibitor'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'RASolve-301 (2L NSCLC)', p_identifier=>'NCT06881784', p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2025-05-01', p_phase_end_date=>'2027-12-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'RASolve-301 (2L NSCLC)', p_identifier=>'NCT06881784', p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2025-05-01', p_phase_end_date=>'2027-12-31', p_indication_name=>'KRAS G12C NSCLC');
   perform pg_temp.mk_event(p_space, EVT_TOP, 'RASolve-301 2L NSCLC readout', '2027-03-31', 'asset', a, 'forecasted', p_asof, 'high', 'quarter');
 
   -- Boehringer zongertinib (HER2 TKI)
   a := public.create_asset(p_space_id=>p_space, p_company_id=>c_bi, p_name=>'Zongertinib', p_generic_name=>'zongertinib (Hernexeos)', p_moa_names=>array['HER2 TKI'], p_roa_names=>array['Oral']);
-  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'Beamion LUNG-1', p_identifier=>'NCT04886804', p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2021-06-01', p_phase_end_date=>'2027-03-31', p_indication_name=>N);
+  t := public.create_trial(p_space_id=>p_space, p_asset_id=>a, p_name=>'Beamion LUNG-1', p_identifier=>'NCT04886804', p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2021-06-01', p_phase_end_date=>'2027-03-31', p_indication_name=>'HER2-mutant NSCLC');
   update public.asset_indications set development_status='APPROVED', development_status_source='analyst' where asset_id=a;
   perform pg_temp.mk_event(p_space, EVT_APPR, 'FDA accelerated approval — zongertinib HER2 2L', '2025-08-08', 'asset', a, 'forecasted', p_asof, 'high', 'exact');
 

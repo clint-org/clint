@@ -173,32 +173,34 @@ begin
 
   -- trials (real NCT IDs). SigVie-002 concluded just before "today" so its Trial End
   -- is past (not the home hero) and the awaited full readout becomes the next event.
+  -- Per-asset NSCLC biomarker niche so the Indication cut has multiple wedges
+  -- (and reinforces the "which niche wins" pitch), not one flat "NSCLC" spoke.
   t_sigvie := public.create_trial(p_space_id=>p_space, p_asset_id=>a_sv, p_name=>'SigVie-002', p_identifier=>'NCT06012435',
-                p_status=>'Completed', p_phase_type=>'P3', p_phase_start_date=>'2023-09-01', p_phase_end_date=>'2026-06-25', p_indication_name=>v_nsclc);
+                p_status=>'Completed', p_phase_type=>'P3', p_phase_start_date=>'2023-09-01', p_phase_end_date=>'2026-06-25', p_indication_name=>'Non-squamous NSCLC');
   t_sv1l := public.create_trial(p_space_id=>p_space, p_asset_id=>a_sv, p_name=>'Sigvotatug + pembrolizumab (1L PD-L1 >=50%)', p_identifier=>'NCT06758401',
-                p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2025-01-15', p_phase_end_date=>'2028-06-30', p_indication_name=>v_nsclc);
+                p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2025-01-15', p_phase_end_date=>'2028-06-30', p_indication_name=>'Non-squamous NSCLC');
   t_tl01 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_dato, p_name=>'TROPION-Lung01', p_identifier=>'NCT04656652',
-                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2021-02-01', p_phase_end_date=>'2024-12-31', p_indication_name=>v_nsclc);
+                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2021-02-01', p_phase_end_date=>'2024-12-31', p_indication_name=>'EGFR-mutant NSCLC');
   t_tl08 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_dato, p_name=>'TROPION-Lung08 (1L PD-L1 >=50%)', p_identifier=>'NCT05215340',
-                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2022-11-01', p_phase_end_date=>'2026-12-31', p_indication_name=>v_nsclc);
+                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2022-11-01', p_phase_end_date=>'2026-12-31', p_indication_name=>'EGFR-mutant NSCLC');
   t_tl07 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_dato, p_name=>'TROPION-Lung07 (1L PD-L1 <50%)', p_identifier=>'NCT05555732',
-                p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2023-01-01', p_phase_end_date=>'2027-06-30', p_indication_name=>v_nsclc);
+                p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2023-01-01', p_phase_end_date=>'2027-06-30', p_indication_name=>'EGFR-mutant NSCLC');
   t_dl02 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_enh, p_name=>'DESTINY-Lung02', p_identifier=>'NCT04644237',
-                p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2020-12-01', p_phase_end_date=>'2024-06-30', p_indication_name=>v_nsclc);
+                p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2020-12-01', p_phase_end_date=>'2024-06-30', p_indication_name=>'HER2-mutant NSCLC');
   t_dl04 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_enh, p_name=>'DESTINY-Lung04 (1L HER2-mut)', p_identifier=>'NCT05048797',
-                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2021-12-01', p_phase_end_date=>'2027-03-31', p_indication_name=>v_nsclc);
+                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2021-12-01', p_phase_end_date=>'2027-03-31', p_indication_name=>'HER2-mutant NSCLC');
   t_otl05 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_sac, p_name=>'OptiTROP-Lung05 (1L PD-L1+)', p_identifier=>'NCT06448312',
-                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2024-06-01', p_phase_end_date=>'2026-11-30', p_indication_name=>v_nsclc);
+                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2024-06-01', p_phase_end_date=>'2026-11-30', p_indication_name=>'EGFR-mutant NSCLC');
   t_mk009 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_sac, p_name=>'MK-2870-009 (EGFR post-TKI)', p_identifier=>'NCT06305754',
-                p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2024-03-01', p_phase_end_date=>'2027-06-30', p_indication_name=>v_nsclc);
+                p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2024-03-01', p_phase_end_date=>'2027-06-30', p_indication_name=>'EGFR-mutant NSCLC');
   t_lumi := public.create_trial(p_space_id=>p_space, p_asset_id=>a_teliso, p_name=>'LUMINOSITY (c-Met-high)', p_identifier=>'NCT03539536',
-                p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2019-01-01', p_phase_end_date=>'2024-12-31', p_indication_name=>v_nsclc);
+                p_status=>'Active, not recruiting', p_phase_type=>'P2', p_phase_start_date=>'2019-01-01', p_phase_end_date=>'2024-12-31', p_indication_name=>'c-Met-high NSCLC');
   t_her2 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_her3, p_name=>'HERTHENA-Lung02 (EGFR post-TKI)', p_identifier=>'NCT05338970',
-                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2021-09-01', p_phase_end_date=>'2025-03-31', p_indication_name=>v_nsclc);
+                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2021-09-01', p_phase_end_date=>'2025-03-31', p_indication_name=>'EGFR-mutant NSCLC');
   t_evoke01 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_sg, p_name=>'EVOKE-01', p_identifier=>'NCT05089734',
-                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2021-12-01', p_phase_end_date=>'2024-06-30', p_indication_name=>v_nsclc);
+                p_status=>'Active, not recruiting', p_phase_type=>'P3', p_phase_start_date=>'2021-12-01', p_phase_end_date=>'2024-06-30', p_indication_name=>'All-comers NSCLC');
   t_evoke03 := public.create_trial(p_space_id=>p_space, p_asset_id=>a_sg, p_name=>'EVOKE-03 (1L PD-L1 >=50%)', p_identifier=>'NCT05609968',
-                p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2023-02-01', p_phase_end_date=>'2027-06-30', p_indication_name=>v_nsclc);
+                p_status=>'Recruiting', p_phase_type=>'P3', p_phase_start_date=>'2023-02-01', p_phase_end_date=>'2027-06-30', p_indication_name=>'All-comers NSCLC');
 
   -- Ring placement: give the core assets their real NSCLC market stage so the
   -- bullseye spreads radially (competitors ahead, Pfizer's sigvotatug the P3
