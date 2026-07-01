@@ -91,6 +91,17 @@ beforeAll(async () => {
       payload: { from: 'PHASE2', to: 'PHASE3' },
       occurred_at: '2026-01-04T00:00:00Z',
     },
+    {
+      // The visible Change text (drug name) lives ONLY in the payload -- the
+      // RPC title for this type is just "Intervention Changed". Search must
+      // reach payload content so a query for what the user SEES matches.
+      space_id: spaceId,
+      trial_id: trialId,
+      source: 'ctgov',
+      event_type: 'intervention_changed',
+      payload: { added: [{ name: 'Tirzepatide 15mg', type: 'Experimental' }] },
+      occurred_at: '2026-01-05T00:00:00Z',
+    },
   ]);
   if (ceErr) throw new Error(`insert change events: ${ceErr.message}`);
 }, 120_000);
@@ -102,12 +113,14 @@ afterAll(async () => {
 async function listDetected(params: {
   sources?: string[];
   types?: string[];
+  search?: string;
 }): Promise<DetectedRow[]> {
   const { data, error } = await svc.rpc('get_events_page_data', {
     p_space_id: spaceId,
     p_source_type: 'detected',
     p_change_sources: params.sources ?? null,
     p_change_event_types: params.types ?? null,
+    p_search: params.search ?? null,
     p_limit: 50,
     p_offset: 0,
   });
@@ -120,13 +133,13 @@ async function listDetected(params: {
 }
 
 describe('get_events_page_data change-source / change-type filters', () => {
-  it('returns all four detected rows when unfiltered', async () => {
-    expect(await listDetected({})).toHaveLength(4);
+  it('returns all five detected rows when unfiltered', async () => {
+    expect(await listDetected({})).toHaveLength(5);
   });
 
   it('filters by a single source', async () => {
     const rows = await listDetected({ sources: ['ctgov'] });
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(3);
     expect(rows.every((r) => r.change_source === 'ctgov')).toBe(true);
   });
 
@@ -149,6 +162,14 @@ describe('get_events_page_data change-source / change-type filters', () => {
 
   it('treats an empty-array filter as no narrowing', async () => {
     // The RPC normalizes '{}' -> null, so an empty array must not exclude rows.
-    expect(await listDetected({ sources: [] })).toHaveLength(4);
+    expect(await listDetected({ sources: [] })).toHaveLength(5);
+  });
+
+  it('search matches text that lives only in the change payload (drug name)', async () => {
+    // "Tirzepatide" appears only in the intervention_changed payload, not in the
+    // RPC-composed title -- but it IS what the Change column renders. Search must
+    // reach it, else querying for what the user sees returns nothing.
+    const rows = await listDetected({ search: 'tirz' });
+    expect(rows).toEqual([{ change_source: 'ctgov', change_event_type: 'intervention_changed' }]);
   });
 });

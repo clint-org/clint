@@ -209,12 +209,15 @@ export async function seedDivergentIndicationStatus(
 export async function seedActivityDetectedChanges(world: ScratchWorld): Promise<SeedIds> {
   const ids = await seedBasics(world);
 
+  // Known spread so filter assertions are deterministic: 3 CT.gov / 2 analyst /
+  // 1 import; 2 status_changed; and one intervention_changed whose drug name
+  // lives ONLY in the payload (exercises the payload-search fix).
   const rows: { source: string; type: string; payload: Record<string, unknown>; day: string }[] = [
     { source: 'ctgov', type: 'status_changed', payload: { from: 'RECRUITING', to: 'ACTIVE_NOT_RECRUITING' }, day: '2026-02-01' },
     { source: 'ctgov', type: 'date_moved', payload: { which_date: 'primary_completion', direction: 'delay', days_diff: '120' }, day: '2026-02-05' },
-    { source: 'ctgov', type: 'phase_transitioned', payload: { from: 'PHASE2', to: 'PHASE3' }, day: '2026-02-09' },
+    { source: 'ctgov', type: 'intervention_changed', payload: { added: [{ name: 'Tirzepatide 15mg', type: 'Experimental' }] }, day: '2026-02-09' },
     { source: 'analyst', type: 'status_changed', payload: { from: 'ACTIVE_NOT_RECRUITING', to: 'COMPLETED' }, day: '2026-02-12' },
-    { source: 'analyst', type: 'date_moved', payload: { which_date: 'primary_completion', direction: 'accelerate', days_diff: '30' }, day: '2026-02-15' },
+    { source: 'analyst', type: 'phase_transitioned', payload: { from: 'PHASE2', to: 'PHASE3' }, day: '2026-02-15' },
     { source: 'source_import', type: 'enrollment_target_changed', payload: { from: '400', to: '650' }, day: '2026-02-18' },
   ];
 
