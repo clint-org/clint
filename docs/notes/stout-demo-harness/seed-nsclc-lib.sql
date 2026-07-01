@@ -15,6 +15,28 @@ begin
   return s;
 end $f$;
 
+-- ensure_moa_roa: create the space's mechanism-of-action / route-of-administration
+-- rows BEFORE assets. create_asset -> link_asset_moa_roa only LINKS to pre-existing
+-- MoA/RoA rows (it never creates them), so without this the MoA/RoA join tables stay
+-- empty and every MoA/RoA-grouped view (heatmap, bullseye "which science") is blank.
+create or replace function pg_temp.ensure_moa_roa(p_space uuid, p_moas text[], p_roas text[])
+returns void language plpgsql as $f$
+declare v_name text;
+begin
+  if p_moas is not null then
+    foreach v_name in array p_moas loop
+      insert into public.mechanisms_of_action(space_id, name, created_by, display_order)
+        values (p_space, v_name, auth.uid(), 0) on conflict (space_id, name) do nothing;
+    end loop;
+  end if;
+  if p_roas is not null then
+    foreach v_name in array p_roas loop
+      insert into public.routes_of_administration(space_id, name, created_by, display_order)
+        values (p_space, v_name, auth.uid(), 0) on conflict (space_id, name) do nothing;
+    end loop;
+  end if;
+end $f$;
+
 create or replace function pg_temp.grant_members(p_space uuid, p_members uuid[])
 returns void language plpgsql as $f$
 declare m uuid;
@@ -121,6 +143,11 @@ declare
 begin
   if (select count(*) from public.companies where space_id = p_space) > 0 then return; end if;
 
+  -- MoA/RoA rows must exist before create_asset can link them (core ADC set)
+  perform pg_temp.ensure_moa_roa(p_space,
+    array['Integrin beta-6 directed ADC','TROP2-directed ADC','HER2-directed ADC','c-Met-directed ADC','HER3-directed ADC'],
+    array['Intravenous']);
+
   -- companies (with logos)
   co_pfizer := public.create_company(p_space_id=>p_space, p_name=>'Pfizer',          p_logo_url=>L_BRAND||'pfizer.com');
   co_az     := public.create_company(p_space_id=>p_space, p_name=>'AstraZeneca',     p_logo_url=>L_BRAND||'astrazeneca.com');
@@ -225,12 +252,12 @@ begin
       E'Pfizer''s near-term decision is **binary**:\n\n- chase a **narrow 1-prior-line label**, or\n- pivot weight onto the **1L pembrolizumab combination**, a lane where Dato-DXd and sac-TMT are already ahead.\n\nThe **biomarker-niche path** is the credible plan B: trastuzumab deruxtecan (HER2-mutant) and telisotuzumab vedotin (c-Met-high) both cleared the FDA by going narrow.\n\n**Recommended next steps:**\n\n1. Pressure-test the regulatory viability of the 1-prior-line subgroup before committing 1L resourcing.\n2. Model a sac-TMT global filing in 2026 compressing the first-line window.\n3. Keep the integrin-beta-6 biomarker-niche option open as a fallback.',
       (p_asof - 3)::timestamptz,
       p_links => jsonb_build_array(
-        jsonb_build_object('entity_type','asset','entity_id',a_dato::text,'relationship_type','Competitor','gloss','TROP2 ADC; broadest 1L program, the franchise to beat','display_order',0),
-        jsonb_build_object('entity_type','asset','entity_id',a_sac::text,'relationship_type','Competitor','gloss','First ADC + IO to hit a 1L NSCLC primary (OptiTROP-Lung05)','display_order',1),
-        jsonb_build_object('entity_type','asset','entity_id',a_enh::text,'relationship_type','Predecessor','gloss','Biomarker-niche precedent: HER2-mutant','display_order',2),
-        jsonb_build_object('entity_type','asset','entity_id',a_teliso::text,'relationship_type','Predecessor','gloss','Biomarker-niche precedent: c-Met-high','display_order',3),
-        jsonb_build_object('entity_type','asset','entity_id',a_sg::text,'relationship_type','Same class','gloss','2L ADC monotherapy OS miss (EVOKE-01)','display_order',4),
-        jsonb_build_object('entity_type','asset','entity_id',a_her3::text,'relationship_type','Same class','gloss','OS miss and withdrawn US filing (HERTHENA-Lung02)','display_order',5)));
+        jsonb_build_object('entity_type','product','entity_id',a_dato::text,'relationship_type','Competitor','gloss','TROP2 ADC; broadest 1L program, the franchise to beat','display_order',0),
+        jsonb_build_object('entity_type','product','entity_id',a_sac::text,'relationship_type','Competitor','gloss','First ADC + IO to hit a 1L NSCLC primary (OptiTROP-Lung05)','display_order',1),
+        jsonb_build_object('entity_type','product','entity_id',a_enh::text,'relationship_type','Predecessor','gloss','Biomarker-niche precedent: HER2-mutant','display_order',2),
+        jsonb_build_object('entity_type','product','entity_id',a_teliso::text,'relationship_type','Predecessor','gloss','Biomarker-niche precedent: c-Met-high','display_order',3),
+        jsonb_build_object('entity_type','product','entity_id',a_sg::text,'relationship_type','Same class','gloss','2L ADC monotherapy OS miss (EVOKE-01)','display_order',4),
+        jsonb_build_object('entity_type','product','entity_id',a_her3::text,'relationship_type','Same class','gloss','OS miss and withdrawn US filing (HERTHENA-Lung02)','display_order',5)));
     perform pg_temp.mk_intel(p_space, 'space', p_space,
       'NSCLC ADC field: the first-line prize is still open',
       'AstraZeneca/Daiichi own the category with two approved NSCLC ADCs (Dato-DXd, Enhertu) and the deepest 1L combination pipeline. Every 2L ADC monotherapy story is commoditizing — three ADCs have now failed to beat docetaxel on OS. The unclaimed prize is ADC + checkpoint inhibitor in first line, and sac-TMT (OptiTROP-Lung05) is the first to prove it can hit a 1L primary.',

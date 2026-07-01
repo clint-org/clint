@@ -28,6 +28,10 @@ declare
   procedure_done boolean;
 begin
   if p_tier < 2 then return; end if;
+  -- MoA/RoA rows for the tier-2 field assets (must exist before create_asset links them)
+  perform pg_temp.ensure_moa_roa(p_space,
+    array['EGFR TKI','Anti-PD-1','ALK TKI','EGFR-MET bispecific','KRAS G12C inhibitor','PD-1/VEGF bispecific'],
+    array['Oral','Intravenous']);
   select id into c_pfizer from public.companies where space_id=p_space and name='Pfizer';
   select id into c_az from public.companies where space_id=p_space and name='AstraZeneca';
   select id into c_merck from public.companies where space_id=p_space and name='Merck';
@@ -144,6 +148,10 @@ begin
 
   if p_tier < 3 then return; end if;
   -- ================= TIER 3: the rest of the field =================
+  -- MoA/RoA rows for the tier-3 field assets (must exist before create_asset links them)
+  perform pg_temp.ensure_moa_roa(p_space,
+    array['Anti-PD-L1','RET inhibitor','MET inhibitor','ROS1 TKI','pan-RAS(ON) inhibitor','HER2 TKI'],
+    array['Oral','Intravenous']);
   c_roche    := public.create_company(p_space_id=>p_space, p_name=>'Roche', p_logo_url=>L||'roche.com');
   c_lilly    := public.create_company(p_space_id=>p_space, p_name=>'Eli Lilly', p_logo_url=>L||'lilly.com');
   c_novartis := public.create_company(p_space_id=>p_space, p_name=>'Novartis', p_logo_url=>L||'novartis.com');
