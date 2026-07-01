@@ -196,3 +196,103 @@ export async function seedDivergentIndicationStatus(
     approvedIndicationName,
   };
 }
+
+export interface LogoCompany {
+  companyId: string;
+  assetId: string;
+  companyName: string;
+  logoUrl: string;
+}
+
+export interface SeedCompanyLogosResult {
+  /** Correct-domain company (biogen.com): blank before the fix, real logo after. */
+  biogen: LogoCompany;
+  /** Wrong-domain company (arrowhead.com, from name-guessed import): blank before,
+   *  lettermark after -- the residual data issue the domain correction addresses. */
+  arrowhead: LogoCompany;
+}
+
+/**
+ * Seed the issue-#194 repro: companies carrying a raw Brandfetch Logo Link URL
+ * (`https://cdn.brandfetch.io/<domain>/symbol`) exactly as the importer stores
+ * it. Each gets an asset + P3 Obesity trial so it plots on the bullseye and its
+ * company tile renders in the asset detail panel. Rendered raw (pre-fix) the CDN
+ * returns its blank hotlink-protection placeholder; routed through app-brand-logo
+ * (post-fix) the client id + lettermark resolve a real logo (biogen.com) or a
+ * clean lettermark (the wrong-domain arrowhead.com).
+ */
+export interface SeedCompanyLogosOptions {
+  /**
+   * When true, seed the *corrected* Brandfetch domains (the data half of the
+   * #194 resolution): Arrowhead uses `arrowheadpharma.com/icon` instead of the
+   * name-guessed `arrowhead.com`. Used for the "after" capture so the tile shows
+   * the real logo. Default false reproduces the shipped-bad prod data.
+   */
+  fixDomains?: boolean;
+}
+
+export async function seedCompanyLogos(
+  world: ScratchWorld,
+  options: SeedCompanyLogosOptions = {}
+): Promise<SeedCompanyLogosResult> {
+  const api = apiAs(world, 'owner');
+  const arrowheadLogo = options.fixDomains
+    ? 'https://cdn.brandfetch.io/arrowheadpharma.com/icon'
+    : 'https://cdn.brandfetch.io/arrowhead.com/symbol';
+
+  async function makeCompanyWithAsset(
+    name: string,
+    logoUrl: string,
+    assetName: string,
+    genericName: string
+  ): Promise<LogoCompany> {
+    const company = await api.rpc('create_company', {
+      p_space_id: world.spaceId,
+      p_name: name,
+      p_logo_url: logoUrl,
+    });
+    if (company.error) throw new Error(`seed create_company (${name}): ${company.error.message}`);
+    const companyId = idOf(company.data);
+
+    const asset = await api.rpc('create_asset', {
+      p_space_id: world.spaceId,
+      p_company_id: companyId,
+      p_name: assetName,
+      p_generic_name: genericName,
+      p_moa_names: ['ANGPTL3 inhibitor'],
+      p_roa_names: ['Subcutaneous'],
+    });
+    if (asset.error) throw new Error(`seed create_asset (${name}): ${asset.error.message}`);
+    const assetId = idOf(asset.data);
+
+    const trial = await api.rpc('create_trial', {
+      p_space_id: world.spaceId,
+      p_asset_id: assetId,
+      p_name: `${assetName} P3 ${world.id}`,
+      p_identifier: null,
+      p_status: 'Recruiting',
+      p_phase_type: 'P3',
+      p_phase_start_date: '2024-01-01',
+      p_phase_end_date: '2026-12-31',
+      p_indication_name: 'Obesity',
+    });
+    if (trial.error) throw new Error(`seed create_trial (${name}): ${trial.error.message}`);
+
+    return { companyId, assetId, companyName: name, logoUrl };
+  }
+
+  const biogen = await makeCompanyWithAsset(
+    'Biogen',
+    'https://cdn.brandfetch.io/biogen.com/symbol',
+    `BIIB-ANG3 ${world.id}`,
+    'biogen-ang3'
+  );
+  const arrowhead = await makeCompanyWithAsset(
+    'Arrowhead Pharmaceuticals',
+    arrowheadLogo,
+    `ARO-ANG3 ${world.id}`,
+    'aro-ang3'
+  );
+
+  return { biogen, arrowhead };
+}
