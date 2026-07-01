@@ -5,13 +5,14 @@ import { jwtSubject } from '../auth';
 import { createCtgovClient } from '../ctgov-sync/ctgov-client';
 import { buildNctPrompt, type NctStudyRecord } from './nct-prompt-builder';
 import { toStudyRecord, applyNctTrialNames } from './nct-study-record';
-import { classifyLlmFailure, llmFailureMessage } from './call-outcome';
+import { isLlmAbort, llmFailureMessage } from './call-outcome';
 import { closeAiCall } from './ai-call-close';
+import { chunkArray, mergeSubBatches, type SubBatchExtraction } from './nct-merge';
 import { validateExtraction } from './response-validator';
 import { computeFuzzyAlternates } from './fuzzy-alternates';
 import { applyLogoEnrichment, resolveProposalNames } from './post-extract';
 import { extractionTemperature } from './temperature';
-import type { NctResolveRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
+import type { NctResolveRequest, ExtractResponse, InventorySnapshot } from './types';
 
 const NCT_REGEX = /^NCT\d{8}$/i;
 const MAX_NCTS = 50;
@@ -19,6 +20,14 @@ const CTGOV_FETCH_TIMEOUT_MS = 8_000;
 // 90s headroom for Sonnet extractions; under Cloudflare's ~100s edge
 // timeout so the CDN can't 524 before our own abort. Mirrors handler.ts.
 const LLM_TIMEOUT_MS = 90_000;
+// Sub-batch size for NCT resolution (#178). A single call over the whole batch
+// grows with the number of trials and can exceed LLM_TIMEOUT_MS -- and Cloudflare's
+// ~100s edge ceiling -- for a within-limit import. Splitting into <=10-study
+// sub-calls keeps each comfortably under the timeout. Chosen so a full MAX_NCTS
+// (50) import fans out to at most ceil(50/10) = 5 concurrent model calls, under
+// Cloudflare's 6-simultaneous-outbound-connection cap. If MAX_NCTS grows past 60,
+// raise CHUNK_SIZE in step to keep that fan-out <= 5.
+const CHUNK_SIZE = 10;
 // Public Brandfetch Logo Link client ID. Mirrors the Angular env so both
 // frontend renders and worker enrichment present the same Referer/Origin
 // to the CDN hotlink check.
@@ -191,88 +200,55 @@ export async function handleNctResolve(
     p_space_id: body.space_id,
   });
 
+  // Representative full-batch prompt, captured into ai_calls.output at close for
+  // replay/analysis. The request is issued as CHUNK_SIZE-study sub-calls below,
+  // but this mirrors the single logical extraction the stored nct_ids reproduce.
   const prompt = buildNctPrompt(studyRecords, inventory);
-  // Captured into ai_calls.output at close for exact replay/analysis.
   const promptText = `${prompt.system}\n\n${prompt.user}`;
   const temperature = extractionTemperature(preflight.model);
   const aiParams = { model: preflight.model, max_tokens: 8192, temperature };
 
-  let rawOutput: string;
-  let promptTokens = 0;
-  let completionTokens = 0;
-  // Diagnostics captured on every close so the AI Usage row explains itself:
-  // how many trials the model was asked to resolve, and how long each phase
-  // took (CT.gov fetch vs the model call that our timeout may abort).
+  // Resolve the batch as concurrent CHUNK_SIZE-study sub-calls so no single model
+  // call has to fit the whole batch inside LLM_TIMEOUT_MS / the ~100s edge ceiling
+  // (#178). Each sub-call is validated independently against the SAME inventory;
+  // mergeSubBatches then reconciles their index spaces into one proposal set.
   const llmStart = Date.now();
+  const studyChunks = chunkArray(studyRecords, CHUNK_SIZE);
+  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  const outcomes = await Promise.all(
+    studyChunks.map((chunk) => resolveChunk(client, chunk, inventory, preflight.model, temperature))
+  );
+
+  const promptTokens = outcomes.reduce((sum, o) => sum + o.promptTokens, 0);
+  const completionTokens = outcomes.reduce((sum, o) => sum + o.completionTokens, 0);
+  const successes = outcomes.filter((o) => o.ok);
+  const failures = outcomes.filter((o) => !o.ok);
+
+  // Diagnostics captured on every close so the AI Usage row explains itself: how
+  // many trials the model was asked to resolve, how long each phase took (CT.gov
+  // fetch vs the model calls), and how the batch was chunked (#178 / #162).
   const diagnostics = () => ({
     trial_count: studyRecords.length,
     ctgov_ms: ctgovMs,
     llm_ms: Date.now() - llmStart,
+    chunk_count: studyChunks.length,
+    chunk_failures: failures.length,
   });
-  try {
-    const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
 
-    const response = await client.messages.create(
-      {
-        // Use the tenant's configured model (resolved server-side in preflight).
-        model: preflight.model,
-        max_tokens: 8192,
-        ...(temperature !== undefined ? { temperature } : {}),
-        system: prompt.system,
-        messages: [{ role: 'user', content: prompt.user }],
-      },
-      { signal: controller.signal }
-    );
-
-    clearTimeout(timeout);
-
-    promptTokens = response.usage?.input_tokens ?? 0;
-    completionTokens = response.usage?.output_tokens ?? 0;
-
-    const textBlock = response.content.find((b) => b.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
-      await closeAiCall(
-        cfg,
-        env,
-        aiCallId,
-        'parse_failed',
-        Date.now() - start,
-        promptTokens,
-        completionTokens,
-        'no_text_block',
-        { prompt: promptText, params: aiParams, diagnostics: diagnostics() }
-      );
-      return jsonErrorWithCode(
-        502,
-        'ai_resolution_failed',
-        'We fetched your trial data but could not resolve companies and assets.',
-        cors,
-        { ctgov_data: studyRecords }
-      );
-    }
-    rawOutput = textBlock.text;
-  } catch (e) {
-    // Abort (our LLM_TIMEOUT_MS timer) -> 'timeout', otherwise 'parse_failed'.
-    // Both are constraint-valid; the removed 'error' value was rejected by the
-    // ai_calls.outcome CHECK constraint, which stranded the row at PENDING (#162).
-    const outcome = classifyLlmFailure(e);
-    // Self-explanatory message on timeout (names the threshold, batch size, and
-    // remedy) instead of the raw, opaque SDK string "Request was aborted." (#162).
-    const message = llmFailureMessage(e, {
-      timeoutMs: LLM_TIMEOUT_MS,
-      trialCount: studyRecords.length,
-    });
+  if (successes.length === 0) {
+    // Every sub-call failed. A 'timeout' when any was our abort timer, else
+    // 'parse_failed' -- both constraint-valid terminal outcomes, never PENDING
+    // (#162). The first failure's message names the threshold/batch/remedy.
+    const anyAbort = failures.some((f) => f.aborted);
     await closeAiCall(
       cfg,
       env,
       aiCallId,
-      outcome,
+      anyAbort ? 'timeout' : 'parse_failed',
       Date.now() - start,
       promptTokens,
       completionTokens,
-      message,
+      failures[0]?.reason ?? 'nct_resolution_failed',
       { prompt: promptText, params: aiParams, diagnostics: diagnostics() }
     );
     return jsonErrorWithCode(
@@ -284,31 +260,17 @@ export async function handleNctResolve(
     );
   }
 
-  const validation = validateExtraction(rawOutput, inventory, '', { skipNameGrounding: true });
-  if (!validation.ok) {
-    await closeAiCall(
-      cfg,
-      env,
-      aiCallId,
-      'parse_failed',
-      Date.now() - start,
-      promptTokens,
-      completionTokens,
-      validation.reason,
-      { prompt: promptText, params: aiParams, raw: rawOutput, diagnostics: diagnostics() }
-    );
-    return jsonErrorWithCode(
-      502,
-      'ai_resolution_failed',
-      'We fetched your trial data but could not resolve companies and assets.',
-      cors,
-      { ctgov_data: studyRecords }
-    );
+  const merged = mergeSubBatches(successes.map((o) => o.extraction!));
+  const proposals = merged.result;
+  const dropped = merged.dropped;
+  warnings.push(...merged.warnings);
+  // Partial success: some sub-batches resolved, others timed out or failed to
+  // parse. Record each so the user (and the AI Usage row) know that a subset of
+  // trials was skipped rather than silently dropped.
+  for (const f of failures) {
+    warnings.push(`nct_chunk_failed:${f.reason}`);
   }
-
-  const proposals = validation.result;
-  const dropped = validation.dropped;
-  warnings.push(...validation.warnings);
+  const rawOutput = successes.map((o) => o.rawOutput).join('\n---\n');
 
   // Name each NCT trial deterministically from its CT.gov record (acronym, else
   // brief title) rather than trusting the model's free-text choice. Keeps trial
@@ -408,6 +370,98 @@ async function fetchStudyWithAbort(
         reject(err);
       });
   });
+}
+
+// Outcome of resolving one NCT sub-batch. resolveChunk never throws so a single
+// slow/failed sub-call cannot reject the whole Promise.all: a failure is reported
+// as `ok: false` with a human-readable reason and an `aborted` flag (true when the
+// failure was our LLM_TIMEOUT_MS timer, which drives the batch-level 'timeout' vs
+// 'parse_failed' outcome). Token counts are always reported for aggregation.
+interface ChunkOutcome {
+  ok: boolean;
+  extraction?: SubBatchExtraction;
+  rawOutput?: string;
+  reason?: string;
+  aborted?: boolean;
+  promptTokens: number;
+  completionTokens: number;
+}
+
+async function resolveChunk(
+  client: Anthropic,
+  chunkStudies: NctStudyRecord[],
+  inventory: InventorySnapshot,
+  model: string,
+  temperature: number | undefined
+): Promise<ChunkOutcome> {
+  const prompt = buildNctPrompt(chunkStudies, inventory);
+  let promptTokens = 0;
+  let completionTokens = 0;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+    let response;
+    try {
+      response = await client.messages.create(
+        {
+          model,
+          max_tokens: 8192,
+          ...(temperature !== undefined ? { temperature } : {}),
+          system: prompt.system,
+          messages: [{ role: 'user', content: prompt.user }],
+        },
+        { signal: controller.signal }
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    promptTokens = response.usage?.input_tokens ?? 0;
+    completionTokens = response.usage?.output_tokens ?? 0;
+
+    const textBlock = response.content.find((b) => b.type === 'text');
+    if (!textBlock || textBlock.type !== 'text') {
+      return { ok: false, reason: 'no_text_block', aborted: false, promptTokens, completionTokens };
+    }
+
+    const validation = validateExtraction(textBlock.text, inventory, '', {
+      skipNameGrounding: true,
+    });
+    if (!validation.ok) {
+      return {
+        ok: false,
+        reason: validation.reason,
+        aborted: false,
+        rawOutput: textBlock.text,
+        promptTokens,
+        completionTokens,
+      };
+    }
+
+    return {
+      ok: true,
+      extraction: {
+        result: validation.result,
+        dropped: validation.dropped,
+        warnings: validation.warnings,
+        promptTokens,
+        completionTokens,
+      },
+      rawOutput: textBlock.text,
+      promptTokens,
+      completionTokens,
+    };
+  } catch (e) {
+    // Self-explanatory message on timeout (names the threshold, batch size, and
+    // remedy) instead of the opaque SDK string "Request was aborted." (#162).
+    return {
+      ok: false,
+      reason: llmFailureMessage(e, { timeoutMs: LLM_TIMEOUT_MS, trialCount: chunkStudies.length }),
+      aborted: isLlmAbort(e),
+      promptTokens,
+      completionTokens,
+    };
+  }
 }
 
 async function fetchTenantId(
