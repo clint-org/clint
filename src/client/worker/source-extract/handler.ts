@@ -4,7 +4,7 @@ import { callRpc, type SupabaseConfig } from '../supabase';
 import { jwtSubject } from '../auth';
 import { cleanHtml } from './html-cleaner';
 import { buildPrompt, estimateTokens } from './prompt-builder';
-import { isLlmAbort } from './call-outcome';
+import { isLlmAbort, llmFailureMessage } from './call-outcome';
 import { closeAiCall } from './ai-call-close';
 import { validateExtraction } from './response-validator';
 import { enrichWithCtgov } from './ctgov-enrichment';
@@ -17,7 +17,10 @@ import { extractionTemperature } from './temperature';
 import type { ExtractRequest, ExtractResponse, InventorySnapshot, DroppedEntity } from './types';
 
 const MAX_SOURCE_BYTES = 500_000;
-const LLM_TIMEOUT_MS = 60_000;
+// 90s gives the current Sonnet models headroom on large multi-entity
+// extractions (60s was tripping on sources that generate long output).
+// Kept under Cloudflare's ~100s edge timeout so the CDN can't 524 first.
+const LLM_TIMEOUT_MS = 90_000;
 const FETCH_TIMEOUT_MS = 10_000;
 // Public Brandfetch Logo Link client ID. Mirrors the Angular env so both
 // frontend renders and worker enrichment present the same Referer/Origin
@@ -314,6 +317,8 @@ export async function handleSourceExtract(
     const msg = isAbort
       ? 'Extraction timed out. Try again or use a shorter source.'
       : "Couldn't read the AI response. Try again.";
+    // Store a self-explanatory error_message on timeout (names the threshold and
+    // remedy) instead of the raw, opaque SDK string "Request was aborted." (#162).
     await closeAiCall(
       cfg,
       env,
@@ -322,7 +327,7 @@ export async function handleSourceExtract(
       Date.now() - start,
       promptTokens,
       completionTokens,
-      String(e),
+      llmFailureMessage(e, { timeoutMs: LLM_TIMEOUT_MS }),
       { prompt: promptText, params: aiParams }
     );
     return jsonErrorWithCode(500, outcome, msg, cors);

@@ -73,7 +73,9 @@
       @if (asset.has_recent_activity) {
         <div
           class="mt-4 flex w-full items-center gap-3 border-l-[3px] border-amber-300 bg-amber-50 px-3.5 py-2.5"
-          [attr.aria-label]="recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)"
+          [attr.aria-label]="
+            recentChangeLabel(asset.recent_changes_count, asset.most_recent_change_type)
+          "
         >
           <span
             class="box-border h-[9px] w-[9px] shrink-0 rounded-full border-2 border-[#f97316]"
@@ -141,7 +143,9 @@
       @if (asset.moas.length > 0 || asset.roas.length > 0) {
         <div class="mt-5 grid grid-cols-2 border border-slate-200">
           <div class="min-w-0 border-r border-slate-200 px-3 py-2.5">
-            <p class="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+            <p
+              class="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400"
+            >
               Mechanism
             </p>
             @if (asset.moas.length > 0) {
@@ -160,7 +164,9 @@
             }
           </div>
           <div class="min-w-0 px-3 py-2.5">
-            <p class="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+            <p
+              class="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400"
+            >
               Route
             </p>
             @if (asset.roas.length > 0) {
@@ -223,7 +229,15 @@
                   </span>
                   <span class="flex items-center gap-2 font-mono text-[11px] text-slate-400">
                     @if (trial.identifier) {
-                      <span>{{ trial.identifier }}</span>
+                      <a
+                        [href]="ctgovRegistryUrl(trial.identifier)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="hover:text-brand-700 hover:underline"
+                        (click)="$event.stopPropagation()"
+                        (keydown.enter)="$event.stopPropagation()"
+                        >{{ trial.identifier }}</a
+                      >
                     }
                     @if (trial.recruitment_status) {
                       <span

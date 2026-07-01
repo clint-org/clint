@@ -26,6 +26,7 @@ import { CompanyService } from '../../../core/services/company.service';
 import { SpaceFieldVisibilityService } from '../../../core/services/space-field-visibility.service';
 import { SpaceSettingsService } from '../../../core/services/space-settings.service';
 import { formatCtgovFieldValue } from '../../../shared/utils/ctgov-field-format';
+import { ctgovRegistryUrl } from '../../../shared/utils/ctgov-registry-url';
 import { TrialCreateDialogComponent } from './trial-create-dialog.component';
 import { ManagePageShellComponent } from '../../../shared/components/manage-page-shell.component';
 import { BrandLogoComponent } from '../../../shared/components/brand-logo.component';
@@ -89,6 +90,9 @@ export class TrialListComponent implements OnInit {
   protected filterInputValue(ev: Event): string {
     return (ev.target as HTMLInputElement).value;
   }
+
+  /** Canonical CT.gov study URL for an NCT identifier (null when unset). */
+  protected readonly ctgovRegistryUrl = ctgovRegistryUrl;
 
   private trialService = inject(TrialService);
   private assetService = inject(AssetService);
@@ -254,7 +258,15 @@ export class TrialListComponent implements OnInit {
   }
 
   onTrialCreated({ trialId }: { trialId: string }): void {
-    this.router.navigate(['/t', this.tenantId(), 's', this.spaceId(), 'profiles', 'trials', trialId]);
+    this.router.navigate([
+      '/t',
+      this.tenantId(),
+      's',
+      this.spaceId(),
+      'profiles',
+      'trials',
+      trialId,
+    ]);
   }
 
   openDetail(trial: Trial): void {

@@ -19,9 +19,14 @@ import { phaseOrder } from '../../../core/models/phase-colors';
 import { Trial } from '../../../core/models/trial.model';
 import { TimelineColumn, TimelineService } from '../../../core/services/timeline.service';
 import { deriveTrialPhaseSpan, TrialPhaseSpan } from '../../../core/models/trial-phase-span';
-import { DetailLevel, GridDensity, LandscapeStateService } from '../../landscape/landscape-state.service';
+import {
+  DetailLevel,
+  GridDensity,
+  LandscapeStateService,
+} from '../../landscape/landscape-state.service';
 import { markerPeriodLabel, markerStartCaption } from '../../../core/models/marker-date-precision';
 import { MARKER_ICON_SIZE } from '../../../shared/utils/grid-constants';
+import { ctgovRegistryUrl } from '../../../shared/utils/ctgov-registry-url';
 import { PhaseChipComponent } from '../../../shared/components/phase-chip.component';
 import { computeInitialScrollLeft } from './initial-scroll';
 import {
@@ -188,6 +193,8 @@ export class DashboardGridComponent implements AfterViewInit {
     'color-mix(in srgb, var(--color-brand-500, #14b8a6) 38%, transparent)';
   protected readonly hoverWash =
     'color-mix(in srgb, var(--color-brand-500, #14b8a6) 7%, transparent)';
+  /** Canonical CT.gov study URL for an NCT identifier (null when unset). */
+  protected readonly ctgovRegistryUrl = ctgovRegistryUrl;
   protected readonly hoverShadowRight = `inset 0 1px 0 0 ${DashboardGridComponent.HOVER_EDGE}, inset 0 -1px 0 0 ${DashboardGridComponent.HOVER_EDGE}, inset -1px 0 0 0 ${DashboardGridComponent.HOVER_EDGE}`;
   readonly showMoaColumn = computed(() => this.landscapeState?.showMoaColumn() ?? true);
   readonly showRoaColumn = computed(() => this.landscapeState?.showRoaColumn() ?? true);
@@ -199,7 +206,9 @@ export class DashboardGridComponent implements AfterViewInit {
   // bands always render; 'assets' adds asset rows (the old Compare); 'trials'
   // adds trial detail. Optional service fallback keeps embedded/export grids
   // (no LandscapeStateService) at full detail.
-  readonly detailLevel = computed<DetailLevel>(() => this.landscapeState?.detailLevel() ?? 'trials');
+  readonly detailLevel = computed<DetailLevel>(
+    () => this.landscapeState?.detailLevel() ?? 'trials'
+  );
   /** Asset header rows render at 'assets' and 'trials' depth, not at 'companies'. */
   readonly showAssetRows = computed(() => this.detailLevel() !== 'companies');
   /** Trial rows render only at full 'trials' depth. */
