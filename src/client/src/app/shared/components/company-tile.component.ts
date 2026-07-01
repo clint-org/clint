@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
+import { BrandLogoComponent } from './brand-logo.component';
 
 /**
  * Company identity tile. Shows the company logo when a `logoUrl` is present,
@@ -10,23 +10,26 @@ import { NgOptimizedImage } from '@angular/common';
  * This is the shared identity treatment used by the bullseye and heatmap
  * detail panes; it mirrors the marker pane's logo affordance and adds the
  * initial fallback the marker pane lacks.
+ *
+ * The logo itself is delegated to `app-brand-logo`, which resolves the stored
+ * Brandfetch URL through the required client id + lettermark and the
+ * same-origin `/api/logo` proxy, and swaps to the projected fallback on load
+ * error. Rendering the raw stored URL directly (as this tile used to) yields
+ * Brandfetch's blank hotlink-protection placeholder for gated brands -- the
+ * bug that left Arrowhead/Biogen tiles empty (see issue #194).
  */
 @Component({
   selector: 'app-company-tile',
   standalone: true,
-  imports: [NgOptimizedImage],
+  imports: [BrandLogoComponent],
   template: `
-    @if (logoUrl()) {
-      <img
-        [ngSrc]="logoUrl()!"
-        [alt]="name()"
-        [width]="size()"
-        [height]="size()"
-        class="flex-none rounded-sm border border-slate-200 bg-white object-contain"
-        [style.width.px]="size()"
-        [style.height.px]="size()"
-      />
-    } @else {
+    <app-brand-logo
+      [url]="logoUrl()"
+      [alt]="name()"
+      [width]="size()"
+      [height]="size()"
+      imgClass="flex-none rounded-sm border border-slate-200 bg-white object-contain"
+    >
       <span
         class="flex flex-none items-center justify-center font-mono font-bold italic text-white"
         [style.width.px]="size()"
@@ -36,7 +39,7 @@ import { NgOptimizedImage } from '@angular/common';
         aria-hidden="true"
         >{{ initial() }}</span
       >
-    }
+    </app-brand-logo>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
