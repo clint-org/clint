@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 
 import { Company } from '../../core/models/company.model';
 import { Asset } from '../../core/models/asset.model';
@@ -24,6 +24,7 @@ import {
 } from '../../core/models/intelligence-references';
 import { EventDetailService } from '../../core/services/event-detail.service';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { RpcCache } from '../../core/services/rpc-cache.service';
 import { PrimaryIntelligenceService } from '../../core/services/primary-intelligence.service';
 import { SpaceSettingsService } from '../../core/services/space-settings.service';
 import { groupCatalystsByTimePeriod, flattenGroupedCatalysts } from '../future-events/group-events';
@@ -57,6 +58,26 @@ interface PersistedLandscapeState {
 const STORAGE_PREFIX = 'landscape-state:';
 
 /**
+ * Debounce for reactive reloads triggered by cache invalidations. An NCT import
+ * fires one background CT.gov sync per created trial; each completes at its own
+ * pace and invalidates the dashboard tag, so coalesce a burst into a single
+ * reload while staying responsive enough that markers appear within ~1s.
+ */
+const INVALIDATION_RELOAD_DEBOUNCE_MS = 400;
+
+/**
+ * Whether an RpcCache invalidation touching `tags` should force the mounted
+ * landscape (bound to `spaceId`) to reload its dashboard dataset. Extracted as
+ * a pure predicate so the decision is unit-testable without instantiating the
+ * service (whose field effects need the zoneless scheduler). The timeline's
+ * data is the `get_dashboard_data` read tagged `space:<id>:dashboard`.
+ */
+export function invalidationHitsDashboard(tags: readonly string[], spaceId: string): boolean {
+  if (!spaceId) return false;
+  return tags.includes(`space:${spaceId}:dashboard`);
+}
+
+/**
  * Shared state for the unified Landscape module.
  * Provided by LandscapeShellComponent so all child views share one instance.
  *
@@ -75,9 +96,25 @@ export class LandscapeStateService {
   private readonly catalyst = inject(EventDetailService);
   private readonly intelligence = inject(PrimaryIntelligenceService);
   private readonly spaceSettings = inject(SpaceSettingsService);
+  private readonly rpcCache = inject(RpcCache);
+  private readonly destroyRef = inject(DestroyRef);
   private storageKey = '';
   private spaceId = '';
   private disablePersistence = false;
+
+  // Reactive reload: react to cache invalidations that touch this space's
+  // dashboard read (e.g. a background CT.gov sync seeding a PCD marker after the
+  // initial fetch) by reloading, so the timeline picks up the new data without
+  // a manual browser refresh. Baselined in init() so invalidations that predate
+  // this instance binding to the space are ignored.
+  private lastHandledInvalidationSeq = 0;
+  private reloadTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.reloadTimer) clearTimeout(this.reloadTimer);
+    });
+  }
 
   /** Read-only signal exposing the bound space id (empty string before init). */
   readonly spaceIdSig = signal('');
@@ -200,6 +237,19 @@ export class LandscapeStateService {
     }
   });
 
+  // Reload when a cache invalidation touches this space's dashboard read. The
+  // seq guard makes each invalidation reload at most once even if the effect
+  // re-runs for another tracked signal; init() sets the baseline so the mount
+  // and any pre-binding invalidation are skipped.
+  private readonly invalidationReloadEffect = effect(() => {
+    const inv = this.rpcCache.invalidations();
+    const sid = this.spaceIdSig();
+    if (inv.seq === this.lastHandledInvalidationSeq) return;
+    this.lastHandledInvalidationSeq = inv.seq;
+    if (!invalidationHitsDashboard(inv.tags, sid)) return;
+    this.scheduleReload();
+  });
+
   // ─── Public API ──────────────────────────────────────────────────────
 
   /**
@@ -218,6 +268,10 @@ export class LandscapeStateService {
     }
   ): Promise<void> {
     this.spaceId = spaceId;
+    // Baseline the invalidation seq to the current value so the reactive-reload
+    // effect ignores any invalidation that fired before this instance bound to
+    // the space (e.g. the import commit's own pre-navigation invalidation).
+    this.lastHandledInvalidationSeq = this.rpcCache.invalidations().seq;
     this.spaceIdSig.set(spaceId);
     try {
       this.showPreclinical.set(await this.spaceSettings.getShowPreclinical(spaceId));
@@ -243,6 +297,20 @@ export class LandscapeStateService {
   /** Reload the dataset (e.g. after data mutation). */
   async reload(): Promise<void> {
     await this.loadData();
+  }
+
+  /**
+   * Debounced, silent reload used by the reactive-invalidation effect. Silent
+   * so a background refresh (e.g. after the CT.gov sync seeds a PCD marker)
+   * swaps the data in place without flashing the timeline loader over
+   * already-rendered content.
+   */
+  private scheduleReload(): void {
+    if (this.reloadTimer) clearTimeout(this.reloadTimer);
+    this.reloadTimer = setTimeout(() => {
+      this.reloadTimer = null;
+      void this.loadData({ silent: true });
+    }, INVALIDATION_RELOAD_DEBOUNCE_MS);
   }
 
   /**
@@ -353,10 +421,16 @@ export class LandscapeStateService {
 
   // ─── Private ─────────────────────────────────────────────────────────
 
-  private async loadData(): Promise<void> {
+  private async loadData(opts?: { silent?: boolean }): Promise<void> {
     if (!this.spaceId) return;
-    this.dataLoading.set(true);
-    this.dataError.set(null);
+    // A silent (background) reload keeps the current data on screen: it does not
+    // raise the loader, and a failure leaves the already-rendered dataset intact
+    // rather than replacing it with an error state.
+    const silent = opts?.silent ?? false;
+    if (!silent) {
+      this.dataLoading.set(true);
+      this.dataError.set(null);
+    }
     try {
       const nullFilters = {
         companyIds: null,
@@ -373,9 +447,11 @@ export class LandscapeStateService {
       const data = await this.dashboardService.getDashboardData(this.spaceId, nullFilters);
       this.rawData.set(data);
     } catch (err) {
-      this.dataError.set(err instanceof Error ? err.message : 'Failed to load data.');
+      if (!silent) {
+        this.dataError.set(err instanceof Error ? err.message : 'Failed to load data.');
+      }
     } finally {
-      this.dataLoading.set(false);
+      if (!silent) this.dataLoading.set(false);
     }
   }
 

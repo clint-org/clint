@@ -41,6 +41,20 @@ export class RpcCache {
   private channel: BroadcastChannel | null = null;
   private stats: RpcCacheStats | null = null;
 
+  /**
+   * Emits the tag set of every invalidation (local writes AND cross-tab
+   * broadcasts, since both funnel through invalidateTagsLocal), stamped with a
+   * monotonic seq. Consumers that hold a snapshot of a cached read -- e.g. the
+   * timeline's LandscapeStateService, which copies get_dashboard_data into its
+   * own `rawData` signal -- can react to an out-of-band invalidation (like the
+   * async CT.gov sync seeding a PCD marker after the initial fetch) and reload,
+   * rather than serving the stale snapshot until a hard refresh wipes this
+   * in-memory singleton. seq starts at 0 so a fresh subscriber can baseline
+   * against it and ignore invalidations that predate its binding.
+   */
+  private invalidationSeq = 0;
+  readonly invalidations = signal<{ tags: string[]; seq: number }>({ tags: [], seq: 0 });
+
   constructor() {
     if (typeof BroadcastChannel !== 'undefined') {
       this.channel = new BroadcastChannel('rpc-cache');
@@ -230,6 +244,11 @@ export class RpcCache {
         this.accessOrder.delete(key);
       }
     }
+    // Announce the invalidation regardless of what was evicted: a consumer may
+    // hold a snapshot whose cache entry has already aged out of this Map, yet
+    // still needs to know the underlying data changed.
+    this.invalidationSeq += 1;
+    this.invalidations.set({ tags, seq: this.invalidationSeq });
     return evictedRpcs;
   }
 

@@ -151,6 +151,28 @@ describe('RpcCache invalidateTags', () => {
     await cache.get('a', {}, opts);
     expect(fetch).toHaveBeenCalledTimes(3);
   });
+
+  it('announces each invalidation on the invalidations signal with a monotonic seq', () => {
+    const cache = new RpcCache();
+    expect(cache.invalidations()).toEqual({ tags: [], seq: 0 });
+
+    cache.invalidateTags(['space:a:dashboard']);
+    expect(cache.invalidations()).toEqual({ tags: ['space:a:dashboard'], seq: 1 });
+
+    cache.invalidateTags(['space:b:events', 'space:b:dashboard']);
+    expect(cache.invalidations()).toEqual({
+      tags: ['space:b:events', 'space:b:dashboard'],
+      seq: 2,
+    });
+  });
+
+  it('announces the invalidation even when no cached entry matched the tags', () => {
+    // A consumer may hold a snapshot whose cache entry already aged out, yet
+    // still needs to learn the underlying data changed.
+    const cache = new RpcCache();
+    cache.invalidateTags(['space:z:dashboard']);
+    expect(cache.invalidations()).toEqual({ tags: ['space:z:dashboard'], seq: 1 });
+  });
 });
 
 describe('RpcCache LRU', () => {

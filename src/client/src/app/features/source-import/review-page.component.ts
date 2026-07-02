@@ -1233,9 +1233,12 @@ export class ReviewPageComponent implements OnInit, HasUnsavedImport {
       const nctResult = data as { created?: { trials?: string[] } } | null;
       const createdTrialIds = nctResult?.created?.trials ?? [];
       for (const trialId of createdTrialIds) {
-        // fire-and-forget: sync runs in the background via the worker
+        // fire-and-forget: sync runs in the background via the worker. Pass the
+        // space id so the sync's completion invalidates the timeline/landscape
+        // caches -- the mounted timeline then reloads and the PCD marker appears
+        // without a manual refresh.
         this.changeEventService
-          .triggerSingleTrialSync(trialId)
+          .triggerSingleTrialSync(trialId, this.spaceId())
           .catch(Function.prototype as () => void);
       }
     }

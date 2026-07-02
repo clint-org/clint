@@ -10,7 +10,7 @@ import type { Trial } from '../../core/models/trial.model';
 import { EMPTY_LANDSCAPE_FILTERS, type LandscapeFilters } from '../../core/models/landscape.model';
 import { TRIAL_START_MARKER_TYPE_ID, TRIAL_END_MARKER_TYPE_ID } from '../../core/models/trial-phase-span';
 
-import { filterDashboardData } from './landscape-state.service';
+import { filterDashboardData, invalidationHitsDashboard } from './landscape-state.service';
 
 // LandscapeStateService creates a persistence effect() in a field initializer,
 // which needs the zoneless ChangeDetectionScheduler -- not available in this
@@ -417,5 +417,46 @@ describe('filterDashboardData timePeriod', () => {
     // The trial survives because its phase span (2025-04-01 .. 2026-01-01),
     // snapshotted before the category filter, overlaps the window.
     expect(result[0].assets![0].trials!.map((t) => t.id)).toEqual(['t-span-only']);
+  });
+});
+
+/**
+ * Reactive reload on cache invalidation (timeline PCD-marker stale-cache bug).
+ * The decision predicate is pure and unit-tested here; the effect wiring that
+ * consumes it needs the zoneless scheduler, so it is asserted by source contract
+ * (mirroring the persistence/marker-references pattern above).
+ */
+describe('invalidationHitsDashboard', () => {
+  it('matches when the tags include this space\'s dashboard tag', () => {
+    expect(invalidationHitsDashboard(['space:s1:dashboard'], 's1')).toBe(true);
+    expect(
+      invalidationHitsDashboard(['trial:t1:detail', 'space:s1:dashboard'], 's1')
+    ).toBe(true);
+  });
+
+  it('does not match another space or a non-dashboard tag', () => {
+    expect(invalidationHitsDashboard(['space:s2:dashboard'], 's1')).toBe(false);
+    expect(invalidationHitsDashboard(['space:s1:events'], 's1')).toBe(false);
+    expect(invalidationHitsDashboard(['space:s1:landscape-all'], 's1')).toBe(false);
+  });
+
+  it('never matches for an unbound (empty) space id', () => {
+    expect(invalidationHitsDashboard(['space::dashboard'], '')).toBe(false);
+    expect(invalidationHitsDashboard([], '')).toBe(false);
+  });
+});
+
+describe('reactive-reload wiring (source contract)', () => {
+  it('reacts to RpcCache.invalidations and reloads via a debounced scheduler', () => {
+    // effect reads the invalidation stream and the bound space id.
+    expect(stateSrc).toContain('this.rpcCache.invalidations()');
+    expect(stateSrc).toContain('invalidationHitsDashboard(inv.tags, sid)');
+    expect(stateSrc).toContain('this.scheduleReload()');
+    // seq guard + baseline so each invalidation reloads at most once and
+    // pre-binding invalidations are ignored.
+    expect(stateSrc).toContain('this.lastHandledInvalidationSeq = this.rpcCache.invalidations().seq');
+    // debounced, silent reload with cleanup on destroy.
+    expect(stateSrc).toContain('void this.loadData({ silent: true })');
+    expect(stateSrc).toContain('this.destroyRef.onDestroy');
   });
 });

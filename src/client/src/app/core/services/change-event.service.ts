@@ -7,6 +7,7 @@ import {
   ChangeEvent,
   MarkerChangeRow,
 } from '../models/change-event.model';
+import { landscapeAllTag } from './cache-tags';
 import { RpcCache } from './rpc-cache.service';
 import { SupabaseService } from './supabase.service';
 
@@ -102,9 +103,17 @@ export class ChangeEventService {
    * Returns the {ok, nct_id, reason} shape so callers can surface
    * `no_nct_id` (the RPC's response when the trial has no identifier set)
    * and other soft errors via toast text.
+   *
+   * Pass `spaceId` when the caller knows it (import commit, trial create/detail):
+   * the sync seeds trial-date markers (Trial Start/End and, critically, the
+   * primary-completion-date marker) that live in the space's dashboard/landscape
+   * reads. Without invalidating those space tags, a timeline fetched between the
+   * commit and the async sync's completion keeps serving the pre-sync snapshot
+   * (bars, no PCD glyph) until a hard refresh. See issue #175/#177.
    */
   async triggerSingleTrialSync(
-    trialId: string
+    trialId: string,
+    spaceId?: string
   ): Promise<{ ok: boolean; nct_id?: string; reason?: string }> {
     const session = (await this.supabase.client.auth.getSession()).data.session;
     const apiBase = (window as Window & { __WORKER_API_BASE?: string }).__WORKER_API_BASE ?? '';
@@ -122,7 +131,14 @@ export class ChangeEventService {
     }
     const result = (await res.json()) as { ok: boolean; nct_id?: string; reason?: string };
     if (result.ok) {
-      this.cache.invalidateTags([`trial:${trialId}:detail`, `trial:${trialId}:activity`]);
+      const tags = [`trial:${trialId}:detail`, `trial:${trialId}:activity`];
+      if (spaceId) {
+        // The sync just wrote/updated the space's trial-date markers; drop the
+        // timeline (dashboard) and bullseye/heatmap/landscape reads so a mounted
+        // or subsequent view refetches with the new markers (e.g. the PCD glyph).
+        tags.push(`space:${spaceId}:dashboard`, landscapeAllTag(spaceId));
+      }
+      this.cache.invalidateTags(tags);
     }
     return result;
   }

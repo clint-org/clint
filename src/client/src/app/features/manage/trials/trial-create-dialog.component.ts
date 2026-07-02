@@ -407,7 +407,9 @@ export class TrialCreateDialogComponent {
       // Best-effort: kick off CT.gov sync if NCT was provided. Don't block the
       // save path on the sync result.
       if (trial.identifier) {
-        this.changeEventService.triggerSingleTrialSync(trial.id).catch(() => undefined);
+        this.changeEventService
+          .triggerSingleTrialSync(trial.id, this.spaceId())
+          .catch(() => undefined);
       }
       this.saved.emit({ trialId: trial.id });
       this.close();

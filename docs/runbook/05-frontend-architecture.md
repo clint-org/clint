@@ -390,6 +390,12 @@ Mutations that do not receive `spaceId` directly (e.g. `update(id, changes)`, `d
 
 `RpcCache.signal(rpcName, params)` returns a `Signal<T | undefined>` that updates when a background SWR refresh produces NEW data. The cache uses `stableStringify` to skip the emit when serialized data is byte-equal to the prior entry, so components that bind to the signal do not re-render for no-op refreshes. The existing `resource()` call sites (`landscape*.component.ts`) compose cleanly: their `loader` calls into a service that routes through `RpcCache`, and the component gets the standard `resource()` signal interface with the cache's dedup and SWR underneath.
 
+### Reactive reload via the invalidation stream
+
+`RpcCache` also exposes `invalidations`, a signal carrying `{ tags, seq }` bumped on every invalidation (local writes and cross-tab broadcasts both funnel through `invalidateTagsLocal`, so both are announced). This exists for consumers that hold a *snapshot* of a cached read rather than binding to the per-entry `signal()` — the timeline's `LandscapeStateService` copies `get_dashboard_data` into its own `rawData` signal, so it cannot observe a plain eviction. It watches `invalidations` in an `effect()`; when the tags include its `space:<id>:dashboard`, it does a debounced, **silent** reload (no loader flash; a background-refresh failure leaves the shown data intact). A per-space `seq` baseline set in `init()` makes each invalidation reload at most once and ignores invalidations that predate the instance binding.
+
+This closes a race specific to async, out-of-band writes: an NCT import seeds the phase bar synchronously but the primary-completion-date (PCD) marker only arrives via the fire-and-forget CT.gov sync (`ChangeEventService.triggerSingleTrialSync`, which now invalidates `space:<id>:dashboard` + `landscape-all` on success). The timeline's first fetch beats that sync; the reactive reload picks up the PCD marker when the sync completes, instead of serving the pre-sync snapshot until a hard refresh. See issues #175/#177.
+
 ### Inflight + invalidation correctness
 
 `fetchAndStore` stamps each placeholder with a monotonically increasing `generation`. If `invalidateTags` runs while a fetch is inflight and removes the entry, the awaited result does NOT repopulate the cache (the generation check at writeback time short-circuits). This guards against the "mutation invalidates, inflight fetch overwrites with pre-mutation data" race that would otherwise allow stale-but-fresh-tagged data to appear in the cache.

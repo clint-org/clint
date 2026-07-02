@@ -365,7 +365,7 @@ export class TrialDetailComponent {
   async syncCtgov(): Promise<void> {
     this.syncing.set(true);
     try {
-      await this.changeEventService.triggerSingleTrialSync(this.trialId());
+      await this.changeEventService.triggerSingleTrialSync(this.trialId(), this.spaceIdSig());
       await Promise.all([this.loadTrial(), this.loadSnapshot(), this.loadTrialActivity()]);
       this.messageService.add({
         severity: 'success',
@@ -392,7 +392,9 @@ export class TrialDetailComponent {
     const previousIdentifier = this.trial()?.identifier ?? null;
     await this.loadTrial();
     if (updated.identifier && updated.identifier !== previousIdentifier) {
-      this.changeEventService.triggerSingleTrialSync(updated.id).catch(() => undefined);
+      this.changeEventService
+        .triggerSingleTrialSync(updated.id, this.spaceIdSig())
+        .catch(() => undefined);
     }
   }
 
