@@ -102,9 +102,19 @@ export class EntityEventsSectionComponent {
     this.menuCache.clear();
   });
   // Reset the edit target whenever the dialog closes so the next "Add event"
-  // opens in create mode rather than re-hydrating the last edited event.
+  // opens in create mode rather than re-hydrating the last edited event, and
+  // strip the ?marker deep-link param on the open->closed transition. Without
+  // the strip, dismissing (or saving) leaves ?marker=<id> in the URL, so
+  // re-editing the same marker re-navigates to an identical URL -- no route
+  // emission fires, and the deep-link effect never re-opens the dialog.
+  private dialogWasOpen = false;
   private readonly eventDialogResetEffect = effect(() => {
-    if (!this.eventDialogOpen()) this.editingEventId.set(null);
+    const open = this.eventDialogOpen();
+    if (!open) {
+      this.editingEventId.set(null);
+      if (this.dialogWasOpen) this.clearMarkerParam();
+    }
+    this.dialogWasOpen = open;
   });
 
   private readonly queryParamMapSig = toSignal(this.route.queryParamMap, {
@@ -197,8 +207,8 @@ export class EntityEventsSectionComponent {
 
   protected async onEventSaved(): Promise<void> {
     this.editingEventId.set(null);
+    // Closing the dialog strips ?marker via eventDialogResetEffect.
     this.eventDialogOpen.set(false);
-    this.clearMarkerParam();
     this.changed.emit();
     this.messageService.add({ severity: 'success', summary: 'Event saved.', life: 3000 });
   }
@@ -232,7 +242,10 @@ export class EntityEventsSectionComponent {
   }
 
   private clearMarkerParam(): void {
-    if (!this.queryParamMapSig().get('marker')) return;
+    // Read the param non-reactively: this runs inside eventDialogResetEffect,
+    // and depending on queryParamMapSig there would re-run that effect on every
+    // param change.
+    if (!this.route.snapshot.queryParamMap.get('marker')) return;
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { marker: null },
